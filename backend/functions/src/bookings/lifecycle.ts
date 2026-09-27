@@ -10,7 +10,7 @@ import {
   type Booking,
   type ImageRef,
 } from '@loane/shared';
-import { db, now, Timestamp } from '../lib/admin';
+import { db, now, Timestamp, FieldValue } from '../lib/admin';
 import { alreadyTaken, failed, invalidArgument } from '../lib/errors';
 import { requireActiveUser } from '../lib/guards';
 import { assertCanTransition, loadBookingFor, notify, pieceName } from './transitions';
@@ -337,6 +337,13 @@ export const cancelBooking = onCall<
   await db().runTransaction(async (tx) => {
     const { booking, actor, ref } = await loadBookingFor(bookingId, user.uid, tx);
     assertCanTransition(booking, 'cancelled', actor);
+
+    // Counted so a pattern is visible to an admin. One cancellation is
+    // life; five in a month is a lender nobody can rely on.
+    tx.update(db().collection(COLLECTIONS.users).doc(user.uid), {
+      'stats.cancellations': FieldValue.increment(1),
+      updatedAt: now(),
+    });
 
     tx.update(ref, {
       status: 'cancelled',

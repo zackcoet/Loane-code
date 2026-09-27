@@ -116,6 +116,7 @@ export function UsersPage({ data, campusId, onCampusChange, onSelectUser }: Prop
                   <th>Listings</th>
                   <th>Posts</th>
                   <th>Rentals</th>
+                  <th>Cancelled</th>
                   <th>Status</th>
                   <th>Email confirmed</th>
                 </tr>
@@ -132,6 +133,16 @@ export function UsersPage({ data, campusId, onCampusChange, onSelectUser }: Prop
                     <td>{user.stats.listingCount}</td>
                     <td>{user.stats.postCount}</td>
                     <td>{user.stats.rentalsAsLender + user.stats.rentalsAsRenter}</td>
+                    <td>
+                      {/* One cancellation is life. A pattern is a lender
+                          nobody can rely on, so flag it before it becomes
+                          a reputation problem. */}
+                      {user.stats.cancellations > 2 ? (
+                        <Pill tone="warn">{user.stats.cancellations}</Pill>
+                      ) : (
+                        (user.stats.cancellations ?? 0)
+                      )}
+                    </td>
                     <td>
                       <Pill tone={user.status === 'active' ? 'good' : 'warn'}>{user.status}</Pill>
                     </td>

@@ -118,11 +118,23 @@ service cloud.firestore {
         allow write: if isSelf(userId) && isActive();
       }
 
-      // Blocked users (Phase 6). Only she can see or change her own list.
+      // Who she has blocked. Written only by blockUser, so the reverse
+      // marker below can never drift out of step with it.
       match /blocked/{blockedUid} {
         allow read: if isSelf(userId);
-        allow create, delete: if isSelf(userId) && isActive();
-        allow update: if false;
+        allow write: if false;
+      }
+
+      // Who has blocked HER.
+      //
+      // She can read it, which technically tells her she was blocked.
+      // Her app needs it to hide him from her feed — without it,
+      // blocking would only work one way in practice. Nothing in the UI
+      // ever says "you were blocked"; her app just quietly filters.
+      // The honest version of this trade-off is in docs/security.md.
+      match /blockedBy/{blockerUid} {
+        allow read: if isSelf(userId);
+        allow write: if false;
       }
 
       // Activity feed. Written by Cloud Functions; she may only mark read.
@@ -322,6 +334,9 @@ service cloud.firestore {
     // -----------------------------------------------------------------
     match /reviews/{reviewId} {
       allow read: if signedIn() && (resource.data.isHidden == false || isAdmin());
+      // Written only by writeReview, which checks that the author really
+      // completed the rental she is rating. That check is the whole
+      // difference between a rating system and a comment box.
       allow write: if false;
     }
 

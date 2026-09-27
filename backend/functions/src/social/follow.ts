@@ -4,6 +4,7 @@ import { COLLECTIONS, ids, type Follow } from '@loane/shared';
 import { db, now, FieldValue } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
+import { assertNotBlocked } from '../moderation/block';
 
 /**
  * `follow` and `unfollow`.
@@ -37,6 +38,7 @@ async function setFollow(
 
   if (!targetUid) throw invalidArgument('Who do you want to follow?');
   if (targetUid === me.uid) throw failed("You can't follow yourself.");
+  if (shouldFollow) await assertNotBlocked(me.uid, targetUid);
 
   const targetRef = db().collection(COLLECTIONS.users).doc(targetUid);
   const meRef = db().collection(COLLECTIONS.users).doc(me.uid);

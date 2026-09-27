@@ -26,6 +26,7 @@ import { Text } from '../../src/components/Text';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { usePagedPosts } from '../../src/hooks/usePagedPosts';
 import { useFollowingUids } from '../../src/hooks/useFollowing';
+import { useHiddenUids } from '../../src/hooks/useBlocks';
 import { logEvent } from '../../src/analytics/events';
 
 export default function Feed() {
@@ -33,12 +34,15 @@ export default function Feed() {
   const { profile } = useAuth();
   const { posts, loading, loadingMore, error, exhausted, refresh, loadMore } = usePagedPosts();
   const { uids: followingUids } = useFollowingUids();
+  const hidden = useHiddenUids();
   const [tab, setTab] = useState<'campus' | 'following'>('campus');
 
-  const visible = useMemo(
-    () => (tab === 'following' ? posts.filter((p) => followingUids.has(p.authorUid)) : posts),
-    [posts, tab, followingUids],
-  );
+  const visible = useMemo(() => {
+    // Blocked either way: her looks simply are not in the feed. This is
+    // the on-device half of blocking — see docs/security.md.
+    const shown = posts.filter((p) => !hidden.has(p.authorUid));
+    return tab === 'following' ? shown.filter((p) => followingUids.has(p.authorUid)) : shown;
+  }, [posts, tab, followingUids, hidden]);
 
   const onPressTag = useCallback(
     (listingId: string, postId: string) => {

@@ -504,6 +504,7 @@ async function main(): Promise<void> {
         rentalsAsRenter: 0,
         ratingAverage: null,
         ratingCount: 0,
+        cancellations: 0,
       },
       lastActiveAt: null,
       pushTokens: [],
@@ -914,6 +915,147 @@ async function main(): Promise<void> {
     }
   }
   console.warn(`Created ${followCount} follows and ${likeCount} likes`);
+
+  // --- Chats, reviews and reports -----------------------------------------
+  // So the inbox, the Reviews tab and the admin queue all have something
+  // real in them rather than three empty states.
+  let chatCount = 0;
+  let messageCount = 0;
+
+  const OPENERS = [
+    ['Is this still free for formals weekend?', 'Yes! It is all yours.'],
+    ['Would this fit a 5\'6" frame?', 'Should do — it is a little long on me and I am 5\'4".'],
+    ['Could I collect from Russell House around 4?', 'Perfect, see you then.'],
+  ];
+
+  for (const [index, opener] of OPENERS.entries()) {
+    const a = users[index]!;
+    const b = users[(index + 3) % users.length]!;
+    if (a.uid === b.uid) continue;
+
+    const conversationId = ids.conversation(a.uid, b.uid);
+    const ref = db.collection(COLLECTIONS.conversations).doc(conversationId);
+
+    await ref.set({
+      id: conversationId,
+      campusId: CAMPUS_ID,
+      participantUids: [a.uid, b.uid].sort(),
+      participants: { [a.uid]: summaryOf(a), [b.uid]: summaryOf(b) },
+      listingId: null,
+      bookingId: null,
+      lastMessage: { body: opener[1]!, senderUid: b.uid, sentAt: FieldValue.serverTimestamp() },
+      // One unread for the person who asked, so the badge is visible.
+      unreadCounts: { [a.uid]: 1, [b.uid]: 0 },
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+
+    for (const [i, body] of opener.entries()) {
+      await ref.collection('messages').add({
+        conversationId,
+        senderUid: i === 0 ? a.uid : b.uid,
+        body,
+        readBy: [i === 0 ? a.uid : b.uid],
+        isDeleted: false,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      messageCount += 1;
+    }
+    chatCount += 1;
+  }
+  console.warn(`Created ${chatCount} chats with ${messageCount} messages`);
+
+  // Reviews on the completed rental, both directions.
+  const completed = (
+    await db.collection(COLLECTIONS.bookings).where('status', '==', 'completed').get()
+  ).docs;
+
+  let reviewCount = 0;
+  for (const doc of completed) {
+    const booking = doc.data() as Booking;
+    const pairs: { author: User; subject: string; role: 'lender' | 'renter'; rating: number; body: string }[] = [
+      {
+        author: users.find((u) => u.uid === booking.lenderUid)!,
+        subject: booking.renterUid,
+        role: 'lender',
+        rating: 5,
+        body: 'Returned it spotless and right on time. Would lend to her again.',
+      },
+      {
+        author: users.find((u) => u.uid === booking.renterUid)!,
+        subject: booking.lenderUid,
+        role: 'renter',
+        rating: 5,
+        body: 'Exactly as described and so easy to meet up with.',
+      },
+    ];
+
+    for (const p of pairs) {
+      if (!p.author) continue;
+      const reviewRef = db.collection(COLLECTIONS.reviews).doc();
+      await reviewRef.set({
+        id: reviewRef.id,
+        campusId: CAMPUS_ID,
+        bookingId: doc.id,
+        listingId: booking.listingId,
+        authorUid: p.author.uid,
+        author: summaryOf(p.author),
+        subjectUid: p.subject,
+        authorRole: p.role,
+        rating: p.rating,
+        body: p.body,
+        isHidden: false,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      await db.collection(COLLECTIONS.users).doc(p.subject).update({
+        'stats.ratingCount': FieldValue.increment(1),
+        'stats.ratingAverage': p.rating,
+      });
+      await doc.ref.update({
+        [p.role === 'lender' ? 'reviews.lenderReviewId' : 'reviews.renterReviewId']: reviewRef.id,
+      });
+      reviewCount += 1;
+    }
+  }
+  console.warn(`Created ${reviewCount} reviews`);
+
+  // A couple of open reports so the admin queue is not empty.
+  const reportSeeds: { targetType: string; reason: string; details: string }[] = [
+    {
+      targetType: 'listing',
+      reason: 'not_as_described',
+      details: 'The photos look like a different colour to what turned up.',
+    },
+    {
+      targetType: 'user',
+      reason: 'off_platform_payment',
+      details: 'Asked me to Venmo her before confirming anything.',
+    },
+  ];
+
+  for (const [index, seedReport] of reportSeeds.entries()) {
+    const reporter = users[index]!;
+    const target = users[(index + 5) % users.length]!;
+    const listing = listings.find((l) => l.ownerUid === target.uid);
+    const ref = db.collection(COLLECTIONS.reports).doc();
+    await ref.set({
+      id: ref.id,
+      campusId: CAMPUS_ID,
+      reporterUid: reporter.uid,
+      targetType: seedReport.targetType,
+      targetId: seedReport.targetType === 'listing' ? (listing?.id ?? target.uid) : target.uid,
+      targetUid: target.uid,
+      reason: seedReport.reason,
+      details: seedReport.details,
+      status: 'open',
+      resolution: { adminUid: null, action: null, notes: null, resolvedAt: null },
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  }
+  console.warn(`Created ${reportSeeds.length} open reports`);
 
   // --- Campus counters ----------------------------------------------------
   await db.collection(COLLECTIONS.campuses).doc(CAMPUS_ID).update({

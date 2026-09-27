@@ -27,6 +27,9 @@
  *   - cancelBooking      either side, before the garment changes hands
  *   - setBlockedDates    the lender's own unavailable days
  *   - openConversation   the one thread between two students
+ *   - writeReview        only from someone who actually rented with you
+ *   - submitReport       flags a user, listing, post or rental for admins
+ *   - blockUser          refuses messaging, renting and following both ways
  *
  * Background triggers:
  *   - countListingView          moves a listing's view count
@@ -73,8 +76,9 @@ export {
 } from './bookings/lifecycle';
 export { sweepBookings, runBookingSweep } from './bookings/sweep';
 export { openConversation } from './messaging/openConversation';
+export { writeReview, editReview } from './reviews/writeReview';
+export { submitReport } from './moderation/report';
+export { blockUser, unblockUser } from './moderation/block';
 
 // --- Later phases -----------------------------------------------------------
 // export { saveListing }             from './social/save';        // Phase 3
-// export { createReview }            from './reviews/create';     // Phase 6
-// export { submitReport }            from './moderation/report';  // Phase 6

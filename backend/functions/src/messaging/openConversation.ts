@@ -3,6 +3,7 @@ import { COLLECTIONS, ids, type Conversation, type User, type UserSummary } from
 import { db, now } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
+import { assertNotBlocked } from '../moderation/block';
 
 /**
  * `openConversation`
@@ -49,6 +50,9 @@ export const openConversation = onCall<OpenInput, Promise<{ conversationId: stri
 
     if (!withUid) throw invalidArgument('Who do you want to message?');
     if (withUid === me.uid) throw failed("You can't message yourself.");
+
+    // Blocking is enforced here, not just hidden in the UI.
+    await assertNotBlocked(me.uid, withUid);
 
     const themSnap = await db().collection(COLLECTIONS.users).doc(withUid).get();
     if (!themSnap.exists) throw notFound('We could not find that student.');

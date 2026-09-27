@@ -140,6 +140,48 @@ in feeds. Nothing private is ever put in Storage.
 | Scripted signup floods | **TODO Phase 8:** Firebase App Check |
 | Function abuse | **TODO Phase 8:** rate limiting on callable functions |
 
+## Blocking: what it does and does not do
+
+Blocking has two halves, and they are not equally strong. Worth
+understanding before anyone relies on it.
+
+### Actions — genuinely enforced
+
+Messaging, renting and following between two people where **either** has
+blocked the other are refused by Cloud Functions (`assertNotBlocked`).
+A modified app cannot get around this. Blocking also removes any follow
+between them in both directions.
+
+### Content — filtered on the phone
+
+Hiding her posts from your feed means **your app skips them**. Firestore
+cannot express "everything on my campus except these fourteen people" in
+a query, and the alternative is a per-user fan-out feed, which is a large
+piece of machinery.
+
+**So:** someone technical who blocked you could still see your public
+posts if they went out of their way. Nobody casually will, and the
+things that actually hurt — messaging you, renting from you, turning up
+— are properly blocked. This is roughly the same seam most social apps
+have.
+
+### The one leak we accept on purpose
+
+For her to disappear from *your* feed after she blocks you, your app has
+to know she blocked you. That is why `users/{uid}/blockedBy` is readable
+by its owner. It technically tells you that you were blocked.
+
+Nothing in the interface ever says so. Her profile reads "This closet
+isn't available", the same as a deleted account. A quiet boundary beats
+a confrontation.
+
+### If this becomes a real problem
+
+The fix is a fan-out feed: a Cloud Function writes each new post into its
+followers' own feed collections, and the block is applied at write time
+rather than read time. That also solves the Following-tab limit. Do both
+together, when scale demands it.
+
 ## What is not done yet
 
 Named honestly so it does not get forgotten:
@@ -152,3 +194,6 @@ Named honestly so it does not get forgotten:
   not yet.
 - **Content moderation of photos.** Human review through the admin reports
   queue only. No automated scanning.
+- **Reports have no resolution flow.** An admin can see the queue; there
+  is no way to action one yet.
+- **Content-level blocking is client-side.** See above.

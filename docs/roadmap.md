@@ -181,15 +181,38 @@ so nothing has to be migrated when we pick it up.
 - Damage claims: 48-hour window, photo evidence, renter response, admin
   decision
 
-## Phase 6 — Trust + Notifications + Messaging
+## Phase 6 — Trust + Messaging ✅ (push notifications still to do)
 
-- Reviews after a completed rental, both directions
-- Star ratings on profiles
-- Report a user, listing, post or transaction
-- **Blocking users** (separate from reporting)
-- 1:1 messaging
-- Push notifications — needs a development build, not Expo Go
-- Activity feed fully wired
+- [x] 1:1 realtime messaging, one thread per pair
+- [x] Reviews after a completed rental, both directions, editable for 48h
+- [x] Star ratings on profiles, recomputed server-side
+- [x] Report a user, listing, post or rental
+- [x] Blocking, with the honest limits written up in
+      [security.md](./security.md)
+- [x] Reminders: starts tomorrow, due back today, overdue
+- [x] Read alerts deleted after 30 days
+- [x] Cancellations counted per user and surfaced in admin
+
+### Push notifications — not built
+
+Everything that *would* send a push already writes an in-app alert, so
+adding push is a send step next to those writes rather than new
+plumbing. What is actually needed:
+
+1. **A development build.** Expo Go cannot receive push at all. This is
+   the real blocker — `npx expo prebuild` and a build through EAS.
+2. **An Apple Push key** (.p8) from the Apple Developer account, plus a
+   Firebase Cloud Messaging server key for Android.
+3. **Ask for permission** at a sensible moment — after her first rental
+   is confirmed, not on first launch — and store the Expo push token on
+   her user document. The `pushTokens` field already exists.
+4. **Send from the functions that already call `notify()`.** One helper,
+   called in the same place, reading her notification preferences, which
+   she can already set.
+5. **Respect `notificationPreferences`**, already built and saved.
+
+Estimate: about a day once the development build exists. The build is
+the long pole, not the code.
 
 ## Phase 7 — Admin dashboard build-out
 

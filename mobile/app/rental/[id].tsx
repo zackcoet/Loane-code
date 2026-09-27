@@ -55,6 +55,8 @@ import { callableErrorMessage } from '../../src/firebase/errors';
 import { pickPhoto, uploadBookingPhoto } from '../../src/lib/photo';
 import { logEvent } from '../../src/analytics/events';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
+import { ReviewSheet } from '../../src/components/ReviewSheet';
+import { ReportSheet } from '../../src/components/ReportSheet';
 
 export default function RentalScreen() {
   const router = useRouter();
@@ -63,6 +65,8 @@ export default function RentalScreen() {
   const { booking, loading } = useBooking(id);
   const [busy, setBusy] = useState(false);
   const chat = useOpenChat();
+  const [reviewing, setReviewing] = useState(false);
+  const [reporting, setReporting] = useState(false);
 
   if (loading) {
     return (
@@ -401,12 +405,41 @@ export default function RentalScreen() {
             <Button label="Report a problem" variant="outline" onPress={onFlagProblem} />
           ) : null}
 
+          {/* Reviews open once the dispute window has closed. Reviewing
+              a rental that is about to be disputed helps nobody. */}
+          {booking.status === 'completed' &&
+          !(isLender ? booking.reviews.lenderReviewId : booking.reviews.renterReviewId) ? (
+            <Button label={`Review @${them.username}`} onPress={() => setReviewing(true)} />
+          ) : null}
+
+          <Button
+            label="Report a problem with this rental"
+            variant="text"
+            onPress={() => setReporting(true)}
+          />
+
           {(booking.status === 'requested' || booking.status === 'confirmed') &&
           !(booking.status === 'requested' && isLender) ? (
             <Button label="Cancel rental" variant="text" onPress={onCancel} />
           ) : null}
         </View>
       </ScrollView>
+
+      <ReviewSheet
+        visible={reviewing}
+        bookingId={booking.id}
+        aboutUsername={them.username}
+        onClose={() => setReviewing(false)}
+      />
+
+      <ReportSheet
+        visible={reporting}
+        targetType="booking"
+        targetId={booking.id}
+        targetUid={isLender ? booking.renterUid : booking.lenderUid}
+        targetLabel={`this rental of ${booking.listing.name}`}
+        onClose={() => setReporting(false)}
+      />
     </Screen>
   );
 }

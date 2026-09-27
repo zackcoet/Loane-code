@@ -89,6 +89,14 @@ export interface User extends BaseDoc, CampusScoped {
     /** Average of reviews left about her, 1-5. Null until her first review. */
     ratingAverage: number | null;
     ratingCount: number;
+    /**
+     * Rentals she called off, on either side.
+     *
+     * One is life. Five in a month is a lender nobody can rely on, and
+     * the admin dashboard surfaces it so that is visible before it
+     * becomes a reputation problem.
+     */
+    cancellations: number;
   };
 
   // --- Activity -----------------------------------------------------------

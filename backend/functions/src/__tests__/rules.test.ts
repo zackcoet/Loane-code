@@ -711,6 +711,177 @@ describe('notifications', () => {
   });
 });
 
+describe('conversations', () => {
+  const OUTSIDER2 = 'uid-outsider2';
+
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', OUTSIDER2), userDoc(OUTSIDER2));
+      await setDoc(doc(ctx.firestore(), 'conversations', 'chat-1'), {
+        id: 'chat-1',
+        campusId: CAMPUS,
+        participantUids: [ELLA, MADDIE],
+        participants: {},
+        lastMessage: { body: 'hi', senderUid: MADDIE, sentAt: new Date() },
+        unreadCounts: { [ELLA]: 2, [MADDIE]: 0 },
+      });
+      await setDoc(doc(ctx.firestore(), 'conversations', 'chat-1', 'messages', 'm1'), {
+        conversationId: 'chat-1',
+        senderUid: MADDIE,
+        body: 'hi',
+        readBy: [MADDIE],
+        isDeleted: false,
+      });
+    });
+  });
+
+  it('is readable only by the two people in it', async () => {
+    await assertSucceeds(getDoc(doc(asElla(), 'conversations', 'chat-1')));
+    await assertSucceeds(getDoc(doc(asMaddie(), 'conversations', 'chat-1')));
+    await assertFails(
+      getDoc(doc(testEnv.authenticatedContext(OUTSIDER2).firestore(), 'conversations', 'chat-1')),
+    );
+  });
+
+  it('keeps its messages private from everyone else', async () => {
+    await assertSucceeds(getDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm1')));
+    await assertFails(
+      getDoc(
+        doc(
+          testEnv.authenticatedContext(OUTSIDER2).firestore(),
+          'conversations',
+          'chat-1',
+          'messages',
+          'm1',
+        ),
+      ),
+    );
+  });
+
+  it('lets a participant send a message as herself', async () => {
+    await assertSucceeds(
+      setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm2'), {
+        conversationId: 'chat-1',
+        senderUid: ELLA,
+        body: 'hello',
+        readBy: [ELLA],
+        isDeleted: false,
+      }),
+    );
+  });
+
+  it('stops her sending a message as someone else', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm3'), {
+        conversationId: 'chat-1',
+        senderUid: MADDIE,
+        body: 'forged',
+        readBy: [ELLA],
+        isDeleted: false,
+      }),
+    );
+  });
+
+  it('stops an outsider posting into the thread', async () => {
+    await assertFails(
+      setDoc(
+        doc(
+          testEnv.authenticatedContext(OUTSIDER2).firestore(),
+          'conversations',
+          'chat-1',
+          'messages',
+          'm4',
+        ),
+        { conversationId: 'chat-1', senderUid: OUTSIDER2, body: 'hi', readBy: [], isDeleted: false },
+      ),
+    );
+  });
+
+  it('stops her editing what was said', async () => {
+    await assertFails(
+      updateDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm1'), { body: 'rewritten' }),
+    );
+  });
+
+  it('lets her clear her own badge', async () => {
+    await assertSucceeds(
+      updateDoc(doc(asElla(), 'conversations', 'chat-1'), { [`unreadCounts.${ELLA}`]: 0 }),
+    );
+  });
+
+  it('stops her clearing the other person’s badge', async () => {
+    // Ella's count starts at 2, so this is a real change rather than a
+    // no-op write — which would be allowed, and would prove nothing.
+    await assertFails(
+      updateDoc(doc(asMaddie(), 'conversations', 'chat-1'), { [`unreadCounts.${ELLA}`]: 0 }),
+    );
+  });
+
+  it('stops her rewriting the last-message preview', async () => {
+    await assertFails(
+      updateDoc(doc(asElla(), 'conversations', 'chat-1'), {
+        lastMessage: { body: 'fake', senderUid: MADDIE, sentAt: new Date() },
+      }),
+    );
+  });
+});
+
+describe('reviews', () => {
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'reviews', 'review-1'), {
+        id: 'review-1',
+        campusId: CAMPUS,
+        bookingId: 'booking-1',
+        authorUid: MADDIE,
+        subjectUid: ELLA,
+        authorRole: 'renter',
+        rating: 5,
+        body: 'lovely',
+        isHidden: false,
+      });
+    });
+  });
+
+  it('cannot be written by the app — only by someone who rented with you', async () => {
+    await assertFails(
+      setDoc(doc(asMaddie(), 'reviews', 'review-fake'), {
+        id: 'review-fake',
+        authorUid: MADDIE,
+        subjectUid: ELLA,
+        rating: 5,
+        isHidden: false,
+      }),
+    );
+  });
+
+  it('cannot have its rating edited directly', async () => {
+    await assertFails(updateDoc(doc(asMaddie(), 'reviews', 'review-1'), { rating: 1 }));
+  });
+
+  it('cannot be hidden by the person it is about', async () => {
+    await assertFails(updateDoc(doc(asElla(), 'reviews', 'review-1'), { isHidden: true }));
+  });
+});
+
+describe('blocks', () => {
+  it('are written only by the block function', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'users', ELLA, 'blocked', MADDIE), { blockedUid: MADDIE }),
+    );
+  });
+
+  it('are readable only by the person they belong to', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', ELLA, 'blocked', MADDIE), {
+        blockedUid: MADDIE,
+      });
+    });
+    await assertSucceeds(getDoc(doc(asElla(), 'users', ELLA, 'blocked', MADDIE)));
+    await assertFails(getDoc(doc(asMaddie(), 'users', ELLA, 'blocked', MADDIE)));
+  });
+});
+
 describe('social counters', () => {
   it('stops her writing her own like (that is a function’s job)', async () => {
     await assertFails(

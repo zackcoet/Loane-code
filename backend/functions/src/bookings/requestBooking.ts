@@ -15,6 +15,7 @@ import {
 import { db, now, Timestamp } from '../lib/admin';
 import { alreadyTaken, failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
+import { assertNotBlocked } from '../moderation/block';
 
 /**
  * `requestBooking`
@@ -78,6 +79,14 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
     const range: DateRange = { startDate, endDate };
     const dateCheck = validateDateRange(range, toIsoDate(new Date()));
     if (!dateCheck.ok) throw invalidArgument(dateCheck.error!);
+
+    const listingSnapForBlock = await db().collection(COLLECTIONS.listings).doc(listingId).get();
+    if (listingSnapForBlock.exists) {
+      await assertNotBlocked(
+        renter.uid,
+        (listingSnapForBlock.data() as { ownerUid: string }).ownerUid,
+      );
+    }
 
     const listingRef = db().collection(COLLECTIONS.listings).doc(listingId);
     const bookingRef = db().collection(COLLECTIONS.bookings).doc();

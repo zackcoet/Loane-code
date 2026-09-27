@@ -28,6 +28,9 @@ import { followUser, unfollowUser } from '../../src/firebase/callables';
 import { callableErrorMessage } from '../../src/firebase/errors';
 import { logEvent } from '../../src/analytics/events';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
+import { useHiddenUids } from '../../src/hooks/useBlocks';
+import { IconButton } from '../../src/components/IconButton';
+import { ReportSheet } from '../../src/components/ReportSheet';
 
 export default function OtherProfile() {
   const router = useRouter();
@@ -37,6 +40,8 @@ export default function OtherProfile() {
   const { user, loading, notFound } = useProfileByUsername(username);
   const { following } = useIsFollowing(user?.uid);
   const chat = useOpenChat();
+  const [reporting, setReporting] = useState(false);
+  const hidden = useHiddenUids();
   const [busy, setBusy] = useState(false);
 
   const isMe = Boolean(me && user && me.uid === user.uid);
@@ -80,6 +85,17 @@ export default function OtherProfile() {
     );
   }
 
+  // Either of us blocked the other: her profile is simply not there.
+  // No banner, no explanation — a quiet boundary, not a confrontation.
+  if (user && hidden.has(user.uid)) {
+    return (
+      <Screen flush>
+        <Header title="" onBack={() => router.back()} />
+        <EmptyState title="Closet not found" body="This closet isn't available." />
+      </Screen>
+    );
+  }
+
   if (notFound || !user) {
     return (
       <Screen flush>
@@ -94,7 +110,19 @@ export default function OtherProfile() {
 
   return (
     <Screen flush>
-      <Header title={`@${user.username}`} onBack={() => router.back()} />
+      <Header
+        title={`@${user.username}`}
+        onBack={() => router.back()}
+        right={
+          isMe ? null : (
+            <IconButton
+              glyph="⋯"
+              accessibilityLabel="Report or block"
+              onPress={() => setReporting(true)}
+            />
+          )
+        }
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <ProfileHeader user={user}>
@@ -127,6 +155,15 @@ export default function OtherProfile() {
 
         <ProfileTabs uid={user.uid} isMe={isMe} />
       </ScrollView>
+
+      <ReportSheet
+        visible={reporting}
+        targetType="user"
+        targetId={user.uid}
+        targetUid={user.uid}
+        targetLabel={`@${user.username}`}
+        onClose={() => setReporting(false)}
+      />
     </Screen>
   );
 }

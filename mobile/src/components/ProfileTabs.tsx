@@ -13,18 +13,19 @@ import {
   Image,
   Pressable,
   StyleSheet,
-  Text,
   View,
   useWindowDimensions,
 } from 'react-native';
 import {
   color,
   spacing,
-  type,
 } from '@loane/shared';
 import { EmptyState } from './EmptyState';
 import { ListingCard } from './ListingCard';
 import { useUserListings, useUserPosts } from '../hooks/useProfile';
+import { useReviews } from '../hooks/useReviews';
+import { Avatar } from './Avatar';
+import { Text } from './Text';
 
 const TABS = ['posts', 'closet', 'reviews'] as const;
 type ProfileTab = (typeof TABS)[number];
@@ -42,6 +43,7 @@ export function ProfileTabs({ uid, isMe }: Props) {
 
   const posts = useUserPosts(uid);
   const listings = useUserListings(uid);
+  const reviews = useReviews(uid);
 
   const cardWidth = (width - spacing.md * 3) / 2;
 
@@ -49,15 +51,17 @@ export function ProfileTabs({ uid, isMe }: Props) {
     <View style={styles.wrapper}>
       <View style={styles.tabRow}>
         {TABS.map((value) => (
-          <Text
+          <Pressable
             key={value}
             accessibilityRole="tab"
             accessibilityState={{ selected: tab === value }}
             onPress={() => setTab(value)}
             style={[styles.tab, tab === value && styles.tabActive]}
           >
-            {value}
-          </Text>
+            <Text variant="label" tone={tab === value ? 'primary' : 'muted'}>
+              {value}
+            </Text>
+          </Pressable>
         ))}
       </View>
 
@@ -92,7 +96,9 @@ export function ProfileTabs({ uid, isMe }: Props) {
                 ) : null}
                 {post.taggedListings.length > 0 ? (
                   <View style={styles.postBadge}>
-                    <Text style={styles.postBadgeText}>{post.taggedListings.length}</Text>
+                    <Text variant="caption" tone="inverse">
+                      {post.taggedListings.length}
+                    </Text>
                   </View>
                 ) : null}
               </Pressable>
@@ -126,12 +132,32 @@ export function ProfileTabs({ uid, isMe }: Props) {
             ))}
           </View>
         )
+      ) : reviews.loading ? (
+        <Loading />
+      ) : reviews.reviews.length === 0 ? (
+        <EmptyState title="No reviews yet" body="Reviews appear after a completed rental." />
       ) : (
-        // TODO-PHASE6: reviews are written after a completed rental.
-        <EmptyState
-          title="No reviews yet"
-          body="Reviews appear after a completed rental."
-        />
+        <View style={styles.reviewList}>
+          {reviews.reviews.map((review) => (
+            <View key={review.id} style={styles.review}>
+              <View style={styles.reviewHead}>
+                <Avatar url={review.author.photoUrl} name={review.author.displayName} size={32} />
+                <View style={styles.reviewWho}>
+                  <Text variant="bodySmall">@{review.author.username}</Text>
+                  <Text variant="caption" tone="muted">
+                    {review.authorRole === 'lender' ? 'lent to her' : 'rented from her'}
+                  </Text>
+                </View>
+                <Text variant="bodySmall">{'★'.repeat(review.rating)}</Text>
+              </View>
+              {review.body ? (
+                <Text variant="bodySmall" style={styles.reviewBody}>
+                  {review.body}
+                </Text>
+              ) : null}
+            </View>
+          ))}
+        </View>
       )}
     </View>
   );
@@ -152,20 +178,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: color.border.default,
   },
-  tab: {
-    flex: 1,
-    textAlign: 'center',
-    paddingVertical: spacing.md,
-    fontSize: type.label.size,
-    letterSpacing: type.label.letterSpacing,
-    textTransform: 'uppercase',
-    color: color.text.muted,
-  },
-  tabActive: {
-    color: color.text.primary,
-    borderBottomWidth: 2,
-    borderBottomColor: color.border.inverse,
-  },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.inverse },
   loading: { paddingVertical: spacing.xxl, alignItems: 'center' },
   grid: {
     flexDirection: 'row',
@@ -198,8 +212,14 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface.inverse,
     alignItems: 'center',
   },
-  postBadgeText: {
-    fontSize: type.caption.size,
-    color: color.text.inverse,
+  reviewList: { padding: spacing.md, gap: spacing.md },
+  review: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: color.border.default,
+    paddingBottom: spacing.md,
   },
+  reviewHead: { flexDirection: 'row', alignItems: 'center' },
+  reviewWho: { flex: 1, marginLeft: spacing.sm },
+  reviewBody: { marginTop: spacing.sm },
+
 });

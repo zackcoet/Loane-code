@@ -320,6 +320,18 @@ export const CLAIM_STATUSES = [
 ] as const;
 export type ClaimStatus = (typeof CLAIM_STATUSES)[number];
 
+/**
+ * How long she has to change a review after writing it.
+ *
+ * Long enough to fix a typo or reconsider in the cold light of day,
+ * short enough that a rating cannot be quietly rewritten months later
+ * to settle a score.
+ */
+export const REVIEW_EDIT_WINDOW_HOURS = 48;
+
+export const REVIEW_MIN_RATING = 1;
+export const REVIEW_MAX_RATING = 5;
+
 /** Lenders have this long after a return to open a damage claim. */
 export const DAMAGE_CLAIM_WINDOW_HOURS = 48;
 
@@ -403,6 +415,10 @@ export const EVENT_TYPES = [
   'rental_returned',
   'rental_disputed',
   'message_sent',
+  'review_written',
+  'report_submitted',
+  'user_blocked',
+  'user_unblocked',
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 

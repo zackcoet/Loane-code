@@ -41,6 +41,7 @@ import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
 import { useListings } from '../../src/hooks/useFeed';
 import { useFollowingUids } from '../../src/hooks/useFollowing';
+import { useHiddenUids } from '../../src/hooks/useBlocks';
 import {
   EMPTY_FILTERS,
   SORTS,
@@ -59,6 +60,13 @@ export default function Discover() {
   const { width } = useWindowDimensions();
   const { items: listings, loading, error } = useListings();
   const { uids: followingUids } = useFollowingUids();
+  const hidden = useHiddenUids();
+
+  // Blocked either way: her closet is not in the marketplace.
+  const campusListings = useMemo(
+    () => listings.filter((l) => !hidden.has(l.ownerUid)),
+    [listings, hidden],
+  );
 
   const { search, setSearch, filters, setFilters, sort, setSort } = useDiscoverState();
   const [tab, setTab] = useState<'explore' | 'following'>('explore');
@@ -77,7 +85,7 @@ export default function Discover() {
   );
 
   const visible = useDiscoverResults({
-    listings,
+    listings: campusListings,
     search,
     filters: effectiveFilters,
     sort,
@@ -86,7 +94,7 @@ export default function Discover() {
 
   // What the sheet's button should say while she is still adjusting it.
   const previewCount = useDiscoverResults({
-    listings,
+    listings: campusListings,
     search,
     filters: draftFilters,
     sort,

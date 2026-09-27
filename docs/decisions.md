@@ -6,6 +6,53 @@ much as the answer.
 
 ---
 
+## 2026-09-27 — Blocking is enforced on actions, filtered on content
+
+**Decision:** Messaging, renting and following are refused server-side
+between blocked users. Hiding their content from each other's feed
+happens on the phone.
+
+**Why:** Firestore cannot query "everything except these fourteen
+people". Doing it properly means a per-user fan-out feed, which is a
+large piece of machinery to build for a campus with a few hundred posts.
+
+**Accepted:** someone technical who blocked you could still see your
+public posts. The things that actually hurt cannot happen.
+
+**Also accepted:** `blockedBy` is readable by the person blocked, which
+technically tells her she was blocked — her app needs it to filter. The
+interface never says so; a blocked profile reads "not available", the
+same as a deleted one.
+
+**Revisit when:** we build a fan-out feed, which also fixes the
+Following-tab limit. Do both at once.
+
+---
+
+## 2026-09-27 — One conversation per pair of students, forever
+
+**Decision:** A conversation's id is the two uids sorted. Messaging from
+a listing, from a profile, and the chat a confirmed rental gets are all
+the same thread.
+
+**Why:** Two people should never wonder which of their chats the other
+one meant. It also makes "do we already have a thread?" a point read
+rather than a query.
+
+---
+
+## 2026-09-27 — Messages are written by the app, not a function
+
+**Decision:** The app writes messages straight to Firestore. A trigger
+updates the thread preview and unread badge afterwards.
+
+**Why:** Sending a message is the one interaction that has to feel
+instant. A callable would add a round trip to every message. Everything
+sensitive about a message — who sent it, that it cannot be edited — is
+enforced by the rules instead.
+
+---
+
 ## 2026-09-27 — Design tokens are two layers, and raw values are a lint error
 
 **Decision:** `palette` holds raw values (what a colour is). `color`, `type`

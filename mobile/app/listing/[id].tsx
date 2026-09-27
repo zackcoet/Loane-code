@@ -43,6 +43,7 @@ import { useListing } from '../../src/hooks/useListing';
 import { useIsSaved } from '../../src/hooks/useSaved';
 import { usePostsTagging } from '../../src/hooks/usePostsTagging';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
+import { ReportSheet } from '../../src/components/ReportSheet';
 import { logEvent } from '../../src/analytics/events';
 
 const CONDITION_LABELS: Record<Condition, string> = {
@@ -63,6 +64,7 @@ export default function ListingDetail() {
   const { saved, toggle } = useIsSaved(id);
   const seenIn = usePostsTagging(id);
   const chat = useOpenChat();
+  const [reporting, setReporting] = useState(false);
 
   const [page, setPage] = useState(0);
   const logged = useRef(false);
@@ -228,6 +230,16 @@ export default function ListingDetail() {
             </Text>
           </Pressable>
 
+          <Text
+            variant="caption"
+            tone="muted"
+            accessibilityRole="button"
+            onPress={() => setReporting(true)}
+            style={styles.report}
+          >
+            Report this listing
+          </Text>
+
           <View style={styles.seenIn}>
             <Text variant="label">Seen in posts</Text>
             {seenIn.loading ? null : seenIn.posts.length === 0 ? (
@@ -266,6 +278,15 @@ export default function ListingDetail() {
           </View>
         </View>
       </ScrollView>
+
+      <ReportSheet
+        visible={reporting}
+        targetType="listing"
+        targetId={listing.id}
+        targetUid={listing.ownerUid}
+        targetLabel={listing.name}
+        onClose={() => setReporting(false)}
+      />
 
       {/* Actions */}
       {!isMine ? (
@@ -362,6 +383,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: color.border.default,
   },
+  report: { marginTop: spacing.xl, textDecorationLine: 'underline' },
   seenInBody: { marginTop: spacing.xs },
   seenInScroll: { flexGrow: 0, flexShrink: 0, marginTop: spacing.md },
   seenInRow: { gap: spacing.sm },

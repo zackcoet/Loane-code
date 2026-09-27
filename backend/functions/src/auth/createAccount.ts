@@ -166,6 +166,7 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
             rentalsAsRenter: 0,
             ratingAverage: null,
             ratingCount: 0,
+            cancellations: 0,
           },
           lastActiveAt: null,
           pushTokens: [],

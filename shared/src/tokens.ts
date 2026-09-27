@@ -147,6 +147,8 @@ export const fontSize = {
   '2xl': 22,
   '3xl': 26,
   '4xl': 32,
+  /** The tappable stars on a review form. */
+  '5xl': 38,
 } as const;
 
 export const fontWeight = {

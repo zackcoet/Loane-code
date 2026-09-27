@@ -142,6 +142,31 @@ export const openConversation = httpsCallable<
   { conversationId: string }
 >(functions, 'openConversation');
 
+/** Only someone who actually completed the rental can review it. */
+export const writeReview = httpsCallable<
+  { bookingId: string; rating: number; body: string },
+  { reviewId: string }
+>(functions, 'writeReview');
+
+export const editReview = httpsCallable<
+  { reviewId: string; rating: number; body: string },
+  { ok: true }
+>(functions, 'editReview');
+
+export const submitReport = httpsCallable<
+  {
+    targetType: 'user' | 'listing' | 'post' | 'booking' | 'message';
+    targetId: string;
+    targetUid?: string;
+    reason: string;
+    details?: string;
+  },
+  { reportId: string }
+>(functions, 'submitReport');
+
+export const blockUser = httpsCallable<{ uid: string }, { ok: true }>(functions, 'blockUser');
+export const unblockUser = httpsCallable<{ uid: string }, { ok: true }>(functions, 'unblockUser');
+
 export const requestBooking = httpsCallable<
   { listingId: string; startDate: string; endDate: string; message?: string },
   { bookingId: string; status: string }
