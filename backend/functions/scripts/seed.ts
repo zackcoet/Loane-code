@@ -24,6 +24,7 @@
 import { initializeApp, deleteApp } from 'firebase-admin/app';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore';
+import { colorFor, placeholderImage } from './placeholderImage';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
@@ -114,22 +115,6 @@ function pickSome<T>(items: readonly T[], max: number): T[] {
   }
   return out;
 }
-
-/**
- * Flat-colour stand-in avatars, one per founding closet, inlined as PNGs so
- * the profile screens have something distinct to show with no hosting and
- * no network.
- */
-const AVATARS: Record<string, string> = {
-  ellapetrickcloset:
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGPI51EHAAGQAKOZ+r+xAAAAAElFTkSuQmCC',
-  maddiescloset:
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGO4tsEXAAQzAdQnUT1OAAAAAElFTkSuQmCC',
-  sloanerents:
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGPYWuEDAANfAXoVw3HHAAAAAElFTkSuQmCC',
-  reesewears:
-    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGPYcfwQAAR8AkKWZ6mhAAAAAElFTkSuQmCC',
-};
 
 interface SeedStudent {
   first: string;
@@ -347,15 +332,18 @@ const CAPTIONS = [
 ];
 
 /**
- * A tiny warm-grey PNG, inlined so seeded photos render with no hosting and
- * no network. React Native's <Image> cannot render an SVG data URI, which is
- * why this is a PNG rather than the obvious one-line SVG.
+ * Seeded photos are generated as real 600x800 PNGs, one colour per item.
+ *
+ * They used to be a single 1x1 pixel stretched across the card, which on
+ * a phone looks exactly like an image failing to load — the whole app
+ * seemed broken when it was working fine. See placeholderImage.ts.
  */
-const PLACEHOLDER =
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mPsauj6DwAFVwJMzKtHDgAAAABJRU5ErkJggg==';
+let photoCursor = 0;
 
 function image(path: string) {
-  return { path, url: PLACEHOLDER, width: 600, height: 800, bytes: 1024 };
+  const uri = placeholderImage(colorFor(photoCursor));
+  photoCursor += 1;
+  return { path, url: uri, width: 600, height: 800, bytes: uri.length };
 }
 
 function summaryOf(u: User) {
@@ -474,7 +462,7 @@ async function main(): Promise<void> {
       firstName: student.first,
       displayName: student.first,
       bio: student.bio ?? 'usc • sharing my closet',
-      photoUrl: AVATARS[student.username] ?? null,
+      photoUrl: placeholderImage(colorFor(users.length), 240, 240),
       campusId: CAMPUS_ID,
       campusEmail: email,
       isVerified: true,
@@ -557,6 +545,7 @@ async function main(): Promise<void> {
       cursor += 1;
 
       const ref = db.collection(COLLECTIONS.listings).doc();
+      const photos = [image(`users/${owner.uid}/listings/${ref.id}/1.jpg`)];
       const rentable = item.rent != null;
       const intent: ListingIntent =
         rentable && item.sale != null ? 'both' : rentable ? 'rent' : 'sell';
@@ -575,8 +564,8 @@ async function main(): Promise<void> {
         condition: item.condition,
         occasions: item.occasions,
         colorNames: [],
-        photos: [image(`users/${owner.uid}/listings/${ref.id}/1.jpg`)],
-        coverUrl: PLACEHOLDER,
+        photos,
+        coverUrl: photos[0]!.url,
         intent,
         status: 'active',
         pricing: {

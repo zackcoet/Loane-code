@@ -7,8 +7,9 @@
  * the moment of drawing. See docs/post-tagging.md.
  */
 
-import { Image, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
-import { color, controls, formatCentsShort, radius, spacing } from '@loane/shared';
+import { useCallback, useEffect, useRef } from 'react';
+import { Animated, Image, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { color, controls, fontSize, formatCentsShort, radius, spacing } from '@loane/shared';
 import { Text } from './Text';
 
 export interface PlacedTag {
@@ -35,8 +36,13 @@ interface Props {
   /** View mode: which label is expanded, if any. */
   expandedListingId?: string | null;
   onExpandTag?: (listingId: string) => void;
+  /** Double tap to like, Instagram-style. View mode only. */
+  onDoubleTap?: () => void;
   aspectRatio?: number;
 }
+
+/** How close two taps have to be to count as a double tap. */
+const DOUBLE_TAP_MS = 280;
 
 export function TaggablePhoto({
   uri,
@@ -49,6 +55,7 @@ export function TaggablePhoto({
   onOpenTag,
   expandedListingId,
   onExpandTag,
+  onDoubleTap,
   aspectRatio = 0.8,
 }: Props) {
   let size = { width: 0, height: 0 };
@@ -57,9 +64,49 @@ export function TaggablePhoto({
     size = event.nativeEvent.layout;
   };
 
+  // Single tap shows the tags, double tap likes. Telling them apart
+  // means holding the single tap for a moment to see whether a second
+  // one arrives — which is why revealing tags feels very slightly lazy.
+  const lastTap = useRef(0);
+  const pendingSingle = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const heart = useRef(new Animated.Value(0)).current;
+
+  useEffect(
+    () => () => {
+      if (pendingSingle.current) clearTimeout(pendingSingle.current);
+    },
+    [],
+  );
+
+  const burst = useCallback(() => {
+    heart.setValue(0);
+    Animated.sequence([
+      Animated.spring(heart, { toValue: 1, useNativeDriver: true, friction: 4 }),
+      Animated.timing(heart, { toValue: 0, duration: 420, delay: 260, useNativeDriver: true }),
+    ]).start();
+  }, [heart]);
+
   const handlePress = (event: { nativeEvent: { locationX: number; locationY: number } }) => {
     if (mode === 'view') {
-      onToggleTags?.();
+      const now = Date.now();
+
+      if (now - lastTap.current < DOUBLE_TAP_MS) {
+        // Second tap: cancel the pending tag toggle and like instead.
+        if (pendingSingle.current) clearTimeout(pendingSingle.current);
+        pendingSingle.current = null;
+        lastTap.current = 0;
+        if (onDoubleTap) {
+          burst();
+          onDoubleTap();
+        }
+        return;
+      }
+
+      lastTap.current = now;
+      pendingSingle.current = setTimeout(() => {
+        pendingSingle.current = null;
+        onToggleTags?.();
+      }, DOUBLE_TAP_MS);
       return;
     }
     if (!onPlaceTag || size.width === 0) return;
@@ -138,6 +185,20 @@ export function TaggablePhoto({
           })
         : null}
 
+      {/* The heart that flashes up on a double tap. */}
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles.burst,
+          {
+            opacity: heart,
+            transform: [{ scale: heart.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }],
+          },
+        ]}
+      >
+        <Text style={styles.burstHeart}>♥</Text>
+      </Animated.View>
+
       {mode === 'view' && tags.length > 0 && !tagsVisible ? (
         <View style={styles.hint} pointerEvents="none">
           <Text variant="caption" tone="inverse">
@@ -184,6 +245,24 @@ const styles = StyleSheet.create({
   },
   labelRight: { left: 0 },
   labelLeft: { right: 0 },
+  burst: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  burstHeart: {
+    fontSize: fontSize['6xl'],
+    lineHeight: 110,
+    color: color.text.inverse,
+    // A shadow so it reads on a pale photo as well as a dark one.
+    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
   hint: {
     position: 'absolute',
     left: spacing.sm,

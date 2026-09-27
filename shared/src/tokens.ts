@@ -149,6 +149,8 @@ export const fontSize = {
   '4xl': 32,
   /** The tappable stars on a review form. */
   '5xl': 38,
+  /** The heart that flashes up when you double tap a photo. */
+  '6xl': 96,
 } as const;
 
 export const fontWeight = {

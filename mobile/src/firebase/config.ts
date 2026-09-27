@@ -22,6 +22,7 @@ import { getFirestore, connectFirestoreEmulator, type Firestore } from 'firebase
 import { getStorage, connectStorageEmulator, type FirebaseStorage } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator, type Functions } from 'firebase/functions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? 'demo-api-key',
@@ -36,11 +37,39 @@ const firebaseConfig = {
 export const USE_EMULATORS = process.env.EXPO_PUBLIC_USE_EMULATORS !== 'false';
 
 /**
- * Your phone cannot reach "localhost" — that means the phone itself. When
- * testing on a real device, set EXPO_PUBLIC_EMULATOR_HOST to your laptop's
- * LAN IP (`ipconfig getifaddr en0`).
+ * Where the emulators are.
+ *
+ * Your phone cannot reach "localhost" — that means the phone itself. So on
+ * a real device we need the laptop's address on the Wi-Fi.
+ *
+ * WE WORK IT OUT RATHER THAN BEING TOLD. Expo already knows the address
+ * the phone used to reach the Metro dev server — it is how the app got
+ * here at all — and the emulators are on that same laptop. Reading it
+ * from `hostUri` means the app follows the laptop from network to
+ * network with nothing to configure, which matters because a laptop's
+ * IP changes every time you move.
+ *
+ * EXPO_PUBLIC_EMULATOR_HOST still wins if it is set, for the case where
+ * the emulators are somewhere other than the machine running Metro.
+ * Falling back to 127.0.0.1 is right for the iOS Simulator, which shares
+ * the laptop's network.
  */
-const EMULATOR_HOST = process.env.EXPO_PUBLIC_EMULATOR_HOST ?? '127.0.0.1';
+function resolveEmulatorHost(): string {
+  const override = process.env.EXPO_PUBLIC_EMULATOR_HOST;
+  if (override) return override;
+
+  // e.g. "192.168.1.198:8081" — strip the Metro port, keep the host.
+  const hostUri =
+    Constants.expoConfig?.hostUri ??
+    (Constants.expoGoConfig as { debuggerHost?: string } | undefined)?.debuggerHost;
+
+  const host = hostUri?.split(':')[0];
+  if (host && host !== 'localhost') return host;
+
+  return '127.0.0.1';
+}
+
+const EMULATOR_HOST = resolveEmulatorHost();
 
 export const app: FirebaseApp = getApps().length > 0 ? getApps()[0]! : initializeApp(firebaseConfig);
 
@@ -70,6 +99,8 @@ export function connectEmulators(): void {
   connectStorageEmulator(storage, EMULATOR_HOST, 9199);
   connectFunctionsEmulator(functions, EMULATOR_HOST, 5001);
 
+  // Printed on purpose: when a phone cannot connect, the first useful
+  // question is always "which address is it even trying?".
   console.warn(`[Loane] Using Firebase emulators at ${EMULATOR_HOST}`);
 }
 

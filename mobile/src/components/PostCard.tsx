@@ -33,6 +33,12 @@ export function PostCard({ post, onPressTag, onPressAuthor, onEdit }: Props) {
   const liked = useIsLiked(post.id);
   const saved = useIsPostSaved(post.id);
 
+  // Double tap likes; it never un-likes. Tapping twice more by accident
+  // and silently undoing a like is worse than the accidental like.
+  const onDoubleTap = () => {
+    if (!liked.on) void liked.toggle();
+  };
+
   const photos = post.photos ?? [];
 
   return (
@@ -96,6 +102,7 @@ export function PostCard({ post, onPressTag, onPressAuthor, onEdit }: Props) {
                 }}
                 onExpandTag={setExpanded}
                 onOpenTag={onPressTag}
+                onDoubleTap={onDoubleTap}
                 expandedListingId={expanded}
               />
             </View>
@@ -120,6 +127,7 @@ export function PostCard({ post, onPressTag, onPressAuthor, onEdit }: Props) {
           }}
           onExpandTag={setExpanded}
           onOpenTag={onPressTag}
+          onDoubleTap={onDoubleTap}
           expandedListingId={expanded}
         />
       ) : null}
