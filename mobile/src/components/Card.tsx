@@ -6,7 +6,7 @@
  * of white space, no rounding.
  */
 
-import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { color, controls, spacing } from '@loane/shared';
 
 interface Props {
@@ -16,7 +16,7 @@ interface Props {
   accessibilityLabel?: string;
   /** Removes the inner padding, for a card that holds an image. */
   flush?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function Card({ children, onPress, accessibilityLabel, flush, style }: Props) {

@@ -277,8 +277,9 @@ export default function ListingDetail() {
           {rentable ? (
             <Button
               label="Request to rent"
-              // TODO-PHASE4: the booking calendar.
-              onPress={() => Alert.alert('Coming soon', SOON)}
+              onPress={() =>
+                router.push({ pathname: '/request-rental', params: { id: listing.id } })
+              }
               style={styles.primaryAction}
             />
           ) : null}

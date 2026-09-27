@@ -130,6 +130,10 @@ in feeds. Nothing private is ever put in Storage.
 | Username squatting on someone's handle | Lock documents + reserved-name list |
 | Someone taking payment off-platform | `off_platform_payment` report reason; in-app messaging keeps a record |
 | Oversized or non-image uploads | Storage rules |
+| A renter confirming her own booking | Every status change goes through one server-side transition table |
+| A lender hiding a weekend she already promised | `bookedDates` is derived by a Cloud Function; the app cannot write it |
+| Seeing who rented what | Bookings are readable only by the two people in them; the calendar reads dates only, published onto the listing |
+| A forged handoff confirmation | The whole booking document is function-only |
 | A listing with no photo, no occasion or no price | Required fields enforced in `firestore.rules`, mirroring `validateListingDraft` |
 | Faked prices, campus, owner or counters on a listing | Create and update rules; counters must start at zero and can never be written by the app |
 | Deleting a listing that has rental history | The app cannot delete or mark `removed` at all — only the `removeListing` function, which checks bookings first |

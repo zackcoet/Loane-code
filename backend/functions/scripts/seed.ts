@@ -23,7 +23,7 @@
 
 import { initializeApp, deleteApp } from 'firebase-admin/app';
 import { getAuth, type Auth } from 'firebase-admin/auth';
-import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
@@ -31,7 +31,10 @@ import {
   OCCASIONS,
   SHOE_SIZES,
   SIZES,
+  addDays,
+  calculateFees,
   ids,
+  type Booking,
   type Campus,
   type Category,
   type Listing,
@@ -586,6 +589,8 @@ async function main(): Promise<void> {
         // MVP: every request needs the lender's approval.
         requiresApproval: true,
         blackoutDates: [],
+        // Recomputed by syncListingAvailability as bookings are seeded.
+        bookedDates: [],
         stats: { viewCount: 0, saveCount: 0, tagCount: 0, completedRentals: 0 },
         suspendedReason: null,
         removedAt: null,
@@ -709,6 +714,146 @@ async function main(): Promise<void> {
   }
   console.warn(`Tagged ${tagTotal} pieces across ${tagCounts.size} listings`);
   console.warn(`Created ${postCount} posts`);
+
+  // --- Bookings, one in every status ---------------------------------------
+  // So every screen has something real: a request waiting on the lender,
+  // one in flight, one just back with the dispute window open, and the
+  // terminal ones that fill the Past list.
+  const bookingPlans: {
+    status: Booking['status'];
+    /** Days from today the rental starts. Negative is in the past. */
+    startsIn: number;
+    days: 3 | 7;
+    note?: string;
+  }[] = [
+    { status: 'requested', startsIn: 9, days: 3, note: 'Is this free for the Georgia game?' },
+    { status: 'confirmed', startsIn: 4, days: 3 },
+    { status: 'with_renter', startsIn: -1, days: 3 },
+    { status: 'returned', startsIn: -5, days: 3 },
+    { status: 'completed', startsIn: -20, days: 7 },
+    { status: 'declined', startsIn: 12, days: 3 },
+    { status: 'cancelled', startsIn: 15, days: 3 },
+    { status: 'disputed', startsIn: -12, days: 3 },
+  ];
+
+  const rentable = listings.filter((l) => l.pricing.threeDayCents != null);
+  let bookingCount = 0;
+
+  for (const [index, plan] of bookingPlans.entries()) {
+    const listing = rentable[index % rentable.length]!;
+    // Anyone but the owner.
+    const renter = users.find((u) => u.uid !== listing.ownerUid)!;
+    const lender = users.find((u) => u.uid === listing.ownerUid)!;
+
+    const start = new Date();
+    start.setUTCDate(start.getUTCDate() + plan.startsIn);
+    const startDate = start.toISOString().slice(0, 10);
+    const endDate = addDays(startDate, plan.days);
+
+    const baseCents =
+      (plan.days === 7 ? listing.pricing.sevenDayCents : listing.pricing.threeDayCents) ?? 2500;
+    const amounts = calculateFees(baseCents, listing.garmentValueCents);
+
+    const ref = db.collection(COLLECTIONS.bookings).doc();
+    const handedOver = ['with_renter', 'returned', 'completed', 'disputed'].includes(plan.status);
+    const backAgain = ['returned', 'completed', 'disputed'].includes(plan.status);
+
+    const booking: Booking = {
+      id: ref.id,
+      kind: 'rental',
+      status: plan.status,
+      campusId: CAMPUS_ID,
+      listingId: listing.id,
+      listing: {
+        listingId: listing.id,
+        name: listing.name,
+        coverUrl: listing.coverUrl,
+        ownerUid: listing.ownerUid,
+        priceCents3Day: listing.pricing.threeDayCents,
+        salePriceCents: listing.salePriceCents,
+      },
+      lenderUid: lender.uid,
+      lender: summaryOf(lender),
+      renterUid: renter.uid,
+      renter: summaryOf(renter),
+      startDate,
+      endDate,
+      durationDays: plan.days,
+      amounts,
+      payment: {
+        paymentIntentId: null,
+        holdPaymentIntentId: null,
+        transferId: null,
+        refundId: null,
+        authorizedAt: null,
+        capturedAt: null,
+        holdReleasedAt: null,
+      },
+      renterMessage: plan.note ?? null,
+      handoff: {
+        notes: 'Meet outside Russell House.',
+        dropoffPhotos: handedOver ? [image(`users/${lender.uid}/bookings/${ref.id}/drop.jpg`)] : [],
+        dropoffAt: handedOver ? (FieldValue.serverTimestamp() as never) : null,
+        renterConfirmedReceiptAt: handedOver ? (FieldValue.serverTimestamp() as never) : null,
+        returnPhotos: backAgain ? [image(`users/${lender.uid}/bookings/${ref.id}/back.jpg`)] : [],
+        renterConfirmedReturnAt: backAgain ? (FieldValue.serverTimestamp() as never) : null,
+        lenderConfirmedReturnAt: backAgain ? (FieldValue.serverTimestamp() as never) : null,
+      },
+      timeline: {
+        requestedAt: FieldValue.serverTimestamp() as never,
+        respondedAt:
+          plan.status === 'requested' ? null : (FieldValue.serverTimestamp() as never),
+        confirmedAt: handedOver || plan.status === 'confirmed'
+          ? (FieldValue.serverTimestamp() as never)
+          : null,
+        cancelledAt: plan.status === 'cancelled' ? (FieldValue.serverTimestamp() as never) : null,
+        completedAt: plan.status === 'completed' ? (FieldValue.serverTimestamp() as never) : null,
+      },
+      cancelledByUid: plan.status === 'cancelled' ? renter.uid : null,
+      cancellationReason: plan.status === 'cancelled' ? 'My plans changed' : null,
+      declineReason: plan.status === 'declined' ? 'Already promised to a friend' : null,
+      // Only a live request has a deadline to answer by.
+      expiresAt:
+        plan.status === 'requested'
+          ? (Timestamp.fromDate(new Date(Date.now() + 36 * 3600_000)) as never)
+          : null,
+      // Only a fresh return is inside its window.
+      disputeWindowEndsAt:
+        plan.status === 'returned'
+          ? (Timestamp.fromDate(new Date(Date.now() + 30 * 3600_000)) as never)
+          : null,
+      returnProblem:
+        plan.status === 'disputed'
+          ? {
+              type: 'damaged',
+              note: 'Small tear on the left strap.',
+              photos: [image(`users/${lender.uid}/bookings/${ref.id}/problem.jpg`)],
+              flaggedAt: FieldValue.serverTimestamp() as never,
+            }
+          : null,
+      activeClaimId: null,
+      reviews: { lenderReviewId: null, renterReviewId: null },
+      createdAt: FieldValue.serverTimestamp() as never,
+      updatedAt: FieldValue.serverTimestamp() as never,
+    };
+
+    await ref.set(booking);
+    bookingCount += 1;
+
+    // A completed rental counts towards both their histories.
+    if (plan.status === 'completed') {
+      await db.collection(COLLECTIONS.users).doc(lender.uid)
+        .update({ 'stats.rentalsAsLender': FieldValue.increment(1) });
+      await db.collection(COLLECTIONS.users).doc(renter.uid)
+        .update({ 'stats.rentalsAsRenter': FieldValue.increment(1) });
+      await db.collection(COLLECTIONS.listings).doc(listing.id)
+        .update({ 'stats.completedRentals': FieldValue.increment(1) });
+    }
+  }
+
+  await db.collection(COLLECTIONS.campuses).doc(CAMPUS_ID)
+    .update({ 'stats.bookingCount': bookingCount });
+  console.warn(`Created ${bookingCount} bookings, one in every status`);
 
   // --- Follows, likes, saves ---------------------------------------------
   const allPosts = await db.collection(COLLECTIONS.posts).get();

@@ -157,6 +157,14 @@ export default function EditListing() {
         <ListingForm controller={controller} submitLabel="Save changes" onSubmit={onSave} />
         <View style={styles.removeRow}>
           <Button
+            label="Blocked dates"
+            variant="outline"
+            onPress={() =>
+              router.push({ pathname: '/blocked-dates', params: { id: listing.id } })
+            }
+            style={styles.blockedButton}
+          />
+          <Button
             label="Remove from closet"
             variant="outline"
             loading={removing}
@@ -171,6 +179,7 @@ export default function EditListing() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  blockedButton: { marginBottom: spacing.sm },
   removeRow: {
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.xl,

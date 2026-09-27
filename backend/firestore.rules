@@ -226,7 +226,10 @@ service cloud.firestore {
         // write its counters, or un-suspend it after an admin took it down.
         && !changed().hasAny([
              'ownerUid', 'campusId', 'stats', 'suspendedReason',
-             'createdAt', 'owner', 'removedAt'
+             'createdAt', 'owner', 'removedAt',
+             // Derived from the bookings by a Cloud Function. If the app
+             // could write it, a lender could hide a booked weekend.
+             'bookedDates'
            ])
         && draft().status in ['draft', 'active', 'paused']
         && hasRequiredFields()

@@ -589,6 +589,128 @@ describe('saves', () => {
   });
 });
 
+describe('bookings, in detail', () => {
+  const OUTSIDER = 'uid-nosy';
+
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', OUTSIDER), userDoc(OUTSIDER));
+      await setDoc(doc(ctx.firestore(), 'bookings', 'booking-1'), {
+        id: 'booking-1',
+        kind: 'rental',
+        status: 'requested',
+        campusId: CAMPUS,
+        listingId: 'listing-1',
+        lenderUid: ELLA,
+        renterUid: MADDIE,
+        startDate: '2026-11-06',
+        endDate: '2026-11-09',
+      });
+    });
+  });
+
+  it('is readable by the lender and the renter, and nobody else', async () => {
+    await assertSucceeds(getDoc(doc(asElla(), 'bookings', 'booking-1')));
+    await assertSucceeds(getDoc(doc(asMaddie(), 'bookings', 'booking-1')));
+    await assertFails(
+      getDoc(doc(testEnv.authenticatedContext(OUTSIDER).firestore(), 'bookings', 'booking-1')),
+    );
+  });
+
+  it('cannot be moved to confirmed from the app', async () => {
+    // Every status change goes through a function that checks the
+    // transition table. If the app could write status, a renter could
+    // confirm her own booking.
+    await assertFails(updateDoc(doc(asMaddie(), 'bookings', 'booking-1'), { status: 'confirmed' }));
+    await assertFails(updateDoc(doc(asElla(), 'bookings', 'booking-1'), { status: 'confirmed' }));
+  });
+
+  it('cannot have its price rewritten', async () => {
+    await assertFails(
+      updateDoc(doc(asMaddie(), 'bookings', 'booking-1'), { 'amounts.renterTotalCents': 1 }),
+    );
+  });
+
+  it('cannot have a handoff confirmation forged', async () => {
+    await assertFails(
+      updateDoc(doc(asMaddie(), 'bookings', 'booking-1'), {
+        'handoff.renterConfirmedReceiptAt': new Date(),
+      }),
+    );
+  });
+
+  it('cannot be created by the app', async () => {
+    await assertFails(
+      setDoc(doc(asMaddie(), 'bookings', 'booking-new'), {
+        id: 'booking-new',
+        status: 'confirmed',
+        lenderUid: ELLA,
+        renterUid: MADDIE,
+      }),
+    );
+  });
+
+  it('cannot be deleted', async () => {
+    const { deleteDoc } = await import('firebase/firestore');
+    await assertFails(deleteDoc(doc(asElla(), 'bookings', 'booking-1')));
+  });
+});
+
+describe('listing availability', () => {
+  it('stops an owner hiding a booked weekend', async () => {
+    // bookedDates is derived from the bookings by a Cloud Function. If
+    // the app could write it, a lender could quietly clear a day she has
+    // already promised to someone.
+    await assertFails(updateDoc(doc(asElla(), 'listings', 'listing-1'), { bookedDates: [] }));
+  });
+
+  it('lets an owner set her own blocked dates', async () => {
+    await assertSucceeds(
+      updateDoc(doc(asElla(), 'listings', 'listing-1'), { blackoutDates: ['2026-11-01'] }),
+    );
+  });
+});
+
+describe('notifications', () => {
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', ELLA, 'notifications', 'n1'), {
+        id: 'n1',
+        uid: ELLA,
+        type: 'rental_accepted',
+        title: 'Your rental is confirmed',
+        body: 'x',
+        readAt: null,
+      });
+    });
+  });
+
+  it('is readable only by the person it is for', async () => {
+    await assertSucceeds(getDoc(doc(asElla(), 'users', ELLA, 'notifications', 'n1')));
+    await assertFails(getDoc(doc(asMaddie(), 'users', ELLA, 'notifications', 'n1')));
+  });
+
+  it('lets her mark one read, but not rewrite it', async () => {
+    await assertSucceeds(
+      updateDoc(doc(asElla(), 'users', ELLA, 'notifications', 'n1'), { readAt: new Date() }),
+    );
+    await assertFails(
+      updateDoc(doc(asElla(), 'users', ELLA, 'notifications', 'n1'), { title: 'fake' }),
+    );
+  });
+
+  it('cannot be created by the app', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'users', ELLA, 'notifications', 'n2'), {
+        id: 'n2',
+        uid: ELLA,
+        type: 'rental_accepted',
+        title: 'fake',
+      }),
+    );
+  });
+});
+
 describe('social counters', () => {
   it('stops her writing her own like (that is a function’s job)', async () => {
     await assertFails(

@@ -230,6 +230,7 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
           // MVP: every rental request needs the lender's approval.
           requiresApproval: true,
           blackoutDates: form.blackoutDates,
+          // Derived by a Cloud Function; never written from the app.
           suspendedReason: null,
           removedAt: null,
           updatedAt: serverTimestamp(),

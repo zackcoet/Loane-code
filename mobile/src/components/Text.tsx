@@ -13,7 +13,7 @@ import { Text as RNText, StyleSheet, type TextProps } from 'react-native';
 import { color, type } from '@loane/shared';
 
 export type TextVariant = keyof typeof type;
-export type TextTone = 'primary' | 'secondary' | 'muted' | 'inverse' | 'error';
+export type TextTone = 'primary' | 'secondary' | 'muted' | 'inverse' | 'error' | 'disabled';
 
 interface Props extends TextProps {
   /** Named text role from the type scale. */
@@ -30,6 +30,7 @@ const TONE: Record<TextTone, string> = {
   muted: color.text.muted,
   inverse: color.text.inverse,
   error: color.text.error,
+  disabled: color.text.disabled,
 };
 
 export function Text({

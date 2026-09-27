@@ -46,7 +46,14 @@ export function MiniStat({ label, value }: { label: string; value: number }) {
   );
 }
 
-export function Pill({ children, tone }: { children: ReactNode; tone: 'good' | 'warn' | 'neutral' }) {
+export function Pill({
+  children,
+  tone,
+}: {
+  children: ReactNode;
+  /** `bad` is for things a human has to act on, e.g. a flagged return. */
+  tone: 'good' | 'warn' | 'bad' | 'neutral';
+}) {
   return <span className={`pill ${tone}`}>{children}</span>;
 }
 

@@ -459,6 +459,17 @@ button.link {
   border-color: color-mix(in srgb, var(--loane-status-success) 35%, transparent);
 }
 
+.pill.bad {
+  border-color: var(--loane-status-error);
+  color: var(--loane-status-error);
+}
+
+.cell-note {
+  margin-top: 4px;
+  font-size: var(--loane-font-sm);
+  color: var(--loane-text-muted);
+}
+
 .pill.warn {
   color: var(--loane-status-warning);
   border-color: color-mix(in srgb, var(--loane-status-warning) 35%, transparent);

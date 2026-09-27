@@ -21,11 +21,19 @@
  *   - deletePost         soft delete, handing back the tag counts
  *   - likePost / savePost and their undos
  *   - requestBooking     the double-booking-proof rental request
+ *   - respondToBooking   accept or decline, re-checking for conflicts
+ *   - recordDropoff / confirmReceipt / confirmReturn   the handoff
+ *   - flagReturnProblem  the lender's 48-hour window to report a problem
+ *   - cancelBooking      either side, before the garment changes hands
+ *   - setBlockedDates    the lender's own unavailable days
  *
  * Background triggers:
  *   - countListingView          moves a listing's view count
  *   - countPostEngagement       moves a post's view and tag-tap counts
  *   - refreshTagLabels          keeps tag labels in step with the listing
+ *   - syncListingAvailability   publishes booked dates onto the listing so
+ *                               renters can see them without reading
+ *                               other people's bookings
  *   - propagateProfileChanges   refreshes the copies of her profile stored
  *                               on her listings and posts
  *
@@ -48,13 +56,21 @@ export { likePost, unlikePost, savePost, unsavePost } from './social/postEngagem
 export { countListingView } from './triggers/countListingView';
 export { countPostEngagement } from './triggers/countPostEngagement';
 export { refreshTagLabels } from './triggers/refreshTagLabels';
+export { syncListingAvailability } from './triggers/syncListingAvailability';
 export { propagateProfileChanges } from './triggers/propagateProfileChanges';
 export { requestBooking } from './bookings/requestBooking';
+export {
+  cancelBooking,
+  confirmReceipt,
+  confirmReturn,
+  flagReturnProblem,
+  recordDropoff,
+  respondToBooking,
+  setBlockedDates,
+} from './bookings/lifecycle';
+export { sweepBookings, runBookingSweep } from './bookings/sweep';
 
 // --- Later phases -----------------------------------------------------------
 // export { saveListing }             from './social/save';        // Phase 3
-// export { respondToBooking }        from './bookings/respond';   // Phase 4
-// export { confirmHandoff }          from './bookings/handoff';   // Phase 4
-// export { confirmReturn }           from './bookings/return';    // Phase 4
 // export { createReview }            from './reviews/create';     // Phase 6
 // export { submitReport }            from './moderation/report';  // Phase 6

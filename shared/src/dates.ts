@@ -62,3 +62,53 @@ export function rangeHitsBlackout(range: DateRange, blackoutDates: IsoDate[]): b
   const requested = new Set(datesInRange(range));
   return blackoutDates.some((d) => requested.has(d));
 }
+
+/**
+ * Which days a listing cannot be rented.
+ *
+ * Two sources: the owner's own blocked dates, and the days already taken
+ * by a booking that blocks the calendar. The calendar on the request
+ * screen and the check inside `requestBooking` both use this, so what she
+ * sees greyed out is exactly what the server will refuse.
+ */
+export function unavailableDates(
+  blackoutDates: IsoDate[],
+  bookedRanges: DateRange[],
+): Set<IsoDate> {
+  const out = new Set<IsoDate>(blackoutDates);
+  for (const range of bookedRanges) {
+    for (const day of datesInRange(range)) out.add(day);
+  }
+  return out;
+}
+
+/**
+ * Can a rental of `days` days start on `startDate`?
+ *
+ * Every day it would cover must be free. A start date that looks free but
+ * runs into a booked weekend is not actually bookable, and the calendar
+ * greys it out for that reason.
+ */
+export function canStartOn(
+  startDate: IsoDate,
+  days: number,
+  unavailable: Set<IsoDate>,
+): boolean {
+  const range = { startDate, endDate: addDays(startDate, days) };
+  return datesInRange(range).every((day) => !unavailable.has(day));
+}
+
+/** "Fri 3 Oct" — short, unambiguous, no year for dates this season. */
+export function formatShortDate(value: IsoDate): string {
+  return fromIsoDate(value).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+/** "Fri 3 Oct – Mon 6 Oct" */
+export function formatRange(range: DateRange): string {
+  return `${formatShortDate(range.startDate)} – ${formatShortDate(range.endDate)}`;
+}

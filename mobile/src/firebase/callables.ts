@@ -6,7 +6,7 @@
  */
 
 import { httpsCallable } from 'firebase/functions';
-import type { Occasion } from '@loane/shared';
+import type { ImageRef, Occasion } from '@loane/shared';
 import { functions } from './config';
 
 /**
@@ -97,6 +97,41 @@ export const unsavePost = httpsCallable<{ postId: string }, { on: boolean }>(
   functions,
   'unsavePost',
 );
+
+export const respondToBooking = httpsCallable<
+  { bookingId: string; accept: boolean; reason?: string },
+  { status: string }
+>(functions, 'respondToBooking');
+
+export const recordDropoff = httpsCallable<
+  { bookingId: string; photos: ImageRef[]; notes?: string },
+  { ok: true }
+>(functions, 'recordDropoff');
+
+export const confirmReceipt = httpsCallable<{ bookingId: string }, { ok: true }>(
+  functions,
+  'confirmReceipt',
+);
+
+export const confirmReturn = httpsCallable<
+  { bookingId: string; photos?: ImageRef[] },
+  { ok: true }
+>(functions, 'confirmReturn');
+
+export const flagReturnProblem = httpsCallable<
+  { bookingId: string; problem: string; note: string; photos: ImageRef[] },
+  { ok: true }
+>(functions, 'flagReturnProblem');
+
+export const cancelBooking = httpsCallable<{ bookingId: string; reason: string }, { ok: true }>(
+  functions,
+  'cancelBooking',
+);
+
+export const setBlockedDates = httpsCallable<
+  { listingId: string; dates: string[] },
+  { blocked: string[] }
+>(functions, 'setBlockedDates');
 
 export const requestBooking = httpsCallable<
   { listingId: string; startDate: string; endDate: string; message?: string },

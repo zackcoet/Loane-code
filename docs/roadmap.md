@@ -87,6 +87,13 @@ in the seed rather than from the admin dashboard — that is Phase 7.
 
 ### Known simplifications to revisit
 
+- **No payment protection during beta.** No card on file means no hold, no
+  refund path and nothing behind a damage claim. Survivable with founding
+  closets who know each other; not survivable with strangers. This is the
+  single biggest reason Phase 5 matters.
+- **A flagged return has no resolution flow.** It reaches `disputed` and
+  an admin can see it, but there is no way to decide it yet. Phase 5.
+
 - **The Following feed filters instead of querying.** Firestore's `in`
   operator caps at thirty values, so querying by author breaks for anyone
   following more than thirty closets. The real fix is a fan-out feed: a
@@ -133,16 +140,26 @@ campus on the admin dashboard before each term starts.
 - [x] The engagement metrics that answer MVP question 2 now produce real
       numbers: `tagged_item_tap` is the headline one
 
-## Phase 4 — Rentals
+## Phase 4 — Rentals ✅
 
-- Availability calendar on a listing
-- Request a rental; the double-booking-proof Cloud Function
-- Lender accepts or declines
-- Status flow: Requested → Confirmed → With Renter → Returned
-- My Rentals: upcoming and past
-- Pickup and return: handoff notes, required drop-off condition photo, renter
-  confirms receipt, both confirm return
-- Tests for concurrent booking attempts
+- [x] Availability calendar showing booked and blocked days
+- [x] Request a rental; the double-booking-proof Cloud Function
+- [x] Accept / decline, with requests expiring after 48 hours
+- [x] Full status machine, server-enforced from one transition table
+- [x] Handoff: required drop-off photo, renter confirms receipt, both
+      confirm return
+- [x] A 48-hour window after return for the lender to flag a problem;
+      flagged rentals go to `disputed` and surface in the admin panel
+- [x] My Rentals with Renting / Lending
+- [x] Cancellations with a reason, either side, before handoff
+- [x] Lender's blocked dates
+- [x] In-app alerts in Activity, with an unread badge
+
+**No money moves.** Payments are Phase 5 and paused, so the app shows the
+price breakdown and says plainly that the two of them settle up directly.
+The condition photos are required anyway — with no card on file and no
+hold, a before-and-after photo record is the only protection either side
+has.
 
 ## Phase 5 — Payments + Protection ⏸ PAUSED
 

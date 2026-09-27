@@ -149,6 +149,36 @@ to keep in sync, which is one fewer thing to get out of step.
 The `(parentheses)` folders are groups — they organise files without adding a
 segment to the URL.
 
+## The booking status machine
+
+A booking's status only ever changes in one place: `assertCanTransition`
+in `backend/functions/src/bookings/transitions.ts`, which checks the move
+against `BOOKING_TRANSITIONS` in `shared/src/constants.ts`.
+
+That table says who may move a booking where:
+
+```
+requested ──accept(lender)──→ confirmed ──receipt(renter)──→ with_renter
+    │                             │                              │
+    ├─decline(lender)─→ declined  └─cancel(either)─→ cancelled    │
+    └─expire(system)──→ declined                                  │
+                                                                  ▼
+completed ←──48h, no flag (system)── returned ←──confirm return(either)
+                                        │
+                                        └─flag problem(lender)─→ disputed
+```
+
+**Every booking function is a thin wrapper over that check.** The reason
+is boring and important: a state machine spread across six functions
+grows holes. One table means "can the renter confirm her own booking?"
+has exactly one answer.
+
+Two things happen purely because time passed, in an hourly scheduled
+function (`sweepBookings`): a request nobody answered is declined, and a
+return nobody complained about is completed. The emulator does not run
+scheduled functions, so `runBookingSweep` does the same work on demand
+for an admin — a timer you cannot test is a timer you do not trust.
+
 ## Background triggers
 
 Two Cloud Functions run on their own, with nothing calling them:

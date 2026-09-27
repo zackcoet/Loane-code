@@ -3,7 +3,14 @@
  * variants. Small uppercase letter-spaced label, square corners.
  */
 
-import { ActivityIndicator, Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 import {
   color,
   controls,
@@ -20,7 +27,7 @@ interface Props {
   variant?: Variant;
   disabled?: boolean;
   loading?: boolean;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function Button({

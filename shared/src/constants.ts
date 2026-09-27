@@ -172,6 +172,89 @@ export const BOOKING_STATUS_LABELS: Record<BookingStatus, string> = {
   disputed: 'Disputed',
 };
 
+/**
+ * Who is allowed to make each move, and where it can go.
+ *
+ * This table IS the rules. Every booking function looks the move up here
+ * before doing anything, so "can the renter mark her own booking
+ * confirmed?" has exactly one answer in exactly one place.
+ */
+export const BOOKING_TRANSITIONS: Record<
+  BookingStatus,
+  { to: BookingStatus; by: 'lender' | 'renter' | 'either' | 'system' }[]
+> = {
+  requested: [
+    { to: 'confirmed', by: 'lender' },
+    { to: 'declined', by: 'lender' },
+    // Nobody answered in time.
+    { to: 'declined', by: 'system' },
+    { to: 'cancelled', by: 'renter' },
+  ],
+  confirmed: [
+    // The renter confirms she has the garment in her hands.
+    { to: 'with_renter', by: 'renter' },
+    { to: 'cancelled', by: 'either' },
+  ],
+  with_renter: [{ to: 'returned', by: 'either' }],
+  returned: [
+    // The lender has a window to flag a problem.
+    { to: 'disputed', by: 'lender' },
+    // Window passed with no flag.
+    { to: 'completed', by: 'system' },
+  ],
+  // Terminal.
+  declined: [],
+  cancelled: [],
+  completed: [],
+  disputed: [],
+};
+
+/** Statuses where the rental has not yet been handed over. */
+export const CANCELLABLE_STATUSES: readonly BookingStatus[] = ['requested', 'confirmed'];
+
+/** Statuses that are over, one way or another. */
+export const TERMINAL_BOOKING_STATUSES: readonly BookingStatus[] = [
+  'declined',
+  'cancelled',
+  'completed',
+  'disputed',
+];
+
+/**
+ * How long a lender has to answer a request.
+ *
+ * 48 hours, or the day before the rental starts, whichever comes first —
+ * a request for this Saturday should not sit unanswered until Saturday.
+ */
+export const REQUEST_EXPIRY_HOURS = 48;
+
+/**
+ * How long after a return the lender has to flag a problem.
+ *
+ * Until this passes the booking stays `returned`. After it, with no flag,
+ * it becomes `completed`. Matches DAMAGE_CLAIM_WINDOW_HOURS on purpose:
+ * flagging a return is the front door to a damage claim.
+ */
+export const RETURN_DISPUTE_WINDOW_HOURS = 48;
+
+/** Why a lender flagged a return. Becomes a damage claim in Phase 5. */
+export const RETURN_PROBLEMS = [
+  'damaged',
+  'not_returned',
+  'excessive_cleaning',
+  'wrong_item',
+  'other',
+] as const;
+export type ReturnProblem = (typeof RETURN_PROBLEMS)[number];
+
+export const RETURN_PROBLEM_LABELS: Record<ReturnProblem, string> = {
+  damaged: 'It came back damaged',
+  not_returned: "I never got it back",
+  excessive_cleaning: 'It needs more than a normal clean',
+  wrong_item: 'She returned the wrong thing',
+  other: 'Something else',
+};
+
 /** A booking is either a rental or an outright purchase. */
 export const BOOKING_KINDS = ['rental', 'purchase'] as const;
 export type BookingKind = (typeof BOOKING_KINDS)[number];
@@ -309,8 +392,16 @@ export const EVENT_TYPES = [
   'unfollow',
   'search',
   'filter_used',
+  // The rental lifecycle stays in the past tense as a group — these
+  // record something that happened to a booking, not a button press.
   'rental_requested',
   'rental_confirmed',
+  'rental_declined',
+  'rental_cancelled',
+  'rental_handoff',
+  'rental_received',
+  'rental_returned',
+  'rental_disputed',
   'message_sent',
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];

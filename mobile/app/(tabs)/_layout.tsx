@@ -10,6 +10,7 @@
  */
 
 import { Tabs, useRouter } from 'expo-router';
+import { useUnreadCount } from '../../src/hooks/useNotifications';
 import { StyleSheet, Text, View } from 'react-native';
 import {
   color,
@@ -34,6 +35,9 @@ function PlusButton() {
 
 export default function TabsLayout() {
   const router = useRouter();
+  // Nobody gets a push notification until Phase 6, so the badge is the
+  // only nudge that something needs an answer.
+  const unread = useUnreadCount();
 
   return (
     <Tabs
@@ -79,6 +83,8 @@ export default function TabsLayout() {
         options={{
           title: 'Activity',
           tabBarIcon: ({ focused }) => <TabIcon glyph="♡" focused={focused} />,
+          tabBarBadge: unread > 0 ? (unread > 9 ? '9+' : unread) : undefined,
+          tabBarBadgeStyle: styles.badge,
         }}
       />
       <Tabs.Screen
@@ -121,6 +127,11 @@ const styles = StyleSheet.create({
     borderColor: color.border.inverse,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  badge: {
+    backgroundColor: color.status.error,
+    color: color.text.inverse,
+    fontSize: type.caption.size,
   },
   plusGlyph: {
     fontSize: iconSize.md,

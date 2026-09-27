@@ -4,6 +4,7 @@ import type { Booking, DateRange, Listing, User } from '@loane/shared';
 import {
   BLOCKING_BOOKING_STATUSES,
   COLLECTIONS,
+  REQUEST_EXPIRY_HOURS,
   calculateFees,
   daysBetween,
   rangeHitsBlackout,
@@ -11,7 +12,7 @@ import {
   toIsoDate,
   validateDateRange,
 } from '@loane/shared';
-import { db, now } from '../lib/admin';
+import { db, now, Timestamp } from '../lib/admin';
 import { alreadyTaken, failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
 
@@ -52,6 +53,18 @@ interface RequestBookingInput {
 interface RequestBookingResult {
   bookingId: string;
   status: Booking['status'];
+}
+
+/**
+ * When an unanswered request goes stale: 48 hours from now, or the day
+ * before the rental starts, whichever comes first. A request for this
+ * Saturday should not sit unanswered until Saturday.
+ */
+function requestExpiry(startDate: string): Date {
+  const in48h = new Date(Date.now() + REQUEST_EXPIRY_HOURS * 3600_000);
+  const dayBeforeStart = new Date(`${startDate}T00:00:00Z`);
+  dayBeforeStart.setUTCDate(dayBeforeStart.getUTCDate() - 1);
+  return in48h < dayBeforeStart ? in48h : dayBeforeStart;
 }
 
 export const requestBooking = onCall<RequestBookingInput, Promise<RequestBookingResult>>(
@@ -185,6 +198,11 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
         cancelledByUid: null,
         cancellationReason: null,
         declineReason: null,
+        // The lender has 48 hours, or until the day before the rental
+        // starts, whichever comes first.
+        expiresAt: Timestamp.fromDate(requestExpiry(startDate)),
+        disputeWindowEndsAt: null,
+        returnProblem: null,
         activeClaimId: null,
         reviews: { lenderReviewId: null, renterReviewId: null },
       };

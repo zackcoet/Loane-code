@@ -103,6 +103,27 @@ export interface Booking extends BaseDoc, CampusScoped {
   cancellationReason: string | null;
   declineReason: string | null;
 
+  /**
+   * When an unanswered request goes stale. 48 hours after it was made, or
+   * the day before the rental starts, whichever comes first.
+   */
+  expiresAt: Timestampish | null;
+
+  /**
+   * How long the lender has to flag a problem after a return. Until this
+   * passes the booking stays `returned`; after it, with no flag, a
+   * scheduled function marks it `completed`.
+   */
+  disputeWindowEndsAt: Timestampish | null;
+
+  /** Why the lender flagged the return, when she did. */
+  returnProblem: {
+    type: string;
+    note: string;
+    photos: ImageRef[];
+    flaggedAt: Timestampish;
+  } | null;
+
   /** Set while a damage claim is open. */
   activeClaimId: string | null;
 

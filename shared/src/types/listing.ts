@@ -68,12 +68,23 @@ export interface Listing extends BaseDoc, CampusScoped {
    */
   requiresApproval: boolean;
 
-  /**
-   * Days the owner has manually marked unavailable (travel, her own event).
-   * Days blocked by a confirmed booking are NOT listed here — those live in
-   * the bookings collection and are computed server-side.
-   */
+  /** Days the owner has manually marked unavailable (travel, her own event). */
   blackoutDates: IsoDate[];
+
+  /**
+   * Days already taken by a confirmed booking.
+   *
+   * Derived — a Cloud Function recomputes this from the bookings whenever
+   * one changes. It is NOT the source of truth: `requestBooking` still
+   * checks the bookings collection inside a transaction, which is what
+   * actually makes double-booking impossible.
+   *
+   * It exists because a renter is not allowed to read other people's
+   * bookings, so without it her calendar could not grey out a taken
+   * weekend. This is the public shadow of a private collection: dates
+   * only, no names, no prices, nothing about who has it.
+   */
+  bookedDates: IsoDate[];
 
   /** Counters, written by Cloud Functions. */
   stats: {
