@@ -1,5 +1,5 @@
 import { useAdminAuth } from './auth/useAdminAuth';
-import { Overview } from './pages/Overview';
+import { Dashboard } from './pages/Dashboard';
 import { SignIn } from './pages/SignIn';
 
 export function App() {
@@ -12,5 +12,5 @@ export function App() {
   // Signed in but not an admin: say so rather than showing an empty shell.
   if (!user || !isAdmin) return <SignIn rejected={Boolean(user) && !isAdmin} />;
 
-  return <Overview email={user.email} />;
+  return <Dashboard adminEmail={user.email} />;
 }
