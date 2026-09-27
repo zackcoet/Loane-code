@@ -616,7 +616,8 @@ async function main(): Promise<void> {
         campusId: CAMPUS_ID,
         authorUid: author.uid,
         author: summaryOf(author),
-        photos: [image(`users/${author.uid}/posts/${ref.id}/1.jpg`)],
+        // Phase 3 adds real tags; seeded posts carry none yet.
+        photos: [{ ...image(`users/${author.uid}/posts/${ref.id}/1.jpg`), tags: [] }],
         caption: pick(CAPTIONS),
         occasions: pickSome(OCCASIONS, 2) as Occasion[],
         taggedListings: tagged.map((l) => ({

@@ -103,7 +103,9 @@ campus on the admin dashboard before each term starts.
 ## Phase 3 — Social
 
 - Post a Look: photos, caption, occasion tags
-- Tagging listings in a post, and tapping through to rent
+- Tagging listings in a post, and tapping through to rent — the data model
+  is already designed and documented in [post-tagging.md](./post-tagging.md);
+  at launch you may only tag your own pieces
 - Home feed, Explore vs Following tabs, campus filter
 - Follow, like, save
 - The engagement metrics that answer MVP question 2 start producing real

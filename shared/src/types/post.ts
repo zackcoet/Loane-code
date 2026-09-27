@@ -2,11 +2,63 @@ import type { Occasion, PostStatus } from '../constants';
 import type {
   BaseDoc,
   CampusScoped,
+  Cents,
   ImageRef,
   ListingSummary,
   Timestampish,
   UserSummary,
 } from './common';
+
+/**
+ * A tag pinned to a spot on one photo — the Instagram-style dot that
+ * expands into a small label when you tap the picture.
+ *
+ * Built in Phase 3. The shape is settled now so nothing has to migrate.
+ * See docs/post-tagging.md for how it works and why.
+ */
+export interface PhotoTag {
+  /**
+   * Where the dot sits, as a FRACTION of the photo: 0 is the left/top
+   * edge, 1 is the right/bottom. Never pixels — the same photo renders at
+   * a different size on every phone, and a pixel coordinate would drift
+   * off the garment.
+   */
+  x: number;
+  y: number;
+
+  listingId: string;
+
+  /**
+   * Whose closet the piece comes from.
+   *
+   * At launch this ALWAYS equals the post's author: you may only tag your
+   * own pieces. Storing it explicitly rather than assuming it is what lets
+   * us allow tagging a friend's listing later without touching a single
+   * stored document — only a security rule changes.
+   */
+  ownerUid: string;
+
+  /**
+   * A snapshot of what the label shows, so tapping a photo renders
+   * instantly instead of firing one read per tag.
+   *
+   * This copy CAN go stale if the owner changes her price. That is a
+   * deliberate trade: the label is for speed, and tapping it opens the
+   * listing, which is always live. See docs/post-tagging.md.
+   */
+  label: {
+    name: string;
+    coverUrl: string | null;
+    priceCents3Day: Cents | null;
+    salePriceCents: Cents | null;
+    ownerUsername: string;
+  };
+}
+
+/** A post photo, which may carry tags. */
+export interface PostPhoto extends ImageRef {
+  tags: PhotoTag[];
+}
 
 /**
  * `posts/{postId}`
@@ -18,14 +70,24 @@ export interface Post extends BaseDoc, CampusScoped {
   authorUid: string;
   author: UserSummary;
 
-  photos: ImageRef[];
+  /**
+   * Several photos per post, and each photo carries its own tags — a tag
+   * belongs to the picture the garment appears in, not to the post.
+   */
+  photos: PostPhoto[];
   caption: string;
   occasions: Occasion[];
 
   /**
-   * Listings featured in this look. Denormalized so the tap-through target
-   * renders instantly. `taggedListingIds` exists separately because Firestore
-   * can only do array-contains queries on scalars.
+   * Every listing tagged anywhere in this post, flattened.
+   *
+   * `taggedListings` is the denormalized copy used to render a summary row.
+   * `taggedListingIds` exists separately because Firestore's
+   * `array-contains` only works on scalars — it is what powers "Seen in
+   * posts" on a listing's page.
+   *
+   * Both are derived from the per-photo tags and are written by a Cloud
+   * Function, so they cannot disagree with what is actually on the photos.
    */
   taggedListings: ListingSummary[];
   taggedListingIds: string[];
