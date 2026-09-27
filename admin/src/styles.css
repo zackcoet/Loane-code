@@ -1,16 +1,13 @@
 /* Loane admin. Desktop-first, quiet, black-and-white, thin borders. */
 
 :root {
-  --white: #fff;
-  --black: #111;
-  --border: #e5e5e5;
-  --border-dark: #cfcfcf;
-  --soft: #f7f7f7;
-  --text-secondary: #666;
-  --text-muted: #969696;
-  --danger: #b3261e;
-  --good: #0f6b3a;
-  --warn: #8a5a00;
+  --white: var(--loane-white);
+  --black: var(--loane-ink);
+  --border: var(--loane-border);
+  --border-dark: var(--loane-border-strong);
+  --soft: var(--loane-surface-muted);
+  --text-secondary: var(--loane-text-secondary);
+  --text-muted: var(--loane-text-muted);
   color-scheme: light;
 }
 
@@ -21,7 +18,7 @@
 body {
   margin: 0;
   background: var(--white);
-  color: var(--black);
+  color: var(--loane-text-primary);
   font-family: Helvetica, -apple-system, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   line-height: 1.45;
@@ -79,9 +76,15 @@ h3 {
 }
 
 .error {
-  color: var(--danger);
+  color: var(--loane-danger);
   font-size: 12px;
   margin: 16px 32px 0;
+}
+
+.app-loading {
+  padding: 32px;
+  font-size: 13px;
+  color: var(--loane-text-muted);
 }
 
 .admin-shell {
@@ -119,7 +122,7 @@ h3 {
   position: absolute;
   width: 54px;
   height: 54px;
-  border: 1px solid var(--black);
+  border: 1px solid var(--loane-ink);
   border-radius: 50%;
   z-index: 0;
 }
@@ -153,8 +156,8 @@ h3 {
 }
 
 .nav-item.active {
-  background: var(--black);
-  color: var(--white);
+  background: var(--loane-ink);
+  color: var(--loane-white);
 }
 
 .workspace {
@@ -240,22 +243,22 @@ textarea:focus {
 }
 
 .segmented button.active {
-  background: var(--black);
-  color: var(--white);
+  background: var(--loane-ink);
+  color: var(--loane-white);
 }
 
 .text-button,
 .outline-button {
   border: 0;
   background: transparent;
-  color: var(--black);
+  color: var(--loane-text-primary);
   padding: 0;
   text-decoration: underline;
 }
 
 .outline-button {
   height: 40px;
-  border: 1px solid var(--black);
+  border: 1px solid var(--loane-ink);
   padding: 0 14px;
   text-decoration: none;
   background: var(--white);
@@ -268,8 +271,8 @@ button.primary {
   width: 100%;
   height: 52px;
   border: none;
-  background: #000;
-  color: #fff;
+  background: var(--loane-black);
+  color: var(--loane-white);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 1.2px;
@@ -277,8 +280,8 @@ button.primary {
 }
 
 button.primary:disabled {
-  background: #efefef;
-  color: #b0b0b0;
+  background: var(--loane-disabled);
+  color: var(--loane-disabled-text);
 }
 
 button.link {
@@ -287,7 +290,7 @@ button.link {
   padding: 0;
   font: inherit;
   font-size: 13px;
-  color: #111;
+  color: var(--loane-text-primary);
   text-decoration: underline;
 }
 
@@ -377,7 +380,7 @@ button.link {
 .bar-column div {
   width: 100%;
   max-width: 24px;
-  background: var(--black);
+  background: var(--loane-ink);
 }
 
 .bar-column span {
@@ -405,7 +408,7 @@ button.link {
 
 .funnel-row > div > div {
   height: 100%;
-  background: var(--black);
+  background: var(--loane-ink);
 }
 
 .data-table {
@@ -452,13 +455,13 @@ button.link {
 }
 
 .pill.good {
-  color: var(--good);
-  border-color: rgba(15, 107, 58, 0.35);
+  color: var(--loane-success);
+  border-color: color-mix(in srgb, var(--loane-success) 35%, transparent);
 }
 
 .pill.warn {
-  color: var(--warn);
-  border-color: rgba(138, 90, 0, 0.35);
+  color: var(--loane-warning);
+  border-color: color-mix(in srgb, var(--loane-warning) 35%, transparent);
 }
 
 .profile-header {

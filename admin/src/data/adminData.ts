@@ -11,7 +11,7 @@ import {
   type Timestampish,
   type User,
 } from '@loane/shared';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, limit, orderBy, query, type QueryConstraint } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 export interface AdminData {
@@ -25,6 +25,18 @@ export interface AdminData {
   adminActions: AdminAction[];
   events: AppEvent[];
 }
+
+const COLLECTION_LIMITS = {
+  users: 250,
+  campuses: 50,
+  listings: 250,
+  posts: 250,
+  bookings: 250,
+  reports: 100,
+  damageClaims: 100,
+  adminActions: 100,
+  events: 500,
+} as const;
 
 export type DateRangeKey = '7d' | '30d' | 'all';
 
@@ -49,22 +61,28 @@ export async function loadAdminData(): Promise<AdminData> {
     adminActions,
     events,
   ] = await Promise.all([
-    getCollection<User>(COLLECTIONS.users),
-    getCollection<Campus>(COLLECTIONS.campuses),
-    getCollection<Listing>(COLLECTIONS.listings),
-    getCollection<Post>(COLLECTIONS.posts),
-    getCollection<Booking>(COLLECTIONS.bookings),
-    getCollection<Report>(COLLECTIONS.reports),
-    getCollection<DamageClaim>(COLLECTIONS.damageClaims),
-    getCollection<AdminAction>(COLLECTIONS.adminActions),
-    getCollection<AppEvent>(COLLECTIONS.events),
+    getCollection<User>(COLLECTIONS.users, COLLECTION_LIMITS.users, true),
+    getCollection<Campus>(COLLECTIONS.campuses, COLLECTION_LIMITS.campuses, false),
+    getCollection<Listing>(COLLECTIONS.listings, COLLECTION_LIMITS.listings, true),
+    getCollection<Post>(COLLECTIONS.posts, COLLECTION_LIMITS.posts, true),
+    getCollection<Booking>(COLLECTIONS.bookings, COLLECTION_LIMITS.bookings, true),
+    getCollection<Report>(COLLECTIONS.reports, COLLECTION_LIMITS.reports, true),
+    getCollection<DamageClaim>(COLLECTIONS.damageClaims, COLLECTION_LIMITS.damageClaims, true),
+    getCollection<AdminAction>(COLLECTIONS.adminActions, COLLECTION_LIMITS.adminActions, true),
+    getCollection<AppEvent>(COLLECTIONS.events, COLLECTION_LIMITS.events, true),
   ]);
 
   return { users, campuses, listings, posts, bookings, reports, damageClaims, adminActions, events };
 }
 
-async function getCollection<T>(name: string): Promise<T[]> {
-  const snap = await getDocs(collection(db, name));
+async function getCollection<T>(
+  name: string,
+  readLimit: number,
+  newestFirst: boolean,
+): Promise<T[]> {
+  const constraints: QueryConstraint[] = newestFirst ? [orderBy('createdAt', 'desc')] : [];
+  constraints.push(limit(readLimit));
+  const snap = await getDocs(query(collection(db, name), ...constraints));
   return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as T);
 }
 

@@ -49,3 +49,9 @@ Plain-English reason: the Activity Log screen already reads `adminActions`, but 
 Need scheduled or callable aggregation for dashboard metrics once event volume grows.
 
 Plain-English reason: the current admin dashboard reads emulator-sized collections directly, which is fine for buildout and early testing. At real scale, overview charts, funnels, and retention should read precomputed daily/weekly rollups instead of scanning every event and user document.
+
+## Server-backed admin pagination and exact totals
+
+Need backend-owned list endpoints or Firestore aggregate documents for exact totals, full CSV exports, and cursor paging across all matching records.
+
+Plain-English reason: the dashboard now limits each Firestore read so it no longer loads entire collections. That keeps early admin use safe, but it also means tables and CSV exports operate on the latest loaded slice. Before real scale, admins should get server-backed pagination and exact total counts without asking the browser to read every document.

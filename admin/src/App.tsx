@@ -6,7 +6,7 @@ export function App() {
   const { user, isAdmin, loading } = useAdminAuth();
 
   if (loading) {
-    return <main style={{ padding: 32, fontSize: 13, color: '#9B9B9B' }}>Loading…</main>;
+    return <main className="app-loading">Loading…</main>;
   }
 
   // Signed in but not an admin: say so rather than showing an empty shell.
