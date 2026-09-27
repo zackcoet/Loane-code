@@ -1,9 +1,9 @@
 /* Loane admin. Desktop-first, quiet, black-and-white, thin borders. */
 
 :root {
-  --white: var(--loane-white);
-  --black: var(--loane-ink);
-  --border: var(--loane-border);
+  --white: var(--loane-text-inverse);
+  --black: var(--loane-text-primary);
+  --border: var(--loane-border-default);
   --border-dark: var(--loane-border-strong);
   --soft: var(--loane-surface-muted);
   --text-secondary: var(--loane-text-secondary);
@@ -76,7 +76,7 @@ h3 {
 }
 
 .error {
-  color: var(--loane-danger);
+  color: var(--loane-status-error);
   font-size: 12px;
   margin: 16px 32px 0;
 }
@@ -122,7 +122,7 @@ h3 {
   position: absolute;
   width: 54px;
   height: 54px;
-  border: 1px solid var(--loane-ink);
+  border: 1px solid var(--loane-text-primary);
   border-radius: 50%;
   z-index: 0;
 }
@@ -156,8 +156,8 @@ h3 {
 }
 
 .nav-item.active {
-  background: var(--loane-ink);
-  color: var(--loane-white);
+  background: var(--loane-text-primary);
+  color: var(--loane-text-inverse);
 }
 
 .workspace {
@@ -243,8 +243,8 @@ textarea:focus {
 }
 
 .segmented button.active {
-  background: var(--loane-ink);
-  color: var(--loane-white);
+  background: var(--loane-text-primary);
+  color: var(--loane-text-inverse);
 }
 
 .text-button,
@@ -258,7 +258,7 @@ textarea:focus {
 
 .outline-button {
   height: 40px;
-  border: 1px solid var(--loane-ink);
+  border: 1px solid var(--loane-text-primary);
   padding: 0 14px;
   text-decoration: none;
   background: var(--white);
@@ -271,8 +271,8 @@ button.primary {
   width: 100%;
   height: 52px;
   border: none;
-  background: var(--loane-black);
-  color: var(--loane-white);
+  background: var(--loane-surface-inverse);
+  color: var(--loane-text-inverse);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 1.2px;
@@ -280,8 +280,8 @@ button.primary {
 }
 
 button.primary:disabled {
-  background: var(--loane-disabled);
-  color: var(--loane-disabled-text);
+  background: var(--loane-surface-disabled);
+  color: var(--loane-text-disabled);
 }
 
 button.link {
@@ -380,7 +380,7 @@ button.link {
 .bar-column div {
   width: 100%;
   max-width: 24px;
-  background: var(--loane-ink);
+  background: var(--loane-text-primary);
 }
 
 .bar-column span {
@@ -408,7 +408,7 @@ button.link {
 
 .funnel-row > div > div {
   height: 100%;
-  background: var(--loane-ink);
+  background: var(--loane-text-primary);
 }
 
 .data-table {
@@ -455,13 +455,13 @@ button.link {
 }
 
 .pill.good {
-  color: var(--loane-success);
-  border-color: color-mix(in srgb, var(--loane-success) 35%, transparent);
+  color: var(--loane-status-success);
+  border-color: color-mix(in srgb, var(--loane-status-success) 35%, transparent);
 }
 
 .pill.warn {
-  color: var(--loane-warning);
-  border-color: color-mix(in srgb, var(--loane-warning) 35%, transparent);
+  color: var(--loane-status-warning);
+  border-color: color-mix(in srgb, var(--loane-status-warning) 35%, transparent);
 }
 
 .profile-header {

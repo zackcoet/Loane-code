@@ -84,7 +84,7 @@ export function makeOverviewMetrics(data: AdminData, window: DateWindow) {
       },
       { label: 'Views', value: eventCount(data.events, ['post_view', 'listing_view'], window), detail: 'Post + listing views' },
       { label: 'Likes', value: eventCount(data.events, ['post_like'], window), detail: 'Post likes' },
-      { label: 'Saves', value: eventCount(data.events, ['post_save', 'listing_save'], window), detail: 'Looks + listings saved' },
+      { label: 'Saves', value: eventCount(data.events, ['post_save', 'save'], window), detail: 'Looks + listings saved' },
       { label: 'Follows', value: eventCount(data.events, ['follow'], window), detail: 'New follows' },
       { label: 'Tagged-Item Taps', value: eventCount(data.events, ['tagged_item_tap'], window), detail: 'Social to marketplace' },
     ],

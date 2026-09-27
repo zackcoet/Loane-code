@@ -80,14 +80,6 @@
       "rules": {
         "no-restricted-syntax": "off"
       }
-    },
-    {
-      "files": [
-        "admin/**"
-      ],
-      "rules": {
-        "no-restricted-syntax": "off"
-      }
     }
   ]
 }

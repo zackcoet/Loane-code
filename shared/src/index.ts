@@ -9,10 +9,8 @@
 
 export * from './types';
 export * from './constants';
-// The canonical design tokens. Everything new imports from here.
+// The canonical design tokens. The ONLY place raw values live.
 export * from './tokens';
-// Deprecated flat aliases, kept only until admin/ is migrated.
-export { colors, typography, radii, borders, icons } from './brand';
 export * from './collections';
 export * from './money';
 export * from './dates';

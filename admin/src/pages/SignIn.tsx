@@ -8,7 +8,7 @@
 import { useState, type FormEvent } from 'react';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { brand, colors, normalizeEmail, validateEmail } from '@loane/shared';
+import { brand, color, fontSize, normalizeEmail, validateEmail } from '@loane/shared';
 import { auth } from '../firebase/config';
 
 function friendlyAuthError(error: unknown): string {
@@ -114,9 +114,9 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    background: colors.white,
+    background: color.surface.page,
   },
   panel: { width: '100%', maxWidth: 380 },
-  heading: { fontSize: 22, fontWeight: 700, margin: '8px 0 32px' },
-  body: { fontSize: 13, color: colors.textSecondary, marginTop: 8 },
+  heading: { fontSize: fontSize['2xl'], fontWeight: 700, margin: '8px 0 32px' },
+  body: { fontSize: fontSize.sm, color: color.text.secondary, marginTop: 8 },
 };
