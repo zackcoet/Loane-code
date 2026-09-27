@@ -41,12 +41,15 @@ export default function Feed() {
   );
 
   const onPressTag = useCallback(
-    (listingId: string) => {
+    (listingId: string, postId: string) => {
       // The number that tells us whether the social feed drives rentals.
+      // The listing is the target because that is what the tap opens;
+      // postId rides along so the post gets credited too.
       logEvent('tagged_item_tap', {
         surface: 'feed',
         targetType: 'listing',
         targetId: listingId,
+        meta: { postId },
       });
       router.push({ pathname: '/listing/[id]', params: { id: listingId } });
     },
@@ -131,7 +134,7 @@ export default function Feed() {
           renderItem={({ item }) => (
             <PostCard
               post={item}
-              onPressTag={onPressTag}
+              onPressTag={(listingId) => onPressTag(listingId, item.id)}
               onPressAuthor={(username) => router.push(`/u/${username}`)}
               onEdit={
                 item.authorUid === profile?.uid

@@ -69,6 +69,7 @@ export default function PostScreen() {
                 surface: 'post',
                 targetType: 'listing',
                 targetId: listingId,
+                meta: { postId: post.id },
               });
               router.push({ pathname: '/listing/[id]', params: { id: listingId } });
             }}

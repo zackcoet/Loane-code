@@ -24,6 +24,8 @@
  *
  * Background triggers:
  *   - countListingView          moves a listing's view count
+ *   - countPostEngagement       moves a post's view and tag-tap counts
+ *   - refreshTagLabels          keeps tag labels in step with the listing
  *   - propagateProfileChanges   refreshes the copies of her profile stored
  *                               on her listings and posts
  *
@@ -44,6 +46,8 @@ export { createPost } from './posts/createPost';
 export { deletePost } from './posts/deletePost';
 export { likePost, unlikePost, savePost, unsavePost } from './social/postEngagement';
 export { countListingView } from './triggers/countListingView';
+export { countPostEngagement } from './triggers/countPostEngagement';
+export { refreshTagLabels } from './triggers/refreshTagLabels';
 export { propagateProfileChanges } from './triggers/propagateProfileChanges';
 export { requestBooking } from './bookings/requestBooking';
 
