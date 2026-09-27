@@ -36,14 +36,18 @@ export default function Profile() {
   return (
     <Screen flush>
       <View style={styles.header}>
-        <View style={styles.headerSpacer} />
+        <IconButton
+          name="menu"
+          onPress={() => router.push('/menu')}
+          accessibilityLabel="Open menu"
+        />
         <Text style={styles.handle} numberOfLines={1}>
           @{profile.username}
         </Text>
         <IconButton
-          glyph="⚙"
-          onPress={() => router.push('/settings')}
-          accessibilityLabel="Account settings"
+          name="add"
+          onPress={() => router.push('/post-sheet')}
+          accessibilityLabel="Create a post or listing"
         />
       </View>
 
@@ -71,7 +75,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.sm,
   },
-  headerSpacer: { width: controls.minTapTarget },
   handle: {
     flex: 1,
     textAlign: 'center',

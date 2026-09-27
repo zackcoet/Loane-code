@@ -48,7 +48,7 @@ export default function Activity() {
         title="Activity"
         right={
           <IconButton
-            glyph="✉"
+            name="chatbubble-outline"
             onPress={() => router.push('/messages')}
             accessibilityLabel="Messages"
           />

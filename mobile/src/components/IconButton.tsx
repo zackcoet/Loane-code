@@ -6,16 +6,16 @@
  * Using this everywhere is why the header icons are actually hittable.
  */
 
-import { Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
 import {
   color,
   controls,
   iconSize,
 } from '@loane/shared';
+import { Icon, type IconName } from './Icon';
 
 interface Props {
-  /** A text glyph, e.g. "≡". */
-  glyph: string;
+  name: IconName;
   onPress: () => void;
   accessibilityLabel: string;
   size?: number;
@@ -25,7 +25,7 @@ interface Props {
 }
 
 export function IconButton({
-  glyph,
+  name,
   onPress,
   accessibilityLabel,
   size = iconSize.md,
@@ -39,9 +39,7 @@ export function IconButton({
       accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => [styles.target, pressed && styles.pressed, style]}
     >
-      <Text style={[styles.glyph, { fontSize: size, lineHeight: size * 1.15, color: tint }]}>
-        {glyph}
-      </Text>
+      <Icon name={name} size={size} tint={tint} />
     </Pressable>
   );
 }
@@ -54,5 +52,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pressed: { opacity: 0.5 },
-  glyph: { textAlign: 'center' },
 });

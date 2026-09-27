@@ -116,7 +116,7 @@ export default function OtherProfile() {
         right={
           isMe ? null : (
             <IconButton
-              glyph="⋯"
+              name="ellipsis-horizontal"
               accessibilityLabel="Report or block"
               onPress={() => setReporting(true)}
             />

@@ -116,13 +116,13 @@ export default function ListingDetail() {
         right={
           isMine ? (
             <IconButton
-              glyph="✎"
+              name="create-outline"
               accessibilityLabel="Edit this listing"
               onPress={() => router.push({ pathname: '/edit-listing', params: { id: listing.id } })}
             />
           ) : (
             <IconButton
-              glyph={saved ? '♥' : '♡'}
+              name={saved ? 'heart' : 'heart-outline'}
               accessibilityLabel={saved ? 'Remove from wishlist' : 'Save to wishlist'}
               onPress={() => void toggle('listing')}
             />

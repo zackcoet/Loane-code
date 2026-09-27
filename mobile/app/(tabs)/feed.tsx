@@ -63,12 +63,12 @@ export default function Feed() {
   return (
     <Screen flush>
       <View style={styles.header}>
-        <IconButton glyph="≡" onPress={() => router.push('/menu')} accessibilityLabel="Open menu" />
+        <IconButton name="menu" onPress={() => router.push('/menu')} accessibilityLabel="Open menu" />
         <Logo size={30} lockup="below" />
         <IconButton
-          glyph="⌕"
-          onPress={() => router.push('/(tabs)/discover')}
-          accessibilityLabel="Search"
+          name="add"
+          onPress={() => router.push('/post-sheet')}
+          accessibilityLabel="Create a post or listing"
         />
       </View>
 

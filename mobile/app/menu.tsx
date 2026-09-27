@@ -29,6 +29,10 @@ interface Item {
 }
 
 const ITEMS: Item[] = [
+  { label: 'Post a Look / Add to My Closet', href: '/post-sheet' },
+  { label: 'Liked', href: '/(tabs)/activity' },
+  { label: 'Saved', href: '/my-wishlist' },
+  { label: 'Recently Rented', href: '/my-rentals' },
   { label: 'My Listings', href: '/my-listings' },
   { label: 'My Rentals', href: '/my-rentals' },
   { label: 'My Wishlist', href: '/my-wishlist' },
@@ -49,7 +53,7 @@ export default function Menu() {
     <View style={styles.sheet}>
       <View style={styles.header}>
         <Logo size={30} lockup="below" />
-        <IconButton glyph="✕" onPress={() => router.back()} accessibilityLabel="Close menu" />
+        <IconButton name="close" onPress={() => router.back()} accessibilityLabel="Close menu" />
       </View>
 
       <ScrollView>

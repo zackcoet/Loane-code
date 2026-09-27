@@ -1,46 +1,26 @@
 /**
- * The five-tab bar: Feed, Discover, Post (+), Activity, Profile.
- *
- * The middle + is not a tab — tapping it opens a sheet asking "Post a Look"
- * or "Add to My Closet", exactly as in the mockups. We intercept its press
- * and route to a modal instead of switching tabs.
- *
- * Icons are drawn with text glyphs for now so we are not blocked on an
- * icon export. TODO-PHASE1: swap in the real icon set.
+ * The five-tab bar: Feed, Discover, Messages, Activity, Profile.
  */
 
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { useUnreadCount } from '../../src/hooks/useNotifications';
 import { useUnreadMessageCount } from '../../src/hooks/useMessaging';
 import { SuspendedBanner } from '../../src/components/SuspendedBanner';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { color, controls, iconSize, type } from '@loane/shared';
+import { Icon, type IconName } from '../../src/components/Icon';
 
-function TabIcon({ glyph, focused }: { glyph: string; focused: boolean }) {
+function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
   return (
-    <Text style={[styles.icon, { color: focused ? color.icon.default : color.text.muted }]}>
-      {glyph}
-    </Text>
-  );
-}
-
-function PlusButton() {
-  return (
-    <View style={styles.plus}>
-      <Text style={styles.plusGlyph}>+</Text>
-    </View>
+    <Icon name={name} size={iconSize.lg} tint={focused ? color.icon.default : color.text.muted} />
   );
 }
 
 export default function TabsLayout() {
-  const router = useRouter();
   // Nobody gets a push notification until Phase 6, so the badge is the
   // only nudge that something needs an answer.
   const unread = useUnreadCount();
-  // Messages live behind the menu, not a tab, so their badge rides on
-  // Activity too — otherwise an unread message is invisible.
   const unreadMessages = useUnreadMessageCount();
-  const totalUnread = unread + unreadMessages;
 
   return (
     <>
@@ -59,36 +39,31 @@ export default function TabsLayout() {
           name="feed"
           options={{
             title: 'Feed',
-            tabBarIcon: ({ focused }) => <TabIcon glyph="⌂" focused={focused} />,
+            tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />,
           }}
         />
         <Tabs.Screen
           name="discover"
           options={{
             title: 'Discover',
-            tabBarIcon: ({ focused }) => <TabIcon glyph="⌕" focused={focused} />,
+            tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'search' : 'search-outline'} focused={focused} />,
           }}
         />
         <Tabs.Screen
-          name="post"
+          name="messages"
           options={{
-            title: '',
-            tabBarIcon: () => <PlusButton />,
-          }}
-          listeners={{
-            // Not a real tab: open the "what do you want to share?" sheet.
-            tabPress: (event) => {
-              event.preventDefault();
-              router.push('/post-sheet');
-            },
+            title: 'Messages',
+            tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'chatbubble' : 'chatbubble-outline'} focused={focused} />,
+            tabBarBadge: unreadMessages > 0 ? (unreadMessages > 9 ? '9+' : unreadMessages) : undefined,
+            tabBarBadgeStyle: styles.badge,
           }}
         />
         <Tabs.Screen
           name="activity"
           options={{
             title: 'Activity',
-            tabBarIcon: ({ focused }) => <TabIcon glyph="♡" focused={focused} />,
-            tabBarBadge: totalUnread > 0 ? (totalUnread > 9 ? '9+' : totalUnread) : undefined,
+            tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'heart' : 'heart-outline'} focused={focused} />,
+            tabBarBadge: unread > 0 ? (unread > 9 ? '9+' : unread) : undefined,
             tabBarBadgeStyle: styles.badge,
           }}
         />
@@ -96,9 +71,10 @@ export default function TabsLayout() {
           name="profile"
           options={{
             title: 'Profile',
-            tabBarIcon: ({ focused }) => <TabIcon glyph="◯" focused={focused} />,
+            tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'person-circle' : 'person-circle-outline'} focused={focused} />,
           }}
         />
+        <Tabs.Screen name="post" options={{ href: null }} />
       </Tabs>
     </>
   );
@@ -120,29 +96,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   barItem: { paddingVertical: 4 },
-  icon: {
-    fontSize: iconSize.lg,
-    lineHeight: iconSize.lg * 1.15,
-    textAlign: 'center',
-  },
-  plus: {
-    width: controls.tabBarPlus,
-    height: controls.tabBarPlus,
-    borderRadius: controls.tabBarPlus / 2,
-    borderWidth: 1.5,
-    borderColor: color.border.inverse,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   badge: {
     backgroundColor: color.status.error,
     color: color.text.inverse,
     fontSize: type.caption.size,
-  },
-  plusGlyph: {
-    fontSize: iconSize.md,
-    lineHeight: 30,
-    color: color.icon.default,
-    fontWeight: '300',
   },
 });

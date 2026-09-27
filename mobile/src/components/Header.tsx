@@ -24,7 +24,7 @@ export function Header({ title, onBack, right }: Props) {
     <View style={styles.row}>
       <View style={styles.side}>
         {onBack ? (
-          <IconButton glyph="‹" onPress={onBack} accessibilityLabel="Go back" size={iconSize.lg} />
+          <IconButton name="chevron-back" onPress={onBack} accessibilityLabel="Go back" size={iconSize.lg} />
         ) : null}
       </View>
       <Text style={styles.title} numberOfLines={1}>

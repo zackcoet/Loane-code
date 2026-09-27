@@ -82,14 +82,14 @@ export function Calendar({
     <View>
       <View style={styles.monthRow}>
         <IconButton
-          glyph="‹"
+          name="chevron-back"
           accessibilityLabel="Previous month"
           onPress={() => setMonthOffset((m) => Math.max(0, m - 1))}
           tint={canGoBack ? color.icon.default : color.text.disabled}
         />
         <Text variant="label">{label}</Text>
         <IconButton
-          glyph="›"
+          name="chevron-forward"
           accessibilityLabel="Next month"
           onPress={() => setMonthOffset((m) => m + 1)}
           tint={canGoForward ? color.icon.default : color.text.disabled}
