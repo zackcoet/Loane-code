@@ -602,24 +602,82 @@ async function main(): Promise<void> {
   console.warn(`Created ${listings.length} listings`);
 
   // --- Posts --------------------------------------------------------------
+  // Posts carry REAL tags, pinned to plausible spots on the photo, so the
+  // feed exercises the whole tap-photo -> tap-dot -> open-listing path and
+  // "Seen in posts" on a listing has something to show.
   let postCount = 0;
+  let tagTotal = 0;
+  const tagCounts = new Map<string, number>();
+
+  /**
+   * Where a tag sits, as a fraction of the photo. Roughly where the
+   * garment would be in a full-length outfit shot.
+   */
+  const SPOTS: Record<Category, { x: number; y: number }> = {
+    dresses: { x: 0.5, y: 0.52 },
+    tops: { x: 0.5, y: 0.34 },
+    bottoms: { x: 0.5, y: 0.66 },
+    sets: { x: 0.5, y: 0.5 },
+    outerwear: { x: 0.34, y: 0.4 },
+    shoes: { x: 0.5, y: 0.9 },
+    bags: { x: 0.74, y: 0.58 },
+    accessories: { x: 0.58, y: 0.2 },
+    jewelry: { x: 0.46, y: 0.24 },
+  };
 
   for (const author of users) {
     const count = author.isFoundingCloset ? 3 : 1;
+    const theirListings = listings.filter((l) => l.ownerUid === author.uid);
+
     for (let i = 0; i < count; i += 1) {
       const ref = db.collection(COLLECTIONS.posts).doc();
-      const theirListings = listings.filter((l) => l.ownerUid === author.uid);
-      const tagged = theirListings.length > 0 && random() > 0.25 ? [pick(theirListings)] : [];
+
+      // Most looks tag something; a few are just outfit photos, which is
+      // how a real feed looks.
+      const tagged: Listing[] = [];
+      if (theirListings.length > 0 && random() > 0.2) {
+        tagged.push(theirListings[i % theirListings.length]!);
+        // Sometimes a second piece, so multi-tag rendering is covered.
+        if (theirListings.length > 1 && random() > 0.6) {
+          const second = theirListings[(i + 1) % theirListings.length]!;
+          if (second.id !== tagged[0]!.id) tagged.push(second);
+        }
+      }
+
+      const tags = tagged.map((listing) => {
+        const spot = SPOTS[listing.category];
+        tagCounts.set(listing.id, (tagCounts.get(listing.id) ?? 0) + 1);
+        tagTotal += 1;
+        return {
+          // Nudge each tag slightly so two never sit exactly on top of
+          // each other.
+          x: Math.min(0.92, Math.max(0.08, spot.x + (random() - 0.5) * 0.12)),
+          y: Math.min(0.92, Math.max(0.08, spot.y + (random() - 0.5) * 0.08)),
+          listingId: listing.id,
+          ownerUid: listing.ownerUid,
+          label: {
+            name: listing.name,
+            coverUrl: listing.coverUrl,
+            priceCents3Day: listing.pricing.threeDayCents,
+            salePriceCents: listing.salePriceCents,
+            ownerUsername: listing.owner.username,
+          },
+        };
+      });
 
       const post: Post = {
         id: ref.id,
         campusId: CAMPUS_ID,
         authorUid: author.uid,
         author: summaryOf(author),
-        // Phase 3 adds real tags; seeded posts carry none yet.
-        photos: [{ ...image(`users/${author.uid}/posts/${ref.id}/1.jpg`), tags: [] }],
+        photos: [{ ...image(`users/${author.uid}/posts/${ref.id}/1.jpg`), tags }],
         caption: pick(CAPTIONS),
-        occasions: pickSome(OCCASIONS, 2) as Occasion[],
+        // A look inherits the occasion of what it features, which is how
+        // someone would actually tag it.
+        occasions:
+          tagged.length > 0
+            ? (tagged[0]!.occasions.slice(0, 2) as Occasion[])
+            : (pickSome(OCCASIONS, 2) as Occasion[]),
         taggedListings: tagged.map((l) => ({
           listingId: l.id,
           name: l.name,
@@ -644,6 +702,12 @@ async function main(): Promise<void> {
 
     await db.collection(COLLECTIONS.users).doc(author.uid).update({ 'stats.postCount': count });
   }
+
+  // Keep each listing's tagCount honest, the way createPost would have.
+  for (const [listingId, n] of tagCounts) {
+    await db.collection(COLLECTIONS.listings).doc(listingId).update({ 'stats.tagCount': n });
+  }
+  console.warn(`Tagged ${tagTotal} pieces across ${tagCounts.size} listings`);
   console.warn(`Created ${postCount} posts`);
 
   // --- Follows, likes, saves ---------------------------------------------

@@ -111,14 +111,20 @@ makes tagging worth having.
 Either needs: a notification to the owner, a way for her to remove a tag,
 and a rule change. The data model already supports both.
 
-## What Phase 3 has to build
+## Built in Phase 3
 
-- [ ] Tap-to-place tagging while composing a post
-- [ ] A picker limited to the author's own active listings
-- [ ] Tap-photo-to-reveal labels in the feed
-- [ ] Tapping a label opens the listing, logging `tagged_item_tap`
-- [ ] A Cloud Function that keeps `taggedListingIds` / `taggedListings` in
-      step with the per-photo tags, and moves `listing.stats.tagCount`
-- [ ] The **Seen in posts** section on a listing, which is already stubbed
-      on the detail page
-- [ ] A rule asserting `tag.ownerUid == post.authorUid`, plus tests
+- [x] Tap-to-place tagging while composing a post
+- [x] A picker limited to the author's own active listings
+- [x] Tap-photo-to-reveal labels in the feed
+- [x] Tapping a label opens the listing, logging `tagged_item_tap`
+- [x] `createPost` derives `taggedListingIds` / `taggedListings` from the
+      per-photo tags and moves `listing.stats.tagCount`; `deletePost`
+      hands the counts back
+- [x] The **Seen in posts** strip on a listing
+- [x] Own-closet-only enforced in `createPost`, plus tests
+
+One change from the design: rather than a rule asserting
+`tag.ownerUid == post.authorUid`, the rules forbid the app from creating
+a post at all and `createPost` does the check. Rules cannot bump a
+counter on another document, and splitting the work would have meant two
+places that could disagree.

@@ -421,6 +421,138 @@ describe('bookings', () => {
   });
 });
 
+function postDoc(authorUid: string, overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'post-1',
+    campusId: CAMPUS,
+    authorUid,
+    author: {
+      uid: authorUid,
+      username: authorUid,
+      displayName: 'Test',
+      photoUrl: null,
+      campusId: CAMPUS,
+      isVerified: true,
+    },
+    photos: [
+      {
+        path: `users/${authorUid}/posts/post-1/1.jpg`,
+        url: 'https://example.test/p.jpg',
+        width: 1200,
+        height: 1500,
+        tags: [],
+      },
+    ],
+    caption: 'gameday fit secured',
+    occasions: ['gameday'],
+    taggedListings: [],
+    taggedListingIds: [],
+    circleId: null,
+    status: 'active',
+    stats: { likeCount: 0, saveCount: 0, viewCount: 0, tagTapCount: 0 },
+    suspendedReason: null,
+    removedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  };
+}
+
+describe('posts', () => {
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'posts', 'post-1'), postDoc(ELLA));
+    });
+  });
+
+  it('cannot be created by the app at all — createPost owns it', async () => {
+    // A post reaches outside its own document: tagging bumps tagCount on
+    // a listing, and taggedListingIds has to match the photos. Rules
+    // cannot do either, so there is exactly one path.
+    await assertFails(setDoc(doc(asElla(), 'posts', 'post-new'), postDoc(ELLA, { id: 'post-new' })));
+  });
+
+  it('lets her fix her own caption and occasions', async () => {
+    await assertSucceeds(
+      updateDoc(doc(asElla(), 'posts', 'post-1'), {
+        caption: 'rush week day three',
+        occasions: ['rush'],
+      }),
+    );
+  });
+
+  it('stops her editing someone else’s caption', async () => {
+    await assertFails(updateDoc(doc(asMaddie(), 'posts', 'post-1'), { caption: 'mine now' }));
+  });
+
+  it('stops her changing the photos or the tags after publishing', async () => {
+    await assertFails(
+      updateDoc(doc(asElla(), 'posts', 'post-1'), {
+        photos: [
+          {
+            path: 'x',
+            url: 'https://example.test/x.jpg',
+            width: 10,
+            height: 10,
+            tags: [{ x: 0.5, y: 0.5, listingId: 'listing-1', ownerUid: ELLA, label: {} }],
+          },
+        ],
+      }),
+    );
+  });
+
+  it('stops her inventing a like count', async () => {
+    await assertFails(updateDoc(doc(asElla(), 'posts', 'post-1'), { 'stats.likeCount': 900 }));
+  });
+
+  it('stops her tagging listings by editing taggedListingIds directly', async () => {
+    await assertFails(
+      updateDoc(doc(asElla(), 'posts', 'post-1'), { taggedListingIds: ['listing-1'] }),
+    );
+  });
+
+  it('stops her deleting a post outright — deletePost hands back tag counts', async () => {
+    const { deleteDoc } = await import('firebase/firestore');
+    await assertFails(deleteDoc(doc(asElla(), 'posts', 'post-1')));
+    await assertFails(updateDoc(doc(asElla(), 'posts', 'post-1'), { status: 'removed' }));
+  });
+});
+
+describe('post likes and saves', () => {
+  it('a like cannot be written by the app', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'likes', `${ELLA}_post-1`), {
+        uid: ELLA,
+        postId: 'post-1',
+        postAuthorUid: MADDIE,
+        campusId: CAMPUS,
+      }),
+    );
+  });
+
+  it('a post save cannot be written by the app', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'postSaves', `${ELLA}_post-1`), {
+        uid: ELLA,
+        postId: 'post-1',
+        campusId: CAMPUS,
+      }),
+    );
+  });
+
+  it('a post save is readable only by the person who saved it', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'postSaves', `${ELLA}_post-1`), {
+        uid: ELLA,
+        postId: 'post-1',
+        campusId: CAMPUS,
+      });
+    });
+    await assertSucceeds(getDoc(doc(asElla(), 'postSaves', `${ELLA}_post-1`)));
+    await assertFails(getDoc(doc(asMaddie(), 'postSaves', `${ELLA}_post-1`)));
+  });
+});
+
 describe('follows', () => {
   it('cannot be written by the app — follower counts would be fiction', async () => {
     await assertFails(

@@ -87,6 +87,16 @@ in the seed rather than from the admin dashboard — that is Phase 7.
 
 ### Known simplifications to revisit
 
+- **The Following feed filters instead of querying.** Firestore's `in`
+  operator caps at thirty values, so querying by author breaks for anyone
+  following more than thirty closets. The real fix is a fan-out feed: a
+  Cloud Function writes each new post into its followers' own feed
+  collections. Right at scale, far too much machinery for a campus with a
+  few hundred posts.
+- **Tag labels are snapshots.** A price change does not update the label
+  already stored on a post. Tapping it opens the live listing, so nobody
+  can act on a stale number. See docs/post-tagging.md.
+
 - **Repeat views count.** `countListingView` increments on every view by
   anyone who is not the owner, so one person opening a listing five times
   adds five. Deduplicating needs a record per viewer per listing, which is
@@ -111,16 +121,17 @@ A Cloud Function mirrors listings into the index on every change and the
 app queries that instead. Roughly a day's work. Check the listing count per
 campus on the admin dashboard before each term starts.
 
-## Phase 3 — Social
+## Phase 3 — Social ✅
 
-- Post a Look: photos, caption, occasion tags
-- Tagging listings in a post, and tapping through to rent — the data model
-  is already designed and documented in [post-tagging.md](./post-tagging.md);
-  at launch you may only tag your own pieces
-- Home feed, Explore vs Following tabs, campus filter
-- Follow, like, save
-- The engagement metrics that answer MVP question 2 start producing real
-  numbers here
+- [x] Post a Look: photos, caption, occasion tags
+- [x] Instagram-style tagging, own closet only, enforced server-side —
+      see [post-tagging.md](./post-tagging.md)
+- [x] Paged campus feed with All Campus / Following
+- [x] Like and save posts, counts via Cloud Functions
+- [x] Profile Posts tab; edit caption and delete her own looks
+- [x] "Seen in posts" on a listing
+- [x] The engagement metrics that answer MVP question 2 now produce real
+      numbers: `tagged_item_tap` is the headline one
 
 ## Phase 4 — Rentals
 
