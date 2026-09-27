@@ -16,6 +16,10 @@
  *   - save / unsave      the only way a listing's save count ever moves
  *   - removeListing      hides a listing, never deletes it, and refuses
  *                        while a rental is in flight
+ *   - createPost         validates tags, derives the flattened ids and
+ *                        moves tagCount — all in one write
+ *   - deletePost         soft delete, handing back the tag counts
+ *   - likePost / savePost and their undos
  *   - requestBooking     the double-booking-proof rental request
  *
  * Background triggers:
@@ -36,12 +40,14 @@ export { changeUsername } from './auth/changeUsername';
 export { follow, unfollow } from './social/follow';
 export { removeListing } from './listings/removeListing';
 export { saveListing, unsaveListing } from './social/save';
+export { createPost } from './posts/createPost';
+export { deletePost } from './posts/deletePost';
+export { likePost, unlikePost, savePost, unsavePost } from './social/postEngagement';
 export { countListingView } from './triggers/countListingView';
 export { propagateProfileChanges } from './triggers/propagateProfileChanges';
 export { requestBooking } from './bookings/requestBooking';
 
 // --- Later phases -----------------------------------------------------------
-// export { likePost, unlikePost }    from './social/like';        // Phase 3
 // export { saveListing }             from './social/save';        // Phase 3
 // export { respondToBooking }        from './bookings/respond';   // Phase 4
 // export { confirmHandoff }          from './bookings/handoff';   // Phase 4

@@ -15,16 +15,14 @@ import { Logo } from '../src/components/Logo';
 interface Option {
   title: string;
   body: string;
-  /** Null while the destination is a later phase. */
-  href: '/add-to-closet' | null;
+  href: '/add-to-closet' | '/post-look';
 }
 
 const OPTIONS: Option[] = [
   {
     title: 'Post a look',
     body: 'Show off an outfit. Tag the pieces from your closet.',
-    // TODO-PHASE3: posting looks.
-    href: null,
+    href: '/post-look',
   },
   {
     title: 'Add to my closet',
@@ -62,7 +60,7 @@ export default function PostSheet() {
           accessibilityRole="button"
           onPress={() => {
             router.back();
-            if (option.href) router.push(option.href);
+            router.push(option.href);
           }}
         >
           <View style={styles.optionIcon} />

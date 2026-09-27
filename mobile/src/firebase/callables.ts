@@ -6,6 +6,7 @@
  */
 
 import { httpsCallable } from 'firebase/functions';
+import type { Occasion } from '@loane/shared';
 import { functions } from './config';
 
 /**
@@ -62,6 +63,39 @@ export const saveListing = httpsCallable<{ listingId: string }, { saved: boolean
 export const unsaveListing = httpsCallable<{ listingId: string }, { saved: boolean }>(
   functions,
   'unsaveListing',
+);
+
+/**
+ * Posts are created server-side: tagging a garment moves a counter on that
+ * listing, and the flattened tag ids have to agree with the photos.
+ */
+export const createPost = httpsCallable<
+  {
+    photos: { path: string; url: string; width: number; height: number; tags: PostTagInput[] }[];
+    caption: string;
+    occasions: Occasion[];
+  },
+  { postId: string }
+>(functions, 'createPost');
+
+export interface PostTagInput {
+  listingId: string;
+  /** Fraction of the photo, 0-1. Never pixels. */
+  x: number;
+  y: number;
+}
+
+export const deletePost = httpsCallable<{ postId: string }, { ok: true }>(functions, 'deletePost');
+
+export const likePost = httpsCallable<{ postId: string }, { on: boolean }>(functions, 'likePost');
+export const unlikePost = httpsCallable<{ postId: string }, { on: boolean }>(
+  functions,
+  'unlikePost',
+);
+export const savePost = httpsCallable<{ postId: string }, { on: boolean }>(functions, 'savePost');
+export const unsavePost = httpsCallable<{ postId: string }, { on: boolean }>(
+  functions,
+  'unsavePost',
 );
 
 export const requestBooking = httpsCallable<

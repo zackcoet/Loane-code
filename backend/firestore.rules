@@ -244,20 +244,28 @@ service cloud.firestore {
     match /posts/{postId} {
       allow read: if signedIn();
 
-      allow create: if isVerifiedStudent()
-        && request.resource.data.authorUid == uid()
-        && request.resource.data.campusId == existingUser().campusId
-        && request.resource.data.status == 'active'
-        && request.resource.data.stats.likeCount == 0
-        && request.resource.data.stats.saveCount == 0
-        && request.resource.data.stats.viewCount == 0
-        && request.resource.data.stats.tagTapCount == 0;
+      // Posts are created ONLY by the createPost function.
+      //
+      // Unlike a listing, a post reaches outside its own document: tagging
+      // a garment bumps tagCount on that listing, and taggedListingIds has
+      // to agree with the tags actually pinned to the photos. Rules cannot
+      // do either, so there is one path and it is server-side.
+      allow create: if false;
 
+      // She may fix the caption and the occasions. Nothing else — the
+      // photos carry the tags, and changing those has to move counters.
       allow update: if isActive()
         && resource.data.authorUid == uid()
-        && !changed().hasAny(['authorUid', 'campusId', 'stats', 'suspendedReason', 'createdAt'])
-        && request.resource.data.status in ['active', 'removed'];
+        && onlyChanges(['caption', 'occasions', 'updatedAt'])
+        && request.resource.data.caption is string
+        && request.resource.data.caption.size() <= 1000
+        && request.resource.data.occasions is list
+        && request.resource.data.occasions.size() <= 8;
 
+      // Taking a post down hands back the tag counts it was holding, so
+      // that also goes through a function. Nothing is ever hard-deleted:
+      // a post's likes and tap-throughs are evidence for whether the
+      // social side drives rentals.
       allow delete: if false;
     }
 
