@@ -18,6 +18,14 @@ export interface Campus extends BaseDoc {
   emailDomains: string[];
   city: string;
   state: string;
+  /**
+   * The school's color, used for the small dot beside the campus name.
+   * Stored per campus so a new school needs no code change.
+   *
+   * We use the color and never the official logo — university marks are
+   * trademarked and we have no license to display them.
+   */
+  brandColor: string;
   /** Whether students may sign up for this campus yet. */
   isLive: boolean;
   /** Counts kept up to date by Cloud Functions. Never written by the app. */

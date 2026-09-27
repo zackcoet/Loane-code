@@ -4,8 +4,9 @@
  */
 
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '@loane/shared';
+import { StyleSheet, Text, View } from 'react-native';
+import { colors, controls, spacing, typography } from '@loane/shared';
+import { IconButton } from '../../src/components/IconButton';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Screen } from '../../src/components/Screen';
 
@@ -17,14 +18,11 @@ export default function Activity() {
       <View style={styles.header}>
         <View style={styles.headerSpacer} />
         <Text style={styles.title}>Activity</Text>
-        <Pressable
+        <IconButton
+          glyph="✉"
           onPress={() => router.push('/messages')}
-          hitSlop={12}
-          accessibilityRole="button"
           accessibilityLabel="Messages"
-        >
-          <Text style={styles.glyph}>✉</Text>
-        </Pressable>
+        />
       </View>
 
       {/* TODO-PHASE6: notifications list. */}
@@ -38,20 +36,19 @@ export default function Activity() {
 
 const styles = StyleSheet.create({
   header: {
-    height: 52,
+    height: controls.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  headerSpacer: { width: 22 },
+  headerSpacer: { width: controls.minTapTarget },
   title: {
     fontSize: typography.label.size,
     letterSpacing: typography.label.letterSpacing,
     textTransform: 'uppercase',
     color: colors.textPrimary,
   },
-  glyph: { fontSize: 18, color: colors.black },
 });

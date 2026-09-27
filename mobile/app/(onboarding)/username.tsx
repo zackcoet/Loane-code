@@ -99,7 +99,7 @@ export default function ClaimUsername() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.body}>
-          <Logo size={40} showWordmark={false} />
+          <Logo size={44} lockup="mark" />
           <Text style={[text.h2, styles.heading]}>Hi {firstName || 'there'},</Text>
           <Text style={text.label}>Claim your username</Text>
           <Text style={[text.small, styles.explainer]}>

@@ -1,32 +1,32 @@
 /**
  * The side menu from the mockups.
  *
- * Most destinations are later phases, so tapping them does nothing yet
- * rather than dead-ending on a broken screen. Log Out works today.
+ * Every row goes somewhere. The ones whose real screens are later phases
+ * land on a small "coming in Phase N" placeholder rather than dead-ending
+ * on nothing — a row that does nothing feels broken.
  */
 
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { signOut } from 'firebase/auth';
-import { colors, spacing, typography } from '@loane/shared';
+import { colors, controls, spacing, typography } from '@loane/shared';
+import { IconButton } from '../src/components/IconButton';
 import { Logo } from '../src/components/Logo';
 import { auth } from '../src/firebase/config';
 
 interface Item {
   label: string;
-  href?: string;
-  /** Which phase builds it. Shown as a quiet "soon" while unbuilt. */
-  soon?: boolean;
+  href: Href;
 }
 
 const ITEMS: Item[] = [
-  { label: 'My Listings', soon: true },
+  { label: 'My Listings', href: '/my-listings' },
   { label: 'My Rentals', href: '/my-rentals' },
-  { label: 'My Wishlist', soon: true },
+  { label: 'My Wishlist', href: '/my-wishlist' },
   { label: 'Activity', href: '/(tabs)/activity' },
-  { label: 'Find Friends', soon: true },
-  { label: 'Invite Friends', soon: true },
-  { label: 'Payouts & Payment Info', soon: true },
+  { label: 'Find Friends', href: '/find-friends' },
+  { label: 'Invite Friends', href: '/invite-friends' },
+  { label: 'Payouts & Payment Info', href: '/payouts' },
   { label: 'Safety', href: '/help' },
   { label: 'Help & Support', href: '/help' },
 ];
@@ -37,35 +37,25 @@ export default function Menu() {
   return (
     <View style={styles.sheet}>
       <View style={styles.header}>
-        <Logo size={24} />
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Close menu"
-        >
-          <Text style={styles.close}>✕</Text>
-        </Pressable>
+        <Logo size={30} lockup="below" />
+        <IconButton glyph="✕" onPress={() => router.back()} accessibilityLabel="Close menu" />
       </View>
 
       <ScrollView>
         {ITEMS.map((item) => (
           <Pressable
             key={item.label}
-            style={styles.row}
+            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             accessibilityRole="button"
-            disabled={item.soon}
-            onPress={() => {
-              if (item.href) router.push(item.href as never);
-            }}
+            onPress={() => router.push(item.href)}
           >
-            <Text style={[styles.rowLabel, item.soon && styles.rowLabelSoon]}>{item.label}</Text>
-            {item.soon ? <Text style={styles.soon}>Soon</Text> : null}
+            <Text style={styles.rowLabel}>{item.label}</Text>
+            <Text style={styles.chevron}>›</Text>
           </Pressable>
         ))}
 
         <Pressable
-          style={[styles.row, styles.logOut]}
+          style={({ pressed }) => [styles.row, styles.logOut, pressed && styles.rowPressed]}
           accessibilityRole="button"
           onPress={async () => {
             router.back();
@@ -88,23 +78,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
   },
-  close: { fontSize: 18, color: colors.black },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
+    minHeight: controls.minTapTarget + 12,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
+  rowPressed: { backgroundColor: colors.surfaceMuted },
   rowLabel: { fontSize: typography.body.size, color: colors.textPrimary },
-  rowLabelSoon: { color: colors.textMuted },
-  soon: {
-    fontSize: 9,
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    color: colors.textMuted,
-  },
+  chevron: { fontSize: 22, color: colors.textMuted },
   logOut: { marginTop: spacing.lg },
 });

@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
   },
   sectionBody: {
     marginTop: spacing.md,
-    fontSize: typography.bodySmall.size,
+    fontSize: typography.body.size,
     color: colors.textMuted,
     textAlign: 'center',
   },

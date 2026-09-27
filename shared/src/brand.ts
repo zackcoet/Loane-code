@@ -36,6 +36,13 @@ export const colors = {
   disabled: '#EFEFEF',
   disabledText: '#B0B0B0',
 
+  /**
+   * Fallback for the campus dot next to the campus name. Real campuses
+   * carry their own `brandColor` in Firestore — USC's is garnet #73000A.
+   * We use the school's color, never its logo, which is trademarked.
+   */
+  campusDotFallback: '#111111',
+
   // Status colors, used sparingly (booking states, errors).
   success: '#1F7A4D',
   warning: '#B8860B',
@@ -66,14 +73,54 @@ export const fontPlaceholders = {
 } as const;
 
 export const typography = {
-  h1: { size: 28, lineHeight: 34, weight: '700' },
-  h2: { size: 22, lineHeight: 28, weight: '700' },
-  h3: { size: 18, lineHeight: 24, weight: '600' },
-  body: { size: 15, lineHeight: 22, weight: '400' },
-  bodySmall: { size: 13, lineHeight: 18, weight: '400' },
+  h1: { size: 32, lineHeight: 38, weight: '700' },
+  h2: { size: 26, lineHeight: 32, weight: '700' },
+  h3: { size: 20, lineHeight: 26, weight: '600' },
+  body: { size: 17, lineHeight: 24, weight: '400' },
+  bodySmall: { size: 15, lineHeight: 21, weight: '400' },
   /** Small uppercase letter-spaced label, e.g. "SIGN IN TO YOUR CLOSET". */
-  label: { size: 11, lineHeight: 14, weight: '500', letterSpacing: 1.6 },
-  button: { size: 13, lineHeight: 16, weight: '600', letterSpacing: 1.2 },
+  label: { size: 12, lineHeight: 16, weight: '500', letterSpacing: 1.4 },
+  /** The smallest text we allow anywhere — stat captions, tab labels. */
+  caption: { size: 11, lineHeight: 14, weight: '500', letterSpacing: 1 },
+  button: { size: 15, lineHeight: 20, weight: '600', letterSpacing: 1.2 },
+} as const;
+
+/**
+ * Icon sizes.
+ *
+ * The app reads as "clean and minimal", not "small". These are sized against
+ * what a real social app uses — Instagram's tab icons sit around 26-28pt —
+ * so nothing feels undersized on a phone.
+ */
+export const icons = {
+  /** Inline with text, e.g. a chevron in a list row. */
+  sm: 18,
+  /** Top bar: hamburger, search, settings, mail. */
+  md: 26,
+  /** Bottom tab bar. */
+  lg: 28,
+} as const;
+
+/**
+ * Control sizing and tap targets.
+ *
+ * `minTapTarget` is Apple's recommended minimum (44x44pt). Every button and
+ * icon in the app must meet it, using hit slop where the glyph itself is
+ * smaller than the target.
+ */
+export const controls = {
+  minTapTarget: 44,
+  buttonHeight: 56,
+  buttonHeightSmall: 44,
+  inputHeight: 48,
+  /** Bottom tab bar, excluding the home-indicator safe area. */
+  tabBarHeight: 92,
+  /** The circular + in the middle of the tab bar. */
+  tabBarPlus: 46,
+  /** Top bar row height. */
+  headerHeight: 56,
+  /** Single-line rounded chip, e.g. the occasion filters on Discover. */
+  chipHeight: 34,
 } as const;
 
 export const spacing = {
@@ -83,6 +130,7 @@ export const spacing = {
   lg: 24,
   xl: 32,
   xxl: 48,
+  xxxl: 64,
   screenPadding: 24,
 } as const;
 
@@ -111,6 +159,8 @@ export const brand = {
   colors,
   fonts,
   typography,
+  icons,
+  controls,
   spacing,
   radii,
   borders,

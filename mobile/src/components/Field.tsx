@@ -5,7 +5,7 @@
  */
 
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
-import { colors, spacing, typography } from '@loane/shared';
+import { colors, controls, spacing, typography } from '@loane/shared';
 
 interface Props extends TextInputProps {
   error?: string | null;
@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   input: {
-    height: 44,
+    height: controls.inputHeight,
     fontSize: typography.body.size,
     color: colors.textPrimary,
     borderBottomWidth: 1,
@@ -50,6 +50,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   inputError: { borderBottomColor: colors.danger },
-  error: { marginTop: spacing.sm, fontSize: 12, color: colors.danger },
-  hint: { marginTop: spacing.sm, fontSize: 12, color: colors.textMuted },
+  error: { marginTop: spacing.sm, fontSize: typography.bodySmall.size, color: colors.danger },
+  hint: { marginTop: spacing.sm, fontSize: typography.bodySmall.size, color: colors.textMuted },
 });

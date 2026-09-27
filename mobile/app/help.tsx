@@ -77,10 +77,15 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
-  cardTitle: { fontSize: typography.bodySmall.size, fontWeight: '600', color: colors.textPrimary },
-  cardBody: { fontSize: 12, lineHeight: 18, color: colors.textSecondary, marginTop: 4 },
+  cardTitle: { fontSize: typography.body.size, fontWeight: '600', color: colors.textPrimary },
+  cardBody: {
+    fontSize: typography.bodySmall.size,
+    lineHeight: typography.bodySmall.lineHeight,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
   sectionLabel: { marginTop: spacing.lg, marginBottom: spacing.sm },
-  link: { fontSize: typography.bodySmall.size, color: colors.textPrimary },
+  link: { fontSize: typography.body.size, color: colors.textPrimary },
   emergency: {
     marginTop: spacing.lg,
     borderWidth: 1,
@@ -88,6 +93,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceMuted,
     padding: spacing.md,
   },
-  emergencyTitle: { fontSize: typography.bodySmall.size, fontWeight: '600', color: colors.ink },
-  emergencyBody: { fontSize: 12, lineHeight: 18, color: colors.textSecondary, marginTop: 4 },
+  emergencyTitle: { fontSize: typography.body.size, fontWeight: '600', color: colors.ink },
+  emergencyBody: {
+    fontSize: typography.bodySmall.size,
+    lineHeight: typography.bodySmall.lineHeight,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
 });

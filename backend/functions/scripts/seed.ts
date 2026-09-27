@@ -20,7 +20,7 @@
  */
 
 import { initializeApp, deleteApp } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
+import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firestore';
 import {
   CATEGORIES,
@@ -151,12 +151,13 @@ const CAPTIONS = [
   'graduation photos',
 ];
 
-/** A tiny grey placeholder so images render without external hosting. */
+/**
+ * A tiny warm-grey PNG, inlined so seeded photos render with no hosting and
+ * no network. React Native's <Image> cannot render an SVG data URI, which is
+ * why this is a PNG rather than the obvious one-line SVG.
+ */
 const PLACEHOLDER =
-  'data:image/svg+xml;utf8,' +
-  encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800"><rect width="600" height="800" fill="#EDEAE4"/></svg>',
-  );
+  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mPsauj6DwAFVwJMzKtHDgAAAABJRU5ErkJggg==';
 
 function image(path: string) {
   return { path, url: PLACEHOLDER, width: 600, height: 800, bytes: 1024 };
@@ -177,15 +178,27 @@ function summaryOf(u: User) {
 // Seed
 // ---------------------------------------------------------------------------
 
-async function clear(db: Firestore): Promise<void> {
-  const collections = Object.values(COLLECTIONS);
-  for (const name of collections) {
+async function clear(db: Firestore, auth: Auth): Promise<void> {
+  for (const name of Object.values(COLLECTIONS)) {
     const snap = await db.collection(name).limit(500).get();
     if (snap.empty) continue;
     const batch = db.batch();
     snap.docs.forEach((d) => batch.delete(d.ref));
     await batch.commit();
   }
+
+  // Auth users are NOT stored in Firestore, so wiping collections alone
+  // leaves the accounts behind and a second seed run dies on
+  // "email-already-exists". Clearing both is what makes the seed re-runnable.
+  // Safe because assertEmulators() has already refused to run anywhere real.
+  let pageToken: string | undefined;
+  do {
+    const page = await auth.listUsers(1000, pageToken);
+    if (page.users.length > 0) {
+      await auth.deleteUsers(page.users.map((u) => u.uid));
+    }
+    pageToken = page.pageToken;
+  } while (pageToken);
 }
 
 async function main(): Promise<void> {
@@ -195,8 +208,8 @@ async function main(): Promise<void> {
   const db = getFirestore(app);
   const auth = getAuth(app);
 
-  console.warn('Clearing existing emulator data…');
-  await clear(db);
+  console.warn('Clearing existing emulator data (Firestore + Auth)…');
+  await clear(db, auth);
 
   // --- Campus -------------------------------------------------------------
   const campus: Omit<Campus, 'createdAt' | 'updatedAt'> = {
@@ -206,6 +219,8 @@ async function main(): Promise<void> {
     emailDomains: ['sc.edu', 'email.sc.edu'],
     city: 'Columbia',
     state: 'SC',
+    // USC garnet. The color only — never the university's logo.
+    brandColor: '#73000A',
     isLive: true,
     stats: {
       userCount: 0,

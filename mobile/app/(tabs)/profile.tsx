@@ -9,7 +9,8 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '@loane/shared';
+import { colors, controls, spacing, typography } from '@loane/shared';
+import { IconButton } from '../../src/components/IconButton';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Screen } from '../../src/components/Screen';
 import { useAuth } from '../../src/auth/AuthProvider';
@@ -48,14 +49,7 @@ export default function Profile() {
     <Screen flush>
       <View style={styles.header}>
         <Text style={styles.handle}>@{profile.username}</Text>
-        <Pressable
-          onPress={() => router.push('/menu')}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Settings"
-        >
-          <Text style={styles.glyph}>⚙</Text>
-        </Pressable>
+        <IconButton glyph="⚙" onPress={() => router.push('/menu')} accessibilityLabel="Settings" />
       </View>
 
       <View style={styles.identity}>
@@ -105,7 +99,7 @@ export default function Profile() {
 
 const styles = StyleSheet.create({
   header: {
-    height: 52,
+    height: controls.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -116,19 +110,18 @@ const styles = StyleSheet.create({
     letterSpacing: typography.label.letterSpacing,
     color: colors.textPrimary,
   },
-  glyph: { fontSize: 18, color: colors.black },
   identity: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: colors.surfaceMuted,
     borderWidth: 1,
     borderColor: colors.border,
   },
   identityText: { marginLeft: spacing.md, flex: 1 },
-  campus: { fontSize: 12, color: colors.textSecondary, marginTop: 2 },
-  rating: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  campus: { fontSize: typography.bodySmall.size, color: colors.textSecondary, marginTop: 2 },
+  rating: { fontSize: typography.bodySmall.size, color: colors.textMuted, marginTop: 2 },
   bio: { paddingHorizontal: spacing.md, marginTop: spacing.md },
   statsRow: {
     flexDirection: 'row',
@@ -138,10 +131,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   stat: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
-  statValue: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
+  statValue: { fontSize: 18, fontWeight: '600', color: colors.textPrimary },
   statLabel: {
-    fontSize: 9,
-    letterSpacing: 1,
+    fontSize: typography.caption.size,
+    letterSpacing: typography.caption.letterSpacing,
     textTransform: 'uppercase',
     color: colors.textMuted,
     marginTop: 2,

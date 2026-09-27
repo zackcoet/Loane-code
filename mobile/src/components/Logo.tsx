@@ -4,46 +4,63 @@
  * Drawn rather than imported as an image so it stays crisp at any size and
  * we are not blocked on an asset export.
  *
- * At large sizes the wordmark sits across the circles, as on the splash
- * screen. Below `WORDMARK_INSIDE_MIN` the letters would be illegible inside
- * the rings, so it drops below the mark instead — which is how the header
- * lockup looks in the mockups.
+ * Two lockups, matching the mockups:
+ *
+ *   - `across` (the splash): the letters sit on the circles, widely spaced.
+ *     The circles are drawn WIDER than they are tall so the five letters get
+ *     room — squeezing them into two touching circles is what made the old
+ *     version look cramped.
+ *   - `below` (headers): the mark on top, LOANE letter-spaced underneath.
+ *     Used automatically at small sizes, where letters inside the rings
+ *     would be unreadable.
  */
 
 import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '@loane/shared';
 
-/** Smallest circle diameter that can carry the wordmark inside it. */
-const WORDMARK_INSIDE_MIN = 56;
+/** Below this circle diameter the wordmark always drops beneath the mark. */
+const WORDMARK_INSIDE_MIN = 64;
+
+type Lockup = 'auto' | 'across' | 'below' | 'mark';
 
 interface Props {
+  /** Diameter of one circle, in points. */
   size?: number;
-  showWordmark?: boolean;
+  lockup?: Lockup;
   color?: string;
 }
 
-export function Logo({ size = 96, showWordmark = true, color = colors.black }: Props) {
+export function Logo({ size = 96, lockup = 'auto', color = colors.black }: Props) {
   const diameter = size;
-  const overlap = diameter * 0.42;
-  const width = diameter * 2 - overlap;
-  const inside = diameter >= WORDMARK_INSIDE_MIN;
+  // A generous overlap keeps the classic interlocking-rings silhouette.
+  const overlap = diameter * 0.38;
+  const markWidth = diameter * 2 - overlap;
+
+  const resolved: Lockup =
+    lockup === 'auto' ? (diameter >= WORDMARK_INSIDE_MIN ? 'across' : 'below') : lockup;
 
   const circle = {
     width: diameter,
     height: diameter,
     borderRadius: diameter / 2,
-    borderWidth: Math.max(1, diameter * 0.012),
+    borderWidth: Math.max(1, diameter * 0.014),
     borderColor: color,
   };
 
   const mark = (
-    <View style={[styles.mark, { width, height: diameter }]}>
+    <View style={[styles.mark, { width: markWidth, height: diameter }]}>
       <View style={[styles.circle, circle, { left: 0 }]} />
       <View style={[styles.circle, circle, { left: diameter - overlap }]} />
-      {showWordmark && inside ? (
-        <View style={[styles.wordmarkRow, { width }]}>
+      {resolved === 'across' ? (
+        <View style={[styles.acrossRow, { width: markWidth }]}>
           {['L', 'O', 'A', 'N', 'E'].map((letter) => (
-            <Text key={letter} style={[styles.letter, { fontSize: diameter * 0.26, color }]}>
+            <Text
+              key={letter}
+              style={[
+                styles.letter,
+                { fontSize: diameter * 0.3, lineHeight: diameter * 0.36, color },
+              ]}
+            >
               {letter}
             </Text>
           ))}
@@ -52,12 +69,17 @@ export function Logo({ size = 96, showWordmark = true, color = colors.black }: P
     </View>
   );
 
-  if (!showWordmark || inside) return mark;
+  if (resolved !== 'below') return mark;
 
   return (
     <View style={styles.stack}>
       {mark}
-      <Text style={[styles.wordmarkBelow, { fontSize: Math.max(9, diameter * 0.42), color }]}>
+      <Text
+        style={[
+          styles.wordmarkBelow,
+          { fontSize: Math.max(11, diameter * 0.4), color },
+        ]}
+      >
         LOANE
       </Text>
     </View>
@@ -68,13 +90,17 @@ const styles = StyleSheet.create({
   stack: { alignItems: 'center' },
   mark: { position: 'relative', alignItems: 'center', justifyContent: 'center' },
   circle: { position: 'absolute', top: 0 },
-  wordmarkRow: {
+  acrossRow: {
     position: 'absolute',
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
+    // space-around gives the outer letters breathing room against the rings;
+    // space-evenly pushed L and E too close to the edges.
+    justifyContent: 'space-around',
     alignItems: 'center',
     height: '100%',
+    // Slight inset so L and E sit inside the circle edges.
+    paddingHorizontal: '6%',
   },
-  letter: { fontWeight: '400', letterSpacing: 1 },
-  wordmarkBelow: { marginTop: 4, letterSpacing: 3, fontWeight: '400' },
+  letter: { fontWeight: '400', letterSpacing: 2 },
+  wordmarkBelow: { marginTop: 5, letterSpacing: 4, fontWeight: '500' },
 });

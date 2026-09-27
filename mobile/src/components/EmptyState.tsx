@@ -46,11 +46,11 @@ const styles = StyleSheet.create({
   },
   body: {
     marginTop: spacing.md,
-    fontSize: typography.bodySmall.size,
-    lineHeight: typography.bodySmall.lineHeight,
+    fontSize: typography.body.size,
+    lineHeight: typography.body.lineHeight,
     color: colors.textMuted,
     textAlign: 'center',
-    maxWidth: 260,
+    maxWidth: 300,
   },
-  action: { marginTop: spacing.lg, minWidth: 180 },
+  action: { marginTop: spacing.xl, minWidth: 220 },
 });

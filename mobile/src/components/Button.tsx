@@ -4,7 +4,7 @@
  */
 
 import { ActivityIndicator, Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
-import { colors, radii, spacing, typography } from '@loane/shared';
+import { colors, controls, radii, spacing, typography } from '@loane/shared';
 
 type Variant = 'primary' | 'outline' | 'text';
 
@@ -62,7 +62,7 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    height: 52,
+    height: controls.buttonHeight,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.black,
   },
-  textOnly: { height: 40, backgroundColor: 'transparent' },
+  textOnly: { height: controls.minTapTarget, backgroundColor: 'transparent' },
   primaryDisabled: { backgroundColor: colors.disabled },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.8 },

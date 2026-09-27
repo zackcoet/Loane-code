@@ -1,99 +1,95 @@
 /**
  * Feed — the social home. Outfit posts from her campus.
  *
- * Phase 0: header, campus filter and the empty state. The feed itself is
- * Phase 3.
+ * Posts come live from Firestore, scoped to her campusId and to active
+ * status. Tapping a tagged garment logs `tagged_item_tap`, which is the
+ * headline metric for MVP question 2: the social side handing the
+ * marketplace a customer.
  */
 
+import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '@loane/shared';
+import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
+import { colors, controls, spacing } from '@loane/shared';
+import { CampusChip } from '../../src/components/CampusChip';
 import { EmptyState } from '../../src/components/EmptyState';
+import { IconButton } from '../../src/components/IconButton';
 import { Logo } from '../../src/components/Logo';
+import { PostCard } from '../../src/components/PostCard';
 import { Screen } from '../../src/components/Screen';
-import { useAuth } from '../../src/auth/AuthProvider';
+import { usePosts } from '../../src/hooks/useFeed';
+import { logEvent } from '../../src/analytics/events';
 
 export default function Feed() {
   const router = useRouter();
-  const { profile } = useAuth();
+  const { items: posts, loading, error } = usePosts();
+
+  const onPressTag = useCallback((listingId: string) => {
+    // The metric that tells us whether the social feed drives rentals.
+    logEvent('tagged_item_tap', {
+      surface: 'feed',
+      targetType: 'listing',
+      targetId: listingId,
+    });
+    // TODO-PHASE2: open the listing detail screen.
+  }, []);
 
   return (
     <Screen flush>
       <View style={styles.header}>
-        <Pressable
-          onPress={() => router.push('/menu')}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Open menu"
-        >
-          <Text style={styles.menuGlyph}>≡</Text>
-        </Pressable>
-        <Logo size={20} />
-        <View style={styles.headerSpacer} />
+        <IconButton glyph="≡" onPress={() => router.push('/menu')} accessibilityLabel="Open menu" />
+        <Logo size={30} lockup="below" />
+        <IconButton
+          glyph="⌕"
+          onPress={() => router.push('/(tabs)/discover')}
+          accessibilityLabel="Search"
+        />
       </View>
 
       <View style={styles.filterRow}>
-        <Pressable style={styles.campusChip} accessibilityRole="button">
-          <View style={styles.campusDot} />
-          <Text style={styles.campusText}>All Campus</Text>
-          <Text style={styles.chevron}>⌄</Text>
-        </Pressable>
-        <Pressable hitSlop={12} accessibilityRole="button" accessibilityLabel="Search">
-          <Text style={styles.searchGlyph}>⌕</Text>
-        </Pressable>
+        <CampusChip />
       </View>
 
-      {/* TODO-PHASE3: the real feed. */}
-      <EmptyState
-        title="No looks yet"
-        body={
-          profile
-            ? 'Be the first to post an outfit from your campus.'
-            : 'Be the first to post an outfit from your campus.'
-        }
-        actionLabel="Post a look"
-        onAction={() => router.push('/post-sheet')}
-      />
+      {loading ? (
+        <View style={styles.loading}>
+          <ActivityIndicator color={colors.black} />
+        </View>
+      ) : error ? (
+        <EmptyState title="Couldn't load your feed" body={error} />
+      ) : posts.length === 0 ? (
+        <EmptyState
+          title="No looks yet"
+          body="Be the first to post an outfit from your campus."
+          actionLabel="Post a look"
+          onAction={() => router.push('/post-sheet')}
+        />
+      ) : (
+        <FlatList
+          data={posts}
+          keyExtractor={(post) => post.id}
+          renderItem={({ item }) => <PostCard post={item} onPressTag={onPressTag} />}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   header: {
-    height: 52,
+    height: controls.headerHeight + 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
-  headerSpacer: { width: 22 },
-  menuGlyph: { fontSize: 22, color: colors.black },
   filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  campusChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 999,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-  },
-  campusDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: colors.black,
-    marginRight: spacing.sm,
-  },
-  campusText: { fontSize: typography.bodySmall.size, color: colors.textPrimary },
-  chevron: { marginLeft: 6, fontSize: 12, color: colors.textSecondary },
-  searchGlyph: { fontSize: 20, color: colors.black },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list: { paddingTop: spacing.md, paddingBottom: spacing.xxl },
 });

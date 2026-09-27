@@ -76,6 +76,11 @@ function RootNavigator() {
       <Stack.Screen name="help" options={{ presentation: 'card' }} />
       <Stack.Screen name="messages" options={{ presentation: 'card' }} />
       <Stack.Screen name="my-rentals" options={{ presentation: 'card' }} />
+      <Stack.Screen name="my-listings" options={{ presentation: 'card' }} />
+      <Stack.Screen name="my-wishlist" options={{ presentation: 'card' }} />
+      <Stack.Screen name="find-friends" options={{ presentation: 'card' }} />
+      <Stack.Screen name="invite-friends" options={{ presentation: 'card' }} />
+      <Stack.Screen name="payouts" options={{ presentation: 'card' }} />
     </Stack>
   );
 }

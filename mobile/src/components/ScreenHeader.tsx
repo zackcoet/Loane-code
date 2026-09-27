@@ -4,8 +4,9 @@
  */
 
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '@loane/shared';
+import { StyleSheet, Text, View } from 'react-native';
+import { IconButton } from './IconButton';
+import { colors, controls, icons, typography } from '@loane/shared';
 
 interface Props {
   title: string;
@@ -18,9 +19,7 @@ export function ScreenHeader({ title, onBack, right }: Props) {
     <View style={styles.row}>
       <View style={styles.side}>
         {onBack ? (
-          <Pressable onPress={onBack} accessibilityRole="button" accessibilityLabel="Go back" hitSlop={12}>
-            <Text style={styles.chevron}>‹</Text>
-          </Pressable>
+          <IconButton glyph="‹" onPress={onBack} accessibilityLabel="Go back" size={icons.lg} />
         ) : null}
       </View>
       <Text style={styles.title} numberOfLines={1}>
@@ -33,15 +32,14 @@ export function ScreenHeader({ title, onBack, right }: Props) {
 
 const styles = StyleSheet.create({
   row: {
-    height: 52,
+    height: controls.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  side: { width: 44, justifyContent: 'center' },
+  side: { width: controls.minTapTarget, justifyContent: 'center' },
   right: { alignItems: 'flex-end' },
-  chevron: { fontSize: 30, lineHeight: 34, color: colors.black },
   title: {
     flex: 1,
     textAlign: 'center',
@@ -50,5 +48,4 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     color: colors.textPrimary,
   },
-  spacer: { width: spacing.md },
 });

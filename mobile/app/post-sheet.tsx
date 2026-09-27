@@ -34,7 +34,7 @@ export default function PostSheet() {
       <View style={styles.handleRow}>
         <View style={styles.spacer} />
         <View style={styles.center}>
-          <Logo size={26} showWordmark={false} />
+          <Logo size={30} lockup="mark" />
           <Text style={styles.kicker}>Share</Text>
         </View>
         <Pressable
@@ -89,14 +89,15 @@ const styles = StyleSheet.create({
   option: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 76,
     borderWidth: 1,
     borderColor: colors.border,
     padding: spacing.md,
     marginTop: spacing.md,
   },
   optionIcon: {
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     borderWidth: 1,
     borderColor: colors.border,
     marginRight: spacing.md,
@@ -108,6 +109,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     color: colors.textPrimary,
   },
-  optionBody: { fontSize: 12, color: colors.textSecondary, marginTop: 4 },
-  chevron: { fontSize: 20, color: colors.textMuted },
+  optionBody: { fontSize: typography.bodySmall.size, color: colors.textSecondary, marginTop: 4 },
+  chevron: { fontSize: 24, color: colors.textMuted },
 });

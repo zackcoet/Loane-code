@@ -11,7 +11,7 @@
 
 import { Tabs, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, typography } from '@loane/shared';
+import { colors, controls, icons, typography } from '@loane/shared';
 
 function TabIcon({ glyph, focused }: { glyph: string; focused: boolean }) {
   return (
@@ -38,6 +38,7 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: styles.bar,
         tabBarLabelStyle: styles.barLabel,
+        tabBarItemStyle: styles.barItem,
       }}
     >
       <Tabs.Screen
@@ -91,29 +92,35 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
-    height: 84,
-    paddingTop: 8,
+    height: controls.tabBarHeight,
+    paddingTop: 10,
   },
   barLabel: {
-    fontSize: 9,
-    letterSpacing: 1,
+    fontSize: typography.caption.size,
+    lineHeight: typography.caption.lineHeight,
+    letterSpacing: typography.caption.letterSpacing,
     textTransform: 'uppercase',
+    marginTop: 4,
   },
-  icon: { fontSize: 20, lineHeight: 24 },
+  barItem: { paddingVertical: 4 },
+  icon: {
+    fontSize: icons.lg,
+    lineHeight: icons.lg * 1.15,
+    textAlign: 'center',
+  },
   plus: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 1,
+    width: controls.tabBarPlus,
+    height: controls.tabBarPlus,
+    borderRadius: controls.tabBarPlus / 2,
+    borderWidth: 1.5,
     borderColor: colors.black,
     alignItems: 'center',
     justifyContent: 'center',
   },
   plusGlyph: {
-    fontSize: 18,
-    lineHeight: 21,
+    fontSize: 26,
+    lineHeight: 30,
     color: colors.black,
     fontWeight: '300',
   },
-  label: { fontSize: typography.label.size },
 });

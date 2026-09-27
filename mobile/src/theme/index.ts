@@ -6,9 +6,9 @@
  */
 
 import { StyleSheet } from 'react-native';
-import { colors, radii, spacing, typography } from '@loane/shared';
+import { colors, controls, icons, radii, spacing, typography } from '@loane/shared';
 
-export { colors, radii, spacing, typography };
+export { colors, controls, icons, radii, spacing, typography };
 
 /**
  * The small uppercase letter-spaced label used all over the mockups —
@@ -56,9 +56,16 @@ export const text = StyleSheet.create({
     lineHeight: typography.bodySmall.lineHeight,
     color: colors.textSecondary,
   },
+  caption: {
+    fontSize: typography.caption.size,
+    lineHeight: typography.caption.lineHeight,
+    letterSpacing: typography.caption.letterSpacing,
+    textTransform: 'uppercase',
+    color: colors.textMuted,
+  },
   label,
   link: {
-    fontSize: typography.bodySmall.size,
+    fontSize: typography.body.size,
     color: colors.textPrimary,
     textDecorationLine: 'underline',
   },
