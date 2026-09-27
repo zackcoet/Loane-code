@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.pem
+serviceAccountKey*.json
+google-services.json
+GoogleService-Info.plist
+
+# Build output
+dist/
+build/
+lib/
+*.tsbuildinfo
+.vite/
+
+# Expo
+.expo/
+.expo-shared/
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+*.orig.*
+web-build/
+ios/
+android/
+
+# Firebase
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
+database-debug.log
+pubsub-debug.log
+*.log
+.runtimeconfig.json
+emulator-data/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# Test / coverage
+coverage/

@@ -1,0 +1,35 @@
+{
+  "name": "loane",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Loane — a student-only social fashion marketplace. Monorepo root.",
+  "workspaces": [
+    "shared",
+    "mobile",
+    "admin",
+    "backend/functions"
+  ],
+  "engines": {
+    "node": ">=20 <21"
+  },
+  "scripts": {
+    "build:shared": "npm run build --workspace @loane/shared",
+    "mobile": "npm run start --workspace @loane/mobile",
+    "admin": "npm run dev --workspace @loane/admin",
+    "emulators": "npm run emulators --workspace @loane/functions",
+    "seed": "npm run seed --workspace @loane/functions",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2"
+  }
+}
