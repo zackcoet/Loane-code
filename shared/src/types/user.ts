@@ -35,9 +35,33 @@ export interface User extends BaseDoc, CampusScoped {
   verificationMethod: VerificationMethod | null;
   verifiedAt: Timestampish | null;
 
+  /**
+   * Whether we have PROVEN she controls that inbox.
+   *
+   * Deliberately separate from `isVerified`, because the two answer
+   * different questions:
+   *
+   *   isVerified     — her domain is on the approved list, so she may use
+   *                    the app. True from the moment she signs up.
+   *   emailConfirmed — we sent something to that address and she proved she
+   *                    received it. Always false today.
+   *
+   * We do not email a link: university security scanners follow links in
+   * incoming mail, which silently burns a one-time link before the student
+   * ever sees it. The plan is a 6-digit code she types back in.
+   *
+   * Nothing reads this field yet. When we ship the code, it flips to true
+   * and we start enforcing it — no documents have to be migrated. Listed as
+   * launch-blocking in docs/roadmap.md.
+   */
+  emailConfirmed: boolean;
+  emailConfirmedAt: Timestampish | null;
+
   // --- Sizing (shown on her profile so renters can judge fit) -------------
   sizes: {
-    general: Size | null;
+    tops: Size | null;
+    bottoms: Size | null;
+    dresses: Size | null;
     shoe: ShoeSize | null;
   };
 

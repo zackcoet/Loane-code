@@ -67,7 +67,13 @@ export default function Feed() {
         <FlatList
           data={posts}
           keyExtractor={(post) => post.id}
-          renderItem={({ item }) => <PostCard post={item} onPressTag={onPressTag} />}
+          renderItem={({ item }) => (
+            <PostCard
+              post={item}
+              onPressTag={onPressTag}
+              onPressAuthor={(username) => router.push(`/u/${username}`)}
+            />
+          )}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
         />

@@ -1,33 +1,36 @@
 /**
- * Step 5 — claim a username. "Hi [Name], claim your username"
+ * Step 4 (last) — claim a username, and create the account.
  *
- * Submitting calls `completeSignup`, which claims the username and creates
- * her profile in one transaction. Once the profile exists, the root layout
- * sees it and moves her on to the intro slides.
+ * This is where everything actually happens. One call to `createAccount`
+ * checks the school domain, creates the login, writes the profile and
+ * claims the username on the server — and if any part fails, the server
+ * undoes the rest. Then we sign in with the one-time token it returns.
  *
- * The availability check here is only advisory — someone could take the
- * name between the check and the submit, so the real uniqueness guarantee
- * is the transaction on the server.
+ * The availability check here is advisory: someone could take the name in
+ * the moment between checking and submitting, so the real guarantee is the
+ * transaction on the server.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
-import { normalizeUsername, spacing, validateDisplayName, validateUsername } from '@loane/shared';
+import { signInWithCustomToken } from 'firebase/auth';
+import { normalizeUsername, spacing, validateUsername } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { Field } from '../../src/components/Field';
 import { Logo } from '../../src/components/Logo';
 import { Screen } from '../../src/components/Screen';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
-import { checkUsername, completeSignup } from '../../src/firebase/callables';
+import { auth } from '../../src/firebase/config';
+import { checkUsername, createAccount } from '../../src/firebase/callables';
+import { callableErrorMessage } from '../../src/firebase/errors';
 import { useSignupDraft } from '../../src/auth/signupDraft';
 import { logEvent } from '../../src/analytics/events';
-import { callableErrorMessage } from '../../src/firebase/errors';
 import { text } from '../../src/theme';
 
 export default function ClaimUsername() {
   const router = useRouter();
-  const { firstName, campusEmail, setFirstName, reset } = useSignupDraft();
+  const { firstName, campusEmail, getPassword, hasPassword, hydrated, reset } = useSignupDraft();
 
   const [username, setUsername] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +38,15 @@ export default function ClaimUsername() {
   const [busy, setBusy] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Check availability as she types, but not on every keystroke.
+  // The password is held in memory only and never written to disk, so an
+  // app reload loses it. Send her back one step rather than failing at the
+  // end with something she cannot act on.
+  useEffect(() => {
+    if (hydrated && !hasPassword) {
+      router.replace('/(onboarding)/create-account');
+    }
+  }, [hydrated, hasPassword, router]);
+
   useEffect(() => {
     if (debounce.current) clearTimeout(debounce.current);
     setAvailable(null);
@@ -53,7 +64,7 @@ export default function ClaimUsername() {
         setAvailable(result.data.available);
         if (!result.data.available) setError(result.data.reason ?? 'That username is taken.');
       } catch {
-        // Availability is advisory; the server decides for real on submit.
+        // Advisory only; the server decides for real on submit.
         setAvailable(null);
       }
     }, 400);
@@ -64,23 +75,29 @@ export default function ClaimUsername() {
   }, [username]);
 
   const onSubmit = async () => {
-    // Safety net: if the draft was lost (a reinstall, cleared storage), ask
-    // for the name here rather than submitting an empty one and dead-ending
-    // on a server error she cannot act on.
-    const nameCheck = validateDisplayName(firstName);
-    if (!nameCheck.ok) return setError('We lost your first name — add it above and try again.');
-
     const check = validateUsername(username);
     if (!check.ok) return setError(check.error ?? null);
+
+    const password = getPassword();
+    if (!password) {
+      router.replace('/(onboarding)/create-account');
+      return;
+    }
 
     setBusy(true);
     setError(null);
     try {
-      await completeSignup({
+      const result = await createAccount({
         firstName,
-        campusEmail,
+        email: campusEmail,
+        password,
         username: normalizeUsername(username),
       });
+
+      // Sign in with the one-time token the server minted. The root layout
+      // sees the profile appear and moves her on.
+      await signInWithCustomToken(auth, result.data.token);
+
       logEvent('signup_completed', { surface: 'onboarding' });
       reset();
       router.replace('/(onboarding)/intro');
@@ -106,16 +123,6 @@ export default function ClaimUsername() {
             This is how the campus will know you. You can always change it later.
           </Text>
 
-          {validateDisplayName(firstName).ok ? null : (
-            <Field
-              value={firstName}
-              onChangeText={setFirstName}
-              placeholder="First name"
-              autoCapitalize="words"
-              label="First name"
-            />
-          )}
-
           <Field
             value={username}
             onChangeText={(value) => setUsername(value.toLowerCase())}
@@ -131,7 +138,7 @@ export default function ClaimUsername() {
 
         <View style={styles.footer}>
           <Button
-            label="Continue"
+            label="Create account"
             onPress={onSubmit}
             loading={busy}
             disabled={username.trim().length === 0 || available === false}
@@ -144,7 +151,7 @@ export default function ClaimUsername() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  body: { flex: 1, paddingTop: spacing.xl },
+  body: { flex: 1, paddingTop: spacing.lg },
   heading: { marginTop: spacing.lg },
   explainer: { marginTop: spacing.sm, marginBottom: spacing.xl },
   footer: { paddingBottom: spacing.xl },

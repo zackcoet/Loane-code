@@ -6,7 +6,6 @@ import { useState } from 'react';
 import { Link, useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { spacing, validateDisplayName } from '@loane/shared';
-import { auth } from '../../src/firebase/config';
 import { Button } from '../../src/components/Button';
 import { Field } from '../../src/components/Field';
 import { Screen } from '../../src/components/Screen';
@@ -26,14 +25,6 @@ export default function NameStep() {
       return;
     }
     setError(null);
-
-    // If she already has a Firebase Auth account, she stopped partway
-    // through onboarding and is coming back. Skip account creation —
-    // trying again would fail with "email already in use".
-    if (auth.currentUser) {
-      router.push('/(onboarding)/verify-campus');
-      return;
-    }
     router.push('/(onboarding)/create-account');
   };
 

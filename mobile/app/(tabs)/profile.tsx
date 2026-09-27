@@ -1,34 +1,24 @@
 /**
- * Profile — her photo, name, bio, stats and the Posts / Closet / Reviews
- * tabs, exactly as laid out in the mockups.
+ * My Profile.
  *
- * Phase 0: the real profile document is read and rendered, with empty
- * states under each tab. Editing is Phase 1; the closet grid is Phase 2.
+ * Reads her live profile document, so an edit shows here the instant it
+ * saves. Posts and Closet read real data; Reviews is empty until Phase 6.
  */
 
-import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, controls, spacing, typography } from '@loane/shared';
-import { IconButton } from '../../src/components/IconButton';
+import { Button } from '../../src/components/Button';
 import { EmptyState } from '../../src/components/EmptyState';
+import { IconButton } from '../../src/components/IconButton';
+import { ProfileHeader } from '../../src/components/ProfileHeader';
+import { ProfileTabs } from '../../src/components/ProfileTabs';
 import { Screen } from '../../src/components/Screen';
 import { useAuth } from '../../src/auth/AuthProvider';
-import { text } from '../../src/theme';
-
-const TABS = ['posts', 'closet', 'reviews'] as const;
-type ProfileTab = (typeof TABS)[number];
-
-const EMPTY: Record<ProfileTab, { title: string; body: string }> = {
-  posts: { title: 'No posts yet', body: 'Looks she posts will show up here.' },
-  closet: { title: 'Nothing in the closet yet', body: 'Pieces listed to rent or sell live here.' },
-  reviews: { title: 'No reviews yet', body: 'Reviews appear after a completed rental.' },
-};
 
 export default function Profile() {
   const router = useRouter();
   const { profile } = useAuth();
-  const [tab, setTab] = useState<ProfileTab>('posts');
 
   if (!profile) {
     return (
@@ -38,61 +28,32 @@ export default function Profile() {
     );
   }
 
-  const stats = [
-    { label: 'Followers', value: profile.stats.followerCount },
-    { label: 'Following', value: profile.stats.followingCount },
-    { label: 'Items', value: profile.stats.listingCount },
-    { label: 'Rentals', value: profile.stats.rentalsAsLender + profile.stats.rentalsAsRenter },
-  ];
-
   return (
     <Screen flush>
       <View style={styles.header}>
-        <Text style={styles.handle}>@{profile.username}</Text>
-        <IconButton glyph="⚙" onPress={() => router.push('/menu')} accessibilityLabel="Settings" />
+        <View style={styles.headerSpacer} />
+        <Text style={styles.handle} numberOfLines={1}>
+          @{profile.username}
+        </Text>
+        <IconButton
+          glyph="⚙"
+          onPress={() => router.push('/settings')}
+          accessibilityLabel="Account settings"
+        />
       </View>
 
-      <View style={styles.identity}>
-        <View style={styles.avatar} />
-        <View style={styles.identityText}>
-          <Text style={text.h3}>@{profile.username}</Text>
-          <Text style={styles.campus}>■ University of South Carolina</Text>
-          <Text style={styles.rating}>
-            {profile.stats.ratingAverage
-              ? `${'★'.repeat(Math.round(profile.stats.ratingAverage))}  (${profile.stats.ratingCount})`
-              : '☆☆☆☆☆  (0)'}
-          </Text>
-        </View>
-      </View>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        <ProfileHeader user={profile}>
+          <Button
+            label="Edit profile"
+            variant="outline"
+            onPress={() => router.push('/edit-profile')}
+            style={styles.action}
+          />
+        </ProfileHeader>
 
-      {profile.bio ? <Text style={[text.small, styles.bio]}>{profile.bio}</Text> : null}
-
-      <View style={styles.statsRow}>
-        {stats.map((stat) => (
-          <View key={stat.label} style={styles.stat}>
-            <Text style={styles.statValue}>{stat.value}</Text>
-            <Text style={styles.statLabel}>{stat.label}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* TODO-PHASE1: the Edit Profile screen. */}
-
-      <View style={styles.tabRow}>
-        {TABS.map((value) => (
-          <Pressable
-            key={value}
-            onPress={() => setTab(value)}
-            style={[styles.tab, tab === value && styles.tabActive]}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: tab === value }}
-          >
-            <Text style={[styles.tabText, tab === value && styles.tabTextActive]}>{value}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <EmptyState title={EMPTY[tab].title} body={EMPTY[tab].body} />
+        <ProfileTabs uid={profile.uid} isMe />
+      </ScrollView>
     </Screen>
   );
 }
@@ -103,55 +64,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
   },
+  headerSpacer: { width: controls.minTapTarget },
   handle: {
+    flex: 1,
+    textAlign: 'center',
     fontSize: typography.label.size,
     letterSpacing: typography.label.letterSpacing,
     color: colors.textPrimary,
   },
-  identity: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  identityText: { marginLeft: spacing.md, flex: 1 },
-  campus: { fontSize: typography.bodySmall.size, color: colors.textSecondary, marginTop: 2 },
-  rating: { fontSize: typography.bodySmall.size, color: colors.textMuted, marginTop: 2 },
-  bio: { paddingHorizontal: spacing.md, marginTop: spacing.md },
-  statsRow: {
-    flexDirection: 'row',
-    marginTop: spacing.lg,
-    marginHorizontal: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  stat: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
-  statValue: { fontSize: 18, fontWeight: '600', color: colors.textPrimary },
-  statLabel: {
-    fontSize: typography.caption.size,
-    letterSpacing: typography.caption.letterSpacing,
-    textTransform: 'uppercase',
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  tabRow: {
-    flexDirection: 'row',
-    marginTop: spacing.lg,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
-  tabActive: { borderBottomWidth: 1, borderBottomColor: colors.black },
-  tabText: {
-    fontSize: typography.label.size,
-    letterSpacing: typography.label.letterSpacing,
-    textTransform: 'uppercase',
-    color: colors.textMuted,
-  },
-  tabTextActive: { color: colors.textPrimary },
+  content: { paddingBottom: spacing.xxl },
+  action: { flex: 1, height: controls.buttonHeightSmall },
 });

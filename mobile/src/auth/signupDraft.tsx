@@ -1,33 +1,40 @@
 /**
  * Holds what she types across the onboarding screens.
  *
- * Onboarding collects her first name before the account exists, then her
- * campus email, then her username, and only submits everything at the end
- * in one call to `completeSignup`.
+ * Onboarding collects a first name, then a school email and password, then
+ * a username — and only at the very end does it call `createAccount`,
+ * which builds the login and the profile together on the server.
  *
- * This is PERSISTED to device storage, not just held in memory. That matters:
- * the Firebase Auth account is created partway through onboarding, so if the
- * app reloads between "create account" and "claim username", an in-memory
- * draft would come back empty and `completeSignup` would reject the submit
- * with "Enter a name" — a dead end she could never get out of. Persisting
- * the draft means a reload picks up where she left off.
+ * TWO DIFFERENT STORAGE RULES HERE, on purpose:
  *
- * It is cleared as soon as signup completes.
+ *   firstName / campusEmail  persisted to the device, so a reload mid-signup
+ *                            does not lose her progress.
+ *   password                 memory only. A password never goes to disk.
+ *
+ * So if the app reloads between the email screen and the username screen,
+ * everything survives except the password, and the username screen sends
+ * her back one step to retype it. Rare, and the safe trade.
+ *
+ * The whole draft is cleared the moment signup succeeds.
  */
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const STORAGE_KEY = 'loane.signupDraft.v1';
+const STORAGE_KEY = 'loane.signupDraft.v2';
 
-interface SignupDraft {
+interface PersistedDraft {
   firstName: string;
   campusEmail: string;
 }
 
-interface SignupDraftState extends SignupDraft {
+interface SignupDraftState extends PersistedDraft {
   setFirstName: (value: string) => void;
   setCampusEmail: (value: string) => void;
+  /** Memory only — never written to disk. */
+  getPassword: () => string;
+  setPassword: (value: string) => void;
+  hasPassword: boolean;
   reset: () => void;
   /** False until the saved draft has been read back from storage. */
   hydrated: boolean;
@@ -36,18 +43,22 @@ interface SignupDraftState extends SignupDraft {
 const SignupDraftContext = createContext<SignupDraftState | null>(null);
 
 export function SignupDraftProvider({ children }: { children: React.ReactNode }) {
-  const [firstName, setFirstNameState] = useState('');
-  const [campusEmail, setCampusEmailState] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [campusEmail, setCampusEmail] = useState('');
   const [hydrated, setHydrated] = useState(false);
+  const [hasPassword, setHasPassword] = useState(false);
+
+  // A ref, not state: it must never end up serialized anywhere.
+  const password = useRef('');
 
   useEffect(() => {
     let cancelled = false;
     AsyncStorage.getItem(STORAGE_KEY)
       .then((raw) => {
         if (cancelled || !raw) return;
-        const saved = JSON.parse(raw) as Partial<SignupDraft>;
-        setFirstNameState(saved.firstName ?? '');
-        setCampusEmailState(saved.campusEmail ?? '');
+        const saved = JSON.parse(raw) as Partial<PersistedDraft>;
+        setFirstName(saved.firstName ?? '');
+        setCampusEmail(saved.campusEmail ?? '');
       })
       .catch(() => {
         // A missing or corrupt draft is not an error — she just starts over.
@@ -60,7 +71,6 @@ export function SignupDraftProvider({ children }: { children: React.ReactNode })
     };
   }, []);
 
-  // Write through on every change so a reload never loses a step.
   useEffect(() => {
     if (!hydrated) return;
     void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ firstName, campusEmail })).catch(
@@ -73,15 +83,23 @@ export function SignupDraftProvider({ children }: { children: React.ReactNode })
       firstName,
       campusEmail,
       hydrated,
-      setFirstName: setFirstNameState,
-      setCampusEmail: setCampusEmailState,
+      hasPassword,
+      setFirstName,
+      setCampusEmail,
+      getPassword: () => password.current,
+      setPassword: (value: string) => {
+        password.current = value;
+        setHasPassword(value.length > 0);
+      },
       reset: () => {
-        setFirstNameState('');
-        setCampusEmailState('');
+        setFirstName('');
+        setCampusEmail('');
+        password.current = '';
+        setHasPassword(false);
         void AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
       },
     }),
-    [firstName, campusEmail, hydrated],
+    [firstName, campusEmail, hydrated, hasPassword],
   );
 
   return <SignupDraftContext.Provider value={value}>{children}</SignupDraftContext.Provider>;

@@ -1,53 +1,73 @@
 /**
- * Step 3 — create the Firebase Auth account. "One tap and you're in."
+ * Step 3 — school email and password. "One tap and you're in."
  *
- * This is where the account starts existing. The Loane profile is not
- * created until the end of onboarding, so between here and the username
- * step she is signed in without a profile. The root layout knows about that
- * state and puts her back here if she leaves.
+ * ONE email, and it must be a school address. There is no separate personal
+ * email any more: the address we check the campus against is the address
+ * she signs in with.
+ *
+ * Nothing is created here. The screen checks her school domain against the
+ * `campuses` collection so she finds out immediately if we are not at her
+ * school yet, then carries her answers to the username step, where one
+ * server-side call builds the login and the profile together.
+ *
+ * We do NOT send a verification email or link. University security scanners
+ * follow links in incoming mail and would burn a one-time link before she
+ * ever opened it. A 6-digit code is the plan — see docs/roadmap.md.
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { FirebaseError } from 'firebase/app';
-import { LIMITS, normalizeEmail, spacing, validateEmail, validatePassword } from '@loane/shared';
+import { LIMITS, spacing, validateEmail, validatePassword } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { Field } from '../../src/components/Field';
 import { Screen } from '../../src/components/Screen';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
-import { auth } from '../../src/firebase/config';
+import { checkCampusEmail } from '../../src/firebase/callables';
+import { callableErrorMessage } from '../../src/firebase/errors';
+import { useSignupDraft } from '../../src/auth/signupDraft';
 import { text } from '../../src/theme';
-
-/** Firebase error codes turned into something a person can act on. */
-function friendlyAuthError(error: unknown): string {
-  if (error instanceof FirebaseError) {
-    switch (error.code) {
-      case 'auth/email-already-in-use':
-        return 'That email already has an account. Try signing in.';
-      case 'auth/invalid-email':
-        return 'That email does not look right.';
-      case 'auth/weak-password':
-        return `Use at least ${LIMITS.password.min} characters.`;
-      case 'auth/network-request-failed':
-        return 'No connection. Check your internet and try again.';
-      default:
-        break;
-    }
-  }
-  return 'Something went wrong. Try again.';
-}
 
 export default function CreateAccount() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+  const { campusEmail, setCampusEmail, setPassword: storePassword } = useSignupDraft();
 
-  const onSubmit = async () => {
-    const emailCheck = validateEmail(email);
+  const [password, setPasswordInput] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [campusName, setCampusName] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Tell her which school we matched — or that we are not there yet —
+  // while she types, rather than after she has filled in a password.
+  useEffect(() => {
+    if (debounce.current) clearTimeout(debounce.current);
+    setCampusName(null);
+
+    if (!validateEmail(campusEmail).ok) return;
+
+    debounce.current = setTimeout(async () => {
+      try {
+        const result = await checkCampusEmail({ email: campusEmail });
+        if (result.data.allowed) {
+          setCampusName(result.data.campusName ?? null);
+          setError(null);
+        } else {
+          setCampusName(null);
+          setError(result.data.reason ?? "Loane isn't at your school yet.");
+        }
+      } catch {
+        // Advisory only — createAccount checks again for real.
+      }
+    }, 450);
+
+    return () => {
+      if (debounce.current) clearTimeout(debounce.current);
+    };
+  }, [campusEmail]);
+
+  const onContinue = async () => {
+    const emailCheck = validateEmail(campusEmail);
     if (!emailCheck.ok) return setError(emailCheck.error ?? null);
 
     const passwordCheck = validatePassword(password);
@@ -56,10 +76,15 @@ export default function CreateAccount() {
     setBusy(true);
     setError(null);
     try {
-      await createUserWithEmailAndPassword(auth, normalizeEmail(email), password);
-      router.push('/(onboarding)/verify-campus');
+      const result = await checkCampusEmail({ email: campusEmail });
+      if (!result.data.allowed) {
+        setError(result.data.reason ?? "Loane isn't at your school yet.");
+        return;
+      }
+      storePassword(password);
+      router.push('/(onboarding)/username');
     } catch (err) {
-      setError(friendlyAuthError(err));
+      setError(callableErrorMessage(err, 'Could not check that right now. Try again.'));
     } finally {
       setBusy(false);
     }
@@ -75,33 +100,44 @@ export default function CreateAccount() {
         <View style={styles.body}>
           <Text style={text.h2}>One tap and you&apos;re in.</Text>
           <Text style={[text.label, styles.caption]}>Create your account</Text>
+          <Text style={[text.small, styles.explainer]}>
+            Use your school email — it&apos;s how we keep Loane to students on your campus. No
+            confirmation email will be sent.
+          </Text>
 
           <Field
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Your personal email"
+            value={campusEmail}
+            onChangeText={(value) => {
+              setCampusEmail(value);
+              if (error) setError(null);
+            }}
+            placeholder="you@email.sc.edu"
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
             autoCorrect={false}
             autoFocus
+            hint={campusName ?? undefined}
           />
           <Field
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(value) => {
+              setPasswordInput(value);
+              if (error) setError(null);
+            }}
             placeholder={`Password (min ${LIMITS.password.min} characters)`}
             secureTextEntry
             autoCapitalize="none"
             autoComplete="new-password"
-            onSubmitEditing={onSubmit}
+            onSubmitEditing={onContinue}
             error={error}
           />
 
           <Button
-            label="Create account"
-            onPress={onSubmit}
+            label="Continue"
+            onPress={onContinue}
             loading={busy}
-            disabled={email.length === 0 || password.length === 0}
+            disabled={campusEmail.length === 0 || password.length === 0}
           />
         </View>
 
@@ -120,8 +156,9 @@ export default function CreateAccount() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  body: { flex: 1, paddingTop: spacing.xl },
-  caption: { marginTop: spacing.sm, marginBottom: spacing.xl },
+  body: { flex: 1, paddingTop: spacing.lg },
+  caption: { marginTop: spacing.sm, marginBottom: spacing.md },
+  explainer: { marginBottom: spacing.xl },
   footer: { paddingBottom: spacing.xl },
-  altRow: { textAlign: 'center', fontSize: 13, color: '#6B6B6B' },
+  altRow: { textAlign: 'center', fontSize: 15, color: '#6B6B6B' },
 });

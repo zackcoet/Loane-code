@@ -40,6 +40,17 @@ export const OCCASION_LABELS: Record<Occasion, string> = {
 export const SIZES = ['XS', 'S', 'M', 'L', 'XL'] as const;
 export type Size = (typeof SIZES)[number];
 
+/** The sizing fields shown on a profile, in display order. */
+export const SIZE_FIELDS = ['tops', 'bottoms', 'dresses', 'shoe'] as const;
+export type SizeField = (typeof SIZE_FIELDS)[number];
+
+export const SIZE_FIELD_LABELS: Record<SizeField, string> = {
+  tops: 'Tops',
+  bottoms: 'Bottoms',
+  dresses: 'Dresses',
+  shoe: 'Shoes',
+};
+
 export const SHOE_SIZES = [
   '5',
   '5.5',
@@ -276,6 +287,7 @@ export const EVENT_TYPES = [
   'app_open',
   'onboarding_step',
   'signup_completed',
+  'profile_edit',
   'post_view',
   'post_like',
   'post_save',

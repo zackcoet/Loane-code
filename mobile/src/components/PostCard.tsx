@@ -7,6 +7,7 @@
  */
 
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Avatar } from './Avatar';
 import {
   OCCASION_LABELS,
   colors,
@@ -19,15 +20,21 @@ import {
 interface Props {
   post: Post;
   onPressTag?: (listingId: string) => void;
+  onPressAuthor?: (username: string) => void;
 }
 
-export function PostCard({ post, onPressTag }: Props) {
+export function PostCard({ post, onPressTag, onPressAuthor }: Props) {
   const photo = post.photos[0];
 
   return (
     <View style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.avatar} />
+      <Pressable
+        style={styles.header}
+        accessibilityRole="button"
+        accessibilityLabel={`Open @${post.author.username}'s closet`}
+        onPress={() => onPressAuthor?.(post.author.username)}
+      >
+        <Avatar url={post.author.photoUrl} name={post.author.displayName} size={44} />
         <View style={styles.headerText}>
           <Text style={styles.username}>@{post.author.username}</Text>
           {post.occasions.length > 0 ? (
@@ -36,7 +43,7 @@ export function PostCard({ post, onPressTag }: Props) {
             </Text>
           ) : null}
         </View>
-      </View>
+      </Pressable>
 
       {photo ? (
         <Image source={{ uri: photo.url }} style={styles.photo} resizeMode="cover" />
@@ -94,14 +101,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.border,
   },
   headerText: { marginLeft: spacing.md, flex: 1 },
   username: { fontSize: typography.bodySmall.size, fontWeight: '600', color: colors.textPrimary },

@@ -41,7 +41,9 @@ function userDoc(uid: string, overrides: Record<string, unknown> = {}) {
     isVerified: true,
     verificationMethod: 'domain_claimed',
     verifiedAt: new Date(),
-    sizes: { general: null, shoe: null },
+    emailConfirmed: false,
+    emailConfirmedAt: null,
+    sizes: { tops: null, bottoms: null, dresses: null, shoe: null },
     role: 'student',
     status: 'active',
     suspendedReason: null,
@@ -173,6 +175,55 @@ describe('users', () => {
   it('stops a signed-out visitor reading profiles', async () => {
     await assertFails(getDoc(doc(asStranger(), 'users', ELLA)));
   });
+
+  // --- Phase 1: the fields a profile edit must never reach --------------
+
+  it('lets her edit the fields the Edit Profile screen owns', async () => {
+    await assertSucceeds(
+      updateDoc(doc(asElla(), 'users', ELLA), {
+        displayName: 'Ella P',
+        bio: 'gameday and formals',
+        photoUrl: 'https://example.test/photo.jpg',
+        sizes: { tops: 'S', bottoms: 'S', dresses: 'S', shoe: '7.5' },
+      }),
+    );
+  });
+
+  it('stops her changing her own username (only changeUsername may)', async () => {
+    await assertFails(updateDoc(doc(asElla(), 'users', ELLA), { username: 'someoneelse' }));
+  });
+
+  it('stops her changing her campus email', async () => {
+    await assertFails(
+      updateDoc(doc(asElla(), 'users', ELLA), { campusEmail: 'ella@harvard.edu' }),
+    );
+  });
+
+  it('stops her confirming her own email', async () => {
+    await assertFails(updateDoc(doc(asElla(), 'users', ELLA), { emailConfirmed: true }));
+  });
+
+  it('stops her un-suspending her own account', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', ELLA), userDoc(ELLA, { status: 'suspended' }));
+    });
+    await assertFails(updateDoc(doc(asElla(), 'users', ELLA), { status: 'active' }));
+  });
+
+  it('stops her flagging herself as a founding closet', async () => {
+    await assertFails(updateDoc(doc(asElla(), 'users', ELLA), { isFoundingCloset: true }));
+  });
+
+  it('stops her editing a real field and a forbidden one in the same write', async () => {
+    // A single write touching both must fail as a whole — otherwise the
+    // allow-list could be slipped past by bundling.
+    await assertFails(
+      updateDoc(doc(asElla(), 'users', ELLA), {
+        bio: 'looks innocent',
+        'stats.followerCount': 9999,
+      }),
+    );
+  });
 });
 
 describe('private settings', () => {
@@ -270,6 +321,18 @@ describe('bookings', () => {
     await assertSucceeds(getDoc(doc(asMaddie(), 'bookings', 'booking-1')));
     await assertFails(
       getDoc(doc(testEnv.authenticatedContext('uid-nosy').firestore(), 'bookings', 'booking-1')),
+    );
+  });
+});
+
+describe('follows', () => {
+  it('cannot be written by the app — follower counts would be fiction', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'follows', `${ELLA}_${MADDIE}`), {
+        followerUid: ELLA,
+        followingUid: MADDIE,
+        campusId: CAMPUS,
+      }),
     );
   });
 });

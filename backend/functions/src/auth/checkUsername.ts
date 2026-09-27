@@ -6,8 +6,9 @@ import { db } from '../lib/admin';
  * `checkUsername`
  *
  * Lets the Claim Username screen say "that one's taken" before submitting.
- * Purely advisory — the real uniqueness check happens in the transaction in
- * `completeSignup`, because someone could claim the name in between.
+ * Purely advisory — the real uniqueness check happens in the transaction
+ * inside `createAccount` (or `changeUsername`), because someone could claim
+ * the name in between.
  */
 
 interface CheckUsernameInput {

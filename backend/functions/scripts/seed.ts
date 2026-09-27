@@ -26,6 +26,7 @@ import {
   CATEGORIES,
   COLLECTIONS,
   OCCASIONS,
+  SHOE_SIZES,
   SIZES,
   ids,
   type Campus,
@@ -33,6 +34,7 @@ import {
   type Listing,
   type Occasion,
   type Post,
+  type ShoeSize,
   type Size,
   type User,
 } from '@loane/shared';
@@ -90,11 +92,59 @@ function priceCents(min: number, max: number): number {
   return (min + Math.floor(random() * (max - min))) * 100;
 }
 
-const STUDENTS = [
-  { first: 'Ella', username: 'ellapetrickcloset', founding: true },
-  { first: 'Maddie', username: 'maddiescloset', founding: true },
-  { first: 'Sloane', username: 'sloanerents', founding: true },
-  { first: 'Reese', username: 'reesewears', founding: true },
+/**
+ * Flat-colour stand-in avatars, one per founding closet, inlined as PNGs so
+ * the profile screens have something distinct to show with no hosting and
+ * no network.
+ */
+const AVATARS: Record<string, string> = {
+  ellapetrickcloset:
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGPI51EHAAGQAKOZ+r+xAAAAAElFTkSuQmCC',
+  maddiescloset:
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGO4tsEXAAQzAdQnUT1OAAAAAElFTkSuQmCC',
+  sloanerents:
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGPYWuEDAANfAXoVw3HHAAAAAElFTkSuQmCC',
+  reesewears:
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGPYcfwQAAR8AkKWZ6mhAAAAAElFTkSuQmCC',
+};
+
+interface SeedStudent {
+  first: string;
+  username: string;
+  founding: boolean;
+  bio?: string;
+  sizes?: { tops: Size; bottoms: Size; dresses: Size; shoe: ShoeSize };
+}
+
+const STUDENTS: SeedStudent[] = [
+  {
+    first: 'Ella',
+    username: 'ellapetrickcloset',
+    founding: true,
+    bio: 'Welcome to my closet! No washing or dry cleaning please — I handle all of it.',
+    sizes: { tops: 'S', bottoms: 'S', dresses: 'S', shoe: '7.5' },
+  },
+  {
+    first: 'Maddie',
+    username: 'maddiescloset',
+    founding: true,
+    bio: 'Gameday, formals, and everything in between. Pickup near Russell House.',
+    sizes: { tops: 'M', bottoms: 'M', dresses: 'M', shoe: '8' },
+  },
+  {
+    first: 'Sloane',
+    username: 'sloanerents',
+    founding: true,
+    bio: 'Vintage finds and going-out sets. Ask me for fit pics!',
+    sizes: { tops: 'XS', bottoms: 'S', dresses: 'XS', shoe: '6.5' },
+  },
+  {
+    first: 'Reese',
+    username: 'reesewears',
+    founding: true,
+    bio: 'Sorority formals my specialty. Everything steamed before pickup.',
+    sizes: { tops: 'L', bottoms: 'M', dresses: 'M', shoe: '9' },
+  },
   { first: 'Caroline', username: 'carolinecloset', founding: false },
   { first: 'Anna', username: 'annagrace', founding: false },
   { first: 'Blair', username: 'blairb', founding: false },
@@ -263,17 +313,23 @@ async function main(): Promise<void> {
       username: student.username,
       firstName: student.first,
       displayName: student.first,
-      bio: student.founding
-        ? 'Welcome to my closet! No washing or dry cleaning please!'
-        : 'usc • sharing my closet',
-      photoUrl: null,
+      bio: student.bio ?? 'usc • sharing my closet',
+      photoUrl: AVATARS[student.username] ?? null,
       campusId: CAMPUS_ID,
       campusEmail: email,
       isVerified: true,
       // Founding closets are verified by hand; everyone else by domain match.
       verificationMethod: student.founding ? 'manual_admin' : 'domain_claimed',
       verifiedAt: FieldValue.serverTimestamp() as never,
-      sizes: { general: pick(SIZES), shoe: null },
+      // Nobody has proven inbox control — we do not email a code yet.
+      emailConfirmed: false,
+      emailConfirmedAt: null,
+      sizes: student.sizes ?? {
+        tops: pick(SIZES),
+        bottoms: pick(SIZES),
+        dresses: pick(SIZES),
+        shoe: pick(SHOE_SIZES),
+      },
       role: 'student',
       status: 'active',
       suspendedReason: null,
