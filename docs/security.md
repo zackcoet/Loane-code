@@ -1,0 +1,146 @@
+# Loane security approach
+
+## The one rule everything else follows
+
+**Never trust the phone.**
+
+The app running on someone's phone can be inspected, modified and replayed.
+Anything it is allowed to do, assume a determined person will eventually do
+on purpose. So we decide, per piece of data, whether the app is allowed to
+write it — and for anything that involves money, trust or counting, the
+answer is no.
+
+## Who can write what
+
+### The app may write directly
+
+| Data | Condition |
+|---|---|
+| Her own profile | Only her own document, and only the fields she's allowed to change (name, bio, photo, sizes) |
+| Her own listings | Only where `ownerUid` is her uid |
+| Her own posts | Only where `authorUid` is her uid |
+| Her own messages | Only in conversations she is a participant of |
+| Her private settings | Only her own subcollection |
+| Events | Create only. She may never read, edit or delete one |
+
+### Only Cloud Functions may write
+
+- `bookings` — otherwise two people book the same dress
+- `reviews` — otherwise anyone rates anyone
+- All counters: follower counts, like counts, listing counts, ratings
+- `isVerified`, `verificationMethod`, `role`, `status`
+- `usernames` locks
+- `follows`, `likes`, `saves`, `postSaves` (so counters stay honest)
+- `reports`, `damageClaims`, `adminActions`
+- `campuses`
+- All Stripe fields
+
+Cloud Functions use the Admin SDK, which bypasses security rules entirely.
+That is fine, because that code runs on Google's servers where nobody can
+edit it. The rules exist to stop everyone *else*.
+
+### Only admins may read
+
+- `reports` — a reported user must never learn who reported her
+- `damageClaims` (beyond the two people involved)
+- `events`
+- `adminActions`
+
+## How admin works
+
+Admin is a **Firebase custom claim** — a flag attached to the account by the
+server, which the account itself cannot change. Not a field in the database,
+because a field in the database is something someone might find a way to
+write.
+
+```
+request.auth.token.admin == true
+```
+
+The admin dashboard checks this claim at login and refuses anyone without it.
+The security rules check it independently. Both checks matter: the dashboard
+check is a nice error message, the rules check is the actual lock.
+
+Setting the claim is a manual, deliberate act run from a script against a
+named uid. It is never granted by anything the app does.
+
+## Campus verification
+
+**Today (MVP):** a student types a university email. If the domain matches an
+approved campus, `isVerified` is set to `true` by a Cloud Function.
+
+**This is deliberately weak and we know it.** Typing `anyone@sc.edu` proves
+nothing — no confirmation email is sent. Zack's call was to ship the screen
+now and not gate features on it.
+
+What protects us from that being a permanent hole:
+
+- The field, the method (`domain_claimed`) and the timestamp are all recorded
+  now, so after we ship real verification we can tell exactly which accounts
+  were never actually proven and re-verify them.
+- Only a Cloud Function can set it, so it cannot be forged from the app even
+  today.
+- Every place that *should* be gated on it already reads it.
+
+**Before beta launch** (see [roadmap.md](./roadmap.md)) we email a real
+confirmation link, set `verificationMethod` to `email_confirmed`, and start
+enforcing it on listing, renting and messaging. Only the function changes.
+
+## Storage rules
+
+Users upload to their own folders and nowhere else:
+
+```
+users/{uid}/profile/...
+users/{uid}/listings/{listingId}/...
+users/{uid}/posts/{postId}/...
+users/{uid}/bookings/{bookingId}/...
+users/{uid}/claims/{claimId}/...
+```
+
+Enforced on every upload:
+
+- The path's `{uid}` must equal the signed-in uid
+- Content type must be an image
+- Maximum 8 MB per file
+- Photos are compressed and resized to 1600px on the longest edge **before**
+  upload, so the limit is a backstop, not the normal path
+
+Reads are public for listing and post photos — they have to be, they show up
+in feeds. Nothing private is ever put in Storage.
+
+## Secrets
+
+- Nothing secret is ever committed. `.env` is gitignored; every app has a
+  `.env.example` showing the shape without the values.
+- The **Firebase web config is not a secret.** It identifies the project, it
+  does not grant access — the security rules do that. It is safe in the repo
+  and safe in a shipped app. (This surprises people, so: yes, really.)
+- Things that *are* secret — Stripe secret keys, service account JSON —
+  never touch the repo. They live in Cloud Functions config.
+
+## Preventing abuse
+
+| Risk | Mitigation |
+|---|---|
+| Double-booking | Transaction in a Cloud Function ([architecture.md](./architecture.md)) |
+| Fake reviews | Reviews only writable by a participant in a completed booking |
+| Inflated stats | All counters written by functions only |
+| Username squatting on someone's handle | Lock documents + reserved-name list |
+| Someone taking payment off-platform | `off_platform_payment` report reason; in-app messaging keeps a record |
+| Oversized or non-image uploads | Storage rules |
+| Scripted signup floods | **TODO Phase 8:** Firebase App Check |
+| Function abuse | **TODO Phase 8:** rate limiting on callable functions |
+
+## What is not done yet
+
+Named honestly so it does not get forgotten:
+
+- **Real campus email verification.** Must-do before beta.
+- **App Check.** Phase 8. Until then nothing stops someone calling our
+  functions from outside the app.
+- **Rate limiting.** Phase 8.
+- **Blocking users.** Phase 6. Reporting exists in the model; blocking does
+  not yet.
+- **Content moderation of photos.** Human review through the admin reports
+  queue only. No automated scanning.

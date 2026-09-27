@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "default": "demo-loane",
+    "demo": "demo-loane",
+    "dev": "loane-dev",
+    "prod": "loane-code"
+  }
+}

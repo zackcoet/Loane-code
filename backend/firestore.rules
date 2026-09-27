@@ -1,0 +1,333 @@
+rules_version = '2';
+
+// Loane Firestore security rules.
+//
+// The guiding rule: NEVER TRUST THE PHONE.
+//
+// A user may write her own profile, listings, posts and messages. Everything
+// that involves money, trust, verification or counting is writable only by
+// Cloud Functions (which use the Admin SDK and bypass these rules entirely).
+//
+// See docs/security.md for the reasoning behind each block.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // -----------------------------------------------------------------
+    // Helpers
+    // -----------------------------------------------------------------
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function isSelf(userId) {
+      return signedIn() && uid() == userId;
+    }
+
+    // Admin is a custom claim set by the server, never a database field —
+    // a field is something someone might find a way to write.
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    function existingUser() {
+      return get(/databases/$(database)/documents/users/$(uid())).data;
+    }
+
+    // Is this account in good standing? Suspended users can read but not act.
+    function isActive() {
+      return signedIn() && existingUser().status == 'active';
+    }
+
+    // Campus-verified AND active. Today isVerified is set from the email
+    // domain alone (see docs/security.md) — the check is wired up now so
+    // that turning on real verification changes nothing here.
+    function isVerifiedStudent() {
+      return isActive() && existingUser().isVerified == true;
+    }
+
+    // Which fields is this write touching?
+    function changed() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // True when a write only touches fields from the allowed list.
+    function onlyChanges(allowed) {
+      return changed().hasOnly(allowed);
+    }
+
+    // -----------------------------------------------------------------
+    // campuses — the approved-school list
+    // -----------------------------------------------------------------
+    match /campuses/{campusId} {
+      // Readable by anyone, including signed-out users: the signup screen
+      // needs the approved domain list before an account exists.
+      allow read: if true;
+      // Written only by Cloud Functions / admins.
+      allow write: if false;
+    }
+
+    // -----------------------------------------------------------------
+    // users — public profile
+    // -----------------------------------------------------------------
+    match /users/{userId} {
+      allow read: if signedIn();
+
+      // The user profile document is created by a Cloud Function during
+      // signup, never by the app — it has to set campusId and isVerified.
+      allow create: if false;
+
+      // She may edit a narrow set of her own fields and nothing else.
+      // Notably absent: username, campusId, isVerified, role, status, stats.
+      allow update: if isSelf(userId)
+        && isActive()
+        && onlyChanges([
+             'firstName',
+             'displayName',
+             'bio',
+             'photoUrl',
+             'sizes',
+             'pushTokens',
+             'lastActiveAt',
+             'updatedAt'
+           ]);
+
+      allow delete: if false;
+
+      // Private settings: only hers, only ever read by her or an admin.
+      match /private/{docId} {
+        allow read: if isSelf(userId) || isAdmin();
+        allow write: if isSelf(userId) && isActive();
+      }
+
+      // Blocked users (Phase 6). Only she can see or change her own list.
+      match /blocked/{blockedUid} {
+        allow read: if isSelf(userId);
+        allow create, delete: if isSelf(userId) && isActive();
+        allow update: if false;
+      }
+
+      // Activity feed. Written by Cloud Functions; she may only mark read.
+      match /notifications/{notificationId} {
+        allow read: if isSelf(userId);
+        allow create, delete: if false;
+        allow update: if isSelf(userId) && onlyChanges(['readAt', 'updatedAt']);
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // usernames — uniqueness locks
+    // -----------------------------------------------------------------
+    match /usernames/{username} {
+      // Readable so the claim-username screen can say "already taken"
+      // before submitting.
+      allow read: if true;
+      // Claiming happens in a Cloud Function transaction alongside the
+      // user document. Letting the app write here would let someone claim
+      // a name without taking it.
+      allow write: if false;
+    }
+
+    // -----------------------------------------------------------------
+    // listings — garments in closets
+    // -----------------------------------------------------------------
+    match /listings/{listingId} {
+      allow read: if signedIn();
+
+      allow create: if isVerifiedStudent()
+        && request.resource.data.ownerUid == uid()
+        && request.resource.data.campusId == existingUser().campusId
+        && request.resource.data.status in ['draft', 'active']
+        // Counters start at zero. She does not get to invent a view count.
+        && request.resource.data.stats.viewCount == 0
+        && request.resource.data.stats.saveCount == 0
+        && request.resource.data.stats.tagCount == 0
+        && request.resource.data.stats.completedRentals == 0;
+
+      allow update: if isActive()
+        && resource.data.ownerUid == uid()
+        // She cannot move a listing to another campus, change its owner,
+        // write its counters, or un-suspend it after an admin took it down.
+        && !changed().hasAny(['ownerUid', 'campusId', 'stats', 'suspendedReason', 'createdAt'])
+        && request.resource.data.status in ['draft', 'active', 'paused', 'removed'];
+
+      // Soft delete only — set status to 'removed'. History has to survive.
+      allow delete: if false;
+    }
+
+    // -----------------------------------------------------------------
+    // posts — outfit looks
+    // -----------------------------------------------------------------
+    match /posts/{postId} {
+      allow read: if signedIn();
+
+      allow create: if isVerifiedStudent()
+        && request.resource.data.authorUid == uid()
+        && request.resource.data.campusId == existingUser().campusId
+        && request.resource.data.status == 'active'
+        && request.resource.data.stats.likeCount == 0
+        && request.resource.data.stats.saveCount == 0
+        && request.resource.data.stats.viewCount == 0
+        && request.resource.data.stats.tagTapCount == 0;
+
+      allow update: if isActive()
+        && resource.data.authorUid == uid()
+        && !changed().hasAny(['authorUid', 'campusId', 'stats', 'suspendedReason', 'createdAt'])
+        && request.resource.data.status in ['active', 'removed'];
+
+      allow delete: if false;
+    }
+
+    // -----------------------------------------------------------------
+    // Social edges — follows, likes, saves
+    //
+    // All written by Cloud Functions so the counters they drive stay
+    // honest. The app calls a callable function instead of writing here.
+    // -----------------------------------------------------------------
+    match /follows/{followId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /likes/{likeId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /postSaves/{saveId} {
+      allow read: if signedIn() && resource.data.uid == uid();
+      allow write: if false;
+    }
+
+    match /saves/{saveId} {
+      allow read: if signedIn() && resource.data.uid == uid();
+      allow write: if false;
+    }
+
+    // -----------------------------------------------------------------
+    // bookings — rentals and purchases
+    //
+    // THE APP CANNOT WRITE HERE AT ALL. Every booking is created and moved
+    // through its statuses by Cloud Functions running inside transactions.
+    // This is what makes double-booking impossible rather than unlikely.
+    // -----------------------------------------------------------------
+    match /bookings/{bookingId} {
+      allow read: if signedIn()
+        && (resource.data.renterUid == uid()
+            || resource.data.lenderUid == uid()
+            || isAdmin());
+      allow write: if false;
+    }
+
+    // -----------------------------------------------------------------
+    // reviews
+    //
+    // Written only by a Cloud Function, which checks the author actually
+    // completed the booking she is reviewing. That check is the whole
+    // difference between a real rating system and a decorative one.
+    // -----------------------------------------------------------------
+    match /reviews/{reviewId} {
+      allow read: if signedIn() && (resource.data.isHidden == false || isAdmin());
+      allow write: if false;
+    }
+
+    // -----------------------------------------------------------------
+    // conversations + messages
+    // -----------------------------------------------------------------
+    match /conversations/{conversationId} {
+      function isParticipant() {
+        return signedIn() && uid() in resource.data.participantUids;
+      }
+
+      allow read: if isParticipant() || isAdmin();
+      // Created by a Cloud Function so both participants' summaries and the
+      // unread counters are set correctly.
+      allow create: if false;
+      // Unread counts are function-owned; a user may not zero out someone
+      // else's badge.
+      allow update: if false;
+      allow delete: if false;
+
+      match /messages/{messageId} {
+        function inThread() {
+          return signedIn()
+            && uid() in get(/databases/$(database)/documents/conversations/$(conversationId))
+                          .data.participantUids;
+        }
+
+        allow read: if inThread() || isAdmin();
+
+        allow create: if inThread()
+          && isVerifiedStudent()
+          && request.resource.data.senderUid == uid()
+          && request.resource.data.isDeleted == false;
+
+        // She may mark a message read; she may not edit what was said.
+        allow update: if inThread() && onlyChanges(['readBy', 'updatedAt']);
+        allow delete: if false;
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // Moderation — admin eyes only
+    //
+    // A reported user must never be able to see who reported her, so these
+    // are not readable by the people involved.
+    // -----------------------------------------------------------------
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /damageClaims/{claimId} {
+      allow read: if isAdmin()
+        || (signedIn() && (resource.data.lenderUid == uid() || resource.data.renterUid == uid()));
+      allow write: if false;
+    }
+
+    match /adminActions/{actionId} {
+      // Append-only audit log. Even admins cannot rewrite it.
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // -----------------------------------------------------------------
+    // events — engagement tracking
+    //
+    // Create-only from the app. Nobody reads these but admins. They are how
+    // we answer the two MVP questions, so they must be tamper-proof.
+    // -----------------------------------------------------------------
+    match /events/{eventId} {
+      allow read: if isAdmin();
+      allow create: if signedIn()
+        && request.resource.data.uid == uid();
+      allow update, delete: if false;
+    }
+
+    // -----------------------------------------------------------------
+    // circles — designed, not built (Phase 3+)
+    // -----------------------------------------------------------------
+    match /circles/{circleId} {
+      allow read: if signedIn();
+      allow write: if false;
+
+      match /members/{memberUid} {
+        allow read: if signedIn();
+        allow write: if false;
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // Anything not named above is denied. New collections must be added
+    // here deliberately rather than inheriting access by accident.
+    // -----------------------------------------------------------------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

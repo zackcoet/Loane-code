@@ -1,0 +1,32 @@
+{
+  "name": "@loane/functions",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Loane Cloud Functions. Everything involving money, bookings, trust or verification runs here.",
+  "main": "lib/index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "emulators": "npm run build && cd .. && firebase emulators:start --project=demo-loane",
+    "seed": "tsx scripts/seed.ts",
+    "grant-admin": "tsx scripts/grantAdmin.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@loane/shared": "*",
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.5.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "@types/node": "^20.17.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8",
+    "esbuild": "^0.24.0"
+  }
+}

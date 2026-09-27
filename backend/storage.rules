@@ -1,0 +1,77 @@
+rules_version = '2';
+
+// Loane Storage security rules.
+//
+// Every upload goes into a folder named after the uploader's own uid. The
+// path itself is the permission check — you cannot write into someone
+// else's folder because your uid is not in the path.
+//
+// Listing and post photos are publicly readable because they appear in
+// feeds. Nothing private is ever stored here.
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp|heic|heif)');
+    }
+
+    // 8 MB backstop. The app compresses and resizes to 1600px on the long
+    // edge before uploading, so a real photo lands far under this.
+    function underSizeLimit() {
+      return request.resource.size < 8 * 1024 * 1024;
+    }
+
+    function validUpload() {
+      return isImage() && underSizeLimit();
+    }
+
+    match /users/{userId}/profile/{fileName} {
+      allow read: if signedIn();
+      allow write: if isOwner(userId) && validUpload();
+    }
+
+    match /users/{userId}/listings/{listingId}/{fileName} {
+      // Public: listing photos render in feeds and on the marketplace.
+      allow read: if true;
+      allow write: if isOwner(userId) && validUpload();
+    }
+
+    match /users/{userId}/posts/{postId}/{fileName} {
+      allow read: if true;
+      allow write: if isOwner(userId) && validUpload();
+    }
+
+    // Condition photos at drop-off and return. Only the two people in the
+    // booking and admins need these, but Storage rules cannot cheaply read
+    // Firestore, so we keep them readable to signed-in users and never put
+    // anything identifying in the filename.
+    match /users/{userId}/bookings/{bookingId}/{fileName} {
+      allow read: if signedIn();
+      allow write: if isOwner(userId) && validUpload();
+    }
+
+    // Damage claim evidence.
+    match /users/{userId}/claims/{claimId}/{fileName} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId) && validUpload();
+    }
+
+    // Everything else is denied.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

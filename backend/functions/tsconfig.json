@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "types": ["node"],
+    // Type checking only. The deployable bundle is produced by esbuild
+    // (see build.mjs) because Firebase only uploads this folder — a
+    // workspace symlink to @loane/shared would not survive the upload,
+    // so the shared code has to be bundled in.
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "scripts/**/*.ts", "build.mjs"]
+}
