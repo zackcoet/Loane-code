@@ -148,28 +148,93 @@ service cloud.firestore {
 
     // -----------------------------------------------------------------
     // listings — garments in closets
+    //
+    // These checks mirror `validateListingDraft` in shared/src/validation.ts.
+    // The app's copy gives a friendly message; THIS copy is what makes it
+    // true, because security rules cannot call TypeScript. If you change
+    // one, change the other.
     // -----------------------------------------------------------------
     match /listings/{listingId} {
+      function draft() {
+        return request.resource.data;
+      }
+
+      function hasRequiredFields() {
+        return draft().keys().hasAll([
+                 'ownerUid', 'campusId', 'name', 'category', 'occasions',
+                 'intent', 'status', 'photos', 'pricing', 'stats'
+               ])
+          && draft().name is string
+          && draft().name.size() >= 2
+          && draft().name.size() <= 80
+          && draft().description is string
+          && draft().description.size() <= 1000
+          && draft().category in [
+               'dresses','tops','bottoms','sets','outerwear',
+               'shoes','bags','accessories','jewelry'
+             ]
+          && draft().occasions is list
+          && draft().occasions.size() >= 1
+          && draft().occasions.size() <= 8
+          && draft().intent in ['rent', 'sell', 'both']
+          && draft().photos is list
+          && draft().photos.size() >= 1
+          && draft().photos.size() <= 8;
+      }
+
+      /** A price, in whole cents, inside the allowed range. */
+      function validPrice(cents) {
+        return cents is int && cents >= 100 && cents <= 100000;
+      }
+
+      function pricingMatchesIntent() {
+        return (
+          // Rentable pieces need both durations priced and a documented
+          // value — the value is what caps a damage claim later.
+          !(draft().intent in ['rent', 'both'])
+          || (validPrice(draft().pricing.threeDayCents)
+              && validPrice(draft().pricing.sevenDayCents)
+              && draft().garmentValueCents is int
+              && draft().garmentValueCents >= 1000
+              && draft().garmentValueCents <= 500000)
+        ) && (
+          !(draft().intent in ['sell', 'both']) || validPrice(draft().salePriceCents)
+        );
+      }
+
+      function countersStartAtZero() {
+        return draft().stats.viewCount == 0
+          && draft().stats.saveCount == 0
+          && draft().stats.tagCount == 0
+          && draft().stats.completedRentals == 0;
+      }
+
       allow read: if signedIn();
 
       allow create: if isVerifiedStudent()
-        && request.resource.data.ownerUid == uid()
-        && request.resource.data.campusId == existingUser().campusId
-        && request.resource.data.status in ['draft', 'active']
-        // Counters start at zero. She does not get to invent a view count.
-        && request.resource.data.stats.viewCount == 0
-        && request.resource.data.stats.saveCount == 0
-        && request.resource.data.stats.tagCount == 0
-        && request.resource.data.stats.completedRentals == 0;
+        && draft().ownerUid == uid()
+        && draft().campusId == existingUser().campusId
+        && draft().status in ['draft', 'active']
+        && hasRequiredFields()
+        && pricingMatchesIntent()
+        // She does not get to invent a view count.
+        && countersStartAtZero();
 
       allow update: if isActive()
         && resource.data.ownerUid == uid()
         // She cannot move a listing to another campus, change its owner,
         // write its counters, or un-suspend it after an admin took it down.
-        && !changed().hasAny(['ownerUid', 'campusId', 'stats', 'suspendedReason', 'createdAt'])
-        && request.resource.data.status in ['draft', 'active', 'paused', 'removed'];
+        && !changed().hasAny([
+             'ownerUid', 'campusId', 'stats', 'suspendedReason',
+             'createdAt', 'owner', 'removedAt'
+           ])
+        && draft().status in ['draft', 'active', 'paused']
+        && hasRequiredFields()
+        && pricingMatchesIntent();
 
-      // Soft delete only — set status to 'removed'. History has to survive.
+      // No hard delete, and no setting status to 'removed' from the app
+      // either: removing has to check for rental history first, so it goes
+      // through the removeListing Cloud Function. History must survive.
       allow delete: if false;
     }
 

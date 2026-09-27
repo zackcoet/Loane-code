@@ -89,6 +89,7 @@ function RootNavigator() {
       <Stack.Screen name="notification-preferences" options={{ presentation: 'card' }} />
       <Stack.Screen name="privacy" options={{ presentation: 'card' }} />
       <Stack.Screen name="u/[username]" options={{ presentation: 'card' }} />
+      <Stack.Screen name="add-to-closet" options={{ presentation: 'card' }} />
     </Stack>
   );
 }

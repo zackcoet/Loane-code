@@ -175,6 +175,107 @@ export function validatePhotoCount(count: number, kind: 'listing' | 'post'): Val
   return OK;
 }
 
+/**
+ * Everything the Add to Closet screen collects, before it becomes a
+ * Listing document.
+ */
+export interface ListingDraft {
+  name: string;
+  description: string;
+  brand: string | null;
+  category: Category | null;
+  size: Size | null;
+  shoeSize: string | null;
+  condition: string | null;
+  occasions: Occasion[];
+  intent: 'rent' | 'sell' | 'both' | null;
+  threeDayCents: Cents | null;
+  sevenDayCents: Cents | null;
+  salePriceCents: Cents | null;
+  garmentValueCents: Cents | null;
+  photoCount: number;
+}
+
+/**
+ * Validates a whole listing in one pass, in the order the fields appear on
+ * screen, so the first error she sees is the first thing she can fix.
+ *
+ * The SAME rules are re-stated in firestore.rules, because security rules
+ * cannot call TypeScript. That duplication is deliberate and load-bearing:
+ * this function gives a friendly message, the rules make it true. If you
+ * change one, change the other — there is a test that a listing missing a
+ * required field is rejected by the rules.
+ */
+export function validateListingDraft(draft: ListingDraft): ValidationResult {
+  const photos = validatePhotoCount(draft.photoCount, 'listing');
+  if (!photos.ok) return photos;
+
+  const name = validateListingName(draft.name);
+  if (!name.ok) return name;
+
+  if (draft.description.length > LIMITS.listingDescription.max) {
+    return fail(`Descriptions can be at most ${LIMITS.listingDescription.max} characters.`);
+  }
+  if (draft.brand && draft.brand.length > LIMITS.brand.max) {
+    return fail(`Brand names can be at most ${LIMITS.brand.max} characters.`);
+  }
+
+  if (!draft.category) return fail('Pick a category.');
+  if (!isCategory(draft.category)) return fail('Pick a valid category.');
+
+  // Shoes are sized differently; everything else uses XS-XL. Bags and most
+  // accessories have no size at all.
+  const needsClothingSize = !['shoes', 'bags', 'accessories', 'jewelry'].includes(draft.category);
+  if (needsClothingSize && !draft.size) return fail('Pick a size.');
+  if (draft.size && !isSize(draft.size)) return fail('Pick a valid size.');
+
+  if (draft.occasions.length === 0) {
+    return fail('Pick at least one occasion so people can find it.');
+  }
+  if (draft.occasions.some((o) => !isOccasion(o))) return fail('Pick valid occasions.');
+
+  if (!draft.intent) return fail('Choose whether this is for rent, for sale, or both.');
+
+  const rentable = draft.intent === 'rent' || draft.intent === 'both';
+  const sellable = draft.intent === 'sell' || draft.intent === 'both';
+
+  if (rentable) {
+    if (draft.threeDayCents == null) return fail('Set a 3-day rental price.');
+    const three = validatePriceCents(draft.threeDayCents, '3-day price');
+    if (!three.ok) return three;
+
+    if (draft.sevenDayCents == null) return fail('Set a 7-day rental price.');
+    const seven = validatePriceCents(draft.sevenDayCents, '7-day price');
+    if (!seven.ok) return seven;
+
+    // Not a hard rule of the world, but a 7-day price below the 3-day one
+    // is almost always a typo, and it would quietly cost her money.
+    if (draft.sevenDayCents < draft.threeDayCents) {
+      return fail('The 7-day price is lower than the 3-day price. Is that right?');
+    }
+  }
+
+  if (sellable) {
+    if (draft.salePriceCents == null) return fail('Set a sale price.');
+    const sale = validatePriceCents(draft.salePriceCents, 'Sale price');
+    if (!sale.ok) return sale;
+  }
+
+  if (rentable) {
+    if (draft.garmentValueCents == null) {
+      return fail("Set what the piece is worth — it's what protects you if it's damaged.");
+    }
+    const value = validateGarmentValueCents(draft.garmentValueCents);
+    if (!value.ok) return value;
+
+    if (draft.threeDayCents != null && draft.garmentValueCents < draft.threeDayCents) {
+      return fail('The garment value should be more than the rental price.');
+    }
+  }
+
+  return OK;
+}
+
 // ---------------------------------------------------------------------------
 // Bookings
 // ---------------------------------------------------------------------------
