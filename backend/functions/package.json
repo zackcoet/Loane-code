@@ -22,11 +22,12 @@
     "firebase-functions": "^6.5.0"
   },
   "devDependencies": {
-    "@firebase/rules-unit-testing": "^4.0.1",
+    "@firebase/rules-unit-testing": "^5.0.2",
     "@types/node": "^20.17.10",
+    "esbuild": "^0.24.0",
+    "firebase": "^12.19.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8",
-    "esbuild": "^0.24.0"
+    "vitest": "^2.1.8"
   }
 }

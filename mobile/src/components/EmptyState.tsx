@@ -1,0 +1,56 @@
+/**
+ * The empty states from the mockups.
+ *
+ * Every list in Loane starts empty, and at launch most of them will BE
+ * empty for a while. They are part of the product, not an afterthought:
+ * "No looks yet — be the first to post an outfit from your campus."
+ */
+
+import { StyleSheet, Text, View } from 'react-native';
+import { colors, spacing, typography } from '@loane/shared';
+import { Button } from './Button';
+
+interface Props {
+  title: string;
+  body?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}
+
+export function EmptyState({ title, body, actionLabel, onAction }: Props) {
+  return (
+    <View style={styles.wrapper}>
+      <Text style={styles.title}>{title}</Text>
+      {body ? <Text style={styles.body}>{body}</Text> : null}
+      {actionLabel && onAction ? (
+        <Button label={actionLabel} variant="outline" onPress={onAction} style={styles.action} />
+      ) : null}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrapper: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xxl,
+  },
+  title: {
+    fontSize: typography.label.size,
+    letterSpacing: typography.label.letterSpacing,
+    textTransform: 'uppercase',
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  body: {
+    marginTop: spacing.md,
+    fontSize: typography.bodySmall.size,
+    lineHeight: typography.bodySmall.lineHeight,
+    color: colors.textMuted,
+    textAlign: 'center',
+    maxWidth: 260,
+  },
+  action: { marginTop: spacing.lg, minWidth: 180 },
+});
