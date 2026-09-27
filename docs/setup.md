@@ -86,27 +86,78 @@ A QR code appears. Open the **Camera app** on your iPhone, point it at the QR
 code, and tap the banner — it opens in Expo Go. (On Android, scan it from
 inside the Expo Go app.)
 
-### Important: your phone cannot see "localhost"
+### Getting it working on a real phone
 
-To your phone, "localhost" means the phone itself. So when you run on a real
-device you must tell the app your laptop's address on the wi-fi network.
+There are **two** separate things that have to be right. Getting one and
+not the other is the usual cause of "no connection" on the phone while
+everything looks fine on the laptop.
 
-Find it:
+**1. The app has to know your laptop's address.**
+
+To your phone, "localhost" means *the phone*. Run:
 
 ```bash
-ipconfig getifaddr en0
+npm run lan
 ```
 
-Then put that value in `mobile/.env`:
+That finds your Wi-Fi address and writes it into `mobile/.env`. Restart
+the app afterwards.
 
+**Your laptop's address changes** when you switch networks, and sometimes
+when the router feels like it. If the phone suddenly stops connecting,
+run `npm run lan` again — that is almost always the fix.
+
+**2. The emulators have to accept connections from other devices.**
+
+By default the Firebase emulators listen on `127.0.0.1` only, which means
+they refuse anything that is not the laptop itself. Your phone can have
+exactly the right address and still get nothing.
+
+`backend/firebase.json` sets `"host": "0.0.0.0"` on each emulator, which
+means "listen on every network interface". You can confirm it:
+
+```bash
+lsof -nP -iTCP -sTCP:LISTEN | grep -E ':(8080|9099|5001|9199) '
 ```
-EXPO_PUBLIC_EMULATOR_HOST=192.168.1.42
-```
 
-Restart the app after changing it. Your phone and laptop must be on the same
-wi-fi.
+You want to see `*:8080`. If it says `127.0.0.1:8080`, the emulators need
+restarting.
 
-(In the iOS Simulator this is not needed — `127.0.0.1` works there.)
+> **Where this is safe.** `0.0.0.0` means anyone on the same Wi-Fi can
+> reach your emulators. On your home network that is fine. On open campus
+> or coffee-shop Wi-Fi, anyone on that network could read and write your
+> local test data. It is a `demo-` project with fake students in it, so
+> the worst case is someone spoiling your seed — but do not leave it
+> running on a public network, and never point this at a real project.
+
+(In the iOS Simulator none of this matters — it shares the laptop's
+network, so `127.0.0.1` works.)
+
+### Still not connecting?
+
+Work down this list:
+
+| Check | How |
+|---|---|
+| Same Wi-Fi? | Phone and laptop, same network. A phone on cellular will never reach it. |
+| Right IP? | `npm run lan`, then restart the app |
+| Emulators listening widely? | `lsof` command above — want `*:8080`, not `127.0.0.1:8080` |
+| Mac firewall blocking? | System Settings → Network → Firewall. If it is on, allow incoming for `node` and `java`, or turn it off on a trusted network |
+| Wi-Fi isolating clients? | See below |
+
+**Client isolation** is the one that catches people out. Many public and
+university networks deliberately stop devices talking to each other, so
+your phone cannot reach your laptop no matter what either is configured
+to do. Guest networks almost always do this.
+
+You can test it from the phone's browser: open
+`http://YOUR_IP:4000`. If the emulator dashboard loads, the network is
+fine and the problem is configuration. If it times out, the network is
+blocking you.
+
+**Ways round it:** use a home network or a personal hotspot from your
+phone (with the laptop joined to it), or test in the iOS Simulator
+instead.
 
 **The admin dashboard** (a fourth terminal, when you want it):
 

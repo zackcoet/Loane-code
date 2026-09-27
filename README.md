@@ -65,9 +65,9 @@ Then scan the QR code with your iPhone camera to open it in Expo Go.
 Seeded accounts all use the password `loane1234`:
 `ellapetrickcloset@email.sc.edu` (student), `admin@joinloane.com` (admin).
 
-> **Your phone can't see "localhost."** When running on a real device, set
-> `EXPO_PUBLIC_EMULATOR_HOST` in `mobile/.env` to your laptop's wi-fi IP
-> (`ipconfig getifaddr en0`). See [docs/setup.md](docs/setup.md).
+> **Testing on a real phone?** Run `npm run lan` first — it points the app
+> at your laptop's current Wi-Fi address. Run it again whenever you change
+> networks. See [docs/setup.md](docs/setup.md) if it still will not connect.
 
 ## The docs
 
