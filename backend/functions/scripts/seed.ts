@@ -10,18 +10,22 @@
  *
  * What it creates:
  *   - the University of South Carolina campus
- *   - 1 admin account
+ *   - 1 generic admin account
+ *   - Zack's admin account, when SEED_ADMIN_PASSWORD is set locally
  *   - 10 students, 4 of them flagged as founding closets
  *   - ~30 listings across categories and occasions
  *   - ~18 outfit posts, most tagging a listing
  *   - follows, likes and saves between them
  *
- * Every account uses the password: loane1234
+ * Seeded test accounts use the password: loane1234
+ * Zack's admin password is read from backend/functions/.env and is never hardcoded.
  */
 
 import { initializeApp, deleteApp } from 'firebase-admin/app';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   CATEGORIES,
   COLLECTIONS,
@@ -64,7 +68,25 @@ function assertEmulators(): void {
 }
 
 const PASSWORD = 'loane1234';
+const ZACK_ADMIN_EMAIL = 'zackcoetzee123@gmail.com';
 const CAMPUS_ID = 'university-of-south-carolina';
+
+function loadLocalEnv(): void {
+  const envPath = resolve(process.cwd(), '.env');
+  if (!existsSync(envPath)) return;
+
+  for (const rawLine of readFileSync(envPath, 'utf8').split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+    const eq = line.indexOf('=');
+    if (eq === -1) continue;
+
+    const key = line.slice(0, eq).trim();
+    const rawValue = line.slice(eq + 1).trim();
+    const value = rawValue.replace(/^['"]|['"]$/g, '');
+    process.env[key] ??= value;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Deterministic fake data
@@ -252,6 +274,7 @@ async function clear(db: Firestore, auth: Auth): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  loadLocalEnv();
   assertEmulators();
 
   const app = initializeApp({ projectId: process.env.GCLOUD_PROJECT });
@@ -295,6 +318,20 @@ async function main(): Promise<void> {
   });
   await auth.setCustomUserClaims(adminRecord.uid, { admin: true });
   console.warn('Created admin: admin@joinloane.com / ' + PASSWORD);
+
+  const zackAdminPassword = process.env.SEED_ADMIN_PASSWORD?.trim();
+  if (zackAdminPassword) {
+    const zackAdminRecord = await auth.createUser({
+      email: ZACK_ADMIN_EMAIL,
+      password: zackAdminPassword,
+      displayName: 'Zack Coetzee',
+      emailVerified: true,
+    });
+    await auth.setCustomUserClaims(zackAdminRecord.uid, { admin: true });
+    console.warn(`Created admin: ${ZACK_ADMIN_EMAIL} (password read from local .env)`);
+  } else {
+    console.warn(`Skipped ${ZACK_ADMIN_EMAIL}: SEED_ADMIN_PASSWORD is not set in backend/functions/.env.`);
+  }
 
   // --- Students -----------------------------------------------------------
   const users: User[] = [];
@@ -550,7 +587,7 @@ async function main(): Promise<void> {
   console.warn('Seed complete.');
   console.warn('  Sign in as any student, e.g.  ellapetrickcloset@email.sc.edu');
   console.warn('  Admin dashboard:              admin@joinloane.com');
-  console.warn(`  Password for all accounts:    ${PASSWORD}`);
+  console.warn(`  Password for seeded test accounts: ${PASSWORD}`);
 
   await deleteApp(app);
 }
