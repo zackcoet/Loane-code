@@ -27,6 +27,7 @@ answer is no.
 
 - `bookings` — otherwise two people book the same dress
 - `reviews` — otherwise anyone rates anyone
+- `saves` — saving drives the save count owners see
 - All counters: follower counts, like counts, listing counts, ratings
 - `isVerified`, `verificationMethod`, `role`, `status`
 - `usernames` locks
@@ -129,6 +130,9 @@ in feeds. Nothing private is ever put in Storage.
 | Username squatting on someone's handle | Lock documents + reserved-name list |
 | Someone taking payment off-platform | `off_platform_payment` report reason; in-app messaging keeps a record |
 | Oversized or non-image uploads | Storage rules |
+| A listing with no photo, no occasion or no price | Required fields enforced in `firestore.rules`, mirroring `validateListingDraft` |
+| Faked prices, campus, owner or counters on a listing | Create and update rules; counters must start at zero and can never be written by the app |
+| Deleting a listing that has rental history | The app cannot delete or mark `removed` at all — only the `removeListing` function, which checks bookings first |
 | Scripted signup floods | **TODO Phase 8:** Firebase App Check |
 | Function abuse | **TODO Phase 8:** rate limiting on callable functions |
 

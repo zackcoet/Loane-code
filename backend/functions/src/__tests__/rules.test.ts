@@ -276,6 +276,100 @@ describe('listings', () => {
     await assertFails(deleteDoc(doc(asElla(), 'listings', 'listing-1')));
   });
 
+  // --- Phase 2: the listing rules mirror validateListingDraft ----------
+
+  it('refuses a listing with no photos', async () => {
+    await assertFails(
+      setDoc(
+        doc(asElla(), 'listings', 'listing-nophoto'),
+        listingDoc(ELLA, { id: 'listing-nophoto', photos: [], coverUrl: null }),
+      ),
+    );
+  });
+
+  it('refuses a listing with no occasions — nobody could ever find it', async () => {
+    await assertFails(
+      setDoc(
+        doc(asElla(), 'listings', 'listing-noocc'),
+        listingDoc(ELLA, { id: 'listing-noocc', occasions: [] }),
+      ),
+    );
+  });
+
+  it('refuses a rentable listing with no price', async () => {
+    await assertFails(
+      setDoc(
+        doc(asElla(), 'listings', 'listing-free'),
+        listingDoc(ELLA, {
+          id: 'listing-free',
+          pricing: { threeDayCents: null, sevenDayCents: null },
+        }),
+      ),
+    );
+  });
+
+  it('refuses a rentable listing with no documented garment value', async () => {
+    // The value is what caps a damage claim later, so a rentable piece
+    // without one has no protection behind it.
+    await assertFails(
+      setDoc(
+        doc(asElla(), 'listings', 'listing-novalue'),
+        listingDoc(ELLA, { id: 'listing-novalue', garmentValueCents: 0 }),
+      ),
+    );
+  });
+
+  it('refuses a price that is not whole cents', async () => {
+    await assertFails(
+      setDoc(
+        doc(asElla(), 'listings', 'listing-float'),
+        listingDoc(ELLA, {
+          id: 'listing-float',
+          pricing: { threeDayCents: 25.5, sevenDayCents: 4000 },
+        }),
+      ),
+    );
+  });
+
+  it('refuses a for-sale listing with no sale price', async () => {
+    await assertFails(
+      setDoc(
+        doc(asElla(), 'listings', 'listing-nosale'),
+        listingDoc(ELLA, { id: 'listing-nosale', intent: 'sell', salePriceCents: null }),
+      ),
+    );
+  });
+
+  it('refuses a listing placed on another campus', async () => {
+    await assertFails(
+      setDoc(
+        doc(asElla(), 'listings', 'listing-elsewhere'),
+        listingDoc(ELLA, { id: 'listing-elsewhere', campusId: 'some-other-school' }),
+      ),
+    );
+  });
+
+  it('stops her faking the price on an existing listing’s counters', async () => {
+    await assertFails(
+      updateDoc(doc(asElla(), 'listings', 'listing-1'), { 'stats.saveCount': 500 }),
+    );
+  });
+
+  it('stops her marking her own listing removed — that goes through a function', async () => {
+    // Removing has to check for rental history first, which the app cannot
+    // see, so there is exactly one path and it is server-side.
+    await assertFails(updateDoc(doc(asElla(), 'listings', 'listing-1'), { status: 'removed' }));
+  });
+
+  it('lets her pause and unpause her own listing', async () => {
+    await assertSucceeds(updateDoc(doc(asElla(), 'listings', 'listing-1'), { status: 'paused' }));
+    await assertSucceeds(updateDoc(doc(asElla(), 'listings', 'listing-1'), { status: 'active' }));
+  });
+
+  it('stops her reassigning a listing to someone else', async () => {
+    await assertFails(updateDoc(doc(asElla(), 'listings', 'listing-1'), { ownerUid: MADDIE }));
+  });
+
   it('stops a suspended account listing anything', async () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), 'users', MADDIE), userDoc(MADDIE, { status: 'suspended' }));
@@ -336,6 +430,30 @@ describe('follows', () => {
         campusId: CAMPUS,
       }),
     );
+  });
+});
+
+describe('saves', () => {
+  it('cannot be written by the app — it drives the listing save count', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'saves', `${ELLA}_listing-1`), {
+        uid: ELLA,
+        listingId: 'listing-1',
+        campusId: CAMPUS,
+      }),
+    );
+  });
+
+  it('is readable only by the person who saved it', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'saves', `${ELLA}_listing-1`), {
+        uid: ELLA,
+        listingId: 'listing-1',
+        campusId: CAMPUS,
+      });
+    });
+    await assertSucceeds(getDoc(doc(asElla(), 'saves', `${ELLA}_listing-1`)));
+    await assertFails(getDoc(doc(asMaddie(), 'saves', `${ELLA}_listing-1`)));
   });
 });
 
