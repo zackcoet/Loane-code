@@ -83,7 +83,20 @@ service cloud.firestore {
       allow create: if false;
 
       // She may edit a narrow set of her own fields and nothing else.
-      // Notably absent: username, campusId, isVerified, role, status, stats.
+      //
+      // This is an ALLOW-LIST: anything not named here is refused, so a
+      // field added to the User type later is locked by default until we
+      // deliberately open it.
+      //
+      // Deliberately absent, and each for a reason:
+      //   username        — a handle is a lock; changeUsername owns it
+      //   campusId        — she cannot move herself to another school
+      //   campusEmail     — the address is what her campus claim rests on
+      //   isVerified      — otherwise "verified student" means nothing
+      //   emailConfirmed  — only a real confirmation may set this
+      //   role, status    — nobody promotes or un-suspends themselves
+      //   stats           — every counter is a Cloud Function's job
+      //   isFoundingCloset, stripe, verifiedAt, createdAt
       allow update: if isSelf(userId)
         && isActive()
         && onlyChanges([

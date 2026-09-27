@@ -21,9 +21,11 @@ export interface CampusView {
   loading: boolean;
 }
 
-export function useCampus(): CampusView {
-  const { profile } = useAuth();
-  const campusId = profile?.campusId ?? null;
+/**
+ * Loads any campus by id. Used on another student's profile, where the
+ * campus may one day differ from the viewer's own.
+ */
+export function useCampusName(campusId: string | null | undefined): CampusView {
   const [campus, setCampus] = useState<Campus | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -53,4 +55,10 @@ export function useCampus(): CampusView {
     dotColor: campus?.brandColor ?? colors.campusDotFallback,
     loading,
   };
+}
+
+/** The signed-in student's own campus. */
+export function useCampus(): CampusView {
+  const { profile } = useAuth();
+  return useCampusName(profile?.campusId ?? null);
 }

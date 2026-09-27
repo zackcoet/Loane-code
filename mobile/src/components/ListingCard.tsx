@@ -10,9 +10,10 @@ interface Props {
   /** Card width, worked out by the grid. */
   width: number;
   onPress?: (listingId: string) => void;
+  onPressOwner?: (username: string) => void;
 }
 
-export function ListingCard({ listing, width, onPress }: Props) {
+export function ListingCard({ listing, width, onPress, onPressOwner }: Props) {
   const price =
     listing.pricing.threeDayCents != null
       ? formatCentsShort(listing.pricing.threeDayCents)
@@ -40,7 +41,12 @@ export function ListingCard({ listing, width, onPress }: Props) {
         {price ? <Text style={styles.price}>{price}</Text> : null}
         {listing.size ? <Text style={styles.size}>{listing.size}</Text> : null}
       </View>
-      <Text style={styles.owner} numberOfLines={1}>
+      <Text
+        style={styles.owner}
+        numberOfLines={1}
+        onPress={() => onPressOwner?.(listing.owner.username)}
+        suppressHighlighting
+      >
         @{listing.owner.username}
       </Text>
     </Pressable>

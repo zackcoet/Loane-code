@@ -15,12 +15,16 @@ tracking exists from day one rather than being bolted on later.
 
 These are not a phase. They are a gate. Beta does not open until they are done.
 
-- [ ] **Real campus email verification.** Today a student types an `sc.edu`
-      address and we believe her. Before real students and real garments are
-      involved, we must email a confirmation code or link and only then set
-      `isVerified`. Everything is already wired for this — only the Cloud
-      Function changes. *(Zack's call: skip for now, do not block features
-      on it, but this is non-negotiable before launch.)*
+- [ ] **Real campus email verification — a 6-DIGIT CODE, not a link.**
+      Today a student types an `sc.edu` address and we believe her.
+      **Do not send a link:** university security scanners follow links in
+      incoming mail and would burn a one-time link before the student ever
+      opened it. Email a 6-digit code she types back in, then set
+      `emailConfirmed: true` and start enforcing it on listing, renting and
+      messaging. The field already exists on every user and is always false
+      today, so nothing has to be migrated — only a Cloud Function and one
+      screen are new. *(Zack's call: not blocking any feature for now, but
+      non-negotiable before beta.)*
 - [ ] **Firebase App Check**, so our functions can only be called by our app.
 - [ ] Terms of Service and Privacy Policy live and linked.
 - [ ] Confirm the final brand hex codes (three are currently sampled from the
@@ -47,15 +51,28 @@ These are not a phase. They are a gate. Beta does not open until they are done.
 - [x] Admin: Vite + React shell with admin-only login
 - [x] Connected to GitHub, clean commits on `main`
 
-## Phase 1 — Accounts
+## Phase 1 — Accounts ✅
 
-- Profile editing: photo upload, display name, bio, sizing
-- Viewing another student's profile and closet
-- Account settings screen (from the mockups)
-- Username changes, with the lock document handled correctly
-- Founding-closet flag, set by an admin
-- *Deferred from the gate above:* real email verification lands here if we
-  choose to do it early
+- [x] **One sign-up screen, school email only.** The separate personal-email
+      step is gone. Only approved campus domains can create an account.
+- [x] **Signup happens entirely server-side.** `createAccount` checks the
+      domain, creates the login, writes the profile and claims the username
+      in one call — and deletes the half-made login if any part fails, so a
+      login can never exist without a profile behind it.
+- [x] `emailConfirmed` on every user, always false, ready for the 6-digit
+      code above
+- [x] My Profile: photo, name, handle, campus, rating, bio, sizes, stats,
+      and Posts / Closet / Reviews
+- [x] Edit Profile: photo (camera or library, compressed before upload),
+      display name, username, bio, sizing
+- [x] Other students' profiles at `/u/{username}`, with Follow / Unfollow
+      running as Cloud Functions
+- [x] Account Settings, including a working Change Password
+- [x] Events: `profile_view`, `profile_edit`, `follow`, `unfollow`
+- [x] Security rules tightened to an explicit allow-list, with tests
+
+Not done here, deliberately: the founding-closet flag is still set by hand
+in the seed rather than from the admin dashboard — that is Phase 7.
 
 ## Phase 2 — Closet + Marketplace
 

@@ -6,6 +6,56 @@ much as the answer.
 
 ---
 
+## 2026-09-27 — Sign-up runs entirely on the server
+
+**Decision:** The app no longer creates Firebase Auth accounts. One callable
+function, `createAccount`, checks the school domain, creates the login,
+writes the profile and claims the username — and deletes the login it just
+made if any later step fails. The app then signs in with a one-time token
+the function returns.
+
+**Why:** The obvious flow is "app creates the login, then calls us to make
+the profile." That leaves a gap where a login exists with no Loane profile,
+and anyone willing to skip the second call could sit there indefinitely.
+Zack asked whether the server could do the whole thing instead of paying for
+Identity Platform. It can, and it closes the gap at no cost.
+
+**Trade-off:** `createCustomToken` needs the functions service account to
+hold the "Service Account Token Creator" role in production. A one-time,
+free grant in the Google Cloud console. Emulators do not need it.
+
+**Knock-on:** the password now has to survive from the email screen to the
+username screen. It is held in memory only and never written to disk, so an
+app reload sends her back one screen to retype it.
+
+---
+
+## 2026-09-27 — Campus verification is a 6-digit code, never a link
+
+**Decision:** When we ship real verification it will email a 6-digit code
+she types back into the app. Not a magic link.
+
+**Why:** University mail systems run security scanners that follow every
+link in incoming mail. A one-time link would be consumed by the scanner
+before the student ever saw the email, and she would be locked out through
+no fault of her own.
+
+---
+
+## 2026-09-27 — `isVerified` and `emailConfirmed` are two different things
+
+**Decision:** Keep both fields, with sharply different meanings.
+`isVerified` means her domain is on the approved list, so she may use the
+app — true from signup. `emailConfirmed` means we have proven she controls
+that inbox — always false today.
+
+**Why:** Zack asked for `emailConfirmed`. We already had `isVerified`, and
+two fields that sound alike are a bug waiting to happen, so the split is
+written down here and in the type. When the code ships, `emailConfirmed`
+flips and we start enforcing it. No documents migrate.
+
+---
+
 ## 2026-09-25 — Skip real campus email verification for MVP
 
 **Decision:** Build the "Verify your campus" screen exactly as designed.

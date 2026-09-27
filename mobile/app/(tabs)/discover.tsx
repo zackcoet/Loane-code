@@ -187,6 +187,7 @@ export default function Discover() {
             <ListingCard
               listing={item}
               width={cardWidth}
+              onPressOwner={(username) => router.push(`/u/${username}`)}
               onPress={(listingId) => {
                 logEvent('listing_view', {
                   surface: 'discover',

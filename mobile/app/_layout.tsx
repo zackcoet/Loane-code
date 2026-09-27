@@ -41,10 +41,10 @@ function RootNavigator() {
     }
 
     if (needsOnboarding) {
-      // Signed in, no profile: she stopped partway through onboarding.
-      // Resume at the name step, not at verify-campus — the name step skips
-      // straight past account creation when an account already exists, and
-      // it is the one place that can recover a first name the draft lost.
+      // Signed in with no profile. Since Phase 1 this can no longer be
+      // created — createAccount writes the login and the profile together
+      // or neither — but accounts made by the old two-step flow may still
+      // be stuck here, so the safety net stays.
       if (!inOnboarding) router.replace('/(onboarding)/name');
       return;
     }
@@ -81,6 +81,12 @@ function RootNavigator() {
       <Stack.Screen name="find-friends" options={{ presentation: 'card' }} />
       <Stack.Screen name="invite-friends" options={{ presentation: 'card' }} />
       <Stack.Screen name="payouts" options={{ presentation: 'card' }} />
+      <Stack.Screen name="settings" options={{ presentation: 'card' }} />
+      <Stack.Screen name="edit-profile" options={{ presentation: 'card' }} />
+      <Stack.Screen name="change-password" options={{ presentation: 'card' }} />
+      <Stack.Screen name="notification-preferences" options={{ presentation: 'card' }} />
+      <Stack.Screen name="privacy" options={{ presentation: 'card' }} />
+      <Stack.Screen name="u/[username]" options={{ presentation: 'card' }} />
     </Stack>
   );
 }

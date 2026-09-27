@@ -6,9 +6,14 @@
  * docs/security.md.
  *
  * Built and working today:
- *   - completeSignup   creates the account atomically: campus, username, profile
- *   - checkUsername    "is this taken?" for the claim-username screen
- *   - requestBooking   the double-booking-proof rental request
+ *   - createAccount      the whole signup server-side: checks the school
+ *                        domain, creates the login, writes the profile and
+ *                        claims the username, or leaves nothing behind
+ *   - checkCampusEmail   "is Loane at my school?" as she types
+ *   - checkUsername      "is this taken?" for the claim-username screen
+ *   - changeUsername     swaps her handle in one transaction
+ *   - follow / unfollow  the only way follower counts ever move
+ *   - requestBooking     the double-booking-proof rental request
  *
  * Skeletons with TODOs, filled in during later phases:
  *   - social counters  (Phase 3)
@@ -17,12 +22,13 @@
  *   - reviews, reports, push notifications (Phase 6)
  */
 
-export { completeSignup } from './auth/completeSignup';
+export { createAccount, checkCampusEmail } from './auth/createAccount';
 export { checkUsername } from './auth/checkUsername';
+export { changeUsername } from './auth/changeUsername';
+export { follow, unfollow } from './social/follow';
 export { requestBooking } from './bookings/requestBooking';
 
 // --- Later phases -----------------------------------------------------------
-// export { follow, unfollow }        from './social/follow';      // Phase 3
 // export { likePost, unlikePost }    from './social/like';        // Phase 3
 // export { saveListing }             from './social/save';        // Phase 3
 // export { respondToBooking }        from './bookings/respond';   // Phase 4

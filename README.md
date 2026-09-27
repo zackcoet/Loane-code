@@ -79,6 +79,7 @@ Seeded accounts all use the password `loane1234`:
 | [setup.md](docs/setup.md) | Install, run, test, deploy, troubleshoot |
 | [roadmap.md](docs/roadmap.md) | What's built, what's next, what must happen before beta |
 | [decisions.md](docs/decisions.md) | Why things are the way they are |
+| [parallel-agents.md](docs/parallel-agents.md) | Running two AI tools at once without them colliding |
 
 ## Tech stack
 

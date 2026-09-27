@@ -23,7 +23,9 @@
     "format:check": "prettier --check .",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "build:functions": "npm run build --workspace @loane/functions"
+    "build:functions": "npm run build --workspace @loane/functions",
+    "worktree": "bash scripts/worktree.sh",
+    "worktree:remove": "bash scripts/worktree-remove.sh"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.18.0",
