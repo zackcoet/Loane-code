@@ -28,15 +28,18 @@ export default function Feed() {
   const router = useRouter();
   const { items: posts, loading, error } = usePosts();
 
-  const onPressTag = useCallback((listingId: string) => {
-    // The metric that tells us whether the social feed drives rentals.
-    logEvent('tagged_item_tap', {
-      surface: 'feed',
-      targetType: 'listing',
-      targetId: listingId,
-    });
-    // TODO-PHASE2: open the listing detail screen.
-  }, []);
+  const onPressTag = useCallback(
+    (listingId: string) => {
+      // The metric that tells us whether the social feed drives rentals.
+      logEvent('tagged_item_tap', {
+        surface: 'feed',
+        targetType: 'listing',
+        targetId: listingId,
+      });
+      router.push({ pathname: '/listing/[id]', params: { id: listingId } });
+    },
+    [router],
+  );
 
   return (
     <Screen flush>

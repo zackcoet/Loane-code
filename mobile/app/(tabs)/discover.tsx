@@ -195,8 +195,7 @@ export default function Discover() {
                   targetType: 'listing',
                   targetId: listingId,
                 });
-                // TODO-PHASE2: open the listing detail screen.
-                router.push('/(tabs)/discover');
+                router.push({ pathname: '/listing/[id]', params: { id: listingId } });
               }}
             />
           )}

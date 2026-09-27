@@ -53,6 +53,17 @@ export const removeListing = httpsCallable<
   { keptForHistory: boolean; bookingCount: number }
 >(functions, 'removeListing');
 
+/** Saving drives a counter, so like follows it is server-owned. */
+export const saveListing = httpsCallable<{ listingId: string }, { saved: boolean }>(
+  functions,
+  'saveListing',
+);
+
+export const unsaveListing = httpsCallable<{ listingId: string }, { saved: boolean }>(
+  functions,
+  'unsaveListing',
+);
+
 export const requestBooking = httpsCallable<
   { listingId: string; startDate: string; endDate: string; message?: string },
   { bookingId: string; status: string }

@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { ActivityIndicator, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import {
   color,
@@ -24,10 +25,10 @@ interface Props {
   uid: string;
   /** Changes the empty-state wording between "you" and "she". */
   isMe: boolean;
-  onPressListing?: (listingId: string) => void;
 }
 
-export function ProfileTabs({ uid, isMe, onPressListing }: Props) {
+export function ProfileTabs({ uid, isMe }: Props) {
+  const router = useRouter();
   const [tab, setTab] = useState<ProfileTab>('posts');
   const { width } = useWindowDimensions();
 
@@ -100,7 +101,9 @@ export function ProfileTabs({ uid, isMe, onPressListing }: Props) {
                 key={listing.id}
                 listing={listing}
                 width={cardWidth}
-                onPress={onPressListing}
+                onPress={(listingId) =>
+                  router.push({ pathname: '/listing/[id]', params: { id: listingId } })
+                }
               />
             ))}
           </View>

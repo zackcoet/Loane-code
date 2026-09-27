@@ -29,8 +29,7 @@ export default function AddToCloset() {
     });
 
     Alert.alert('Added to your closet', 'Your piece is live on your campus.');
-    // TODO-PHASE2-STEP4: open the new listing's detail page instead.
-    router.back();
+    router.replace({ pathname: '/listing/[id]', params: { id: listingId } });
   };
 
   return (

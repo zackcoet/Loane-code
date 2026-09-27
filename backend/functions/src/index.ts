@@ -13,6 +13,7 @@
  *   - checkUsername      "is this taken?" for the claim-username screen
  *   - changeUsername     swaps her handle in one transaction
  *   - follow / unfollow  the only way follower counts ever move
+ *   - save / unsave      the only way a listing's save count ever moves
  *   - removeListing      hides a listing, never deletes it, and refuses
  *                        while a rental is in flight
  *   - requestBooking     the double-booking-proof rental request
@@ -29,6 +30,7 @@ export { checkUsername } from './auth/checkUsername';
 export { changeUsername } from './auth/changeUsername';
 export { follow, unfollow } from './social/follow';
 export { removeListing } from './listings/removeListing';
+export { saveListing, unsaveListing } from './social/save';
 export { requestBooking } from './bookings/requestBooking';
 
 // --- Later phases -----------------------------------------------------------
