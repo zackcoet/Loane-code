@@ -101,6 +101,7 @@ export function ProfileTabs({ uid, isMe }: Props) {
                 key={listing.id}
                 listing={listing}
                 width={cardWidth}
+                hideSave={isMe}
                 onPress={(listingId) =>
                   router.push({ pathname: '/listing/[id]', params: { id: listingId } })
                 }

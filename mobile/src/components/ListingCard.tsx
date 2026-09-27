@@ -2,14 +2,17 @@
  * One garment in the Discover grid.
  */
 
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import {
   type Listing,
   color,
   formatCentsShort,
+  radius,
   spacing,
   type,
 } from '@loane/shared';
+import { Text } from './Text';
+import { useIsSaved } from '../hooks/useSaved';
 
 interface Props {
   listing: Listing;
@@ -17,9 +20,12 @@ interface Props {
   width: number;
   onPress?: (listingId: string) => void;
   onPressOwner?: (username: string) => void;
+  /** Hides the heart, e.g. on her own closet. */
+  hideSave?: boolean;
 }
 
-export function ListingCard({ listing, width, onPress, onPressOwner }: Props) {
+export function ListingCard({ listing, width, onPress, onPressOwner, hideSave }: Props) {
+  const { saved, toggle } = useIsSaved(listing.id);
   const price =
     listing.pricing.threeDayCents != null
       ? formatCentsShort(listing.pricing.threeDayCents)
@@ -34,11 +40,26 @@ export function ListingCard({ listing, width, onPress, onPressOwner }: Props) {
       accessibilityLabel={listing.name}
       onPress={() => onPress?.(listing.id)}
     >
-      {listing.coverUrl ? (
-        <Image source={{ uri: listing.coverUrl }} style={styles.photo} resizeMode="cover" />
-      ) : (
-        <View style={[styles.photo, styles.photoPlaceholder]} />
-      )}
+      <View>
+        {listing.coverUrl ? (
+          <Image source={{ uri: listing.coverUrl }} style={styles.photo} resizeMode="cover" />
+        ) : (
+          <View style={[styles.photo, styles.photoPlaceholder]} />
+        )}
+        {hideSave ? null : (
+          <Pressable
+            onPress={() => void toggle('discover')}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={saved ? 'Remove from wishlist' : 'Save to wishlist'}
+            style={styles.heart}
+          >
+            <Text variant="bodySmall" tone="inverse">
+              {saved ? '♥' : '♡'}
+            </Text>
+          </Pressable>
+        )}
+      </View>
 
       <Text style={styles.name} numberOfLines={1}>
         {listing.name}
@@ -63,6 +84,18 @@ const styles = StyleSheet.create({
   card: { marginBottom: spacing.lg },
   photo: { width: '100%', aspectRatio: 0.75, backgroundColor: color.surface.muted },
   photoPlaceholder: { borderWidth: 1, borderColor: color.border.default },
+  heart: {
+    position: 'absolute',
+    right: spacing.sm,
+    bottom: spacing.sm,
+    width: 30,
+    height: 30,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: color.surface.inverse,
+    opacity: 0.85,
+  },
   name: {
     marginTop: spacing.sm,
     fontSize: type.bodySmall.size,
