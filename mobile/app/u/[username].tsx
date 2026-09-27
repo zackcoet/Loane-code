@@ -27,6 +27,7 @@ import { useIsFollowing, useProfileByUsername } from '../../src/hooks/useProfile
 import { followUser, unfollowUser } from '../../src/firebase/callables';
 import { callableErrorMessage } from '../../src/firebase/errors';
 import { logEvent } from '../../src/analytics/events';
+import { useOpenChat } from '../../src/hooks/useOpenChat';
 
 export default function OtherProfile() {
   const router = useRouter();
@@ -35,6 +36,7 @@ export default function OtherProfile() {
 
   const { user, loading, notFound } = useProfileByUsername(username);
   const { following } = useIsFollowing(user?.uid);
+  const chat = useOpenChat();
   const [busy, setBusy] = useState(false);
 
   const isMe = Boolean(me && user && me.uid === user.uid);
@@ -115,10 +117,8 @@ export default function OtherProfile() {
               <Button
                 label="Message"
                 variant="outline"
-                // TODO-PHASE6: 1:1 messaging.
-                onPress={() =>
-                  Alert.alert('Coming soon', 'Messaging arrives with the rest of Loane soon.')
-                }
+                loading={chat.opening}
+                onPress={() => void chat.open(user.uid)}
                 style={styles.action}
               />
             </>

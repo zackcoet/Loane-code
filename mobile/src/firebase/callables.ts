@@ -133,6 +133,15 @@ export const setBlockedDates = httpsCallable<
   { blocked: string[] }
 >(functions, 'setBlockedDates');
 
+/**
+ * The one thread between two students. Messaging her about a dress and
+ * the chat a confirmed rental gets are the same conversation.
+ */
+export const openConversation = httpsCallable<
+  { withUid: string; listingId?: string; bookingId?: string },
+  { conversationId: string }
+>(functions, 'openConversation');
+
 export const requestBooking = httpsCallable<
   { listingId: string; startDate: string; endDate: string; message?: string },
   { bookingId: string; status: string }

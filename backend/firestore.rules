@@ -337,9 +337,18 @@ service cloud.firestore {
       // Created by a Cloud Function so both participants' summaries and the
       // unread counters are set correctly.
       allow create: if false;
-      // Unread counts are function-owned; a user may not zero out someone
-      // else's badge.
-      allow update: if false;
+      // She may clear HER OWN unread badge and nothing else. The
+      // diff check is what stops her zeroing the other person's count
+      // or rewriting the last-message preview. Marking a thread read
+      // happens constantly, so making it a round trip to a function
+      // would be a lot of latency for one number.
+      allow update: if isParticipant()
+        && onlyChanges(['unreadCounts', 'updatedAt'])
+        && request.resource.data.unreadCounts
+             .diff(resource.data.unreadCounts)
+             .affectedKeys()
+             .hasOnly([uid()])
+        && request.resource.data.unreadCounts[uid()] == 0;
       allow delete: if false;
 
       match /messages/{messageId} {

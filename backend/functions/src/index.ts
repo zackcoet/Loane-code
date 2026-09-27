@@ -26,6 +26,7 @@
  *   - flagReturnProblem  the lender's 48-hour window to report a problem
  *   - cancelBooking      either side, before the garment changes hands
  *   - setBlockedDates    the lender's own unavailable days
+ *   - openConversation   the one thread between two students
  *
  * Background triggers:
  *   - countListingView          moves a listing's view count
@@ -34,6 +35,7 @@
  *   - syncListingAvailability   publishes booked dates onto the listing so
  *                               renters can see them without reading
  *                               other people's bookings
+ *   - onMessageCreated          updates a thread's preview and unread badge
  *   - propagateProfileChanges   refreshes the copies of her profile stored
  *                               on her listings and posts
  *
@@ -57,6 +59,7 @@ export { countListingView } from './triggers/countListingView';
 export { countPostEngagement } from './triggers/countPostEngagement';
 export { refreshTagLabels } from './triggers/refreshTagLabels';
 export { syncListingAvailability } from './triggers/syncListingAvailability';
+export { onMessageCreated } from './triggers/onMessageCreated';
 export { propagateProfileChanges } from './triggers/propagateProfileChanges';
 export { requestBooking } from './bookings/requestBooking';
 export {
@@ -69,6 +72,7 @@ export {
   setBlockedDates,
 } from './bookings/lifecycle';
 export { sweepBookings, runBookingSweep } from './bookings/sweep';
+export { openConversation } from './messaging/openConversation';
 
 // --- Later phases -----------------------------------------------------------
 // export { saveListing }             from './social/save';        // Phase 3

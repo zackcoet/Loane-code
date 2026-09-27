@@ -5,6 +5,7 @@ import {
   COLLECTIONS,
   RETURN_DISPUTE_WINDOW_HOURS,
   RETURN_PROBLEMS,
+  ids,
   rangesOverlap,
   type Booking,
   type ImageRef,
@@ -53,6 +54,12 @@ export const respondToBooking = onCall<
           .where('listingId', '==', booking.listingId)
           .where('status', 'in', BLOCKING_BOOKING_STATUSES as string[]),
       );
+
+      // Read before any write — a transaction requires it.
+      const conversationRef = db()
+        .collection(COLLECTIONS.conversations)
+        .doc(ids.conversation(booking.lenderUid, booking.renterUid));
+      const conversationSnap = await tx.get(conversationRef);
       const clash = conflicts.docs.some((doc) => {
         const other = doc.data() as Booking;
         if (doc.id === bookingId || !other.startDate || !other.endDate) return false;
@@ -72,6 +79,35 @@ export const respondToBooking = onCall<
         'timeline.confirmedAt': now(),
         updatedAt: now(),
       });
+
+      // Now that it is really happening, make sure they have a thread to
+      // arrange the handoff — and paying, since Loane is not doing that
+      // during beta. The id is the two uids sorted, so this is the SAME
+      // thread as any chat they already had; it just gains a booking.
+      //
+      // Create it only if it is missing. A blind merge here would zero
+      // an existing thread's unread badge and wipe its last-message
+      // preview, which is exactly the wrong thing to do to two people
+      // who have already been talking.
+      if (!conversationSnap.exists) {
+        tx.set(conversationRef, {
+          id: conversationRef.id,
+          campusId: booking.campusId,
+          participantUids: [booking.lenderUid, booking.renterUid].sort(),
+          participants: {
+            [booking.lenderUid]: booking.lender,
+            [booking.renterUid]: booking.renter,
+          },
+          listingId: booking.listingId,
+          bookingId,
+          lastMessage: null,
+          unreadCounts: { [booking.lenderUid]: 0, [booking.renterUid]: 0 },
+          createdAt: now(),
+          updatedAt: now(),
+        });
+      } else if (!(conversationSnap.data() as { bookingId?: string }).bookingId) {
+        tx.update(conversationRef, { bookingId, updatedAt: now() });
+      }
       notify(tx, {
         uid: booking.renterUid,
         type: 'rental_accepted',

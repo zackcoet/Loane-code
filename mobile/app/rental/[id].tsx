@@ -54,6 +54,7 @@ import {
 import { callableErrorMessage } from '../../src/firebase/errors';
 import { pickPhoto, uploadBookingPhoto } from '../../src/lib/photo';
 import { logEvent } from '../../src/analytics/events';
+import { useOpenChat } from '../../src/hooks/useOpenChat';
 
 export default function RentalScreen() {
   const router = useRouter();
@@ -61,6 +62,7 @@ export default function RentalScreen() {
   const { profile } = useAuth();
   const { booking, loading } = useBooking(id);
   const [busy, setBusy] = useState(false);
+  const chat = useOpenChat();
 
   if (loading) {
     return (
@@ -239,7 +241,11 @@ export default function RentalScreen() {
           </View>
         </Card>
 
-        <Card style={styles.person} onPress={() => router.push(`/u/${them.username}`)}>
+        <Card
+          style={styles.person}
+          onPress={() => void chat.open(isLender ? booking.renterUid : booking.lenderUid, { bookingId: booking.id })}
+          accessibilityLabel={`Message @${them.username}`}
+        >
           <Avatar url={them.photoUrl} name={them.displayName} size={44} />
           <View style={styles.personText}>
             <Text variant="caption" tone="muted">
@@ -247,8 +253,8 @@ export default function RentalScreen() {
             </Text>
             <Text>@{them.username}</Text>
           </View>
-          <Text variant="h3" tone="muted">
-            ›
+          <Text variant="caption" tone="muted">
+            Message
           </Text>
         </Card>
 

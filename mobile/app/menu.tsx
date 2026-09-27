@@ -30,6 +30,7 @@ const ITEMS: Item[] = [
   { label: 'My Rentals', href: '/my-rentals' },
   { label: 'My Wishlist', href: '/my-wishlist' },
   { label: 'Activity', href: '/(tabs)/activity' },
+  { label: 'Messages', href: '/messages' },
   { label: 'Find Friends', href: '/find-friends' },
   { label: 'Invite Friends', href: '/invite-friends' },
   { label: 'Payouts & Payment Info', href: '/payouts' },

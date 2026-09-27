@@ -42,6 +42,7 @@ import { useAuth } from '../../src/auth/AuthProvider';
 import { useListing } from '../../src/hooks/useListing';
 import { useIsSaved } from '../../src/hooks/useSaved';
 import { usePostsTagging } from '../../src/hooks/usePostsTagging';
+import { useOpenChat } from '../../src/hooks/useOpenChat';
 import { logEvent } from '../../src/analytics/events';
 
 const CONDITION_LABELS: Record<Condition, string> = {
@@ -61,6 +62,7 @@ export default function ListingDetail() {
   const { listing, loading, notFound } = useListing(id);
   const { saved, toggle } = useIsSaved(id);
   const seenIn = usePostsTagging(id);
+  const chat = useOpenChat();
 
   const [page, setPage] = useState(0);
   const logged = useRef(false);
@@ -269,9 +271,10 @@ export default function ListingDetail() {
       {!isMine ? (
         <View style={styles.actionBar}>
           <Button
-            label={saved ? 'Saved' : 'Save'}
+            label="Message"
             variant="outline"
-            onPress={() => void toggle('listing')}
+            loading={chat.opening}
+            onPress={() => void chat.open(listing.ownerUid, { listingId: listing.id })}
             style={styles.saveButton}
           />
           {rentable ? (
