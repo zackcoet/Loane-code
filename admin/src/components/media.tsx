@@ -43,6 +43,7 @@ export function ThumbGrid({
 export function ModerationGrid({
   items,
   emptyTitle,
+  onAction,
 }: {
   emptyTitle: string;
   items: Array<{
@@ -54,6 +55,8 @@ export function ModerationGrid({
     meta: string;
     actionLabel: string;
   }>;
+  /** Opens the hide / restore dialog for one item. */
+  onAction?: (id: string, status: Listing['status'] | Post['status']) => void;
 }) {
   if (items.length === 0) return <EmptyState title={emptyTitle} body="Try clearing filters or running the seed script." />;
   return (
@@ -66,8 +69,18 @@ export function ModerationGrid({
             <h3>{item.title}</h3>
             <p className="muted">{item.meta}</p>
           </div>
-          <Pill tone={item.status === 'active' ? 'good' : 'neutral'}>{item.status}</Pill>
-          <button className="outline-button" disabled title="Needs a Cloud Function">
+          <Pill
+            tone={
+              item.status === 'active' ? 'good' : item.status === 'suspended' ? 'bad' : 'neutral'
+            }
+          >
+            {item.status}
+          </Pill>
+          <button
+            className="outline-button"
+            onClick={() => onAction?.(item.id, item.status)}
+            disabled={!onAction}
+          >
             {item.actionLabel}
           </button>
         </article>

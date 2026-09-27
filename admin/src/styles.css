@@ -657,3 +657,142 @@ button.link {
     grid-template-columns: 1fr;
   }
 }
+
+/* --- Admin action dialog ------------------------------------------- */
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 50;
+}
+
+.dialog {
+  width: 100%;
+  max-width: 460px;
+  padding: 24px;
+  background: var(--loane-surface-page, #fff);
+  border: 1px solid var(--loane-border-default);
+}
+
+.dialog-title {
+  margin: 0;
+  font-size: var(--loane-font-xl);
+}
+
+.dialog-description {
+  margin: 8px 0 0;
+  font-size: var(--loane-font-sm);
+  color: var(--loane-text-secondary);
+}
+
+.dialog-danger {
+  margin: 16px 0 0;
+  padding: 8px 12px;
+  border-left: 2px solid var(--loane-status-error);
+  font-size: var(--loane-font-sm);
+  color: var(--loane-status-error);
+}
+
+.dialog-label {
+  display: block;
+  margin: 20px 0 6px;
+  font-size: 11px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--loane-text-secondary);
+}
+
+.dialog-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--loane-border-default);
+  font-family: inherit;
+  font-size: var(--loane-font-md);
+  resize: vertical;
+}
+
+.dialog-input:focus {
+  outline: none;
+  border-color: var(--loane-text-primary);
+}
+
+.dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.dialog-actions .primary {
+  width: auto;
+  min-width: 140px;
+  height: 44px;
+}
+
+.dialog-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.choice {
+  padding: 8px 14px;
+  border: 1px solid var(--loane-border-default);
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  font-size: var(--loane-font-sm);
+  cursor: pointer;
+}
+
+.choice.on {
+  background: var(--loane-surface-inverse);
+  color: var(--loane-text-inverse);
+  border-color: var(--loane-surface-inverse);
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.row-actions button {
+  padding: 6px 12px;
+  border: 1px solid var(--loane-border-default);
+  background: none;
+  font: inherit;
+  font-size: var(--loane-font-sm);
+  cursor: pointer;
+}
+
+.row-actions button:hover {
+  background: var(--loane-surface-muted);
+}
+
+.photo-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.photo-compare img {
+  width: 100%;
+  border: 1px solid var(--loane-border-default);
+}
+
+.photo-compare h4 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--loane-text-secondary);
+}

@@ -882,6 +882,96 @@ describe('blocks', () => {
   });
 });
 
+describe('admin-only data', () => {
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', ELLA, 'adminNotes', 'note-1'), {
+        id: 'note-1',
+        uid: ELLA,
+        note: 'Warned about off-platform payment.',
+        adminUid: ADMIN,
+      });
+      await setDoc(doc(ctx.firestore(), 'adminActions', 'action-1'), {
+        id: 'action-1',
+        adminUid: ADMIN,
+        action: 'suspend_user',
+        targetType: 'user',
+        targetId: MADDIE,
+        notes: 'Repeated off-platform requests.',
+      });
+    });
+  });
+
+  it('keeps admin notes hidden from the student they are about', async () => {
+    // Half the point of a private note is being able to write "watch
+    // this one" honestly.
+    await assertFails(getDoc(doc(asElla(), 'users', ELLA, 'adminNotes', 'note-1')));
+    await assertSucceeds(getDoc(doc(asAdmin(), 'users', ELLA, 'adminNotes', 'note-1')));
+  });
+
+  it('stops anyone writing an admin note from the app', async () => {
+    await assertFails(
+      setDoc(doc(asAdmin(), 'users', ELLA, 'adminNotes', 'note-2'), { note: 'x' }),
+    );
+  });
+
+  it('keeps the audit log readable by admins and nobody else', async () => {
+    await assertSucceeds(getDoc(doc(asAdmin(), 'adminActions', 'action-1')));
+    await assertFails(getDoc(doc(asElla(), 'adminActions', 'action-1')));
+  });
+
+  it('makes the audit log append-only, even for an admin', async () => {
+    // An audit log an admin can rewrite is not an audit log.
+    await assertFails(updateDoc(doc(asAdmin(), 'adminActions', 'action-1'), { notes: 'nicer' }));
+    const { deleteDoc } = await import('firebase/firestore');
+    await assertFails(deleteDoc(doc(asAdmin(), 'adminActions', 'action-1')));
+  });
+});
+
+describe('suspension', () => {
+  it('stops a suspended student listing, posting or messaging', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', ELLA), userDoc(ELLA, { status: 'suspended' }));
+      await setDoc(doc(ctx.firestore(), 'conversations', 'chat-s'), {
+        id: 'chat-s',
+        campusId: CAMPUS,
+        participantUids: [ELLA, MADDIE],
+        participants: {},
+        unreadCounts: { [ELLA]: 0, [MADDIE]: 0 },
+      });
+    });
+
+    await assertFails(
+      setDoc(doc(asElla(), 'listings', 'listing-sus'), listingDoc(ELLA, { id: 'listing-sus' })),
+    );
+    await assertFails(
+      setDoc(doc(asElla(), 'conversations', 'chat-s', 'messages', 'm-sus'), {
+        conversationId: 'chat-s',
+        senderUid: ELLA,
+        body: 'hi',
+        readBy: [ELLA],
+        isDeleted: false,
+      }),
+    );
+  });
+
+  it('still lets her read, so she can see why', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', ELLA), userDoc(ELLA, { status: 'suspended' }));
+    });
+    await assertSucceeds(getDoc(doc(asElla(), 'users', ELLA)));
+    await assertSucceeds(getDoc(doc(asElla(), 'listings', 'listing-1')));
+  });
+
+  it('stops her lifting her own suspension', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', ELLA), userDoc(ELLA, { status: 'suspended' }));
+    });
+    await assertFails(updateDoc(doc(asElla(), 'users', ELLA), { status: 'active' }));
+    await assertFails(updateDoc(doc(asElla(), 'users', ELLA), { suspendedReason: null }));
+  });
+});
+
 describe('social counters', () => {
   it('stops her writing her own like (that is a function’s job)', async () => {
     await assertFails(

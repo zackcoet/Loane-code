@@ -49,6 +49,31 @@ edit it. The rules exist to stop everyone *else*.
 
 ## How admin works
 
+**Every admin action is a Cloud Function, and every one writes an audit
+row in the same commit as the change.** Not two writes — one batch. If
+the audit row could fail on its own, we would eventually have an action
+nobody can account for, which is the one thing an audit log exists to
+prevent.
+
+The dashboard never writes to Firestore directly. `adminActions` is
+readable by admins and writable by nobody, including admins: an audit
+log an admin can rewrite is not an audit log.
+
+Three rules are built into suspension rather than left to whoever
+clicks:
+
+| Rule | Why |
+|---|---|
+| Nobody can suspend themselves | Locking yourself out of your own panel is a bad afternoon |
+| Admins cannot be suspended from the panel | On a two-person team that is a foot-gun. Remove the admin claim first, deliberately |
+| A suspended student can still read | She is shown a banner saying why, with an address to appeal to. Silently breaking every button is both unkind and unanswerable |
+
+Private notes on a student live at `users/{uid}/adminNotes` and are
+readable only by admins. Half the point of them is being able to write
+"watch this one" honestly.
+
+
+
 Admin is a **Firebase custom claim** — a flag attached to the account by the
 server, which the account itself cannot change. Not a field in the database,
 because a field in the database is something someone might find a way to

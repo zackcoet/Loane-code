@@ -1,7 +1,15 @@
+import { useState } from 'react';
 import { CATEGORY_LABELS, type AppEvent, type User } from '@loane/shared';
 import type { AdminData } from '../data/adminData';
 import { toDate } from '../data/adminData';
 import { Avatar, MetricCard, Panel } from '../components/ui';
+import { ActionDialog } from '../components/ActionDialog';
+import {
+  addAdminNote,
+  adminErrorMessage,
+  suspendUser,
+  unsuspendUser,
+} from '../data/adminActions';
 import { ThumbGrid, Timeline } from '../components/media';
 import { campusName } from './UsersPage';
 
@@ -11,16 +19,70 @@ interface Props {
   onBack: () => void;
 }
 
+type Dialog = 'suspend' | 'unsuspend' | 'note' | null;
+
 export function UserDetailPage({ user, data, onBack }: Props) {
   const listings = data.listings.filter((listing) => listing.ownerUid === user.uid);
   const posts = data.posts.filter((post) => post.authorUid === user.uid);
   const events = recentUserEvents(data.events, user.uid);
+
+  const [dialog, setDialog] = useState<Dialog>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const suspended = user.status === 'suspended';
+  // Two rules the panel should not even offer, never mind enforce.
+  const protectedAccount = user.role === 'admin';
+
+  const run = async (reason: string) => {
+    setBusy(true);
+    setError(null);
+    try {
+      if (dialog === 'suspend') await suspendUser({ uid: user.uid, reason });
+      if (dialog === 'unsuspend') await unsuspendUser({ uid: user.uid, reason });
+      if (dialog === 'note') await addAdminNote({ uid: user.uid, note: reason });
+      setDialog(null);
+    } catch (err) {
+      setError(adminErrorMessage(err, 'Could not do that.'));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <>
       <button className="text-button back-button" onClick={onBack}>
         Back to users
       </button>
+      <Panel title="Moderation" kicker={suspended ? 'Suspended' : 'Active'}>
+        {suspended && user.suspendedReason ? (
+          <p className="cell-note">Reason on file: {user.suspendedReason}</p>
+        ) : null}
+        {protectedAccount ? (
+          <p className="cell-note">
+            This is an admin account. Admins cannot be suspended from here — remove the admin
+            claim first.
+          </p>
+        ) : null}
+        <div className="row-actions" style={{ marginTop: 12 }}>
+          {suspended ? (
+            <button onClick={() => setDialog('unsuspend')}>Lift suspension</button>
+          ) : (
+            <button disabled={protectedAccount} onClick={() => setDialog('suspend')}>
+              Suspend
+            </button>
+          )}
+          <button onClick={() => setDialog('note')}>Add a private note</button>
+        </div>
+        {user.stats.cancellations > 0 ? (
+          <p className="cell-note" style={{ marginTop: 12 }}>
+            {user.stats.cancellations} cancelled{' '}
+            {user.stats.cancellations === 1 ? 'rental' : 'rentals'}
+            {user.stats.cancellations > 2 ? ' — worth a look' : ''}
+          </p>
+        ) : null}
+      </Panel>
+
       <section className="profile-header">
         <Avatar user={user} />
         <div>
@@ -79,6 +141,34 @@ export function UserDetailPage({ user, data, onBack }: Props) {
           />
         </Panel>
       </section>
+
+      <ActionDialog
+        open={dialog !== null}
+        title={
+          dialog === 'suspend'
+            ? `Suspend @${user.username}?`
+            : dialog === 'unsuspend'
+              ? `Lift the suspension on @${user.username}?`
+              : 'Add a private note'
+        }
+        description={
+          dialog === 'suspend'
+            ? 'She can still browse Loane, but cannot post, list, rent or message. She is told why and given an address to appeal to.'
+            : dialog === 'unsuspend'
+              ? 'She gets full access back and is told so.'
+              : 'Only admins can read this. She never sees it.'
+        }
+        confirmLabel={
+          dialog === 'suspend' ? 'Suspend' : dialog === 'unsuspend' ? 'Lift it' : 'Save note'
+        }
+        danger={error ?? undefined}
+        busy={busy}
+        onConfirm={(reason) => void run(reason)}
+        onClose={() => {
+          setDialog(null);
+          setError(null);
+        }}
+      />
     </>
   );
 }

@@ -214,7 +214,7 @@ plumbing. What is actually needed:
 Estimate: about a day once the development build exists. The build is
 the long pole, not the code.
 
-## Phase 7 — Admin dashboard build-out
+## Phase 7 — Admin dashboard build-out ✅
 
 - Overview metrics answering both MVP questions
 - User management: verify, suspend, remove

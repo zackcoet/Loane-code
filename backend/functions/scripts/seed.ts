@@ -1058,6 +1058,58 @@ async function main(): Promise<void> {
   }
   console.warn(`Created ${reportSeeds.length} open reports`);
 
+  // A few audit rows and a note, so the Activity Log and the user
+  // detail page have something real in them.
+  const adminUid = adminRecord.uid;
+  const auditSeeds = [
+    {
+      action: 'hide_listing',
+      targetType: 'listing',
+      targetId: listings[0]!.id,
+      notes: 'Photos did not match the description. Asked her to relist with real ones.',
+    },
+    {
+      action: 'report_dismissed',
+      targetType: 'report',
+      targetId: 'seeded-report',
+      notes: 'Checked the thread — a misunderstanding about pickup time, not a scam.',
+    },
+  ];
+
+  for (const row of auditSeeds) {
+    const ref = db.collection(COLLECTIONS.adminActions).doc();
+    await ref.set({
+      id: ref.id,
+      adminUid,
+      adminEmail: 'admin@joinloane.com',
+      action: row.action,
+      targetType: row.targetType,
+      targetId: row.targetId,
+      notes: row.notes,
+      before: null,
+      after: null,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  }
+
+  const notedUser = users[4]!;
+  const noteRef = db
+    .collection(COLLECTIONS.users)
+    .doc(notedUser.uid)
+    .collection('adminNotes')
+    .doc();
+  await noteRef.set({
+    id: noteRef.id,
+    uid: notedUser.uid,
+    note: 'Asked a renter to pay off-platform once. Warned, seemed to take it on board.',
+    adminUid,
+    adminEmail: 'admin@joinloane.com',
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  console.warn(`Created ${auditSeeds.length} audit rows and 1 admin note`);
+
   // --- Campus counters ----------------------------------------------------
   await db.collection(COLLECTIONS.campuses).doc(CAMPUS_ID).update({
     'stats.userCount': users.length,

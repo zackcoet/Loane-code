@@ -6,6 +6,31 @@ much as the answer.
 
 ---
 
+## 2026-09-27 — An admin action and its audit row are one write
+
+**Decision:** Every admin Cloud Function queues the change and the
+`adminActions` row onto the same batch. `adminActions` is append-only
+even for admins.
+
+**Why:** If the audit row is a second write, it can fail on its own, and
+then an action exists that nobody can account for. That is precisely the
+situation an audit log is for. Making it one commit means the log cannot
+be behind the truth.
+
+---
+
+## 2026-09-27 — A resolved dispute ends as `completed`, not a new status
+
+**Decision:** Deciding a flagged return records an outcome and a note on
+the booking and moves it to `completed`, bumping the rental counters the
+sweep would normally have.
+
+**Why:** The rental did happen. A separate `resolved` status would add a
+branch to the state machine for no behavioural difference. When Phase 5
+lands, the outcome is what triggers a claim against the hold.
+
+---
+
 ## 2026-09-27 — Blocking is enforced on actions, filtered on content
 
 **Decision:** Messaging, renting and following are refused server-side
