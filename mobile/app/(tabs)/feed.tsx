@@ -1,36 +1,48 @@
 /**
- * Feed — the social home. Outfit posts from her campus.
+ * Feed — the social home.
  *
- * Posts come live from Firestore, scoped to her campusId and to active
- * status. Tapping a tagged garment logs `tagged_item_tap`, which is the
- * headline metric for MVP question 2: the social side handing the
- * marketplace a customer.
+ * Posts from her campus, newest first, twenty at a time. All Campus shows
+ * everyone; Following narrows to closets she follows.
  */
 
-import { useCallback } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
 import {
-  color,
-  controls,
-  spacing,
-} from '@loane/shared';
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { color, controls, spacing } from '@loane/shared';
 import { CampusChip } from '../../src/components/CampusChip';
 import { EmptyState } from '../../src/components/EmptyState';
 import { IconButton } from '../../src/components/IconButton';
 import { Logo } from '../../src/components/Logo';
 import { PostCard } from '../../src/components/PostCard';
 import { Screen } from '../../src/components/Screen';
-import { usePosts } from '../../src/hooks/useFeed';
+import { Text } from '../../src/components/Text';
+import { useAuth } from '../../src/auth/AuthProvider';
+import { usePagedPosts } from '../../src/hooks/usePagedPosts';
+import { useFollowingUids } from '../../src/hooks/useFollowing';
 import { logEvent } from '../../src/analytics/events';
 
 export default function Feed() {
   const router = useRouter();
-  const { items: posts, loading, error } = usePosts();
+  const { profile } = useAuth();
+  const { posts, loading, loadingMore, error, exhausted, refresh, loadMore } = usePagedPosts();
+  const { uids: followingUids } = useFollowingUids();
+  const [tab, setTab] = useState<'campus' | 'following'>('campus');
+
+  const visible = useMemo(
+    () => (tab === 'following' ? posts.filter((p) => followingUids.has(p.authorUid)) : posts),
+    [posts, tab, followingUids],
+  );
 
   const onPressTag = useCallback(
     (listingId: string) => {
-      // The metric that tells us whether the social feed drives rentals.
+      // The number that tells us whether the social feed drives rentals.
       logEvent('tagged_item_tap', {
         surface: 'feed',
         targetType: 'listing',
@@ -57,32 +69,77 @@ export default function Feed() {
         <CampusChip />
       </View>
 
+      <View style={styles.tabRow}>
+        {(
+          [
+            ['campus', 'All Campus'],
+            ['following', 'Following'],
+          ] as const
+        ).map(([value, label]) => (
+          <Pressable
+            key={value}
+            onPress={() => setTab(value)}
+            style={[styles.tab, tab === value && styles.tabActive]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === value }}
+          >
+            <Text variant="label" tone={tab === value ? 'primary' : 'muted'}>
+              {label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       {loading ? (
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
       ) : error ? (
         <EmptyState title="Couldn't load your feed" body={error} />
-      ) : posts.length === 0 ? (
+      ) : visible.length === 0 ? (
         <EmptyState
           title="No looks yet"
-          body="Be the first to post an outfit from your campus."
-          actionLabel="Post a look"
-          onAction={() => router.push('/post-sheet')}
+          body={
+            tab === 'following'
+              ? 'Follow a few closets and their looks show up here.'
+              : 'Be the first to post an outfit from your campus.'
+          }
+          actionLabel={tab === 'campus' ? 'Post a look' : undefined}
+          onAction={tab === 'campus' ? () => router.push('/post-look') : undefined}
         />
       ) : (
         <FlatList
-          data={posts}
+          data={visible}
           keyExtractor={(post) => post.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.6}
+          initialNumToRender={3}
+          maxToRenderPerBatch={3}
+          windowSize={5}
+          ListFooterComponent={
+            loadingMore ? (
+              <ActivityIndicator color={color.icon.default} style={styles.footer} />
+            ) : exhausted && visible.length > 0 ? (
+              <Text variant="caption" tone="muted" style={styles.end}>
+                You&apos;re all caught up
+              </Text>
+            ) : null
+          }
           renderItem={({ item }) => (
             <PostCard
               post={item}
               onPressTag={onPressTag}
               onPressAuthor={(username) => router.push(`/u/${username}`)}
+              onEdit={
+                item.authorUid === profile?.uid
+                  ? () => router.push({ pathname: '/edit-post', params: { id: item.id } })
+                  : undefined
+              }
             />
           )}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
         />
       )}
     </Screen>
@@ -97,12 +154,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.sm,
   },
-  filterRow: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
+  filterRow: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
+  tabRow: {
+    flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: color.border.default,
   },
+  tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.inverse },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingTop: spacing.md, paddingBottom: spacing.xxl },
+  footer: { paddingVertical: spacing.lg },
+  end: { textAlign: 'center', paddingVertical: spacing.lg },
 });

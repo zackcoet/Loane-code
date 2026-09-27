@@ -91,6 +91,8 @@ function RootNavigator() {
       <Stack.Screen name="u/[username]" options={{ presentation: 'card' }} />
       <Stack.Screen name="add-to-closet" options={{ presentation: 'card' }} />
       <Stack.Screen name="post-look" options={{ presentation: 'card' }} />
+      <Stack.Screen name="edit-post" options={{ presentation: 'card' }} />
+      <Stack.Screen name="post/[id]" options={{ presentation: 'card' }} />
       <Stack.Screen name="edit-listing" options={{ presentation: 'card' }} />
       <Stack.Screen name="listing/[id]" options={{ presentation: 'card' }} />
     </Stack>

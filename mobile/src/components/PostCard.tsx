@@ -1,88 +1,176 @@
 /**
  * One outfit post in the feed.
  *
- * The tagged-garment row under the photo is the bridge from "cute outfit"
- * to "rent this" — tapping it is the single most important interaction in
- * the product, so it is a visible row rather than a hidden hotspot.
+ * Tapping the photo shows or hides the tag dots; tapping a dot opens its
+ * label with the item name and price; tapping the label opens the
+ * listing. That last tap is the one that matters — it is the social side
+ * handing the marketplace a customer, and it is what `tagged_item_tap`
+ * measures.
  */
 
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { OCCASION_LABELS, color, controls, spacing, type Post } from '@loane/shared';
 import { Avatar } from './Avatar';
-import {
-  OCCASION_LABELS,
-  type Post,
-  color,
-  formatCentsShort,
-  iconSize,
-  spacing,
-  type,
-} from '@loane/shared';
+import { TaggablePhoto } from './TaggablePhoto';
+import { Text } from './Text';
+import { useIsLiked, useIsPostSaved } from '../hooks/usePostEngagement';
 
 interface Props {
   post: Post;
-  onPressTag?: (listingId: string) => void;
-  onPressAuthor?: (username: string) => void;
+  onPressTag: (listingId: string) => void;
+  onPressAuthor: (username: string) => void;
+  /** Shown on her own posts. */
+  onEdit?: () => void;
 }
 
-export function PostCard({ post, onPressTag, onPressAuthor }: Props) {
-  const photo = post.photos[0];
+export function PostCard({ post, onPressTag, onPressAuthor, onEdit }: Props) {
+  const { width } = useWindowDimensions();
+  const [tagsVisible, setTagsVisible] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+
+  const liked = useIsLiked(post.id);
+  const saved = useIsPostSaved(post.id);
+
+  const photos = post.photos ?? [];
 
   return (
     <View style={styles.card}>
-      <Pressable
-        style={styles.header}
-        accessibilityRole="button"
-        accessibilityLabel={`Open @${post.author.username}'s closet`}
-        onPress={() => onPressAuthor?.(post.author.username)}
-      >
-        <Avatar url={post.author.photoUrl} name={post.author.displayName} size={44} />
-        <View style={styles.headerText}>
-          <Text style={styles.username}>@{post.author.username}</Text>
-          {post.occasions.length > 0 ? (
-            <Text style={styles.occasions}>
-              {post.occasions.map((o) => OCCASION_LABELS[o]).join(' · ')}
-            </Text>
-          ) : null}
-        </View>
-      </Pressable>
-
-      {photo ? (
-        <Image source={{ uri: photo.url }} style={styles.photo} resizeMode="cover" />
-      ) : (
-        <View style={[styles.photo, styles.photoPlaceholder]} />
-      )}
-
-      {post.taggedListings.map((tagged) => (
+      <View style={styles.header}>
         <Pressable
-          key={tagged.listingId}
-          style={styles.tagRow}
+          style={styles.author}
           accessibilityRole="button"
-          accessibilityLabel={`View ${tagged.name}`}
-          onPress={() => onPressTag?.(tagged.listingId)}
+          accessibilityLabel={`Open @${post.author.username}'s closet`}
+          onPress={() => onPressAuthor(post.author.username)}
         >
-          <View style={styles.tagThumb} />
-          <View style={styles.tagText}>
-            <Text style={styles.tagName} numberOfLines={1}>
-              {tagged.name}
+          <Avatar url={post.author.photoUrl} name={post.author.displayName} size={44} />
+          <View style={styles.authorText}>
+            <Text variant="bodySmall" style={styles.username}>
+              @{post.author.username}
             </Text>
-            {tagged.priceCents3Day != null ? (
-              <Text style={styles.tagPrice}>
-                {formatCentsShort(tagged.priceCents3Day)} · 3 days
+            {post.occasions.length > 0 ? (
+              <Text variant="caption" tone="muted">
+                {post.occasions.map((o) => OCCASION_LABELS[o]).join(' · ')}
               </Text>
             ) : null}
           </View>
-          <Text style={styles.chevron}>›</Text>
         </Pressable>
-      ))}
+        {onEdit ? (
+          <Text
+            variant="caption"
+            tone="muted"
+            accessibilityRole="button"
+            onPress={onEdit}
+            style={styles.edit}
+          >
+            Edit
+          </Text>
+        ) : null}
+      </View>
+
+      {photos.length > 1 ? (
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
+        >
+          {photos.map((photo, index) => (
+            <View key={`${photo.path}-${index}`} style={{ width }}>
+              <TaggablePhoto
+                uri={photo.url}
+                mode="view"
+                tags={(photo.tags ?? []).map((tag) => ({
+                  listingId: tag.listingId,
+                  x: tag.x,
+                  y: tag.y,
+                  name: tag.label.name,
+                  priceCents3Day: tag.label.priceCents3Day,
+                  salePriceCents: tag.label.salePriceCents,
+                }))}
+                tagsVisible={tagsVisible}
+                onToggleTags={() => {
+                  setTagsVisible((v) => !v);
+                  setExpanded(null);
+                }}
+                onExpandTag={setExpanded}
+                onOpenTag={onPressTag}
+                expandedListingId={expanded}
+              />
+            </View>
+          ))}
+        </ScrollView>
+      ) : photos[0] ? (
+        <TaggablePhoto
+          uri={photos[0].url}
+          mode="view"
+          tags={(photos[0].tags ?? []).map((tag) => ({
+            listingId: tag.listingId,
+            x: tag.x,
+            y: tag.y,
+            name: tag.label.name,
+            priceCents3Day: tag.label.priceCents3Day,
+            salePriceCents: tag.label.salePriceCents,
+          }))}
+          tagsVisible={tagsVisible}
+          onToggleTags={() => {
+            setTagsVisible((v) => !v);
+            setExpanded(null);
+          }}
+          onExpandTag={setExpanded}
+          onOpenTag={onPressTag}
+          expandedListingId={expanded}
+        />
+      ) : null}
+
+      {photos.length > 1 ? (
+        <View style={styles.dots}>
+          {photos.map((photo, index) => (
+            <View key={photo.path} style={[styles.dot, index === page && styles.dotActive]} />
+          ))}
+        </View>
+      ) : null}
+
+      <View style={styles.actions}>
+        <Pressable
+          onPress={() => void liked.toggle()}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={liked.on ? 'Unlike' : 'Like'}
+          style={styles.action}
+        >
+          <Text variant="h3">{liked.on ? '♥' : '♡'}</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => void saved.toggle()}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={saved.on ? 'Remove from wishlist' : 'Save this look'}
+          style={styles.action}
+        >
+          <Text variant="h3">{saved.on ? '★' : '☆'}</Text>
+        </Pressable>
+        <View style={styles.spacer} />
+        {post.taggedListings.length > 0 ? (
+          <Text variant="caption" tone="muted">
+            {post.taggedListings.length === 1
+              ? '1 piece tagged'
+              : `${post.taggedListings.length} pieces tagged`}
+          </Text>
+        ) : null}
+      </View>
 
       <View style={styles.footer}>
-        <Text style={styles.caption}>
-          <Text style={styles.captionName}>@{post.author.username} </Text>
-          {post.caption}
-        </Text>
         {post.stats.likeCount > 0 ? (
-          <Text style={styles.likes}>
+          <Text variant="bodySmall" style={styles.likes}>
             {post.stats.likeCount} {post.stats.likeCount === 1 ? 'like' : 'likes'}
+          </Text>
+        ) : null}
+        {post.caption ? (
+          <Text>
+            <Text style={styles.username}>@{post.author.username} </Text>
+            {post.caption}
           </Text>
         ) : null}
       </View>
@@ -94,7 +182,7 @@ const styles = StyleSheet.create({
   card: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: color.border.default,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
     marginBottom: spacing.lg,
   },
   header: {
@@ -103,44 +191,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
-  headerText: { marginLeft: spacing.md, flex: 1 },
-  username: { fontSize: type.bodySmall.size, fontWeight: '600', color: color.text.primary },
-  occasions: {
-    fontSize: type.caption.size,
-    letterSpacing: type.caption.letterSpacing,
-    textTransform: 'uppercase',
-    color: color.text.muted,
-    marginTop: 2,
-  },
-  photo: { width: '100%', aspectRatio: 0.8, backgroundColor: color.surface.muted },
-  photoPlaceholder: { borderTopWidth: 1, borderBottomWidth: 1, borderColor: color.border.default },
-  tagRow: {
+  author: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  authorText: { marginLeft: spacing.md, flex: 1 },
+  username: { fontWeight: '600' },
+  edit: { textDecorationLine: 'underline', paddingHorizontal: spacing.sm },
+  dots: { flexDirection: 'row', justifyContent: 'center', paddingTop: spacing.sm, gap: 5 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: color.border.default },
+  dotActive: { backgroundColor: color.surface.inverse },
+  actions: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: spacing.md,
-    marginTop: spacing.md,
-    borderWidth: 1,
-    borderColor: color.border.default,
-    padding: spacing.sm,
-    minHeight: 56,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    gap: spacing.md,
   },
-  tagThumb: {
-    width: 40,
-    height: 40,
-    backgroundColor: color.surface.muted,
-    borderWidth: 1,
-    borderColor: color.border.default,
-  },
-  tagText: { flex: 1, marginLeft: spacing.md },
-  tagName: { fontSize: type.bodySmall.size, color: color.text.primary },
-  tagPrice: { fontSize: type.caption.size, color: color.text.secondary, marginTop: 2 },
-  chevron: { fontSize: iconSize.sm, color: color.text.muted, paddingHorizontal: spacing.sm },
-  footer: { paddingHorizontal: spacing.md, paddingTop: spacing.md },
-  caption: {
-    fontSize: type.body.size,
-    lineHeight: type.body.lineHeight,
-    color: color.text.primary,
-  },
-  captionName: { fontWeight: '600' },
-  likes: { fontSize: type.bodySmall.size, color: color.text.secondary, marginTop: spacing.sm },
+  action: { minWidth: 32, minHeight: controls.minTapTarget, justifyContent: 'center' },
+  spacer: { flex: 1 },
+  footer: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
+  likes: { fontWeight: '600', marginBottom: 2 },
 });

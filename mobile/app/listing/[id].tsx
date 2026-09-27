@@ -41,6 +41,7 @@ import { Text } from '../../src/components/Text';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useListing } from '../../src/hooks/useListing';
 import { useIsSaved } from '../../src/hooks/useSaved';
+import { usePostsTagging } from '../../src/hooks/usePostsTagging';
 import { logEvent } from '../../src/analytics/events';
 
 const CONDITION_LABELS: Record<Condition, string> = {
@@ -59,6 +60,7 @@ export default function ListingDetail() {
   const { profile } = useAuth();
   const { listing, loading, notFound } = useListing(id);
   const { saved, toggle } = useIsSaved(id);
+  const seenIn = usePostsTagging(id);
 
   const [page, setPage] = useState(0);
   const logged = useRef(false);
@@ -224,13 +226,41 @@ export default function ListingDetail() {
             </Text>
           </Pressable>
 
-          {/* TODO-PHASE3: posts that tag this listing. The data model is
-              already designed for it — see docs/post-tagging.md. */}
           <View style={styles.seenIn}>
             <Text variant="label">Seen in posts</Text>
-            <Text variant="bodySmall" tone="muted" style={styles.seenInBody}>
-              Looks featuring this piece will show up here.
-            </Text>
+            {seenIn.loading ? null : seenIn.posts.length === 0 ? (
+              <Text variant="bodySmall" tone="muted" style={styles.seenInBody}>
+                Looks featuring this piece will show up here.
+              </Text>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.seenInScroll}
+                contentContainerStyle={styles.seenInRow}
+              >
+                {seenIn.posts.map((post) => (
+                  <Pressable
+                    key={post.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open @${post.author.username}'s look`}
+                    onPress={() => router.push({ pathname: '/post/[id]', params: { id: post.id } })}
+                    style={styles.seenInTile}
+                  >
+                    {post.photos[0] ? (
+                      <Image
+                        source={{ uri: post.photos[0].url }}
+                        style={styles.seenInImage}
+                        resizeMode="cover"
+                      />
+                    ) : null}
+                    <Text variant="caption" tone="muted" numberOfLines={1} style={styles.seenInWho}>
+                      @{post.author.username}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -329,6 +359,17 @@ const styles = StyleSheet.create({
     borderTopColor: color.border.default,
   },
   seenInBody: { marginTop: spacing.xs },
+  seenInScroll: { flexGrow: 0, flexShrink: 0, marginTop: spacing.md },
+  seenInRow: { gap: spacing.sm },
+  seenInTile: { width: 96 },
+  seenInImage: {
+    width: 96,
+    height: 120,
+    borderWidth: 1,
+    borderColor: color.border.default,
+    backgroundColor: color.surface.muted,
+  },
+  seenInWho: { marginTop: 4 },
   actionBar: {
     flexDirection: 'row',
     gap: spacing.sm,

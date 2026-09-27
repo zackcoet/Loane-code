@@ -8,7 +8,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import {
   color,
   spacing,
@@ -66,19 +74,28 @@ export function ProfileTabs({ uid, isMe }: Props) {
             }
           />
         ) : (
-          // TODO-PHASE3: a real photo grid once posts carry real images.
           <View style={styles.postGrid}>
             {posts.items.map((post) => (
-              <View key={post.id} style={[styles.postTile, { width: cardWidth }]}>
-                <Text style={styles.postCaption} numberOfLines={3}>
-                  {post.caption}
-                </Text>
-                {post.taggedListings.length > 0 ? (
-                  <Text style={styles.postTagged}>
-                    {post.taggedListings.length} tagged
-                  </Text>
+              <Pressable
+                key={post.id}
+                accessibilityRole="button"
+                accessibilityLabel={post.caption || 'Open look'}
+                onPress={() => router.push({ pathname: '/post/[id]', params: { id: post.id } })}
+                style={[styles.postTile, { width: cardWidth }]}
+              >
+                {post.photos[0] ? (
+                  <Image
+                    source={{ uri: post.photos[0].url }}
+                    style={styles.postImage}
+                    resizeMode="cover"
+                  />
                 ) : null}
-              </View>
+                {post.taggedListings.length > 0 ? (
+                  <View style={styles.postBadge}>
+                    <Text style={styles.postBadgeText}>{post.taggedListings.length}</Text>
+                  </View>
+                ) : null}
+              </Pressable>
             ))}
           </View>
         )
@@ -166,18 +183,23 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderWidth: 1,
     borderColor: color.border.default,
-    padding: spacing.md,
-    justifyContent: 'space-between',
+    backgroundColor: color.surface.muted,
+    overflow: 'hidden',
   },
-  postCaption: {
-    fontSize: type.bodySmall.size,
-    lineHeight: type.bodySmall.lineHeight,
-    color: color.text.primary,
+  postImage: { width: '100%', height: '100%' },
+  postBadge: {
+    position: 'absolute',
+    right: spacing.sm,
+    top: spacing.sm,
+    minWidth: 20,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 10,
+    backgroundColor: color.surface.inverse,
+    alignItems: 'center',
   },
-  postTagged: {
+  postBadgeText: {
     fontSize: type.caption.size,
-    letterSpacing: type.caption.letterSpacing,
-    textTransform: 'uppercase',
-    color: color.text.muted,
+    color: color.text.inverse,
   },
 });
