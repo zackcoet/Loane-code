@@ -13,8 +13,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
-import { FirebaseError } from 'firebase/app';
-import { normalizeUsername, spacing, validateUsername } from '@loane/shared';
+import { normalizeUsername, spacing, validateDisplayName, validateUsername } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { Field } from '../../src/components/Field';
 import { Logo } from '../../src/components/Logo';
@@ -23,11 +22,12 @@ import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { checkUsername, completeSignup } from '../../src/firebase/callables';
 import { useSignupDraft } from '../../src/auth/signupDraft';
 import { logEvent } from '../../src/analytics/events';
+import { callableErrorMessage } from '../../src/firebase/errors';
 import { text } from '../../src/theme';
 
 export default function ClaimUsername() {
   const router = useRouter();
-  const { firstName, campusEmail, reset } = useSignupDraft();
+  const { firstName, campusEmail, setFirstName, reset } = useSignupDraft();
 
   const [username, setUsername] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +64,12 @@ export default function ClaimUsername() {
   }, [username]);
 
   const onSubmit = async () => {
+    // Safety net: if the draft was lost (a reinstall, cleared storage), ask
+    // for the name here rather than submitting an empty one and dead-ending
+    // on a server error she cannot act on.
+    const nameCheck = validateDisplayName(firstName);
+    if (!nameCheck.ok) return setError('We lost your first name — add it above and try again.');
+
     const check = validateUsername(username);
     if (!check.ok) return setError(check.error ?? null);
 
@@ -79,11 +85,7 @@ export default function ClaimUsername() {
       reset();
       router.replace('/(onboarding)/intro');
     } catch (err) {
-      const message =
-        err instanceof FirebaseError && err.message
-          ? err.message
-          : 'Could not finish setting up your account. Try again.';
-      setError(message);
+      setError(callableErrorMessage(err, 'Could not finish setting up your account. Try again.'));
     } finally {
       setBusy(false);
     }
@@ -103,6 +105,16 @@ export default function ClaimUsername() {
           <Text style={[text.small, styles.explainer]}>
             This is how the campus will know you. You can always change it later.
           </Text>
+
+          {validateDisplayName(firstName).ok ? null : (
+            <Field
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="First name"
+              autoCapitalize="words"
+              label="First name"
+            />
+          )}
 
           <Field
             value={username}

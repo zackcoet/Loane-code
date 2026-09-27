@@ -42,7 +42,10 @@ function RootNavigator() {
 
     if (needsOnboarding) {
       // Signed in, no profile: she stopped partway through onboarding.
-      if (!inOnboarding) router.replace('/(onboarding)/verify-campus');
+      // Resume at the name step, not at verify-campus — the name step skips
+      // straight past account creation when an account already exists, and
+      // it is the one place that can recover a first name the draft lost.
+      if (!inOnboarding) router.replace('/(onboarding)/name');
       return;
     }
 
