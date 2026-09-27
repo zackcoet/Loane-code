@@ -50,7 +50,7 @@ import {
   useDiscoverState,
   type Filters,
 } from '../../src/hooks/useDiscover';
-import { logEvent } from '../../src/analytics/events';
+import { logEvent, logEventDebounced } from '../../src/analytics/events';
 
 const GRID_COLUMNS = 2;
 
@@ -136,8 +136,12 @@ export default function Discover() {
           value={search}
           onChangeText={(value) => {
             setSearch(value);
+            // Debounced: one row when she stops typing, not one per key.
             if (value.trim().length > 2) {
-              logEvent('search', { surface: 'discover', meta: { length: value.trim().length } });
+              logEventDebounced('search', {
+                surface: 'discover',
+                meta: { length: value.trim().length },
+              });
             }
           }}
           placeholder="Search closets and pieces"

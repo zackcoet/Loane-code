@@ -40,6 +40,25 @@ interface LogOptions {
   meta?: Record<string, string | number | boolean>;
 }
 
+const debounces: Record<string, ReturnType<typeof setTimeout>> = {};
+
+/**
+ * Logs once the user stops doing the thing.
+ *
+ * Search fires on every keystroke. Typing "vintage dress" would otherwise
+ * write eleven rows, which floods the table, costs eleven writes and tells
+ * us nothing we did not already know from the last one. This waits for a
+ * pause and logs the final state instead.
+ */
+export function logEventDebounced(type: EventType, options: LogOptions = {}, waitMs = 800): void {
+  const key = `${type}:${options.surface ?? 'other'}`;
+  if (debounces[key]) clearTimeout(debounces[key]);
+  debounces[key] = setTimeout(() => {
+    delete debounces[key];
+    logEvent(type, options);
+  }, waitMs);
+}
+
 export function logEvent(type: EventType, options: LogOptions = {}): void {
   const uid = auth.currentUser?.uid ?? null;
 
