@@ -89,6 +89,16 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  /**
+   * Replaces the whole form in one go. Used by the edit screen when the
+   * listing arrives — setting fields one at a time would re-render for
+   * each and risk an update loop.
+   */
+  const hydrate = useCallback((next: ListingFormState) => {
+    setForm(next);
+    setError(null);
+  }, []);
+
   const set = useCallback(<K extends keyof ListingFormState>(key: K, value: ListingFormState[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
     setError(null);
@@ -248,6 +258,7 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
 
   return {
     form,
+    hydrate,
     set,
     toggleOccasion,
     addPhoto,

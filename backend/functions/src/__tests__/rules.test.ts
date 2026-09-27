@@ -90,8 +90,10 @@ function listingDoc(ownerUid: string, overrides: Record<string, unknown> = {}) {
     condition: 'like_new',
     occasions: ['formal'],
     colorNames: [],
-    photos: [],
-    coverUrl: null,
+    photos: [
+      { path: `users/${ownerUid}/listings/listing-1/1.jpg`, url: 'https://example.test/1.jpg', width: 1200, height: 1600 },
+    ],
+    coverUrl: 'https://example.test/1.jpg',
     intent: 'rent',
     status: 'active',
     pricing: { threeDayCents: 2500, sevenDayCents: 4000 },

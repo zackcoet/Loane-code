@@ -44,6 +44,15 @@ export const unfollowUser = httpsCallable<{ uid: string }, { following: boolean 
   'unfollow',
 );
 
+/**
+ * Hides a listing. Never deletes — a rented piece is part of someone
+ * else's history. Refuses while a rental is in flight.
+ */
+export const removeListing = httpsCallable<
+  { listingId: string },
+  { keptForHistory: boolean; bookingCount: number }
+>(functions, 'removeListing');
+
 export const requestBooking = httpsCallable<
   { listingId: string; startDate: string; endDate: string; message?: string },
   { bookingId: string; status: string }

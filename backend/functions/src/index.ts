@@ -13,6 +13,8 @@
  *   - checkUsername      "is this taken?" for the claim-username screen
  *   - changeUsername     swaps her handle in one transaction
  *   - follow / unfollow  the only way follower counts ever move
+ *   - removeListing      hides a listing, never deletes it, and refuses
+ *                        while a rental is in flight
  *   - requestBooking     the double-booking-proof rental request
  *
  * Skeletons with TODOs, filled in during later phases:
@@ -26,6 +28,7 @@ export { createAccount, checkCampusEmail } from './auth/createAccount';
 export { checkUsername } from './auth/checkUsername';
 export { changeUsername } from './auth/changeUsername';
 export { follow, unfollow } from './social/follow';
+export { removeListing } from './listings/removeListing';
 export { requestBooking } from './bookings/requestBooking';
 
 // --- Later phases -----------------------------------------------------------
