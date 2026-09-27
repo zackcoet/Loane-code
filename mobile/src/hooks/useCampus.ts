@@ -8,7 +8,11 @@
 
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { COLLECTIONS, colors, type Campus } from '@loane/shared';
+import {
+  COLLECTIONS,
+  type Campus,
+  color,
+} from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 
@@ -52,7 +56,7 @@ export function useCampusName(campusId: string | null | undefined): CampusView {
   return {
     campus,
     name: campus?.name ?? 'Your campus',
-    dotColor: campus?.brandColor ?? colors.campusDotFallback,
+    dotColor: campus?.brandColor ?? color.campus.dotFallback,
     loading,
   };
 }

@@ -8,9 +8,14 @@
 
 import { useRouter } from 'expo-router';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { brand, colors, spacing, typography } from '@loane/shared';
+import {
+  brand,
+  color,
+  spacing,
+  type,
+} from '@loane/shared';
 import { Screen } from '../src/components/Screen';
-import { ScreenHeader } from '../src/components/ScreenHeader';
+import { Header } from '../src/components/Header';
 import { text } from '../src/theme';
 
 const TIPS = [
@@ -37,7 +42,7 @@ export default function Help() {
 
   return (
     <Screen flush>
-      <ScreenHeader title="Help & Safety" onBack={() => router.back()} />
+      <Header title="Help & Safety" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.content}>
         {TIPS.map((tip) => (
           <View key={tip.title} style={styles.card}>
@@ -73,31 +78,31 @@ const styles = StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
   card: {
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: color.border.default,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
-  cardTitle: { fontSize: typography.body.size, fontWeight: '600', color: colors.textPrimary },
+  cardTitle: { fontSize: type.body.size, fontWeight: '600', color: color.text.primary },
   cardBody: {
-    fontSize: typography.bodySmall.size,
-    lineHeight: typography.bodySmall.lineHeight,
-    color: colors.textSecondary,
+    fontSize: type.bodySmall.size,
+    lineHeight: type.bodySmall.lineHeight,
+    color: color.text.secondary,
     marginTop: 4,
   },
   sectionLabel: { marginTop: spacing.lg, marginBottom: spacing.sm },
-  link: { fontSize: typography.body.size, color: colors.textPrimary },
+  link: { fontSize: type.body.size, color: color.text.primary },
   emergency: {
     marginTop: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceMuted,
+    borderColor: color.border.default,
+    backgroundColor: color.surface.muted,
     padding: spacing.md,
   },
-  emergencyTitle: { fontSize: typography.body.size, fontWeight: '600', color: colors.ink },
+  emergencyTitle: { fontSize: type.body.size, fontWeight: '600', color: color.text.primary },
   emergencyBody: {
-    fontSize: typography.bodySmall.size,
-    lineHeight: typography.bodySmall.lineHeight,
-    color: colors.textSecondary,
+    fontSize: type.bodySmall.size,
+    lineHeight: type.bodySmall.lineHeight,
+    color: color.text.secondary,
     marginTop: 4,
   },
 });

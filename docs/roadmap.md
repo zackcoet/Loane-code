@@ -105,7 +105,14 @@ in the seed rather than from the admin dashboard — that is Phase 7.
   confirms receipt, both confirm return
 - Tests for concurrent booking attempts
 
-## Phase 5 — Payments + Protection
+## Phase 5 — Payments + Protection ⏸ PAUSED
+
+**Blocked until the company is registered.** Stripe Connect needs a legal
+entity and a bank account before any of this can be built or tested, so
+Phase 5 waits. Everything it will need is already designed into the data
+model — every booking carries a `payment` block and a full fee breakdown —
+so nothing has to be migrated when we pick it up.
+
 
 - Stripe Connect onboarding for lenders
 - Card on file for renters; **card not charged until a rental is confirmed**

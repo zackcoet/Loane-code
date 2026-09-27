@@ -5,7 +5,10 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing } from '@loane/shared';
+import {
+  color,
+  spacing,
+} from '@loane/shared';
 
 interface Props {
   children: React.ReactNode;
@@ -36,7 +39,7 @@ export function Screen({ children, scroll = false, flush = false, style }: Props
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.white },
+  safe: { flex: 1, backgroundColor: color.surface.page },
   inner: { flex: 1 },
   padded: { paddingHorizontal: spacing.screenPadding },
   scrollContent: { flexGrow: 1, paddingBottom: spacing.xxl },

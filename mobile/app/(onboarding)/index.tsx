@@ -6,7 +6,12 @@
 
 import { Link, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import { brand, colors, spacing, typography } from '@loane/shared';
+import {
+  brand,
+  color,
+  spacing,
+  type,
+} from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { Logo } from '../../src/components/Logo';
 import { Screen } from '../../src/components/Screen';
@@ -35,16 +40,16 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   tagline: {
     marginTop: spacing.lg,
-    fontSize: typography.label.size,
+    fontSize: type.label.size,
     letterSpacing: 3,
-    color: colors.textSecondary,
+    color: color.text.secondary,
   },
   footer: { paddingBottom: spacing.xxl },
   signIn: {
     marginTop: spacing.lg,
     textAlign: 'center',
-    fontSize: typography.bodySmall.size,
-    color: colors.textPrimary,
+    fontSize: type.bodySmall.size,
+    color: color.text.primary,
     textDecorationLine: 'underline',
   },
 });

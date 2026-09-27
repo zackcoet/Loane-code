@@ -7,7 +7,7 @@
 import { useRouter } from 'expo-router';
 import { EmptyState } from './EmptyState';
 import { Screen } from './Screen';
-import { ScreenHeader } from './ScreenHeader';
+import { Header } from './Header';
 
 interface Props {
   title: string;
@@ -19,7 +19,7 @@ export function ComingSoon({ title, body }: Props) {
 
   return (
     <Screen flush>
-      <ScreenHeader title={title} onBack={() => router.back()} />
+      <Header title={title} onBack={() => router.back()} />
       <EmptyState title="Coming soon" body={body} />
     </Screen>
   );

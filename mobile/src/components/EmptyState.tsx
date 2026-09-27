@@ -7,7 +7,11 @@
  */
 
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '@loane/shared';
+import {
+  color,
+  spacing,
+  type,
+} from '@loane/shared';
 import { Button } from './Button';
 
 interface Props {
@@ -38,17 +42,17 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
   },
   title: {
-    fontSize: typography.label.size,
-    letterSpacing: typography.label.letterSpacing,
+    fontSize: type.label.size,
+    letterSpacing: type.label.letterSpacing,
     textTransform: 'uppercase',
-    color: colors.textSecondary,
+    color: color.text.secondary,
     textAlign: 'center',
   },
   body: {
     marginTop: spacing.md,
-    fontSize: typography.body.size,
-    lineHeight: typography.body.lineHeight,
-    color: colors.textMuted,
+    fontSize: type.body.size,
+    lineHeight: type.body.lineHeight,
+    color: color.text.muted,
     textAlign: 'center',
     maxWidth: 300,
   },

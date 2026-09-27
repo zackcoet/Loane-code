@@ -4,7 +4,13 @@
  */
 
 import { ActivityIndicator, Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
-import { colors, controls, radii, spacing, typography } from '@loane/shared';
+import {
+  color,
+  controls,
+  radius,
+  spacing,
+  type,
+} from '@loane/shared';
 
 type Variant = 'primary' | 'outline' | 'text';
 
@@ -44,7 +50,7 @@ export function Button({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? colors.white : colors.black} />
+        <ActivityIndicator color={variant === 'primary' ? color.surface.page : color.icon.default} />
       ) : (
         <Text
           style={[
@@ -66,25 +72,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
-    borderRadius: radii.sm,
+    borderRadius: radius.sm,
   },
-  primary: { backgroundColor: colors.black },
+  primary: { backgroundColor: color.surface.inverse },
   outline: {
-    backgroundColor: colors.white,
+    backgroundColor: color.surface.page,
     borderWidth: 1,
-    borderColor: colors.black,
+    borderColor: color.border.inverse,
   },
   textOnly: { height: controls.minTapTarget, backgroundColor: 'transparent' },
-  primaryDisabled: { backgroundColor: colors.disabled },
+  primaryDisabled: { backgroundColor: color.surface.disabled },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.8 },
   label: {
-    fontSize: typography.button.size,
+    fontSize: type.button.size,
     fontWeight: '600',
-    letterSpacing: typography.button.letterSpacing,
+    letterSpacing: type.button.letterSpacing,
     textTransform: 'uppercase',
   },
-  labelOnDark: { color: colors.white },
-  labelOnLight: { color: colors.black },
-  labelDisabled: { color: colors.disabledText },
+  labelOnDark: { color: color.text.inverse },
+  labelOnLight: { color: color.icon.default },
+  labelDisabled: { color: color.text.disabled },
 });

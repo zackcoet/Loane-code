@@ -5,14 +5,14 @@
 import { useRouter } from 'expo-router';
 import { EmptyState } from '../src/components/EmptyState';
 import { Screen } from '../src/components/Screen';
-import { ScreenHeader } from '../src/components/ScreenHeader';
+import { Header } from '../src/components/Header';
 
 export default function Messages() {
   const router = useRouter();
 
   return (
     <Screen flush>
-      <ScreenHeader title="Messages" onBack={() => router.back()} />
+      <Header title="Messages" onBack={() => router.back()} />
       {/* TODO-PHASE6: conversation list. */}
       <EmptyState
         title="No messages yet"

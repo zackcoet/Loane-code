@@ -10,7 +10,11 @@
 import { useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
-import { colors, controls, spacing } from '@loane/shared';
+import {
+  color,
+  controls,
+  spacing,
+} from '@loane/shared';
 import { CampusChip } from '../../src/components/CampusChip';
 import { EmptyState } from '../../src/components/EmptyState';
 import { IconButton } from '../../src/components/IconButton';
@@ -52,7 +56,7 @@ export default function Feed() {
 
       {loading ? (
         <View style={styles.loading}>
-          <ActivityIndicator color={colors.black} />
+          <ActivityIndicator color={color.icon.default} />
         </View>
       ) : error ? (
         <EmptyState title="Couldn't load your feed" body={error} />
@@ -94,7 +98,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: color.border.default,
   },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingTop: spacing.md, paddingBottom: spacing.xxl },

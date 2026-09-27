@@ -22,12 +22,13 @@ import {
 import {
   OCCASIONS,
   OCCASION_LABELS,
-  colors,
-  controls,
-  radii,
-  spacing,
-  typography,
   type Occasion,
+  color,
+  controls,
+  iconSize,
+  radius,
+  spacing,
+  type,
 } from '@loane/shared';
 import { Chip } from '../../src/components/Chip';
 import { EmptyState } from '../../src/components/EmptyState';
@@ -85,7 +86,7 @@ export default function Discover() {
             }
           }}
           placeholder="Search closets and pieces"
-          placeholderTextColor={colors.textMuted}
+          placeholderTextColor={color.text.muted}
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
@@ -162,7 +163,7 @@ export default function Discover() {
         />
       ) : loading ? (
         <View style={styles.loading}>
-          <ActivityIndicator color={colors.black} />
+          <ActivityIndicator color={color.icon.default} />
         </View>
       ) : error ? (
         <EmptyState title="Couldn't load Discover" body={error} />
@@ -215,10 +216,10 @@ const styles = StyleSheet.create({
   },
   headerSpacer: { width: 46 },
   title: {
-    fontSize: typography.label.size,
-    letterSpacing: typography.label.letterSpacing,
+    fontSize: type.label.size,
+    letterSpacing: type.label.letterSpacing,
     textTransform: 'uppercase',
-    color: colors.textPrimary,
+    color: color.text.primary,
   },
   searchWrap: {
     flexDirection: 'row',
@@ -228,17 +229,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     paddingHorizontal: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.pill,
+    borderColor: color.border.default,
+    borderRadius: radius.pill,
   },
-  searchGlyph: { fontSize: 20, color: colors.textMuted, marginRight: spacing.sm },
+  searchGlyph: { fontSize: iconSize.sm, color: color.text.muted, marginRight: spacing.sm },
   searchInput: {
     flex: 1,
-    fontSize: typography.bodySmall.size,
-    color: colors.textPrimary,
+    fontSize: type.bodySmall.size,
+    color: color.text.primary,
     paddingVertical: 0,
   },
-  clear: { fontSize: 16, color: colors.textMuted, paddingLeft: spacing.sm },
+  clear: { fontSize: iconSize.sm, color: color.text.muted, paddingLeft: spacing.sm },
   chipScroll: { flexGrow: 0, flexShrink: 0 },
   chipRow: {
     paddingHorizontal: spacing.md,
@@ -258,31 +259,31 @@ const styles = StyleSheet.create({
     height: controls.minTapTarget,
     minWidth: 120,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.pill,
+    borderColor: color.border.default,
+    borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
   },
-  toolGlyph: { fontSize: 15, color: colors.textPrimary, marginRight: spacing.sm },
+  toolGlyph: { fontSize: type.bodySmall.size, color: color.text.primary, marginRight: spacing.sm },
   toolLabel: {
-    fontSize: typography.caption.size,
-    letterSpacing: typography.caption.letterSpacing,
+    fontSize: type.caption.size,
+    letterSpacing: type.caption.letterSpacing,
     textTransform: 'uppercase',
-    color: colors.textPrimary,
+    color: color.text.primary,
   },
   tabRow: {
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: color.border.default,
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: colors.black },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.inverse },
   tabText: {
-    fontSize: typography.label.size,
-    letterSpacing: typography.label.letterSpacing,
+    fontSize: type.label.size,
+    letterSpacing: type.label.letterSpacing,
     textTransform: 'uppercase',
-    color: colors.textMuted,
+    color: color.text.muted,
   },
-  tabTextActive: { color: colors.textPrimary },
+  tabTextActive: { color: color.text.primary },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   grid: { paddingHorizontal: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.xxl },
   gridRow: { gap: spacing.md },

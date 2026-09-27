@@ -7,11 +7,17 @@ import { Link, useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { normalizeEmail, spacing, validateEmail } from '@loane/shared';
+import {
+  color,
+  normalizeEmail,
+  spacing,
+  type,
+  validateEmail,
+} from '@loane/shared';
 import { Button } from '../../src/components/Button';
-import { Field } from '../../src/components/Field';
+import { Input } from '../../src/components/Input';
 import { Screen } from '../../src/components/Screen';
-import { ScreenHeader } from '../../src/components/ScreenHeader';
+import { Header } from '../../src/components/Header';
 import { auth } from '../../src/firebase/config';
 import { text } from '../../src/theme';
 
@@ -59,7 +65,7 @@ export default function SignIn() {
 
   return (
     <Screen>
-      <ScreenHeader title="" onBack={() => router.back()} />
+      <Header title="" onBack={() => router.back()} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -68,7 +74,7 @@ export default function SignIn() {
           <Text style={text.h2}>Welcome back.</Text>
           <Text style={[text.label, styles.caption]}>Sign in to your closet</Text>
 
-          <Field
+          <Input
             value={email}
             onChangeText={setEmail}
             placeholder="Your email"
@@ -78,7 +84,7 @@ export default function SignIn() {
             autoCorrect={false}
             autoFocus
           />
-          <Field
+          <Input
             value={password}
             onChangeText={setPassword}
             placeholder="Password"
@@ -115,5 +121,9 @@ const styles = StyleSheet.create({
   body: { flex: 1, paddingTop: spacing.xxl },
   caption: { marginTop: spacing.sm, marginBottom: spacing.xl },
   footer: { paddingBottom: spacing.xl },
-  altRow: { textAlign: 'center', fontSize: 13, color: '#6B6B6B' },
+  altRow: {
+    textAlign: 'center',
+    fontSize: type.bodySmall.size,
+    color: color.text.secondary,
+  },
 });

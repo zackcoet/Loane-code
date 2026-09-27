@@ -6,6 +6,38 @@ much as the answer.
 
 ---
 
+## 2026-09-27 — Design tokens are two layers, and raw values are a lint error
+
+**Decision:** `palette` holds raw values (what a colour is). `color`, `type`
+and the size scales name things by purpose (what it is for). Screens only
+touch the second layer. A lint rule fails the build on any hex string or
+numeric `fontSize` outside `shared/src/tokens.ts`.
+
+**Why:** Sizing had been set screen by screen and had already drifted — the
+first UI pass found eighteen hand-written font sizes. A convention nobody
+enforces is not a convention. The rule caught those eighteen the moment it
+was switched on.
+
+**Exemption:** `admin/` is exempt for now because Codex is rebuilding it in
+a separate worktree. `shared/src/brand.ts` keeps the old flat names alive
+as aliases so admin keeps compiling. Both are deleted when that branch
+merges.
+
+---
+
+## 2026-09-27 — Phase 5 is paused until the company is registered
+
+**Decision:** No payments work until there is a legal entity.
+
+**Why:** Stripe Connect needs a registered business and a bank account.
+Building against it before that exists means building against something we
+cannot test or ship.
+
+**Cost of waiting:** none. The data model already carries the payment and
+fee fields, so nothing migrates later.
+
+---
+
 ## 2026-09-27 — Sign-up runs entirely on the server
 
 **Decision:** The app no longer creates Firebase Auth accounts. One callable

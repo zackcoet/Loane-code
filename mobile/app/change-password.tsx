@@ -12,11 +12,15 @@ import { useRouter } from 'expo-router';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { LIMITS, spacing, validatePassword } from '@loane/shared';
+import {
+  LIMITS,
+  spacing,
+  validatePassword,
+} from '@loane/shared';
 import { Button } from '../src/components/Button';
-import { Field } from '../src/components/Field';
+import { Input } from '../src/components/Input';
 import { Screen } from '../src/components/Screen';
-import { ScreenHeader } from '../src/components/ScreenHeader';
+import { Header } from '../src/components/Header';
 import { auth } from '../src/firebase/config';
 import { text } from '../src/theme';
 
@@ -73,7 +77,7 @@ export default function ChangePassword() {
 
   return (
     <Screen flush>
-      <ScreenHeader title="Change Password" onBack={() => router.back()} />
+      <Header title="Change Password" onBack={() => router.back()} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -83,7 +87,7 @@ export default function ChangePassword() {
             For your security, confirm your current password first.
           </Text>
 
-          <Field
+          <Input
             label="Current password"
             value={current}
             onChangeText={setCurrent}
@@ -91,7 +95,7 @@ export default function ChangePassword() {
             autoCapitalize="none"
             autoComplete="current-password"
           />
-          <Field
+          <Input
             label="New password"
             value={next}
             onChangeText={setNext}
@@ -100,7 +104,7 @@ export default function ChangePassword() {
             autoCapitalize="none"
             autoComplete="new-password"
           />
-          <Field
+          <Input
             label="Confirm new password"
             value={confirm}
             onChangeText={setConfirm}

@@ -4,7 +4,10 @@
  */
 
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, typography } from '@loane/shared';
+import {
+  color,
+  type,
+} from '@loane/shared';
 
 interface Props {
   average: number | null;
@@ -25,6 +28,6 @@ export function StarRating({ average, count }: Props) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  stars: { fontSize: 14, color: colors.textPrimary, letterSpacing: 1 },
-  count: { marginLeft: 6, fontSize: typography.bodySmall.size, color: colors.textMuted },
+  stars: { fontSize: type.bodySmall.size, color: color.text.primary, letterSpacing: 1 },
+  count: { marginLeft: 6, fontSize: type.bodySmall.size, color: color.text.muted },
 });

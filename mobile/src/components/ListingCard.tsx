@@ -3,7 +3,13 @@
  */
 
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, formatCentsShort, spacing, typography, type Listing } from '@loane/shared';
+import {
+  type Listing,
+  color,
+  formatCentsShort,
+  spacing,
+  type,
+} from '@loane/shared';
 
 interface Props {
   listing: Listing;
@@ -55,20 +61,20 @@ export function ListingCard({ listing, width, onPress, onPressOwner }: Props) {
 
 const styles = StyleSheet.create({
   card: { marginBottom: spacing.lg },
-  photo: { width: '100%', aspectRatio: 0.75, backgroundColor: colors.surfaceMuted },
-  photoPlaceholder: { borderWidth: 1, borderColor: colors.border },
+  photo: { width: '100%', aspectRatio: 0.75, backgroundColor: color.surface.muted },
+  photoPlaceholder: { borderWidth: 1, borderColor: color.border.default },
   name: {
     marginTop: spacing.sm,
-    fontSize: typography.bodySmall.size,
-    color: colors.textPrimary,
+    fontSize: type.bodySmall.size,
+    color: color.text.primary,
   },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  price: { fontSize: typography.bodySmall.size, fontWeight: '600', color: colors.textPrimary },
+  price: { fontSize: type.bodySmall.size, fontWeight: '600', color: color.text.primary },
   size: {
     marginLeft: spacing.sm,
-    fontSize: typography.caption.size,
-    letterSpacing: typography.caption.letterSpacing,
-    color: colors.textMuted,
+    fontSize: type.caption.size,
+    letterSpacing: type.caption.letterSpacing,
+    color: color.text.muted,
   },
-  owner: { fontSize: typography.caption.size, color: colors.textMuted, marginTop: 2 },
+  owner: { fontSize: type.caption.size, color: color.text.muted, marginTop: 2 },
 });

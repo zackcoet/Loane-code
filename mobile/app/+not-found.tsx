@@ -1,6 +1,9 @@
 import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, spacing } from '@loane/shared';
+import {
+  color,
+  spacing,
+} from '@loane/shared';
 import { text } from '../src/theme';
 
 export default function NotFound() {
@@ -19,7 +22,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: color.surface.page,
     padding: spacing.xl,
   },
   link: { marginTop: spacing.md },

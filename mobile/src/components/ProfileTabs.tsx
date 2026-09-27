@@ -8,7 +8,11 @@
 
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { colors, spacing, typography } from '@loane/shared';
+import {
+  color,
+  spacing,
+  type,
+} from '@loane/shared';
 import { EmptyState } from './EmptyState';
 import { ListingCard } from './ListingCard';
 import { useUserListings, useUserPosts } from '../hooks/useProfile';
@@ -115,7 +119,7 @@ export function ProfileTabs({ uid, isMe, onPressListing }: Props) {
 function Loading() {
   return (
     <View style={styles.loading}>
-      <ActivityIndicator color={colors.black} />
+      <ActivityIndicator color={color.icon.default} />
     </View>
   );
 }
@@ -125,21 +129,21 @@ const styles = StyleSheet.create({
   tabRow: {
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: color.border.default,
   },
   tab: {
     flex: 1,
     textAlign: 'center',
     paddingVertical: spacing.md,
-    fontSize: typography.label.size,
-    letterSpacing: typography.label.letterSpacing,
+    fontSize: type.label.size,
+    letterSpacing: type.label.letterSpacing,
     textTransform: 'uppercase',
-    color: colors.textMuted,
+    color: color.text.muted,
   },
   tabActive: {
-    color: colors.textPrimary,
+    color: color.text.primary,
     borderBottomWidth: 2,
-    borderBottomColor: colors.black,
+    borderBottomColor: color.border.inverse,
   },
   loading: { paddingVertical: spacing.xxl, alignItems: 'center' },
   grid: {
@@ -157,19 +161,19 @@ const styles = StyleSheet.create({
   postTile: {
     aspectRatio: 1,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: color.border.default,
     padding: spacing.md,
     justifyContent: 'space-between',
   },
   postCaption: {
-    fontSize: typography.bodySmall.size,
-    lineHeight: typography.bodySmall.lineHeight,
-    color: colors.textPrimary,
+    fontSize: type.bodySmall.size,
+    lineHeight: type.bodySmall.lineHeight,
+    color: color.text.primary,
   },
   postTagged: {
-    fontSize: typography.caption.size,
-    letterSpacing: typography.caption.letterSpacing,
+    fontSize: type.caption.size,
+    letterSpacing: type.caption.letterSpacing,
     textTransform: 'uppercase',
-    color: colors.textMuted,
+    color: color.text.muted,
   },
 });

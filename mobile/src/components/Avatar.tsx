@@ -3,7 +3,9 @@
  */
 
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { colors } from '@loane/shared';
+import {
+  color,
+} from '@loane/shared';
 
 interface Props {
   url?: string | null;
@@ -29,7 +31,7 @@ export function Avatar({ url, name, size = 48 }: Props) {
 }
 
 const styles = StyleSheet.create({
-  base: { backgroundColor: colors.surfaceMuted, borderWidth: 1, borderColor: colors.border },
+  base: { backgroundColor: color.surface.muted, borderWidth: 1, borderColor: color.border.default },
   fallback: { alignItems: 'center', justifyContent: 'center' },
-  initial: { color: colors.textMuted, fontWeight: '500' },
+  initial: { color: color.text.muted, fontWeight: '500' },
 });

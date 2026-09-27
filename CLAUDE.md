@@ -82,6 +82,13 @@ Cloud Function. No exceptions.
 - TypeScript strict everywhere. ESLint + Prettier at the root.
 - **One source of truth for every data model.** Types live in
   `@loane/shared`. Never redefine a type or repeat a magic string.
+- **No raw colours or font sizes.** Everything comes from
+  `shared/src/tokens.ts` via the semantic layer — `color.text.primary`, not
+  `'#111111'`; `type.body.size`, not `17`. The linter fails the build
+  otherwise. Prefer the shared components (`Text`, `Button`, `Input`,
+  `Chip`, `Card`, `Avatar`, `Header`, `PhotoGrid`) over raw React Native
+  views. See [docs/design-system.md](docs/design-system.md).
+- **Every tap target is at least 44pt** (`controls.minTapTarget`).
 - **Money is always an integer number of US cents.** Never a float.
 - **Rental dates are plain calendar dates** (`"2026-10-04"`), never
   timestamps. Ranges are half-open: `startDate` inclusive, `endDate`
@@ -104,7 +111,7 @@ hairline borders, small uppercase letter-spaced labels, bold black primary
 buttons, square corners.
 
 - Logo: two overlapping circles with L O A N E spaced across them.
-- Brand tokens are in `shared/src/brand.ts`. **Three colors are marked
+- Brand tokens are in `shared/src/tokens.ts`. **Three colors are marked
   `TODO-CONFIRM`** — the strategy deck printed hex codes that didn't match
   its own swatches, so gold, terracotta and sage were sampled from the
   swatch pixels. Cream `#FFFFF2` and maroon `#6F0C27` are confirmed.

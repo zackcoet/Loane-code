@@ -4,7 +4,12 @@
 
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '@loane/shared';
+import {
+  color,
+  iconSize,
+  spacing,
+  type,
+} from '@loane/shared';
 import { Logo } from '../src/components/Logo';
 
 interface Option {
@@ -71,7 +76,7 @@ export default function PostSheet() {
 const styles = StyleSheet.create({
   sheet: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: color.surface.page,
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
   },
@@ -80,18 +85,18 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center' },
   kicker: {
     marginTop: spacing.sm,
-    fontSize: typography.label.size,
-    letterSpacing: typography.label.letterSpacing,
+    fontSize: type.label.size,
+    letterSpacing: type.label.letterSpacing,
     textTransform: 'uppercase',
-    color: colors.textMuted,
+    color: color.text.muted,
   },
-  close: { fontSize: 18, color: colors.black },
+  close: { fontSize: iconSize.sm, color: color.icon.default },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 76,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: color.border.default,
     padding: spacing.md,
     marginTop: spacing.md,
   },
@@ -99,16 +104,16 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: color.border.default,
     marginRight: spacing.md,
   },
   optionText: { flex: 1 },
   optionTitle: {
-    fontSize: typography.label.size,
-    letterSpacing: typography.label.letterSpacing,
+    fontSize: type.label.size,
+    letterSpacing: type.label.letterSpacing,
     textTransform: 'uppercase',
-    color: colors.textPrimary,
+    color: color.text.primary,
   },
-  optionBody: { fontSize: typography.bodySmall.size, color: colors.textSecondary, marginTop: 4 },
-  chevron: { fontSize: 24, color: colors.textMuted },
+  optionBody: { fontSize: type.bodySmall.size, color: color.text.secondary, marginTop: 4 },
+  chevron: { fontSize: iconSize.md, color: color.text.muted },
 });

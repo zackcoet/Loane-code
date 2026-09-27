@@ -1,14 +1,23 @@
 {
   "root": true,
   "parser": "@typescript-eslint/parser",
-  "parserOptions": { "ecmaVersion": 2022, "sourceType": "module" },
-  "plugins": ["@typescript-eslint"],
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module"
+  },
+  "plugins": [
+    "@typescript-eslint"
+  ],
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/recommended",
     "prettier"
   ],
-  "env": { "es2022": true, "node": true, "browser": true },
+  "env": {
+    "es2022": true,
+    "node": true,
+    "browser": true
+  },
   "ignorePatterns": [
     "node_modules",
     "dist",
@@ -21,10 +30,64 @@
   "rules": {
     "@typescript-eslint/no-unused-vars": [
       "error",
-      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
     ],
     "@typescript-eslint/no-explicit-any": "warn",
-    "no-console": ["warn", { "allow": ["warn", "error"] }],
-    "eqeqeq": ["error", "always"]
-  }
+    "no-console": [
+      "warn",
+      {
+        "allow": [
+          "warn",
+          "error"
+        ]
+      }
+    ],
+    "eqeqeq": [
+      "error",
+      "always",
+      {
+        "null": "ignore"
+      }
+    ],
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "Literal[value=/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/]",
+        "message": "Raw colours are not allowed outside shared/src/tokens.ts. Use a semantic token, e.g. color.text.primary or color.border.default. See docs/design-system.md."
+      },
+      {
+        "selector": "Property[key.name='fontSize'] > Literal",
+        "message": "Raw font sizes are not allowed. Use a token, e.g. type.body.size or fontSize.md. See docs/design-system.md."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "shared/src/tokens.ts"
+      ],
+      "rules": {
+        "no-restricted-syntax": "off"
+      }
+    },
+    {
+      "files": [
+        "backend/functions/scripts/**"
+      ],
+      "rules": {
+        "no-restricted-syntax": "off"
+      }
+    },
+    {
+      "files": [
+        "admin/**"
+      ],
+      "rules": {
+        "no-restricted-syntax": "off"
+      }
+    }
+  ]
 }

@@ -5,7 +5,12 @@
 
 import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, controls, spacing, typography } from '@loane/shared';
+import {
+  color,
+  controls,
+  spacing,
+  type,
+} from '@loane/shared';
 import { IconButton } from '../../src/components/IconButton';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Screen } from '../../src/components/Screen';
@@ -42,13 +47,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: color.border.default,
   },
   headerSpacer: { width: controls.minTapTarget },
   title: {
-    fontSize: typography.label.size,
-    letterSpacing: typography.label.letterSpacing,
+    fontSize: type.label.size,
+    letterSpacing: type.label.letterSpacing,
     textTransform: 'uppercase',
-    color: colors.textPrimary,
+    color: color.text.primary,
   },
 });

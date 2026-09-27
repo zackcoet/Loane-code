@@ -5,11 +5,16 @@
 import { useState } from 'react';
 import { Link, useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
-import { spacing, validateDisplayName } from '@loane/shared';
+import {
+  color,
+  spacing,
+  type,
+  validateDisplayName,
+} from '@loane/shared';
 import { Button } from '../../src/components/Button';
-import { Field } from '../../src/components/Field';
+import { Input } from '../../src/components/Input';
 import { Screen } from '../../src/components/Screen';
-import { ScreenHeader } from '../../src/components/ScreenHeader';
+import { Header } from '../../src/components/Header';
 import { text } from '../../src/theme';
 import { useSignupDraft } from '../../src/auth/signupDraft';
 
@@ -30,7 +35,7 @@ export default function NameStep() {
 
   return (
     <Screen>
-      <ScreenHeader title="" onBack={() => router.back()} />
+      <Header title="" onBack={() => router.back()} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -39,7 +44,7 @@ export default function NameStep() {
           <Text style={text.h2}>Every great closet has{'\n'}a name behind it.</Text>
           <Text style={[text.label, styles.caption]}>What&apos;s yours?</Text>
 
-          <Field
+          <Input
             value={firstName}
             onChangeText={(value) => {
               setFirstName(value);
@@ -74,5 +79,10 @@ const styles = StyleSheet.create({
   body: { flex: 1, paddingTop: spacing.xl },
   caption: { marginTop: spacing.sm, marginBottom: spacing.xl },
   footer: { paddingBottom: spacing.xl },
-  altRow: { marginTop: spacing.lg, textAlign: 'center', fontSize: 13, color: '#6B6B6B' },
+  altRow: {
+    marginTop: spacing.lg,
+    textAlign: 'center',
+    fontSize: type.bodySmall.size,
+    color: color.text.secondary,
+  },
 });

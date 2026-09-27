@@ -17,7 +17,9 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { colors } from '@loane/shared';
+import {
+  color,
+} from '@loane/shared';
 import { AuthProvider, useAuth } from '../src/auth/AuthProvider';
 import { SignupDraftProvider } from '../src/auth/signupDraft';
 import { logEvent } from '../src/analytics/events';
@@ -61,13 +63,13 @@ function RootNavigator() {
   if (loading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator color={colors.black} />
+        <ActivityIndicator color={color.icon.default} />
       </View>
     );
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.white } }}>
+    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.surface.page } }}>
       <Stack.Screen name="(onboarding)" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
@@ -109,6 +111,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: color.surface.page,
   },
 });

@@ -15,12 +15,16 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { signInWithCustomToken } from 'firebase/auth';
-import { normalizeUsername, spacing, validateUsername } from '@loane/shared';
+import {
+  normalizeUsername,
+  spacing,
+  validateUsername,
+} from '@loane/shared';
 import { Button } from '../../src/components/Button';
-import { Field } from '../../src/components/Field';
+import { Input } from '../../src/components/Input';
 import { Logo } from '../../src/components/Logo';
 import { Screen } from '../../src/components/Screen';
-import { ScreenHeader } from '../../src/components/ScreenHeader';
+import { Header } from '../../src/components/Header';
 import { auth } from '../../src/firebase/config';
 import { checkUsername, createAccount } from '../../src/firebase/callables';
 import { callableErrorMessage } from '../../src/firebase/errors';
@@ -110,7 +114,7 @@ export default function ClaimUsername() {
 
   return (
     <Screen>
-      <ScreenHeader title="" onBack={() => router.back()} />
+      <Header title="" onBack={() => router.back()} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -123,7 +127,7 @@ export default function ClaimUsername() {
             This is how the campus will know you. You can always change it later.
           </Text>
 
-          <Field
+          <Input
             value={username}
             onChangeText={(value) => setUsername(value.toLowerCase())}
             placeholder="@username"

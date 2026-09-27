@@ -18,11 +18,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
-import { LIMITS, spacing, validateEmail, validatePassword } from '@loane/shared';
+import {
+  LIMITS,
+  color,
+  spacing,
+  type,
+  validateEmail,
+  validatePassword,
+} from '@loane/shared';
 import { Button } from '../../src/components/Button';
-import { Field } from '../../src/components/Field';
+import { Input } from '../../src/components/Input';
 import { Screen } from '../../src/components/Screen';
-import { ScreenHeader } from '../../src/components/ScreenHeader';
+import { Header } from '../../src/components/Header';
 import { checkCampusEmail } from '../../src/firebase/callables';
 import { callableErrorMessage } from '../../src/firebase/errors';
 import { useSignupDraft } from '../../src/auth/signupDraft';
@@ -92,7 +99,7 @@ export default function CreateAccount() {
 
   return (
     <Screen>
-      <ScreenHeader title="" onBack={() => router.back()} />
+      <Header title="" onBack={() => router.back()} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -105,7 +112,7 @@ export default function CreateAccount() {
             confirmation email will be sent.
           </Text>
 
-          <Field
+          <Input
             value={campusEmail}
             onChangeText={(value) => {
               setCampusEmail(value);
@@ -119,7 +126,7 @@ export default function CreateAccount() {
             autoFocus
             hint={campusName ?? undefined}
           />
-          <Field
+          <Input
             value={password}
             onChangeText={(value) => {
               setPasswordInput(value);
@@ -160,5 +167,9 @@ const styles = StyleSheet.create({
   caption: { marginTop: spacing.sm, marginBottom: spacing.md },
   explainer: { marginBottom: spacing.xl },
   footer: { paddingBottom: spacing.xl },
-  altRow: { textAlign: 'center', fontSize: 15, color: '#6B6B6B' },
+  altRow: {
+    textAlign: 'center',
+    fontSize: type.bodySmall.size,
+    color: color.text.secondary,
+  },
 });

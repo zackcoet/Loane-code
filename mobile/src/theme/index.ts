@@ -1,96 +1,89 @@
 /**
- * Turns the shared brand tokens into React Native styles.
+ * React Native style helpers built from the shared design tokens.
  *
- * The tokens themselves live in `@loane/shared` so the admin dashboard uses
- * exactly the same values. This file is only the React Native translation.
+ * The tokens themselves live in `@loane/shared/tokens` so the admin
+ * dashboard uses exactly the same values. This file is only the React
+ * Native translation — it must never introduce a new colour or size.
  */
 
 import { StyleSheet } from 'react-native';
-import { colors, controls, icons, radii, spacing, typography } from '@loane/shared';
+import { color, controls, iconSize, radius, spacing, type } from '@loane/shared';
 
-export { colors, controls, icons, radii, spacing, typography };
+export { color, controls, iconSize, radius, spacing, type };
 
 /**
  * The small uppercase letter-spaced label used all over the mockups —
  * "SIGN IN TO YOUR CLOSET", "CREATE YOUR ACCOUNT", "BROWSE & BORROW".
  */
 export const label = {
-  fontSize: typography.label.size,
-  lineHeight: typography.label.lineHeight,
-  letterSpacing: typography.label.letterSpacing,
+  fontSize: type.label.size,
+  lineHeight: type.label.lineHeight,
+  letterSpacing: type.label.letterSpacing,
   textTransform: 'uppercase' as const,
-  color: colors.textSecondary,
+  color: color.text.secondary,
 };
 
 export const text = StyleSheet.create({
   h1: {
-    fontSize: typography.h1.size,
-    lineHeight: typography.h1.lineHeight,
+    fontSize: type.h1.size,
+    lineHeight: type.h1.lineHeight,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: color.text.primary,
   },
   h2: {
-    fontSize: typography.h2.size,
-    lineHeight: typography.h2.lineHeight,
+    fontSize: type.h2.size,
+    lineHeight: type.h2.lineHeight,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: color.text.primary,
   },
   h3: {
-    fontSize: typography.h3.size,
-    lineHeight: typography.h3.lineHeight,
+    fontSize: type.h3.size,
+    lineHeight: type.h3.lineHeight,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: color.text.primary,
   },
   body: {
-    fontSize: typography.body.size,
-    lineHeight: typography.body.lineHeight,
-    color: colors.textPrimary,
+    fontSize: type.body.size,
+    lineHeight: type.body.lineHeight,
+    color: color.text.primary,
   },
   bodyMuted: {
-    fontSize: typography.body.size,
-    lineHeight: typography.body.lineHeight,
-    color: colors.textSecondary,
+    fontSize: type.body.size,
+    lineHeight: type.body.lineHeight,
+    color: color.text.secondary,
   },
   small: {
-    fontSize: typography.bodySmall.size,
-    lineHeight: typography.bodySmall.lineHeight,
-    color: colors.textSecondary,
+    fontSize: type.bodySmall.size,
+    lineHeight: type.bodySmall.lineHeight,
+    color: color.text.secondary,
   },
   caption: {
-    fontSize: typography.caption.size,
-    lineHeight: typography.caption.lineHeight,
-    letterSpacing: typography.caption.letterSpacing,
+    fontSize: type.caption.size,
+    lineHeight: type.caption.lineHeight,
+    letterSpacing: type.caption.letterSpacing,
     textTransform: 'uppercase',
-    color: colors.textMuted,
+    color: color.text.muted,
   },
   label,
   link: {
-    fontSize: typography.body.size,
-    color: colors.textPrimary,
+    fontSize: type.body.size,
+    color: color.text.primary,
     textDecorationLine: 'underline',
   },
 });
 
 export const layout = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.white,
-  },
-  padded: {
-    paddingHorizontal: spacing.screenPadding,
-  },
+  screen: { flex: 1, backgroundColor: color.surface.page },
+  padded: { paddingHorizontal: spacing.screenPadding },
   centered: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.screenPadding,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  row: { flexDirection: 'row', alignItems: 'center' },
   hairlineBottom: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: color.border.default,
   },
 });

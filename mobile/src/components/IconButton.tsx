@@ -7,7 +7,11 @@
  */
 
 import { Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
-import { colors, controls, icons } from '@loane/shared';
+import {
+  color,
+  controls,
+  iconSize,
+} from '@loane/shared';
 
 interface Props {
   /** A text glyph, e.g. "≡". */
@@ -15,7 +19,8 @@ interface Props {
   onPress: () => void;
   accessibilityLabel: string;
   size?: number;
-  color?: string;
+  /** Overrides the default glyph colour. */
+  tint?: string;
   style?: ViewStyle;
 }
 
@@ -23,8 +28,8 @@ export function IconButton({
   glyph,
   onPress,
   accessibilityLabel,
-  size = icons.md,
-  color = colors.black,
+  size = iconSize.md,
+  tint = color.icon.default,
   style,
 }: Props) {
   return (
@@ -34,7 +39,7 @@ export function IconButton({
       accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => [styles.target, pressed && styles.pressed, style]}
     >
-      <Text style={[styles.glyph, { fontSize: size, lineHeight: size * 1.15, color }]}>
+      <Text style={[styles.glyph, { fontSize: size, lineHeight: size * 1.15, color: tint }]}>
         {glyph}
       </Text>
     </Pressable>

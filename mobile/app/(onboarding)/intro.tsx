@@ -14,7 +14,11 @@ import {
   Text,
   View,
 } from 'react-native';
-import { colors, spacing, typography } from '@loane/shared';
+import {
+  color,
+  spacing,
+  type,
+} from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { Screen } from '../../src/components/Screen';
 import { text } from '../../src/theme';
@@ -97,26 +101,26 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   skipRow: { alignItems: 'flex-end', paddingHorizontal: spacing.lg, paddingVertical: spacing.sm },
   skip: {
-    fontSize: typography.label.size,
-    letterSpacing: typography.label.letterSpacing,
+    fontSize: type.label.size,
+    letterSpacing: type.label.letterSpacing,
     textTransform: 'uppercase',
-    color: colors.textSecondary,
+    color: color.text.secondary,
   },
   slide: { alignItems: 'center', paddingHorizontal: spacing.xl, paddingTop: spacing.lg },
   // TODO-PHASE1: replace with the real screenshots from the mockups.
   artPlaceholder: {
     width: '70%',
     aspectRatio: 0.62,
-    backgroundColor: colors.surfaceMuted,
+    backgroundColor: color.surface.muted,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: color.border.default,
     marginBottom: spacing.xl,
   },
   kicker: {
-    fontSize: typography.label.size,
-    letterSpacing: typography.label.letterSpacing,
+    fontSize: type.label.size,
+    letterSpacing: type.label.letterSpacing,
     textTransform: 'uppercase',
-    color: colors.textMuted,
+    color: color.text.muted,
     marginBottom: spacing.md,
   },
   title: { textAlign: 'center' },
@@ -128,7 +132,7 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     marginHorizontal: 4,
-    backgroundColor: colors.border,
+    backgroundColor: color.border.default,
   },
-  dotActive: { backgroundColor: colors.black },
+  dotActive: { backgroundColor: color.surface.inverse },
 });

@@ -9,7 +9,13 @@
 import { useRouter, type Href } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { signOut } from 'firebase/auth';
-import { colors, controls, spacing, typography } from '@loane/shared';
+import {
+  color,
+  controls,
+  iconSize,
+  spacing,
+  type,
+} from '@loane/shared';
 import { IconButton } from '../src/components/IconButton';
 import { Logo } from '../src/components/Logo';
 import { auth } from '../src/firebase/config';
@@ -70,7 +76,7 @@ export default function Menu() {
 }
 
 const styles = StyleSheet.create({
-  sheet: { flex: 1, backgroundColor: colors.white, paddingTop: spacing.md },
+  sheet: { flex: 1, backgroundColor: color.surface.page, paddingTop: spacing.md },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -86,10 +92,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: color.border.default,
   },
-  rowPressed: { backgroundColor: colors.surfaceMuted },
-  rowLabel: { fontSize: typography.body.size, color: colors.textPrimary },
-  chevron: { fontSize: 22, color: colors.textMuted },
+  rowPressed: { backgroundColor: color.surface.muted },
+  rowLabel: { fontSize: type.body.size, color: color.text.primary },
+  chevron: { fontSize: iconSize.sm, color: color.text.muted },
   logOut: { marginTop: spacing.lg },
 });

@@ -9,9 +9,16 @@
 import { useRouter, type Href } from 'expo-router';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { signOut } from 'firebase/auth';
-import { brand, colors, controls, spacing, typography } from '@loane/shared';
+import {
+  brand,
+  color,
+  controls,
+  iconSize,
+  spacing,
+  type,
+} from '@loane/shared';
 import { Screen } from '../src/components/Screen';
-import { ScreenHeader } from '../src/components/ScreenHeader';
+import { Header } from '../src/components/Header';
 import { useAuth } from '../src/auth/AuthProvider';
 import { auth } from '../src/firebase/config';
 
@@ -69,7 +76,7 @@ export default function Settings() {
 
   return (
     <Screen flush>
-      <ScreenHeader title="Account Settings" onBack={() => router.back()} />
+      <Header title="Account Settings" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.content}>
         {rows.map((row) =>
           row.readOnly ? (
@@ -124,12 +131,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: color.border.default,
   },
-  rowPressed: { backgroundColor: colors.surfaceMuted },
+  rowPressed: { backgroundColor: color.surface.muted },
   rowRight: { flexDirection: 'row', alignItems: 'center', flexShrink: 1, marginLeft: spacing.md },
-  label: { fontSize: typography.body.size, color: colors.textPrimary },
-  value: { flexShrink: 1, fontSize: typography.bodySmall.size, color: colors.textMuted },
-  chevron: { fontSize: 22, color: colors.textMuted, marginLeft: spacing.sm },
-  logOut: { marginTop: spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  label: { fontSize: type.body.size, color: color.text.primary },
+  value: { flexShrink: 1, fontSize: type.bodySmall.size, color: color.text.muted },
+  chevron: { fontSize: iconSize.sm, color: color.text.muted, marginLeft: spacing.sm },
+  logOut: { marginTop: spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.border.default },
 });

@@ -12,7 +12,10 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { COLLECTIONS, type User } from '@loane/shared';
+import {
+  COLLECTIONS,
+  type User,
+} from '@loane/shared';
 import { auth, db } from '../firebase/config';
 import { setAnalyticsCampus } from '../analytics/events';
 

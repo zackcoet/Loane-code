@@ -7,7 +7,12 @@
 
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { colors, controls, spacing, typography } from '@loane/shared';
+import {
+  color,
+  controls,
+  spacing,
+  type,
+} from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { EmptyState } from '../../src/components/EmptyState';
 import { IconButton } from '../../src/components/IconButton';
@@ -70,9 +75,9 @@ const styles = StyleSheet.create({
   handle: {
     flex: 1,
     textAlign: 'center',
-    fontSize: typography.label.size,
-    letterSpacing: typography.label.letterSpacing,
-    color: colors.textPrimary,
+    fontSize: type.label.size,
+    letterSpacing: type.label.letterSpacing,
+    color: color.text.primary,
   },
   content: { paddingBottom: spacing.xxl },
   action: { flex: 1, height: controls.buttonHeightSmall },

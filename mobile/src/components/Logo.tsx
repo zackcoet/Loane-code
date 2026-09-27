@@ -16,7 +16,9 @@
  */
 
 import { StyleSheet, Text, View } from 'react-native';
-import { colors } from '@loane/shared';
+import {
+  color,
+} from '@loane/shared';
 
 /** Below this circle diameter the wordmark always drops beneath the mark. */
 const WORDMARK_INSIDE_MIN = 64;
@@ -27,10 +29,11 @@ interface Props {
   /** Diameter of one circle, in points. */
   size?: number;
   lockup?: Lockup;
-  color?: string;
+  /** Overrides the mark colour. */
+  tint?: string;
 }
 
-export function Logo({ size = 96, lockup = 'auto', color = colors.black }: Props) {
+export function Logo({ size = 96, lockup = 'auto', tint = color.icon.default }: Props) {
   const diameter = size;
   // A generous overlap keeps the classic interlocking-rings silhouette.
   const overlap = diameter * 0.38;
@@ -44,7 +47,7 @@ export function Logo({ size = 96, lockup = 'auto', color = colors.black }: Props
     height: diameter,
     borderRadius: diameter / 2,
     borderWidth: Math.max(1, diameter * 0.014),
-    borderColor: color,
+    borderColor: tint,
   };
 
   const mark = (
@@ -58,7 +61,7 @@ export function Logo({ size = 96, lockup = 'auto', color = colors.black }: Props
               key={letter}
               style={[
                 styles.letter,
-                { fontSize: diameter * 0.3, lineHeight: diameter * 0.36, color },
+                { fontSize: diameter * 0.3, lineHeight: diameter * 0.36, color: tint },
               ]}
             >
               {letter}
@@ -77,7 +80,7 @@ export function Logo({ size = 96, lockup = 'auto', color = colors.black }: Props
       <Text
         style={[
           styles.wordmarkBelow,
-          { fontSize: Math.max(11, diameter * 0.4), color },
+          { fontSize: Math.max(11, diameter * 0.4), color: tint },
         ]}
       >
         LOANE

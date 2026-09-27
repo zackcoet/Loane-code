@@ -30,23 +30,23 @@ import {
   LIMITS,
   SHOE_SIZES,
   SIZES,
-  colors,
+  type ShoeSize,
+  type Size,
+  color,
   controls,
   normalizeUsername,
   spacing,
-  typography,
+  type,
   validateBio,
   validateDisplayName,
   validateUsername,
-  type ShoeSize,
-  type Size,
 } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { Button } from '../src/components/Button';
 import { Chip } from '../src/components/Chip';
-import { Field } from '../src/components/Field';
+import { Input } from '../src/components/Input';
 import { Screen } from '../src/components/Screen';
-import { ScreenHeader } from '../src/components/ScreenHeader';
+import { Header } from '../src/components/Header';
 import { useAuth } from '../src/auth/AuthProvider';
 import { db } from '../src/firebase/config';
 import { changeUsername, checkUsername } from '../src/firebase/callables';
@@ -79,7 +79,7 @@ export default function EditProfile() {
   if (!profile) {
     return (
       <Screen flush>
-        <ScreenHeader title="Edit Profile" onBack={() => router.back()} />
+        <Header title="Edit Profile" onBack={() => router.back()} />
       </Screen>
     );
   }
@@ -185,7 +185,7 @@ export default function EditProfile() {
 
   return (
     <Screen flush>
-      <ScreenHeader title="Edit Profile" onBack={() => router.back()} />
+      <Header title="Edit Profile" onBack={() => router.back()} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -203,7 +203,7 @@ export default function EditProfile() {
             </Text>
           </Pressable>
 
-          <Field
+          <Input
             label="Display name"
             value={displayName}
             onChangeText={setDisplayName}
@@ -212,7 +212,7 @@ export default function EditProfile() {
             maxLength={LIMITS.displayName.max}
           />
 
-          <Field
+          <Input
             label="Username"
             value={username}
             onChangeText={onUsernameChange}
@@ -224,7 +224,7 @@ export default function EditProfile() {
             hint={usernameOk ?? 'Others can find and mention you at this name.'}
           />
 
-          <Field
+          <Input
             label="Bio"
             value={bio}
             onChangeText={setBio}
@@ -315,8 +315,8 @@ const styles = StyleSheet.create({
   photoBlock: { alignItems: 'center', marginBottom: spacing.xl },
   photoAction: {
     marginTop: spacing.md,
-    fontSize: typography.bodySmall.size,
-    color: colors.textPrimary,
+    fontSize: type.bodySmall.size,
+    color: color.text.primary,
     textDecorationLine: 'underline',
   },
   bioInput: { height: 88, textAlignVertical: 'top' },
@@ -324,12 +324,12 @@ const styles = StyleSheet.create({
   sizeHelp: { marginTop: spacing.xs, marginBottom: spacing.md },
   sizeGroup: { marginBottom: spacing.lg },
   sizeLabel: {
-    fontSize: typography.bodySmall.size,
-    color: colors.textSecondary,
+    fontSize: type.bodySmall.size,
+    color: color.text.secondary,
     marginBottom: spacing.sm,
   },
   sizeScroll: { flexGrow: 0, flexShrink: 0 },
   sizeRow: { gap: spacing.sm, alignItems: 'center', paddingRight: spacing.md },
-  error: { color: colors.danger, fontSize: typography.bodySmall.size, marginBottom: spacing.md },
+  error: { color: color.status.error, fontSize: type.bodySmall.size, marginBottom: spacing.md },
   save: { marginTop: spacing.md, height: controls.buttonHeight },
 });

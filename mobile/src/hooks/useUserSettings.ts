@@ -6,7 +6,10 @@
 
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
-import { COLLECTIONS, type UserPrivate } from '@loane/shared';
+import {
+  COLLECTIONS,
+  type UserPrivate,
+} from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 

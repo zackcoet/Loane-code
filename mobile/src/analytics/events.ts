@@ -15,7 +15,11 @@
 
 import { Platform } from 'react-native';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { COLLECTIONS, type EventSurface, type EventType } from '@loane/shared';
+import {
+  COLLECTIONS,
+  type EventSurface,
+  type EventType,
+} from '@loane/shared';
 import { auth, db } from '../firebase/config';
 
 /** One id per app launch, so we can measure return visits. */

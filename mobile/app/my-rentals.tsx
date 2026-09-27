@@ -4,9 +4,13 @@
 
 import { useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '@loane/shared';
+import {
+  color,
+  spacing,
+  type,
+} from '@loane/shared';
 import { Screen } from '../src/components/Screen';
-import { ScreenHeader } from '../src/components/ScreenHeader';
+import { Header } from '../src/components/Header';
 
 function Section({ title, body }: { title: string; body: string }) {
   return (
@@ -22,7 +26,7 @@ export default function MyRentals() {
 
   return (
     <Screen flush>
-      <ScreenHeader title="My Rentals" onBack={() => router.back()} />
+      <Header title="My Rentals" onBack={() => router.back()} />
       {/* TODO-PHASE4: real bookings. */}
       <Section title="Active" body="No active rentals. Reserved pieces will appear here." />
       <Section title="Past" body="No past rentals." />
@@ -35,18 +39,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xl,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+    borderBottomColor: color.border.default,
   },
   sectionTitle: {
-    fontSize: typography.label.size,
-    letterSpacing: typography.label.letterSpacing,
+    fontSize: type.label.size,
+    letterSpacing: type.label.letterSpacing,
     textTransform: 'uppercase',
-    color: colors.textSecondary,
+    color: color.text.secondary,
   },
   sectionBody: {
     marginTop: spacing.md,
-    fontSize: typography.body.size,
-    color: colors.textMuted,
+    fontSize: type.body.size,
+    color: color.text.muted,
     textAlign: 'center',
   },
 });

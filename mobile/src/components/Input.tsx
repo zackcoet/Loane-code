@@ -5,7 +5,12 @@
  */
 
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
-import { colors, controls, spacing, typography } from '@loane/shared';
+import {
+  color,
+  controls,
+  spacing,
+  type,
+} from '@loane/shared';
 
 interface Props extends TextInputProps {
   error?: string | null;
@@ -14,12 +19,12 @@ interface Props extends TextInputProps {
   hint?: string;
 }
 
-export function Field({ error, label, hint, style, ...inputProps }: Props) {
+export function Input({ error, label, hint, style, ...inputProps }: Props) {
   return (
     <View style={styles.wrapper}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <TextInput
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={color.text.muted}
         {...inputProps}
         style={[styles.input, error ? styles.inputError : null, style]}
       />
@@ -35,21 +40,21 @@ export function Field({ error, label, hint, style, ...inputProps }: Props) {
 const styles = StyleSheet.create({
   wrapper: { marginBottom: spacing.lg },
   label: {
-    fontSize: typography.label.size,
-    letterSpacing: typography.label.letterSpacing,
+    fontSize: type.label.size,
+    letterSpacing: type.label.letterSpacing,
     textTransform: 'uppercase',
-    color: colors.textSecondary,
+    color: color.text.secondary,
     marginBottom: spacing.sm,
   },
   input: {
     height: controls.inputHeight,
-    fontSize: typography.body.size,
-    color: colors.textPrimary,
+    fontSize: type.body.size,
+    color: color.text.primary,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomColor: color.border.default,
     paddingVertical: spacing.sm,
   },
-  inputError: { borderBottomColor: colors.danger },
-  error: { marginTop: spacing.sm, fontSize: typography.bodySmall.size, color: colors.danger },
-  hint: { marginTop: spacing.sm, fontSize: typography.bodySmall.size, color: colors.textMuted },
+  inputError: { borderBottomColor: color.status.error },
+  error: { marginTop: spacing.sm, fontSize: type.bodySmall.size, color: color.status.error },
+  hint: { marginTop: spacing.sm, fontSize: type.bodySmall.size, color: color.text.muted },
 });

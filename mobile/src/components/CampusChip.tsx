@@ -8,7 +8,13 @@
  */
 
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, controls, radii, spacing, typography } from '@loane/shared';
+import {
+  color,
+  controls,
+  radius,
+  spacing,
+  type,
+} from '@loane/shared';
 import { useCampus } from '../hooks/useCampus';
 
 export function CampusChip({ onPress }: { onPress?: () => void }) {
@@ -37,8 +43,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     minHeight: controls.minTapTarget,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.pill,
+    borderColor: color.border.default,
+    borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     maxWidth: '82%',
@@ -46,8 +52,8 @@ const styles = StyleSheet.create({
   dot: { width: 14, height: 14, borderRadius: 7, marginRight: spacing.sm },
   text: {
     flexShrink: 1,
-    fontSize: typography.bodySmall.size,
-    color: colors.textPrimary,
+    fontSize: type.bodySmall.size,
+    color: color.text.primary,
   },
-  chevron: { marginLeft: spacing.sm, fontSize: 14, color: colors.textSecondary },
+  chevron: { marginLeft: spacing.sm, fontSize: type.caption.size, color: color.text.secondary },
 });

@@ -9,7 +9,13 @@
  */
 
 import { Pressable, StyleSheet, Text } from 'react-native';
-import { colors, controls, radii, spacing, typography } from '@loane/shared';
+import {
+  color,
+  controls,
+  radius,
+  spacing,
+  type,
+} from '@loane/shared';
 
 interface Props {
   label: string;
@@ -41,11 +47,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radii.pill,
+    borderColor: color.border.default,
+    borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
   },
-  chipActive: { backgroundColor: colors.black, borderColor: colors.black },
-  text: { fontSize: typography.bodySmall.size, color: colors.textPrimary },
-  textActive: { color: colors.white },
+  chipActive: { backgroundColor: color.surface.inverse, borderColor: color.border.inverse },
+  text: { fontSize: type.bodySmall.size, color: color.text.primary },
+  textActive: { color: color.text.inverse },
 });

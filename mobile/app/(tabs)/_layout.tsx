@@ -11,11 +11,16 @@
 
 import { Tabs, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, controls, icons, typography } from '@loane/shared';
+import {
+  color,
+  controls,
+  iconSize,
+  type,
+} from '@loane/shared';
 
 function TabIcon({ glyph, focused }: { glyph: string; focused: boolean }) {
   return (
-    <Text style={[styles.icon, { color: focused ? colors.black : colors.textMuted }]}>{glyph}</Text>
+    <Text style={[styles.icon, { color: focused ? color.icon.default : color.text.muted }]}>{glyph}</Text>
   );
 }
 
@@ -34,8 +39,8 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.black,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: color.icon.default,
+        tabBarInactiveTintColor: color.text.muted,
         tabBarStyle: styles.bar,
         tabBarLabelStyle: styles.barLabel,
         tabBarItemStyle: styles.barItem,
@@ -89,23 +94,23 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   bar: {
-    backgroundColor: colors.white,
+    backgroundColor: color.surface.page,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: color.border.default,
     height: controls.tabBarHeight,
     paddingTop: 10,
   },
   barLabel: {
-    fontSize: typography.caption.size,
-    lineHeight: typography.caption.lineHeight,
-    letterSpacing: typography.caption.letterSpacing,
+    fontSize: type.caption.size,
+    lineHeight: type.caption.lineHeight,
+    letterSpacing: type.caption.letterSpacing,
     textTransform: 'uppercase',
     marginTop: 4,
   },
   barItem: { paddingVertical: 4 },
   icon: {
-    fontSize: icons.lg,
-    lineHeight: icons.lg * 1.15,
+    fontSize: iconSize.lg,
+    lineHeight: iconSize.lg * 1.15,
     textAlign: 'center',
   },
   plus: {
@@ -113,14 +118,14 @@ const styles = StyleSheet.create({
     height: controls.tabBarPlus,
     borderRadius: controls.tabBarPlus / 2,
     borderWidth: 1.5,
-    borderColor: colors.black,
+    borderColor: color.border.inverse,
     alignItems: 'center',
     justifyContent: 'center',
   },
   plusGlyph: {
-    fontSize: 26,
+    fontSize: iconSize.md,
     lineHeight: 30,
-    color: colors.black,
+    color: color.icon.default,
     fontWeight: '300',
   },
 });

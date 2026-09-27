@@ -11,13 +11,17 @@
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { colors, controls, spacing } from '@loane/shared';
+import {
+  color,
+  controls,
+  spacing,
+} from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { EmptyState } from '../../src/components/EmptyState';
 import { ProfileHeader } from '../../src/components/ProfileHeader';
 import { ProfileTabs } from '../../src/components/ProfileTabs';
 import { Screen } from '../../src/components/Screen';
-import { ScreenHeader } from '../../src/components/ScreenHeader';
+import { Header } from '../../src/components/Header';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useIsFollowing, useProfileByUsername } from '../../src/hooks/useProfile';
 import { followUser, unfollowUser } from '../../src/firebase/callables';
@@ -66,9 +70,9 @@ export default function OtherProfile() {
   if (loading) {
     return (
       <Screen flush>
-        <ScreenHeader title="" onBack={() => router.back()} />
+        <Header title="" onBack={() => router.back()} />
         <View style={styles.loading}>
-          <ActivityIndicator color={colors.black} />
+          <ActivityIndicator color={color.icon.default} />
         </View>
       </Screen>
     );
@@ -77,7 +81,7 @@ export default function OtherProfile() {
   if (notFound || !user) {
     return (
       <Screen flush>
-        <ScreenHeader title="" onBack={() => router.back()} />
+        <Header title="" onBack={() => router.back()} />
         <EmptyState
           title="Closet not found"
           body={`We couldn't find @${username ?? ''} on Loane.`}
@@ -88,7 +92,7 @@ export default function OtherProfile() {
 
   return (
     <Screen flush>
-      <ScreenHeader title={`@${user.username}`} onBack={() => router.back()} />
+      <Header title={`@${user.username}`} onBack={() => router.back()} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <ProfileHeader user={user}>
