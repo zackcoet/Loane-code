@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { NAV_ITEMS, PAGE_LABELS, type Page } from '../types';
-import { BrandVariables } from './BrandVariables';
 
 interface Props {
   adminEmail: string | null;
@@ -15,7 +14,6 @@ interface Props {
 export function AdminLayout({ adminEmail, children, page, title, onPageChange }: Props) {
   return (
     <div className="admin-shell">
-      <BrandVariables />
       <aside className="sidebar">
         <div className="brand-mark" aria-label="Loane">
           <span>L</span>
