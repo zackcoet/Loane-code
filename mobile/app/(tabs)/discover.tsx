@@ -1,20 +1,23 @@
 /**
- * Discover — the marketplace. Browse and filter every closet on campus.
+ * Discover — the marketplace.
  *
- * Listings come live from Firestore, scoped to her campus and to active
- * status. Search and the occasion chips filter what has already loaded;
- * server-side search and the full filter/sort sheets are Phase 2.
+ * One query goes to the server (active listings on my campus, newest
+ * first) and search, filters and sort all run on the phone. That is a
+ * deliberate choice; the reasoning and the point at which we outgrow it
+ * are written up in src/hooks/useDiscover.ts and docs/roadmap.md.
  */
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import {
+  ActionSheetIOS,
   ActivityIndicator,
+  Alert,
   FlatList,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
   useWindowDimensions,
@@ -22,20 +25,31 @@ import {
 import {
   OCCASIONS,
   OCCASION_LABELS,
-  type Occasion,
   color,
   controls,
-  iconSize,
   radius,
   spacing,
   type,
+  type Occasion,
 } from '@loane/shared';
 import { Chip } from '../../src/components/Chip';
 import { EmptyState } from '../../src/components/EmptyState';
+import { FilterSheet } from '../../src/components/FilterSheet';
 import { ListingCard } from '../../src/components/ListingCard';
 import { Logo } from '../../src/components/Logo';
 import { Screen } from '../../src/components/Screen';
+import { Text } from '../../src/components/Text';
 import { useListings } from '../../src/hooks/useFeed';
+import { useFollowingUids } from '../../src/hooks/useFollowing';
+import {
+  EMPTY_FILTERS,
+  SORTS,
+  SORT_LABELS,
+  countActiveFilters,
+  useDiscoverResults,
+  useDiscoverState,
+  type Filters,
+} from '../../src/hooks/useDiscover';
 import { logEvent } from '../../src/analytics/events';
 
 const GRID_COLUMNS = 2;
@@ -44,39 +58,80 @@ export default function Discover() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { items: listings, loading, error } = useListings();
+  const { uids: followingUids } = useFollowingUids();
 
+  const { search, setSearch, filters, setFilters, sort, setSort } = useDiscoverState();
   const [tab, setTab] = useState<'explore' | 'following'>('explore');
-  const [occasion, setOccasion] = useState<Occasion | null>(null);
-  const [search, setSearch] = useState('');
+  const [quickOccasion, setQuickOccasion] = useState<Occasion | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [draftFilters, setDraftFilters] = useState<Filters>(EMPTY_FILTERS);
 
-  const cardWidth = useMemo(() => {
-    const gutters = spacing.md * 2 + spacing.md * (GRID_COLUMNS - 1);
-    return (width - gutters) / GRID_COLUMNS;
-  }, [width]);
+  // The quick chips above the grid are a shortcut into the same occasion
+  // filter the sheet edits, so the two can never disagree.
+  const effectiveFilters = useMemo<Filters>(
+    () =>
+      quickOccasion
+        ? { ...filters, occasions: [...new Set([...filters.occasions, quickOccasion])] }
+        : filters,
+    [filters, quickOccasion],
+  );
 
-  const visible = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return listings.filter((listing) => {
-      if (occasion && !listing.occasions.includes(occasion)) return false;
-      if (!term) return true;
-      return (
-        listing.name.toLowerCase().includes(term) ||
-        (listing.brand ?? '').toLowerCase().includes(term) ||
-        listing.owner.username.toLowerCase().includes(term)
+  const visible = useDiscoverResults({
+    listings,
+    search,
+    filters: effectiveFilters,
+    sort,
+    followingUids: tab === 'following' ? followingUids : null,
+  });
+
+  // What the sheet's button should say while she is still adjusting it.
+  const previewCount = useDiscoverResults({
+    listings,
+    search,
+    filters: draftFilters,
+    sort,
+    followingUids: tab === 'following' ? followingUids : null,
+  }).length;
+
+  const cardWidth = (width - spacing.md * (GRID_COLUMNS + 1)) / GRID_COLUMNS;
+  const activeCount = countActiveFilters(effectiveFilters);
+
+  const openSort = () => {
+    const labels = SORTS.map((s) => SORT_LABELS[s]);
+    const choose = (index: number) => {
+      const chosen = SORTS[index];
+      if (!chosen) return;
+      setSort(chosen);
+      logEvent('filter_used', { surface: 'discover', meta: { sort: chosen } });
+    };
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: ['Cancel', ...labels], cancelButtonIndex: 0, title: 'Sort by' },
+        (index) => {
+          if (index > 0) choose(index - 1);
+        },
       );
-    });
-  }, [listings, occasion, search]);
+    } else {
+      Alert.alert('Sort by', undefined, [
+        ...SORTS.map((s, i) => ({ text: SORT_LABELS[s], onPress: () => choose(i) })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ]);
+    }
+  };
 
   return (
     <Screen flush>
       <View style={styles.header}>
         <Logo size={30} lockup="mark" />
-        <Text style={styles.title}>Discover</Text>
+        <Text variant="label">Discover</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <View style={styles.searchWrap}>
-        <Text style={styles.searchGlyph}>⌕</Text>
+        <Text variant="h3" tone="muted" style={styles.searchGlyph}>
+          ⌕
+        </Text>
         <TextInput
           value={search}
           onChangeText={(value) => {
@@ -93,23 +148,23 @@ export default function Discover() {
           style={styles.searchInput}
         />
         {search.length > 0 ? (
-          <Pressable
+          <Text
+            tone="muted"
             onPress={() => setSearch('')}
-            hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel="Clear search"
+            style={styles.clear}
           >
-            <Text style={styles.clear}>✕</Text>
-          </Pressable>
+            ✕
+          </Text>
         ) : null}
       </View>
 
-      {/* All eight occasions, in one scrolling row of single-line chips. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         // flexGrow: 0 stops the flex column stretching the row to full
-        // height, which is what turned these into tall pills.
+        // height, which would turn these into tall pills.
         style={styles.chipScroll}
         contentContainerStyle={styles.chipRow}
       >
@@ -117,27 +172,31 @@ export default function Discover() {
           <Chip
             key={value}
             label={OCCASION_LABELS[value]}
-            active={occasion === value}
+            active={quickOccasion === value}
             onPress={() => {
-              const next = occasion === value ? null : value;
-              setOccasion(next);
-              if (next) {
-                logEvent('filter_used', { surface: 'discover', meta: { occasion: next } });
-              }
+              const next = quickOccasion === value ? null : value;
+              setQuickOccasion(next);
+              if (next) logEvent('filter_used', { surface: 'discover', meta: { occasion: next } });
             }}
           />
         ))}
       </ScrollView>
 
-      {/* TODO-PHASE2: these open the real filter and sort sheets. */}
       <View style={styles.toolRow}>
-        <Pressable style={styles.toolButton} accessibilityRole="button">
-          <Text style={styles.toolGlyph}>⚟</Text>
-          <Text style={styles.toolLabel}>Filter</Text>
+        <Pressable
+          style={[styles.toolButton, activeCount > 0 && styles.toolButtonActive]}
+          accessibilityRole="button"
+          onPress={() => {
+            setDraftFilters(filters);
+            setSheetOpen(true);
+          }}
+        >
+          <Text variant="caption" tone={activeCount > 0 ? 'inverse' : 'primary'}>
+            {activeCount > 0 ? `Filter · ${activeCount}` : 'Filter'}
+          </Text>
         </Pressable>
-        <Pressable style={styles.toolButton} accessibilityRole="button">
-          <Text style={styles.toolGlyph}>⇅</Text>
-          <Text style={styles.toolLabel}>Sort</Text>
+        <Pressable style={styles.toolButton} accessibilityRole="button" onPress={openSort}>
+          <Text variant="caption">{SORT_LABELS[sort]}</Text>
         </Pressable>
       </View>
 
@@ -150,18 +209,14 @@ export default function Discover() {
             accessibilityRole="tab"
             accessibilityState={{ selected: tab === value }}
           >
-            <Text style={[styles.tabText, tab === value && styles.tabTextActive]}>{value}</Text>
+            <Text variant="label" tone={tab === value ? 'primary' : 'muted'}>
+              {value}
+            </Text>
           </Pressable>
         ))}
       </View>
 
-      {tab === 'following' ? (
-        // TODO-PHASE3: filter by who she follows.
-        <EmptyState
-          title="Nothing here yet"
-          body="Follow a few closets and their pieces will show up here."
-        />
-      ) : loading ? (
+      {loading ? (
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
@@ -171,9 +226,20 @@ export default function Discover() {
         <EmptyState
           title="Nothing here yet"
           body={
-            search || occasion
-              ? 'Try a different search or occasion.'
-              : 'Closets on your campus will show up here as students list their pieces.'
+            tab === 'following'
+              ? 'Follow a few closets and their pieces show up here.'
+              : search || activeCount > 0
+                ? 'Try a different search, or loosen your filters.'
+                : 'Closets on your campus will show up here as students list their pieces.'
+          }
+          actionLabel={activeCount > 0 ? 'Clear filters' : undefined}
+          onAction={
+            activeCount > 0
+              ? () => {
+                  setFilters(EMPTY_FILTERS);
+                  setQuickOccasion(null);
+                }
+              : undefined
           }
         />
       ) : (
@@ -184,23 +250,46 @@ export default function Discover() {
           columnWrapperStyle={styles.gridRow}
           contentContainerStyle={styles.grid}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <Text variant="caption" tone="muted" style={styles.count}>
+              {visible.length} {visible.length === 1 ? 'piece' : 'pieces'}
+            </Text>
+          }
           renderItem={({ item }) => (
             <ListingCard
               listing={item}
               width={cardWidth}
               onPressOwner={(username) => router.push(`/u/${username}`)}
-              onPress={(listingId) => {
-                logEvent('listing_view', {
-                  surface: 'discover',
-                  targetType: 'listing',
-                  targetId: listingId,
-                });
-                router.push({ pathname: '/listing/[id]', params: { id: listingId } });
-              }}
+              onPress={(listingId) =>
+                router.push({ pathname: '/listing/[id]', params: { id: listingId } })
+              }
             />
           )}
         />
       )}
+
+      <FilterSheet
+        visible={sheetOpen}
+        filters={filters}
+        resultCount={previewCount}
+        onPreview={setDraftFilters}
+        onApply={(next) => {
+          setFilters(next);
+          setSheetOpen(false);
+          if (countActiveFilters(next) > 0) {
+            logEvent('filter_used', {
+              surface: 'discover',
+              meta: {
+                sizes: next.sizes.length,
+                categories: next.categories.length,
+                occasions: next.occasions.length,
+                priced: Boolean(next.minPrice || next.maxPrice),
+              },
+            });
+          }
+        }}
+        onClose={() => setSheetOpen(false)}
+      />
     </Screen>
   );
 }
@@ -214,12 +303,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   headerSpacer: { width: 46 },
-  title: {
-    fontSize: type.label.size,
-    letterSpacing: type.label.letterSpacing,
-    textTransform: 'uppercase',
-    color: color.text.primary,
-  },
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -231,43 +314,35 @@ const styles = StyleSheet.create({
     borderColor: color.border.default,
     borderRadius: radius.pill,
   },
-  searchGlyph: { fontSize: iconSize.sm, color: color.text.muted, marginRight: spacing.sm },
+  searchGlyph: { marginRight: spacing.sm },
   searchInput: {
     flex: 1,
     fontSize: type.bodySmall.size,
     color: color.text.primary,
     paddingVertical: 0,
   },
-  clear: { fontSize: iconSize.sm, color: color.text.muted, paddingLeft: spacing.sm },
+  clear: { paddingLeft: spacing.sm },
   chipScroll: { flexGrow: 0, flexShrink: 0 },
-  chipRow: {
-    paddingHorizontal: spacing.md,
-    gap: spacing.sm,
-    alignItems: 'center',
-  },
+  chipRow: { paddingHorizontal: spacing.md, gap: spacing.sm, alignItems: 'center' },
   toolRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
     paddingVertical: spacing.md,
   },
   toolButton: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     height: controls.minTapTarget,
-    minWidth: 120,
+    minWidth: 130,
     borderWidth: 1,
     borderColor: color.border.default,
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
   },
-  toolGlyph: { fontSize: type.bodySmall.size, color: color.text.primary, marginRight: spacing.sm },
-  toolLabel: {
-    fontSize: type.caption.size,
-    letterSpacing: type.caption.letterSpacing,
-    textTransform: 'uppercase',
-    color: color.text.primary,
+  toolButtonActive: {
+    backgroundColor: color.surface.inverse,
+    borderColor: color.border.inverse,
   },
   tabRow: {
     flexDirection: 'row',
@@ -276,14 +351,8 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
   tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.inverse },
-  tabText: {
-    fontSize: type.label.size,
-    letterSpacing: type.label.letterSpacing,
-    textTransform: 'uppercase',
-    color: color.text.muted,
-  },
-  tabTextActive: { color: color.text.primary },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  grid: { paddingHorizontal: spacing.md, paddingTop: spacing.lg, paddingBottom: spacing.xxl },
+  count: { marginBottom: spacing.sm },
+  grid: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.xxl },
   gridRow: { gap: spacing.md },
 });

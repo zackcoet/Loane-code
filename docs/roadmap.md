@@ -85,6 +85,21 @@ in the seed rather than from the admin dashboard — that is Phase 7.
 - Listing detail page; the lender's closet
 - Save / wishlist
 
+### Search: when to replace the current approach
+
+Discover loads one server query — active listings on your campus, newest
+first — and runs search, filters and sort **on the phone**. It feels
+instant, costs nothing extra, and works on a bad signal.
+
+**Replace it when a single campus passes roughly 1,500 active listings.**
+Past that the initial load gets slow and expensive, and it still cannot do
+typo tolerance — "dres" will never find "dress" this way.
+
+**Replace it with** Typesense (~$25/mo hosted, or self-hosted) or Algolia.
+A Cloud Function mirrors listings into the index on every change and the
+app queries that instead. Roughly a day's work. Check the listing count per
+campus on the admin dashboard before each term starts.
+
 ## Phase 3 — Social
 
 - Post a Look: photos, caption, occasion tags
