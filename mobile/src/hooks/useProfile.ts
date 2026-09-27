@@ -110,8 +110,14 @@ export function useUserPosts(uid: string | undefined) {
   return { items, loading };
 }
 
-/** Live listings in one student's closet. */
-export function useUserListings(uid: string | undefined) {
+/**
+ * Live listings in one student's closet.
+ *
+ * `includeHidden` is for her OWN My Listings screen, where she needs to
+ * see paused and removed pieces too. Everyone else only ever sees active
+ * ones.
+ */
+export function useUserListings(uid: string | undefined, includeHidden = false) {
   const [items, setItems] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -126,7 +132,9 @@ export function useUserListings(uid: string | undefined) {
       query(
         collection(db, COLLECTIONS.listings),
         where('ownerUid', '==', uid),
-        where('status', '==', 'active'),
+        ...(includeHidden
+          ? [where('status', 'in', ['active', 'paused', 'draft', 'removed'])]
+          : [where('status', '==', 'active')]),
         orderBy('createdAt', 'desc'),
         limit(PAGE_SIZE),
       ),
@@ -136,7 +144,7 @@ export function useUserListings(uid: string | undefined) {
       },
       () => setLoading(false),
     );
-  }, [uid]);
+  }, [uid, includeHidden]);
 
   return { items, loading };
 }
