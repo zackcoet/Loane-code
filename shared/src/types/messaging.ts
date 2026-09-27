@@ -1,4 +1,4 @@
-import type { BaseDoc, CampusScoped, Timestampish, UserSummary } from './common';
+import type { BaseDoc, CampusScoped, ImageRef, Timestampish, UserSummary } from './common';
 
 /**
  * `conversations/{conversationId}`
@@ -33,6 +33,12 @@ export interface Message extends BaseDoc {
   conversationId: string;
   senderUid: string;
   body: string;
+  /**
+   * An attached photo. Worth having because the two most common things
+   * to say in a rental chat are "does this look right?" and "this was
+   * already like this" — both of which are pictures, not sentences.
+   */
+  photo: ImageRef | null;
   readBy: string[];
   /** Soft delete so moderation can still see it. */
   isDeleted: boolean;

@@ -9,8 +9,11 @@
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
+  ActionSheetIOS,
   ActivityIndicator,
+  Alert,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -25,6 +28,7 @@ import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useConversation } from '../../src/hooks/useMessaging';
+import { pickPhoto, uploadMessagePhoto } from '../../src/lib/photo';
 
 export default function Chat() {
   const router = useRouter();
@@ -33,6 +37,7 @@ export default function Chat() {
   const { conversation, messages, loading, send, markRead } = useConversation(id);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [attaching, setAttaching] = useState(false);
 
   // Opening the thread is what clears the badge.
   useEffect(() => {
@@ -41,6 +46,39 @@ export default function Chat() {
 
   const otherUid = conversation?.participantUids.find((uid) => uid !== profile?.uid);
   const them = otherUid ? conversation?.participants?.[otherUid] : undefined;
+
+  /** Send a photo — showing a stain, or how something fits. */
+  const onAttach = async () => {
+    if (!profile || attaching) return;
+    const source = await new Promise<'camera' | 'library' | null>((resolve) => {
+      if (Platform.OS === 'ios') {
+        ActionSheetIOS.showActionSheetWithOptions(
+          { options: ['Cancel', 'Take a photo', 'Choose from library'], cancelButtonIndex: 0 },
+          (i) => resolve(i === 1 ? 'camera' : i === 2 ? 'library' : null),
+        );
+      } else {
+        Alert.alert('Send a photo', undefined, [
+          { text: 'Take a photo', onPress: () => resolve('camera') },
+          { text: 'Choose from library', onPress: () => resolve('library') },
+          { text: 'Cancel', style: 'cancel', onPress: () => resolve(null) },
+        ]);
+      }
+    });
+    if (!source) return;
+
+    setAttaching(true);
+    try {
+      const picked = await pickPhoto(source, 'free');
+      if (!picked) return;
+      const uploaded = await uploadMessagePhoto(profile.uid, picked);
+      await send(draft, uploaded);
+      setDraft('');
+    } catch {
+      Alert.alert('Loane', 'Could not send that photo. Try again.');
+    } finally {
+      setAttaching(false);
+    }
+  };
 
   const onSend = async () => {
     const text = draft.trim();
@@ -101,6 +139,17 @@ export default function Chat() {
         )}
 
         <View style={styles.composer}>
+          <Pressable
+            onPress={onAttach}
+            disabled={attaching}
+            accessibilityRole="button"
+            accessibilityLabel="Send a photo"
+            style={styles.attach}
+          >
+            <Text variant="h3" tone={attaching ? 'disabled' : 'primary'}>
+              {attaching ? '…' : '+'}
+            </Text>
+          </Pressable>
           <TextInput
             value={draft}
             onChangeText={setDraft}
@@ -131,9 +180,22 @@ function Bubble({ message, mine }: { message: Message; mine: boolean }) {
   return (
     <View style={[styles.bubbleRow, mine ? styles.rowMine : styles.rowTheirs]}>
       <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
-        <Text variant="bodySmall" tone={mine ? 'inverse' : 'primary'}>
-          {message.body}
-        </Text>
+        {message.photo ? (
+          <Image
+            source={{ uri: message.photo.url }}
+            style={styles.bubblePhoto}
+            resizeMode="cover"
+          />
+        ) : null}
+        {message.body ? (
+          <Text
+            variant="bodySmall"
+            tone={mine ? 'inverse' : 'primary'}
+            style={message.photo ? styles.captionUnderPhoto : undefined}
+          >
+            {message.body}
+          </Text>
+        ) : null}
       </View>
     </View>
   );
@@ -184,4 +246,17 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface.inverse,
   },
   sendDisabled: { backgroundColor: color.surface.disabled },
+  attach: {
+    width: controls.minTapTarget,
+    height: controls.minTapTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bubblePhoto: {
+    width: 200,
+    height: 240,
+    borderRadius: radius.sm,
+    backgroundColor: color.surface.muted,
+  },
+  captionUnderPhoto: { marginTop: spacing.sm },
 });

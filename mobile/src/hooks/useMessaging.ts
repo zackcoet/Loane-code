@@ -20,7 +20,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { COLLECTIONS, LIMITS, type Conversation, type Message } from '@loane/shared';
+import { COLLECTIONS, LIMITS, type Conversation, type ImageRef, type Message } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { logEvent } from '../analytics/events';
@@ -118,15 +118,17 @@ export function useConversation(conversationId: string | undefined) {
   }, [conversationId, uid, conversation]);
 
   const send = useCallback(
-    async (body: string) => {
+    async (body: string, photo?: ImageRef) => {
       const text = body.trim();
-      if (!conversationId || !uid || !text) return;
+      // A photo on its own is a perfectly good message.
+      if (!conversationId || !uid || (!text && !photo)) return;
       if (text.length > LIMITS.messageBody.max) return;
 
       await addDoc(collection(db, COLLECTIONS.conversations, conversationId, 'messages'), {
         conversationId,
         senderUid: uid,
         body: text,
+        photo: photo ?? null,
         readBy: [uid],
         isDeleted: false,
         createdAt: serverTimestamp(),

@@ -17,6 +17,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import {
+  type Review,
   color,
   spacing,
 } from '@loane/shared';
@@ -24,6 +25,7 @@ import { EmptyState } from './EmptyState';
 import { ListingCard } from './ListingCard';
 import { useUserListings, useUserPosts } from '../hooks/useProfile';
 import { useReviews } from '../hooks/useReviews';
+import { ReportSheet } from './ReportSheet';
 import { Avatar } from './Avatar';
 import { Text } from './Text';
 
@@ -44,6 +46,7 @@ export function ProfileTabs({ uid, isMe }: Props) {
   const posts = useUserPosts(uid);
   const listings = useUserListings(uid);
   const reviews = useReviews(uid);
+  const [reporting, setReporting] = useState<Review | null>(null);
 
   const cardWidth = (width - spacing.md * 3) / 2;
 
@@ -155,10 +158,30 @@ export function ProfileTabs({ uid, isMe }: Props) {
                   {review.body}
                 </Text>
               ) : null}
+              {/* A nasty review used to leave blocking as the only
+                  option. Reporting one is its own thing. */}
+              <Text
+                variant="caption"
+                tone="muted"
+                accessibilityRole="button"
+                onPress={() => setReporting(review)}
+                style={styles.reviewReport}
+              >
+                Report this review
+              </Text>
             </View>
           ))}
         </View>
       )}
+
+      <ReportSheet
+        visible={reporting !== null}
+        targetType="user"
+        targetId={reporting?.id ?? ''}
+        targetUid={reporting?.authorUid}
+        targetLabel={`a review by @${reporting?.author.username ?? ''}`}
+        onClose={() => setReporting(null)}
+      />
     </View>
   );
 }
@@ -221,5 +244,6 @@ const styles = StyleSheet.create({
   reviewHead: { flexDirection: 'row', alignItems: 'center' },
   reviewWho: { flex: 1, marginLeft: spacing.sm },
   reviewBody: { marginTop: spacing.sm },
+  reviewReport: { marginTop: spacing.sm, textDecorationLine: 'underline' },
 
 });

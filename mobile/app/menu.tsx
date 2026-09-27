@@ -19,10 +19,13 @@ import {
 import { IconButton } from '../src/components/IconButton';
 import { Logo } from '../src/components/Logo';
 import { auth } from '../src/firebase/config';
+import { useUnreadMessageCount } from '../src/hooks/useMessaging';
 
 interface Item {
   label: string;
   href: Href;
+  /** Shown as a count on the right, e.g. unread messages. */
+  badge?: number;
 }
 
 const ITEMS: Item[] = [
@@ -40,6 +43,7 @@ const ITEMS: Item[] = [
 
 export default function Menu() {
   const router = useRouter();
+  const unreadMessages = useUnreadMessageCount();
 
   return (
     <View style={styles.sheet}>
@@ -49,7 +53,10 @@ export default function Menu() {
       </View>
 
       <ScrollView>
-        {ITEMS.map((item) => (
+        {ITEMS.map((raw) => {
+          const item =
+            raw.href === '/messages' ? { ...raw, badge: unreadMessages } : raw;
+          return (
           <Pressable
             key={item.label}
             style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
@@ -57,9 +64,17 @@ export default function Menu() {
             onPress={() => router.push(item.href)}
           >
             <Text style={styles.rowLabel}>{item.label}</Text>
-            <Text style={styles.chevron}>›</Text>
+            <View style={styles.rowRight}>
+              {item.badge ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{item.badge > 9 ? '9+' : item.badge}</Text>
+                </View>
+              ) : null}
+              <Text style={styles.chevron}>›</Text>
+            </View>
           </Pressable>
-        ))}
+          );
+        })}
 
         <Pressable
           style={({ pressed }) => [styles.row, styles.logOut, pressed && styles.rowPressed]}
@@ -97,6 +112,15 @@ const styles = StyleSheet.create({
   },
   rowPressed: { backgroundColor: color.surface.muted },
   rowLabel: { fontSize: type.body.size, color: color.text.primary },
+  rowRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  badge: {
+    minWidth: 20,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 10,
+    backgroundColor: color.surface.inverse,
+  },
+  badgeText: { fontSize: type.caption.size, color: color.text.inverse, textAlign: 'center' },
   chevron: { fontSize: iconSize.sm, color: color.text.muted },
   logOut: { marginTop: spacing.lg },
 });

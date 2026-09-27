@@ -80,4 +80,5 @@ export const storagePaths = {
     `users/${uid}/bookings/${bookingId}/${fileName}`,
   claimPhoto: (uid: string, claimId: string, fileName: string) =>
     `users/${uid}/claims/${claimId}/${fileName}`,
+  messagePhoto: (uid: string, fileName: string) => `users/${uid}/messages/${fileName}`,
 } as const;

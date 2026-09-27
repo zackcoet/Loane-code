@@ -212,7 +212,8 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
         expiresAt: Timestamp.fromDate(requestExpiry(startDate)),
         disputeWindowEndsAt: null,
         returnProblem: null,
-        activeClaimId: null,
+        disputeResolution: null,
+      activeClaimId: null,
         reviews: { lenderReviewId: null, renterReviewId: null },
       };
 

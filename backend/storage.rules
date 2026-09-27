@@ -63,6 +63,15 @@ service firebase.storage {
       allow write: if isOwner(userId) && validUpload();
     }
 
+    // Photos sent in a chat — showing a stain before returning, or how
+    // something fits. Readable by any signed-in student because Storage
+    // rules cannot cheaply check who is in a conversation; the PATH is
+    // unguessable and nothing identifying goes in the filename.
+    match /users/{userId}/messages/{fileName} {
+      allow read: if signedIn();
+      allow write: if isOwner(userId) && validUpload();
+    }
+
     // Damage claim evidence.
     match /users/{userId}/claims/{claimId}/{fileName} {
       allow read: if isOwner(userId) || isAdmin();

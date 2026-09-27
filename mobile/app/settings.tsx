@@ -40,6 +40,7 @@ export default function Settings() {
     { label: 'Edit Profile', href: '/edit-profile' },
     { label: 'Notification Preferences', href: '/notification-preferences' },
     { label: 'Privacy', href: '/privacy' },
+    { label: 'Blocked', href: '/blocked-users' },
     {
       label: 'Linked Bank Account',
       value: 'Not linked',

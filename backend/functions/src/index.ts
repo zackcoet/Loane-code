@@ -31,6 +31,12 @@
  *   - submitReport       flags a user, listing, post or rental for admins
  *   - blockUser          refuses messaging, renting and following both ways
  *
+ * Admin only, every one of which writes an audit row in the same commit:
+ *   - suspendUser / unsuspendUser / addAdminNote
+ *   - hideListing / hidePost / hideReview and their restores
+ *   - resolveReport      can hide content and suspend in the same call
+ *   - resolveDispute     decides a flagged return
+ *
  * Background triggers:
  *   - countListingView          moves a listing's view count
  *   - countPostEngagement       moves a post's view and tag-tap counts
@@ -79,6 +85,16 @@ export { openConversation } from './messaging/openConversation';
 export { writeReview, editReview } from './reviews/writeReview';
 export { submitReport } from './moderation/report';
 export { blockUser, unblockUser } from './moderation/block';
+export { suspendUser, unsuspendUser, addAdminNote } from './admin/moderateUsers';
+export {
+  hideListing,
+  restoreListing,
+  hidePost,
+  restorePost,
+  hideReview,
+} from './admin/moderateContent';
+export { resolveReport } from './admin/resolveReport';
+export { resolveDispute } from './admin/resolveDispute';
 
 // --- Later phases -----------------------------------------------------------
 // export { saveListing }             from './social/save';        // Phase 3

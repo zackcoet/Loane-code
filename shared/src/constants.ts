@@ -237,6 +237,29 @@ export const REQUEST_EXPIRY_HOURS = 48;
  */
 export const RETURN_DISPUTE_WINDOW_HOURS = 48;
 
+/**
+ * How an admin decided a flagged return.
+ *
+ * No money moves on any of these yet — Phase 5 is paused. When it
+ * lands, `renter_at_fault` is what triggers a claim against the
+ * protection hold. Until then a decision is a recorded judgement, which
+ * still matters: the same name coming up twice is the real signal.
+ */
+export const DISPUTE_OUTCOMES = [
+  'renter_at_fault',
+  'lender_at_fault',
+  'no_fault',
+  'inconclusive',
+] as const;
+export type DisputeOutcome = (typeof DISPUTE_OUTCOMES)[number];
+
+export const DISPUTE_OUTCOME_LABELS: Record<DisputeOutcome, string> = {
+  renter_at_fault: 'Renter at fault',
+  lender_at_fault: 'Lender at fault',
+  no_fault: 'Nobody at fault',
+  inconclusive: 'Not enough evidence',
+};
+
 /** Why a lender flagged a return. Becomes a damage claim in Phase 5. */
 export const RETURN_PROBLEMS = [
   'damaged',

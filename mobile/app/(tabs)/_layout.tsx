@@ -11,6 +11,7 @@
 
 import { Tabs, useRouter } from 'expo-router';
 import { useUnreadCount } from '../../src/hooks/useNotifications';
+import { useUnreadMessageCount } from '../../src/hooks/useMessaging';
 import { StyleSheet, Text, View } from 'react-native';
 import {
   color,
@@ -38,6 +39,10 @@ export default function TabsLayout() {
   // Nobody gets a push notification until Phase 6, so the badge is the
   // only nudge that something needs an answer.
   const unread = useUnreadCount();
+  // Messages live behind the menu, not a tab, so their badge rides on
+  // Activity too — otherwise an unread message is invisible.
+  const unreadMessages = useUnreadMessageCount();
+  const totalUnread = unread + unreadMessages;
 
   return (
     <Tabs
@@ -83,7 +88,7 @@ export default function TabsLayout() {
         options={{
           title: 'Activity',
           tabBarIcon: ({ focused }) => <TabIcon glyph="♡" focused={focused} />,
-          tabBarBadge: unread > 0 ? (unread > 9 ? '9+' : unread) : undefined,
+          tabBarBadge: totalUnread > 0 ? (totalUnread > 9 ? '9+' : totalUnread) : undefined,
           tabBarBadgeStyle: styles.badge,
         }}
       />

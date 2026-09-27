@@ -124,6 +124,14 @@ export interface Booking extends BaseDoc, CampusScoped {
     flaggedAt: Timestampish;
   } | null;
 
+  /** How an admin decided a flagged return. */
+  disputeResolution: {
+    outcome: string;
+    notes: string;
+    adminUid: string;
+    decidedAt: Timestampish;
+  } | null;
+
   /** Set while a damage claim is open. */
   activeClaimId: string | null;
 

@@ -832,6 +832,7 @@ async function main(): Promise<void> {
               flaggedAt: FieldValue.serverTimestamp() as never,
             }
           : null,
+      disputeResolution: null,
       activeClaimId: null,
       reviews: { lenderReviewId: null, renterReviewId: null },
       createdAt: FieldValue.serverTimestamp() as never,

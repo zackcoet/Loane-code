@@ -32,7 +32,7 @@ const FACTS = [
   },
   {
     title: 'Blocking',
-    body: 'Blocking another student is coming soon. For now, report anyone who makes you uncomfortable.',
+    body: "Block someone from her profile and you won't see each other, message, or rent from each other. Manage it under Settings → Blocked.",
   },
 ];
 

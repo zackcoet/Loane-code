@@ -137,6 +137,13 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // Private operational notes. She must never see these — half the
+      // point of them is being able to write "watch this one" honestly.
+      match /adminNotes/{noteId} {
+        allow read: if isAdmin();
+        allow write: if false;
+      }
+
       // Activity feed. Written by Cloud Functions; she may only mark read.
       match /notifications/{notificationId} {
         allow read: if isSelf(userId);
