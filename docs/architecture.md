@@ -149,6 +149,22 @@ to keep in sync, which is one fewer thing to get out of step.
 The `(parentheses)` folders are groups — they organise files without adding a
 segment to the URL.
 
+## Background triggers
+
+Two Cloud Functions run on their own, with nothing calling them:
+
+- **`countListingView`** watches the event stream and moves a listing's
+  view count. The app logs the event but cannot touch the counter.
+- **`propagateProfileChanges`** watches user documents. Listings and posts
+  each carry a small copy of their owner's name and photo so a grid is one
+  read instead of thirty-one; when she changes her username, this is what
+  refreshes those copies. It only runs when a copied field actually
+  changes, so an ordinary profile edit costs nothing.
+
+That second one is the price of denormalization, paid deliberately. If you
+add another denormalized copy of a user anywhere, add it to that function
+too.
+
 ## Engagement tracking
 
 Every meaningful action writes a row to the `events` collection: app opens,

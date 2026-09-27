@@ -85,6 +85,17 @@ in the seed rather than from the admin dashboard — that is Phase 7.
 - Listing detail page; the lender's closet
 - Save / wishlist
 
+### Known simplifications to revisit
+
+- **Repeat views count.** `countListingView` increments on every view by
+  anyone who is not the owner, so one person opening a listing five times
+  adds five. Deduplicating needs a record per viewer per listing, which is
+  an extra write on every view. Do it when the number starts driving a
+  decision.
+- **Discover loads up to 1,000 listings at once**, because search and
+  filtering happen on the phone. The cap sits below the migration trigger
+  below, so the two agree.
+
 ### Search: when to replace the current approach
 
 Discover loads one server query — active listings on your campus, newest

@@ -254,6 +254,12 @@ export default function Discover() {
           columnWrapperStyle={styles.gridRow}
           contentContainerStyle={styles.grid}
           showsVerticalScrollIndicator={false}
+          // All matching listings are in memory; these keep the grid
+          // smooth by only mounting the rows near the viewport.
+          initialNumToRender={8}
+          maxToRenderPerBatch={8}
+          windowSize={7}
+          removeClippedSubviews
           ListHeaderComponent={
             <Text variant="caption" tone="muted" style={styles.count}>
               {visible.length} {visible.length === 1 ? 'piece' : 'pieces'}

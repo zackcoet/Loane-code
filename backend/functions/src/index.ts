@@ -18,6 +18,11 @@
  *                        while a rental is in flight
  *   - requestBooking     the double-booking-proof rental request
  *
+ * Background triggers:
+ *   - countListingView          moves a listing's view count
+ *   - propagateProfileChanges   refreshes the copies of her profile stored
+ *                               on her listings and posts
+ *
  * Skeletons with TODOs, filled in during later phases:
  *   - social counters  (Phase 3)
  *   - booking lifecycle: accept, decline, handoff, return (Phase 4)
@@ -31,6 +36,8 @@ export { changeUsername } from './auth/changeUsername';
 export { follow, unfollow } from './social/follow';
 export { removeListing } from './listings/removeListing';
 export { saveListing, unsaveListing } from './social/save';
+export { countListingView } from './triggers/countListingView';
+export { propagateProfileChanges } from './triggers/propagateProfileChanges';
 export { requestBooking } from './bookings/requestBooking';
 
 // --- Later phases -----------------------------------------------------------
