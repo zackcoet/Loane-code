@@ -27,6 +27,9 @@ export default function Discover() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        // Without flexGrow: 0 a horizontal ScrollView stretches to fill the
+        // column, which makes the chips render as full-height pills.
+        style={styles.chipScroll}
         contentContainerStyle={styles.chipRow}
       >
         {OCCASIONS.map((value) => {
@@ -89,7 +92,13 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     color: colors.textPrimary,
   },
-  chipRow: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.sm },
+  chipScroll: { flexGrow: 0, flexShrink: 0 },
+  chipRow: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+    gap: spacing.sm,
+    alignItems: 'center',
+  },
   chip: {
     borderWidth: 1,
     borderColor: colors.border,

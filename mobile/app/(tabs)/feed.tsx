@@ -28,7 +28,7 @@ export default function Feed() {
         >
           <Text style={styles.menuGlyph}>≡</Text>
         </Pressable>
-        <Logo size={26} />
+        <Logo size={20} />
         <View style={styles.headerSpacer} />
       </View>
 

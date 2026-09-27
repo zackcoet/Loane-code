@@ -3,14 +3,21 @@
  *
  * Drawn rather than imported as an image so it stays crisp at any size and
  * we are not blocked on an asset export.
+ *
+ * At large sizes the wordmark sits across the circles, as on the splash
+ * screen. Below `WORDMARK_INSIDE_MIN` the letters would be illegible inside
+ * the rings, so it drops below the mark instead — which is how the header
+ * lockup looks in the mockups.
  */
 
 import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '@loane/shared';
 
+/** Smallest circle diameter that can carry the wordmark inside it. */
+const WORDMARK_INSIDE_MIN = 56;
+
 interface Props {
   size?: number;
-  /** Show the wordmark across the circles. */
   showWordmark?: boolean;
   color?: string;
 }
@@ -19,6 +26,7 @@ export function Logo({ size = 96, showWordmark = true, color = colors.black }: P
   const diameter = size;
   const overlap = diameter * 0.42;
   const width = diameter * 2 - overlap;
+  const inside = diameter >= WORDMARK_INSIDE_MIN;
 
   const circle = {
     width: diameter,
@@ -28,11 +36,11 @@ export function Logo({ size = 96, showWordmark = true, color = colors.black }: P
     borderColor: color,
   };
 
-  return (
-    <View style={[styles.wrapper, { width, height: diameter }]}>
+  const mark = (
+    <View style={[styles.mark, { width, height: diameter }]}>
       <View style={[styles.circle, circle, { left: 0 }]} />
       <View style={[styles.circle, circle, { left: diameter - overlap }]} />
-      {showWordmark ? (
+      {showWordmark && inside ? (
         <View style={[styles.wordmarkRow, { width }]}>
           {['L', 'O', 'A', 'N', 'E'].map((letter) => (
             <Text key={letter} style={[styles.letter, { fontSize: diameter * 0.26, color }]}>
@@ -43,10 +51,22 @@ export function Logo({ size = 96, showWordmark = true, color = colors.black }: P
       ) : null}
     </View>
   );
+
+  if (!showWordmark || inside) return mark;
+
+  return (
+    <View style={styles.stack}>
+      {mark}
+      <Text style={[styles.wordmarkBelow, { fontSize: Math.max(9, diameter * 0.42), color }]}>
+        LOANE
+      </Text>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  wrapper: { position: 'relative', alignItems: 'center', justifyContent: 'center' },
+  stack: { alignItems: 'center' },
+  mark: { position: 'relative', alignItems: 'center', justifyContent: 'center' },
   circle: { position: 'absolute', top: 0 },
   wordmarkRow: {
     position: 'absolute',
@@ -56,4 +76,5 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   letter: { fontWeight: '400', letterSpacing: 1 },
+  wordmarkBelow: { marginTop: 4, letterSpacing: 3, fontWeight: '400' },
 });
