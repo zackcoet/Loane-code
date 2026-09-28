@@ -10,6 +10,7 @@ import {
   color,
   controls,
   iconSize,
+  spacing,
   type,
 } from '@loane/shared';
 
@@ -40,10 +41,17 @@ const styles = StyleSheet.create({
     height: controls.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
+    // Without this the right-hand slot sits flush against the edge of
+    // the screen. The back chevron never looked wrong because its own
+    // 44pt tap target was doing the job by accident.
+    paddingHorizontal: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: color.border.default,
   },
-  side: { width: controls.minTapTarget, justifyContent: 'center' },
+  // minWidth, not width: the slot is icon-sized by default so the title
+  // sits dead centre, but a word put in here is allowed to grow instead
+  // of being crushed into 44 points.
+  side: { minWidth: controls.minTapTarget, justifyContent: 'center' },
   right: { alignItems: 'flex-end' },
   title: {
     flex: 1,

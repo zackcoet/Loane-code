@@ -31,6 +31,7 @@ import {
   type,
   type Message,
 } from '@loane/shared';
+import { Avatar } from '../../src/components/Avatar';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
 import { Icon } from '../../src/components/Icon';
@@ -111,15 +112,20 @@ export default function Chat() {
         title={them ? `@${them.username}` : 'Chat'}
         onBack={() => router.back()}
         right={
+          // Her face, not the word "Profile". It fits the header's
+          // icon-sized slot instead of being squashed into it, and
+          // tapping the person at the top of a chat to open them is
+          // what every other messaging app does.
           them ? (
-            <Text
-              variant="caption"
-              tone="muted"
-              accessibilityRole="button"
+            <Pressable
               onPress={() => router.push(`/u/${them.username}`)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={`Open @${them.username}'s closet`}
+              style={styles.headerAvatar}
             >
-              Profile
-            </Text>
+              <Avatar url={them.photoUrl} name={them.displayName} size={32} />
+            </Pressable>
           ) : null
         }
       />
@@ -268,6 +274,12 @@ function Bubble({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  headerAvatar: {
+    width: controls.minTapTarget,
+    height: controls.minTapTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.md, paddingVertical: spacing.md, gap: spacing.sm },
   bubbleRow: { flexDirection: 'row' },
