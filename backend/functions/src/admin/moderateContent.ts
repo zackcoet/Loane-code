@@ -1,6 +1,6 @@
 import { onCall } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
-import { COLLECTIONS, type Comment, type Listing, type Post } from '@loane/shared';
+import { COLLECTIONS, type Comment, type Listing, type Post, type Review } from '@loane/shared';
 import { db, now, FieldValue } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { logAdminAction, requireAdminContext, requireReason } from './audit';
@@ -94,36 +94,88 @@ export const restorePost = onCall<HideInput, Promise<{ ok: true }>>(
   (r) => moderate(r, 'post', false),
 );
 
-/** Hiding a review a student reported as abusive. */
-export const hideReview = onCall<HideInput, Promise<{ ok: true }>>(
-  { region: 'us-central1' },
-  async (request) => {
-    const admin = requireAdminContext(request);
-    const { id, reason: rawReason } = request.data ?? {};
-    if (!id) throw invalidArgument('Which review?');
-    const reason = requireReason(rawReason, 'Say why it is coming down.');
+/**
+ * Hiding a review, and putting it back.
+ *
+ * The average moves with it. It used not to, on the reasoning that a
+ * review is usually hidden for being abusive rather than wrong — but
+ * that left a one-star review still dragging somebody's rating down
+ * from behind a curtain, invisible to her and to anyone deciding
+ * whether to rent from her. A hidden review has to count for nothing.
+ *
+ * The average is RECOMPUTED FROM THE VISIBLE REVIEWS rather than
+ * adjusted by arithmetic. Adding and subtracting works until the day
+ * two moderators act at once, or a review is hidden twice, and then
+ * the number drifts with nothing to correct it. Reading the reviews is
+ * a handful of documents and is always right.
+ */
+async function moderateReview(
+  request: Parameters<typeof requireAdminContext>[0],
+  hide: boolean,
+): Promise<{ ok: true }> {
+  const admin = requireAdminContext(request);
+  const { id, reason: rawReason } = (request.data ?? {}) as HideInput;
+  if (!id) throw invalidArgument('Which review?');
+  const reason = requireReason(
+    rawReason,
+    hide ? 'Say why it is coming down.' : 'Say why it is going back up.',
+  );
 
-    const ref = db().collection(COLLECTIONS.reviews).doc(id);
-    const snap = await ref.get();
+  const ref = db().collection(COLLECTIONS.reviews).doc(id);
+
+  await db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
     if (!snap.exists) throw notFound('We could not find that review.');
+    const review = snap.data() as Review;
 
-    const batch = db().batch();
-    batch.update(ref, { isHidden: true, updatedAt: now() });
-    logAdminAction(batch, {
+    if (hide && review.isHidden) throw failed('It is already hidden.');
+    if (!hide && !review.isHidden) throw failed('It is not hidden.');
+
+    // Every review for this person, so we can count the visible ones
+    // once the change is applied.
+    const siblings = await tx.get(
+      db().collection(COLLECTIONS.reviews).where('subjectUid', '==', review.subjectUid),
+    );
+
+    const visible = siblings.docs
+      .map((d) => ({ ...(d.data() as Review), id: d.id }))
+      .filter((r) => (r.id === id ? !hide : !r.isHidden));
+
+    const count = visible.length;
+    const average =
+      count === 0
+        ? null
+        : Math.round((visible.reduce((sum, r) => sum + r.rating, 0) / count) * 100) / 100;
+
+    tx.update(ref, { isHidden: hide, updatedAt: now() });
+    tx.update(db().collection(COLLECTIONS.users).doc(review.subjectUid), {
+      'stats.ratingCount': count,
+      'stats.ratingAverage': average,
+      updatedAt: now(),
+    });
+
+    logAdminAction(tx, {
       admin,
-      action: 'hide_review',
-      targetType: 'user',
+      action: hide ? 'hide_review' : 'restore_review',
+      targetType: 'review',
       targetId: id,
       notes: reason,
+      before: { isHidden: review.isHidden, rating: review.rating },
+      after: { isHidden: hide, ratingCount: count, ratingAverage: average },
     });
-    await batch.commit();
+  });
 
-    // TODO: hiding a review does not recompute the subject's average.
-    // Deliberate for now — a hidden review is usually hidden for being
-    // abusive, not for being wrong, and silently moving someone's
-    // rating is its own surprise. Revisit if it comes up.
-    return { ok: true };
-  },
+  logger.info(`review ${hide ? 'hidden' : 'restored'}`, { id, by: admin.uid });
+  return { ok: true };
+}
+
+export const hideReview = onCall<HideInput, Promise<{ ok: true }>>(
+  { region: 'us-central1' },
+  (r) => moderateReview(r, true),
+);
+export const restoreReview = onCall<HideInput, Promise<{ ok: true }>>(
+  { region: 'us-central1' },
+  (r) => moderateReview(r, false),
 );
 
 /**

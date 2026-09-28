@@ -36,6 +36,7 @@
  * Admin only, every one of which writes an audit row in the same commit:
  *   - suspendUser / unsuspendUser / addAdminNote
  *   - hideListing / hidePost / hideReview / hideComment and their restores
+ *     (hiding a review recomputes the subject's rating from what is left)
  *   - resolveReport      can hide content and suspend in the same call
  *   - resolveDispute     decides a flagged return
  *
@@ -96,6 +97,7 @@ export {
   hidePost,
   restorePost,
   hideReview,
+  restoreReview,
   hideComment,
   restoreComment,
 } from './admin/moderateContent';
