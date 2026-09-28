@@ -24,7 +24,7 @@
 import { initializeApp, deleteApp } from 'firebase-admin/app';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore';
-import { colorFor, placeholderImage } from './placeholderImage';
+import { garmentPhoto, peoplePhoto } from './seedPhotos';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
@@ -332,17 +332,28 @@ const CAPTIONS = [
 ];
 
 /**
- * Seeded photos are generated as real 600x800 PNGs, one colour per item.
+ * Seeded photos are real photographs, committed to the repo.
  *
- * They used to be a single 1x1 pixel stretched across the card, which on
- * a phone looks exactly like an image failing to load — the whole app
- * seemed broken when it was working fine. See placeholderImage.ts.
+ * They were flat colour blocks before that, and a 1x1 pixel before
+ * THAT. Both made it impossible to tell whether the app looked right,
+ * because on a phone a grey rectangle and a broken image are the same
+ * thing. See seedPhotos.ts for why they are inlined rather than served
+ * from the Storage emulator.
  */
-let photoCursor = 0;
+let garmentCursor = 0;
+let peopleCursor = 0;
 
+/** A garment photo — what a listing shows. */
 function image(path: string) {
-  const uri = placeholderImage(colorFor(photoCursor));
-  photoCursor += 1;
+  const uri = garmentPhoto(garmentCursor);
+  garmentCursor += 1;
+  return { path, url: uri, width: 600, height: 800, bytes: uri.length };
+}
+
+/** Someone wearing an outfit — what a look shows. */
+function outfitImage(path: string) {
+  const uri = peoplePhoto(peopleCursor);
+  peopleCursor += 1;
   return { path, url: uri, width: 600, height: 800, bytes: uri.length };
 }
 
@@ -462,7 +473,7 @@ async function main(): Promise<void> {
       firstName: student.first,
       displayName: student.first,
       bio: student.bio ?? 'usc • sharing my closet',
-      photoUrl: placeholderImage(colorFor(users.length), 240, 240),
+      photoUrl: peoplePhoto(users.length),
       campusId: CAMPUS_ID,
       campusEmail: email,
       isVerified: true,
@@ -665,7 +676,7 @@ async function main(): Promise<void> {
         campusId: CAMPUS_ID,
         authorUid: author.uid,
         author: summaryOf(author),
-        photos: [{ ...image(`users/${author.uid}/posts/${ref.id}/1.jpg`), tags }],
+        photos: [{ ...outfitImage(`users/${author.uid}/posts/${ref.id}/1.jpg`), tags }],
         caption: pick(CAPTIONS),
         // A look inherits the occasion of what it features, which is how
         // someone would actually tag it.

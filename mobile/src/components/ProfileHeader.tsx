@@ -4,7 +4,7 @@
  * two can never drift apart — only the buttons underneath differ.
  */
 
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   SIZE_FIELDS,
   SIZE_FIELD_LABELS,
@@ -20,9 +20,10 @@ import { useCampusName } from '../hooks/useCampus';
 interface Props {
   user: User;
   children?: React.ReactNode;
+  onPressPhoto?: () => void;
 }
 
-export function ProfileHeader({ user, children }: Props) {
+export function ProfileHeader({ user, children, onPressPhoto }: Props) {
   const { name: campusName, dotColor } = useCampusName(user.campusId);
 
   const stats = [
@@ -40,7 +41,17 @@ export function ProfileHeader({ user, children }: Props) {
   return (
     <View>
       <View style={styles.identity}>
-        <Avatar url={user.photoUrl} name={user.displayName} size={84} />
+        {onPressPhoto ? (
+          <Pressable
+            onPress={onPressPhoto}
+            accessibilityRole="button"
+            accessibilityLabel="Change profile photo"
+          >
+            <Avatar url={user.photoUrl} name={user.displayName} size={84} />
+          </Pressable>
+        ) : (
+          <Avatar url={user.photoUrl} name={user.displayName} size={84} />
+        )}
         <View style={styles.identityText}>
           <Text style={styles.displayName} numberOfLines={1}>
             {user.displayName}

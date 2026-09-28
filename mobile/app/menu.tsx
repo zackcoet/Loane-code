@@ -37,7 +37,7 @@ const ITEMS: Item[] = [
   { label: 'My Rentals', href: '/my-rentals' },
   { label: 'My Wishlist', href: '/my-wishlist' },
   { label: 'Activity', href: '/(tabs)/activity' },
-  { label: 'Messages', href: '/messages' },
+  { label: 'Messages', href: '/(tabs)/messages' },
   { label: 'Find Friends', href: '/find-friends' },
   { label: 'Invite Friends', href: '/invite-friends' },
   { label: 'Payouts & Payment Info', href: '/payouts' },
@@ -59,7 +59,7 @@ export default function Menu() {
       <ScrollView>
         {ITEMS.map((raw) => {
           const item =
-            raw.href === '/messages' ? { ...raw, badge: unreadMessages } : raw;
+            raw.href === '/(tabs)/messages' ? { ...raw, badge: unreadMessages } : raw;
           return (
           <Pressable
             key={item.label}

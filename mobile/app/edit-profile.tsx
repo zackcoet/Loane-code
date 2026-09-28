@@ -14,8 +14,6 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import {
-  ActionSheetIOS,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -51,8 +49,8 @@ import { useAuth } from '../src/auth/AuthProvider';
 import { db } from '../src/firebase/config';
 import { changeUsername, checkUsername } from '../src/firebase/callables';
 import { callableErrorMessage } from '../src/firebase/errors';
-import { pickPhoto, uploadProfilePhoto, type PhotoSource } from '../src/lib/photo';
 import { logEvent } from '../src/analytics/events';
+import { useProfilePhoto } from '../src/hooks/useProfilePhoto';
 import { text } from '../src/theme';
 
 export default function EditProfile() {
@@ -73,8 +71,11 @@ export default function EditProfile() {
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameOk, setUsernameOk] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Shared with tapping your avatar on your profile, so there is one
+  // place that knows how a profile photo gets changed.
+  const { change: choosePhoto, uploading } = useProfilePhoto({ onPicked: setPhotoUrl });
 
   if (!profile) {
     return (
@@ -108,39 +109,6 @@ export default function EditProfile() {
       else setUsernameError(result.data.reason ?? 'That username is taken.');
     } catch {
       // Advisory only; changeUsername decides for real.
-    }
-  };
-
-  const choosePhoto = () => {
-    const run = async (source: PhotoSource) => {
-      setUploading(true);
-      setError(null);
-      try {
-        const picked = await pickPhoto(source);
-        if (!picked) return;
-        const url = await uploadProfilePhoto(profile.uid, picked);
-        setPhotoUrl(url);
-      } catch {
-        setError('Could not upload that photo. Try again.');
-      } finally {
-        setUploading(false);
-      }
-    };
-
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options: ['Cancel', 'Take a photo', 'Choose from library'], cancelButtonIndex: 0 },
-        (index) => {
-          if (index === 1) void run('camera');
-          if (index === 2) void run('library');
-        },
-      );
-    } else {
-      Alert.alert('Profile photo', undefined, [
-        { text: 'Take a photo', onPress: () => void run('camera') },
-        { text: 'Choose from library', onPress: () => void run('library') },
-        { text: 'Cancel', style: 'cancel' },
-      ]);
     }
   };
 

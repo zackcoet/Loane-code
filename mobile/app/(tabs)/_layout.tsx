@@ -74,7 +74,6 @@ export default function TabsLayout() {
             tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'person-circle' : 'person-circle-outline'} focused={focused} />,
           }}
         />
-        <Tabs.Screen name="post" options={{ href: null }} />
       </Tabs>
     </>
   );

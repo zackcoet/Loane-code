@@ -20,10 +20,14 @@ import { ProfileHeader } from '../../src/components/ProfileHeader';
 import { ProfileTabs } from '../../src/components/ProfileTabs';
 import { Screen } from '../../src/components/Screen';
 import { useAuth } from '../../src/auth/AuthProvider';
+import { useProfilePhoto } from '../../src/hooks/useProfilePhoto';
 
 export default function Profile() {
   const router = useRouter();
   const { profile } = useAuth();
+  // Tapping your own avatar changes it there and then — no detour
+  // through the edit form for the one thing people change most.
+  const photo = useProfilePhoto();
 
   if (!profile) {
     return (
@@ -52,7 +56,7 @@ export default function Profile() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <ProfileHeader user={profile}>
+        <ProfileHeader user={profile} onPressPhoto={photo.change}>
           <Button
             label="Edit profile"
             variant="outline"
