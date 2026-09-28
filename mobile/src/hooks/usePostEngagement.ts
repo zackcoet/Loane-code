@@ -21,6 +21,7 @@ import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { likePost, savePost, unlikePost, unsavePost } from '../firebase/callables';
 import { logEvent } from '../analytics/events';
+import { readPostsInOrder } from './readPostsInOrder';
 
 type Kind = 'like' | 'save';
 
@@ -88,12 +89,14 @@ export function useSavedPosts() {
 
   useEffect(() => {
     if (!uid) {
+      setPosts([]);
       setLoading(false);
       return;
     }
+    let live = true;
     setLoading(true);
 
-    return onSnapshot(
+    const unsubscribe = onSnapshot(
       query(
         collection(db, COLLECTIONS.postSaves),
         where('uid', '==', uid),
@@ -103,45 +106,31 @@ export function useSavedPosts() {
       (snap) => {
         const postIds = snap.docs.map((d) => (d.data() as PostSave).postId);
         if (postIds.length === 0) {
-          setPosts([]);
-          setLoading(false);
+          if (live) {
+            setPosts([]);
+            setLoading(false);
+          }
           return;
         }
-
-        // `in` takes at most 30 values, so read in chunks and keep her
-        // original save order.
-        const chunks: string[][] = [];
-        for (let i = 0; i < postIds.length; i += 30) chunks.push(postIds.slice(i, i + 30));
-
-        Promise.all(
-          chunks.map(
-            (chunk) =>
-              new Promise<Post[]>((resolve) => {
-                const unsub = onSnapshot(
-                  query(collection(db, COLLECTIONS.posts), where('id', 'in', chunk)),
-                  (postSnap) => {
-                    resolve(postSnap.docs.map((d) => ({ ...(d.data() as Post), id: d.id })));
-                    unsub();
-                  },
-                  () => {
-                    resolve([]);
-                    unsub();
-                  },
-                );
-              }),
-          ),
-        ).then((groups) => {
-          const byId = new Map(groups.flat().map((p) => [p.id, p]));
-          setPosts(
-            postIds
-              .map((id) => byId.get(id))
-              .filter((p): p is Post => Boolean(p) && p!.status === 'active'),
-          );
-          setLoading(false);
-        });
+        void readPostsInOrder(postIds)
+          .then((found) => {
+            if (!live) return;
+            setPosts(found);
+            setLoading(false);
+          })
+          .catch(() => {
+            if (live) setLoading(false);
+          });
       },
-      () => setLoading(false),
+      () => {
+        if (live) setLoading(false);
+      },
     );
+
+    return () => {
+      live = false;
+      unsubscribe();
+    };
   }, [uid]);
 
   return { posts, loading };

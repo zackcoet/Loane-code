@@ -7,7 +7,7 @@
  * the moment of drawing. See docs/post-tagging.md.
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { Animated, Image, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Reanimated, {
@@ -54,9 +54,6 @@ interface Props {
   aspectRatio?: number;
 }
 
-/** How close two taps have to be to count as a double tap. */
-const DOUBLE_TAP_MS = 280;
-
 export function TaggablePhoto({
   uri,
   tags,
@@ -72,25 +69,24 @@ export function TaggablePhoto({
   zoomable = false,
   aspectRatio = 0.8,
 }: Props) {
-  let size = { width: 0, height: 0 };
-
+  // A ref, not a local: the old code kept this in a `let` that was
+  // recreated on every render, so the measurement was thrown away each
+  // time and only survived by luck of ordering.
+  const layout = useRef({ width: 0, height: 0 });
   const onLayout = (event: LayoutChangeEvent) => {
-    size = event.nativeEvent.layout;
+    layout.current = event.nativeEvent.layout;
   };
 
-  // Single tap shows the tags, double tap likes. Telling them apart
-  // means holding the single tap for a moment to see whether a second
-  // one arrives — which is why revealing tags feels very slightly lazy.
-  const lastTap = useRef(0);
-  const pendingSingle = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Single tap shows the tags, double tap likes, two fingers zoom.
+  //
+  // ALL THREE ARE GESTURE HANDLER GESTURES, on purpose. This used to be
+  // a React Native Pressable with a hand-rolled double-tap timer, and
+  // when the pinch gesture arrived it was nested inside that Pressable
+  // — two different touch systems arguing over the same finger, with
+  // the native one taking the touch and the Pressable never firing. It
+  // stopped taps on a photo working at all, which included the double
+  // tap that likes. One system, composed explicitly, cannot do that.
   const heart = useRef(new Animated.Value(0)).current;
-
-  useEffect(
-    () => () => {
-      if (pendingSingle.current) clearTimeout(pendingSingle.current);
-    },
-    [],
-  );
 
   const burst = useCallback(() => {
     heart.setValue(0);
@@ -100,50 +96,43 @@ export function TaggablePhoto({
     ]).start();
   }, [heart]);
 
-  const handlePress = (event: { nativeEvent: { locationX: number; locationY: number } }) => {
-    if (mode === 'view') {
-      const now = Date.now();
-
-      if (now - lastTap.current < DOUBLE_TAP_MS) {
-        // Second tap: cancel the pending tag toggle and like instead.
-        if (pendingSingle.current) clearTimeout(pendingSingle.current);
-        pendingSingle.current = null;
-        lastTap.current = 0;
-        if (onDoubleTap) {
-          burst();
-          onDoubleTap();
-        }
-        return;
-      }
-
-      lastTap.current = now;
-      pendingSingle.current = setTimeout(() => {
-        pendingSingle.current = null;
-        onToggleTags?.();
-      }, DOUBLE_TAP_MS);
-      return;
-    }
-    if (!onPlaceTag || size.width === 0) return;
-    const { locationX, locationY } = event.nativeEvent;
-    // Clamp, so a tap right on the edge still lands inside the photo.
-    const x = Math.min(1, Math.max(0, locationX / size.width));
-    const y = Math.min(1, Math.max(0, locationY / size.height));
-    onPlaceTag(x, y);
-  };
-
-  const showDots = mode === 'compose' || tagsVisible;
-
-  // --- Pinch to zoom -------------------------------------------------------
-  // Two fingers, so it never competes with the single tap that reveals
-  // the tags or the double tap that likes. It springs back on release
-  // rather than staying zoomed: a photo left at 3x in the middle of a
-  // feed is a photo she then has to work out how to un-zoom.
   const scale = useSharedValue(1);
   const panX = useSharedValue(0);
   const panY = useSharedValue(0);
 
+  const viewing = mode === 'view';
+
+  // runOnJS, because everything these do — setting React state, calling
+  // a Cloud Function — belongs on the JS thread.
+  const doubleTap = Gesture.Tap()
+    .numberOfTaps(2)
+    .runOnJS(true)
+    .enabled(viewing && Boolean(onDoubleTap))
+    .onEnd(() => {
+      burst();
+      onDoubleTap?.();
+    });
+
+  const singleTap = Gesture.Tap()
+    .runOnJS(true)
+    .onEnd((event) => {
+      if (viewing) {
+        onToggleTags?.();
+        return;
+      }
+      if (!onPlaceTag) return;
+      // Clamp, so a tap right on the edge still lands inside the photo.
+      const x = Math.min(1, Math.max(0, event.x / Math.max(1, layout.current.width)));
+      const y = Math.min(1, Math.max(0, event.y / Math.max(1, layout.current.height)));
+      onPlaceTag(x, y);
+    });
+
+  // Pinch stays on the UI thread so the zoom tracks the fingers without
+  // a round trip through JS. It springs back on release rather than
+  // staying zoomed: a photo left at 3x in the middle of a feed is a
+  // photo she then has to work out how to un-zoom.
   const pinch = Gesture.Pinch()
-    .enabled(zoomable && mode === 'view')
+    .enabled(zoomable && viewing)
     .onUpdate((event) => {
       // Never smaller than life size, and a ceiling so it cannot be
       // thrown off into a blur.
@@ -155,10 +144,10 @@ export function TaggablePhoto({
       panY.value = withTiming(0, { duration: 180 });
     });
 
-  // Moving the zoomed photo around under two fingers. One finger is left
-  // alone so the carousel can still be swiped.
+  // Moving the zoomed photo under two fingers. Two, so a one-finger
+  // drag still belongs to the carousel and the feed underneath it.
   const drag = Gesture.Pan()
-    .enabled(zoomable && mode === 'view')
+    .enabled(zoomable && viewing)
     .minPointers(2)
     .onUpdate((event) => {
       if (scale.value <= 1) return;
@@ -170,7 +159,14 @@ export function TaggablePhoto({
       panY.value = withTiming(0, { duration: 180 });
     });
 
-  const zoom = Gesture.Simultaneous(pinch, drag);
+  // Exclusive: the single tap waits to see whether a second one lands,
+  // so liking never also toggles the tags. Simultaneous: a two-finger
+  // zoom is not a tap and the two never need to exclude each other.
+  const gestures = Gesture.Simultaneous(
+    Gesture.Exclusive(doubleTap, singleTap),
+    pinch,
+    drag,
+  );
 
   const zoomStyle = useAnimatedStyle(() => ({
     transform: [
@@ -180,9 +176,14 @@ export function TaggablePhoto({
     ],
   }));
 
+  const showDots = mode === 'compose' || tagsVisible;
+
   return (
-    <Pressable onPress={handlePress} onLayout={onLayout} style={[styles.wrapper, { aspectRatio }]}>
-      <GestureDetector gesture={zoom}>
+    <View onLayout={onLayout} style={[styles.wrapper, { aspectRatio }]}>
+      {/* The gestures are attached to the image ALONE. The tag dots are
+          siblings rendered on top of it, not children, so a tap on a dot
+          is the dot's and never also counts as a tap on the photo. */}
+      <GestureDetector gesture={gestures}>
         <Reanimated.View style={[styles.image, zoomStyle]}>
           <Image source={{ uri }} style={styles.image} resizeMode="cover" />
         </Reanimated.View>
@@ -271,7 +272,7 @@ export function TaggablePhoto({
           </Text>
         </View>
       ) : null}
-    </Pressable>
+    </View>
   );
 }
 
