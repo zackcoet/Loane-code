@@ -117,6 +117,7 @@ function RootNavigator() {
       <Stack.Screen name="liked" options={{ presentation: 'card' }} />
       <Stack.Screen name="post-likes" options={{ presentation: 'card' }} />
       <Stack.Screen name="follow-list" options={{ presentation: 'card' }} />
+      <Stack.Screen name="rental-requests" options={{ presentation: 'card' }} />
       <Stack.Screen name="reviews" options={{ presentation: 'card' }} />
       {/* Both slide up from the bottom: they belong to the post you are
           looking at rather than being somewhere you navigated to. */}

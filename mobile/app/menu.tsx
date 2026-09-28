@@ -22,7 +22,7 @@ import { IconButton } from '../src/components/IconButton';
 import { Logo } from '../src/components/Logo';
 import { Text } from '../src/components/Text';
 import { auth } from '../src/firebase/config';
-import { useUnreadMessageCount } from '../src/hooks/useMessaging';
+import { useMyBookings } from '../src/hooks/useBookings';
 
 const WIDTH = Math.min(320, Dimensions.get('window').width * 0.84);
 
@@ -45,8 +45,10 @@ const ITEMS: Item[] = [
   // because the menu is where people look when they cannot find a thing.
   { label: 'Post or list something', icon: 'add-circle-outline', href: '/post-sheet' },
   { label: 'My Listings', icon: 'pricetags-outline', href: '/my-listings' },
+  { label: 'Rental Requests', icon: 'mail-unread-outline', href: '/rental-requests' },
   { label: 'My Rentals', icon: 'calendar-outline', href: '/my-rentals' },
-  { label: 'Messages', icon: 'chatbubble-outline', href: '/(tabs)/messages' },
+  // Messages is not here. It has its own tab in the bottom bar, and a
+  // second door to the same room is just something else to scan past.
   { label: 'Activity', icon: 'notifications-outline', href: '/(tabs)/activity' },
   { label: 'Find Friends', icon: 'person-add-outline', href: '/find-friends' },
   { label: 'Invite Friends', icon: 'share-outline', href: '/invite-friends' },
@@ -58,7 +60,11 @@ const ITEMS: Item[] = [
 
 export default function Menu() {
   const router = useRouter();
-  const unreadMessages = useUnreadMessageCount();
+  // The badge moved with the row. What needs an answer is no longer
+  // unread messages — that count lives on the Messages tab — but the
+  // requests sitting on her pieces waiting for a yes or no.
+  const lending = useMyBookings('lending');
+  const waitingOnMe = lending.bookings.filter((b) => b.status === 'requested').length;
   const slide = useRef(new Animated.Value(-WIDTH)).current;
 
   useEffect(() => {
@@ -118,7 +124,7 @@ export default function Menu() {
 
           {ITEMS.map((raw) => {
             const item =
-              raw.href === '/(tabs)/messages' ? { ...raw, badge: unreadMessages } : raw;
+              raw.href === '/rental-requests' ? { ...raw, badge: waitingOnMe } : raw;
             return (
               <Pressable
                 key={item.label}
