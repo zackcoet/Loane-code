@@ -1,31 +1,41 @@
 {
-  "//": "EAS build profiles. See docs/setup.md for which one to use when.",
   "cli": {
     "version": ">= 24.0.0",
     "appVersionSource": "remote"
   },
   "build": {
     "development": {
-      "//": "A dev client you install on your own phone. It still talks to the emulators on your laptop over Wi-Fi, exactly like Expo Go does, but it is a real native app — so native modules work and you can see how the app actually behaves off a dev server's leash. This is the only profile that works today.",
       "developmentClient": true,
       "distribution": "internal",
-      "ios": { "simulator": false },
+      "ios": {
+        "simulator": false
+      },
       "channel": "development"
     },
     "preview": {
-      "//": "A standalone app for testing on real phones, pointed at the loane-dev Firebase project. Needs that project to exist and to have functions, rules and indexes deployed to it.",
       "distribution": "internal",
       "channel": "preview",
       "env": {
-        "EXPO_PUBLIC_USE_EMULATORS": "false"
+        "EXPO_PUBLIC_USE_EMULATORS": "false",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAL5iE73tRc9YbY7jGWya65Q8Pl_Kd831M",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "loane-code.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "loane-code",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "loane-code.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "384488190763",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:384488190763:web:13e9baa2efd0b10815cb6e"
       }
     },
     "production": {
-      "//": "The App Store build, pointed at the live loane-code project. Nothing goes here without Zack saying so, every time.",
       "autoIncrement": true,
       "channel": "production",
       "env": {
-        "EXPO_PUBLIC_USE_EMULATORS": "false"
+        "EXPO_PUBLIC_USE_EMULATORS": "false",
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAL5iE73tRc9YbY7jGWya65Q8Pl_Kd831M",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "loane-code.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "loane-code",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "loane-code.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "384488190763",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:384488190763:web:13e9baa2efd0b10815cb6e"
       }
     }
   },
