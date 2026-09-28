@@ -62,10 +62,15 @@ export function logEventDebounced(type: EventType, options: LogOptions = {}, wai
 export function logEvent(type: EventType, options: LogOptions = {}): void {
   const uid = auth.currentUser?.uid ?? null;
 
-  // The security rules require events to carry the caller's own uid, so we
-  // simply skip logging when signed out rather than writing something the
-  // server would reject.
-  if (!uid) return;
+  // The security rules require events to carry the caller's own uid and
+  // her own campus, so we skip logging rather than writing something the
+  // server is certain to reject.
+  //
+  // The campus check matters more than it looks: currentCampusId is set
+  // when her profile loads, and anything fired before that would be
+  // rejected silently — a hole in the numbers that nothing would report.
+  // Dropping it here is the same outcome, minus a pointless write.
+  if (!uid || !currentCampusId) return;
 
   void addDoc(collection(db, COLLECTIONS.events), {
     type,

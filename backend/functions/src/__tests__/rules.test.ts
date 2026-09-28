@@ -16,7 +16,8 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import { EVENT_SURFACES, EVENT_TYPES } from '@loane/shared';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
 const ELLA = 'uid-ella';
@@ -1023,30 +1024,87 @@ describe('social counters', () => {
 });
 
 describe('events', () => {
+  /** A row that satisfies every rule, for tests to break one thing in. */
+  const goodEvent = (overrides: Record<string, unknown> = {}) => ({
+    type: 'listing_view',
+    uid: ELLA,
+    campusId: CAMPUS,
+    surface: 'discover',
+    targetType: 'listing',
+    targetId: 'listing-1',
+    meta: {},
+    sessionId: 'session-abc',
+    platform: 'ios',
+    appVersion: '0.1.0',
+    createdAt: serverTimestamp(),
+    ...overrides,
+  });
+
   it('lets her log her own event', async () => {
-    await assertSucceeds(
-      setDoc(doc(asElla(), 'events', 'event-1'), {
-        type: 'listing_view',
-        uid: ELLA,
-        campusId: CAMPUS,
-        surface: 'discover',
-      }),
-    );
+    await assertSucceeds(setDoc(doc(asElla(), 'events', 'event-1'), goodEvent()));
   });
 
   it('stops her logging an event as someone else', async () => {
+    await assertFails(setDoc(doc(asElla(), 'events', 'event-2'), goodEvent({ uid: MADDIE })));
+  });
+
+  it('stops her attributing an event to another campus', async () => {
+    // One student poisoning another campus's numbers is the kind of
+    // thing nobody notices until a decision has been made on it.
     await assertFails(
-      setDoc(doc(asElla(), 'events', 'event-2'), {
-        type: 'listing_view',
-        uid: MADDIE,
-        campusId: CAMPUS,
-        surface: 'discover',
-      }),
+      setDoc(doc(asElla(), 'events', 'event-3'), goodEvent({ campusId: 'clemson' })),
+    );
+  });
+
+  it('stops her inventing an event type', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'events', 'event-4'), goodEvent({ type: 'tagged_item_tap_lol' })),
+    );
+  });
+
+  it('stops her inventing a surface', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'events', 'event-5'), goodEvent({ surface: 'somewhere' })),
+    );
+  });
+
+  it('stops her backdating an event', async () => {
+    // A backdated row lands in a week we have already reported on.
+    await assertFails(
+      setDoc(doc(asElla(), 'events', 'event-6'), goodEvent({ createdAt: new Date(2020, 0, 1) })),
+    );
+  });
+
+  it('stops her stuffing a payload into meta', async () => {
+    const fat: Record<string, string> = {};
+    for (let i = 0; i < 40; i += 1) fat[`k${i}`] = 'v';
+    await assertFails(setDoc(doc(asElla(), 'events', 'event-7'), goodEvent({ meta: fat })));
+  });
+
+  it('stops her making up a platform', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'events', 'event-8'), goodEvent({ platform: 'toaster' })),
     );
   });
 
   it('stops her reading the event stream', async () => {
     await assertFails(getDoc(doc(asElla(), 'events', 'event-1')));
+  });
+
+  it('lists every EVENT_TYPE and EVENT_SURFACE the app can send', () => {
+    // Rules cannot import from shared, so the allowed lists are copied
+    // into firestore.rules. This is the guard against them drifting:
+    // add a type to constants.ts without adding it to the rules and
+    // every event of that type would be silently refused in production.
+    const rules = readFileSync(resolve(__dirname, '../../../firestore.rules'), 'utf8');
+    const missingTypes = EVENT_TYPES.filter((t) => !rules.includes(`'${t}'`));
+    const missingSurfaces = EVENT_SURFACES.filter((s) => !rules.includes(`'${s}'`));
+    if (missingTypes.length > 0 || missingSurfaces.length > 0) {
+      throw new Error(
+        `firestore.rules is missing event types [${missingTypes.join(', ')}] ` +
+          `and surfaces [${missingSurfaces.join(', ')}]`,
+      );
+    }
   });
 });
 

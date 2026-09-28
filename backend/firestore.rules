@@ -458,12 +458,75 @@ service cloud.firestore {
     // events — engagement tracking
     //
     // Create-only from the app. Nobody reads these but admins. They are how
-    // we answer the two MVP questions, so they must be tamper-proof.
+    // we answer the two MVP questions, so they must be tamper-proof: a
+    // single motivated student able to write arbitrary rows can make
+    // tagged_item_tap say whatever she likes, and we would go on to make
+    // decisions on it.
+    //
+    // The two lists below mirror EVENT_TYPES and EVENT_SURFACES in
+    // shared/src/constants.ts. Rules cannot import, so they are copied —
+    // and a test in rules.test.ts fails if the two ever drift.
+    //
+    // NOT enforced here: how MANY events one person may write. Rules
+    // cannot count over time. That needs App Check and rate limiting,
+    // which are Phase 8. See docs/security.md.
     // -----------------------------------------------------------------
     match /events/{eventId} {
+      function allowedType() {
+        return request.resource.data.type in [
+          'app_open', 'onboarding_step', 'signup_completed', 'profile_edit',
+          'post_view', 'post_like', 'post_unlike', 'post_save', 'post_unsave',
+          'post_create', 'post_edit', 'post_delete',
+          'listing_view', 'listing_create', 'listing_edit', 'listing_remove',
+          'save', 'unsave', 'tagged_item_tap',
+          'profile_view', 'closet_view', 'follow', 'unfollow',
+          'search', 'filter_used',
+          'rental_requested', 'rental_confirmed', 'rental_declined',
+          'rental_cancelled', 'rental_handoff', 'rental_received',
+          'rental_returned', 'rental_disputed',
+          'message_sent', 'comment_created', 'comment_deleted',
+          'post_shared', 'invite_shared', 'review_written',
+          'report_submitted', 'user_blocked', 'user_unblocked'
+        ];
+      }
+
+      function allowedSurface() {
+        return request.resource.data.surface in [
+          'feed', 'discover', 'search', 'profile', 'closet', 'listing',
+          'post', 'onboarding', 'activity', 'messages', 'other'
+        ];
+      }
+
       allow read: if isAdmin();
+
       allow create: if signedIn()
-        && request.resource.data.uid == uid();
+        // Hers, and honestly hers.
+        && request.resource.data.uid == uid()
+        // Her own campus. Otherwise one student can poison another
+        // campus's numbers and we would never know which rows to
+        // distrust. Costs one extra read per event; at a few hundred
+        // users that is nothing, and it is the difference between
+        // analytics we can act on and analytics we cannot.
+        && request.resource.data.campusId == existingUser().campusId
+        // The server's clock, not the phone's. A backdated event lands
+        // in a week we have already reported on.
+        && request.resource.data.createdAt == request.time
+        && allowedType()
+        && allowedSurface()
+        && (request.resource.data.targetType == null
+            || request.resource.data.targetType in
+               ['post', 'listing', 'user', 'booking', 'search', 'screen'])
+        && (request.resource.data.targetId == null
+            || request.resource.data.targetId.size() <= 200)
+        // meta carries a search term or a filter name, not a payload.
+        && request.resource.data.meta is map
+        && request.resource.data.meta.size() <= 12
+        && request.resource.data.sessionId is string
+        && request.resource.data.sessionId.size() <= 64
+        && request.resource.data.platform in ['ios', 'android', 'web']
+        && request.resource.data.appVersion is string
+        && request.resource.data.appVersion.size() <= 32;
+
       allow update, delete: if false;
     }
 
