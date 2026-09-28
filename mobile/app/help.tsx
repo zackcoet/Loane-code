@@ -11,11 +11,13 @@ import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   brand,
   color,
+  iconSize,
   spacing,
   type,
 } from '@loane/shared';
 import { Screen } from '../src/components/Screen';
 import { Header } from '../src/components/Header';
+import { Icon } from '../src/components/Icon';
 import { text } from '../src/theme';
 
 const TIPS = [
@@ -63,7 +65,10 @@ export default function Help() {
         </View>
 
         <View style={styles.emergency}>
-          <Text style={styles.emergencyTitle}>⚠  In an emergency?</Text>
+          <View style={styles.emergencyHeading}>
+            <Icon name="warning-outline" size={iconSize.sm} tint={color.text.primary} />
+            <Text style={styles.emergencyTitle}>In an emergency?</Text>
+          </View>
           <Text style={styles.emergencyBody}>
             Contact your campus safety office or call 911. Loane is a marketplace, not an emergency
             service.
@@ -98,6 +103,7 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface.muted,
     padding: spacing.md,
   },
+  emergencyHeading: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   emergencyTitle: { fontSize: type.body.size, fontWeight: '600', color: color.text.primary },
   emergencyBody: {
     fontSize: type.bodySmall.size,

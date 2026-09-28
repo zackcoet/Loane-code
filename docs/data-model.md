@@ -41,6 +41,7 @@ the code is right and this file needs updating.
 | `follows` | Who follows whom | Functions only |
 | `likes` | Post likes | Functions only |
 | `postSaves` | Saved looks | Functions only |
+| `comments` | Comments on a look | Functions only |
 | `saves` | Saved listings (wishlist) | Functions only |
 | `bookings` | Rentals and purchases | **Functions only** |
 | `reviews` | Post-rental ratings | Functions only |
@@ -137,6 +138,19 @@ denormalized copies so the tap-through renders instantly, and
 `taggedListingIds` holds bare ids because Firestore's `array-contains` only
 works on scalars.
 
+`lastLiker` is the most recent person to like the look, stored on the post
+so the "Liked by Harper and 12 others" line costs the feed nothing. The
+alternative — a likes query plus a profile read for every post scrolling
+past — is two extra reads per post to print one name. It is cleared when
+that same person un-likes, because we do not know who liked it before her
+and a name belonging to somebody who took their like back is worse than
+showing the count alone.
+
+The expanded "See tagged pieces" panel deliberately does NOT use the
+denormalized copies. It reads the listings live, because it shows size,
+price and description — exactly the fields an owner edits — and it costs
+nothing until somebody opens it.
+
 `stats.tagTapCount` counts taps from a post through to a listing. **This is the
 single most important number for MVP question 2** — it is the direct measure
 of the social side driving marketplace activity.
@@ -194,10 +208,34 @@ Written only by a Cloud Function, and only by someone who actually completed
 the booking being reviewed. That single rule is what separates a real rating
 system from a fake one.
 
+## `comments`
+
+Top-level rather than a subcollection of the post, because admins need to
+sweep every comment on the platform and a collection-group query needs an
+index of its own where a plain collection does not.
+
+Written only by `addComment` / `deleteComment`, for two reasons rules cannot
+cover: the count under the post has to move with the comment, and the name
+and photo stamped on it have to really be hers. If the app could write
+those, anyone could leave a comment signed by somebody else.
+
+Soft-deleted like everything else. `removed` is what she chose, `suspended`
+is what an admin did, and a comment somebody reported still exists when an
+admin goes looking for it. Both the author of the comment and the author of
+the look can remove one — clearing something nasty off her own post should
+not mean waiting on us.
+
 ## `conversations` + `conversations/{id}/messages`
 
 1:1 only for MVP. The conversation id is the two uids sorted and joined with
 `_`, so the same pair can never end up with two separate threads.
+
+A message may carry a `sharedPost`: a look somebody sent into the chat,
+stored as a snapshot rather than just a post id so the bubble renders
+immediately and does not turn into a blank card if the post later comes
+down. Tapping it opens the live post, which is where the truth is. Only
+`sharePost` may write one — it moves the post's share count — so the rules
+refuse any app-written message whose `sharedPost` is not null.
 
 ## `reports` and `damageClaims`
 

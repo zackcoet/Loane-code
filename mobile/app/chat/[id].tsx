@@ -21,9 +21,19 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { LIMITS, color, controls, radius, spacing, type, type Message } from '@loane/shared';
+import {
+  LIMITS,
+  color,
+  controls,
+  iconSize,
+  radius,
+  spacing,
+  type,
+  type Message,
+} from '@loane/shared';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
+import { Icon } from '../../src/components/Icon';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
 import { useAuth } from '../../src/auth/AuthProvider';
@@ -148,9 +158,11 @@ export default function Chat() {
             accessibilityLabel="Send a photo"
             style={styles.attach}
           >
-            <Text variant="h3" tone={attaching ? 'disabled' : 'primary'}>
-              {attaching ? '…' : '+'}
-            </Text>
+            {attaching ? (
+              <ActivityIndicator color={color.icon.muted} />
+            ) : (
+              <Icon name="add" size={iconSize.md} />
+            )}
           </Pressable>
           <TextInput
             value={draft}

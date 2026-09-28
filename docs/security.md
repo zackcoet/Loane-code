@@ -215,10 +215,12 @@ Named honestly so it does not get forgotten:
 - **App Check.** Phase 8. Until then nothing stops someone calling our
   functions from outside the app.
 - **Rate limiting.** Phase 8.
-- **Blocking users.** Phase 6. Reporting exists in the model; blocking does
-  not yet.
 - **Content moderation of photos.** Human review through the admin reports
   queue only. No automated scanning.
-- **Reports have no resolution flow.** An admin can see the queue; there
-  is no way to action one yet.
-- **Content-level blocking is client-side.** See above.
+- **Comments are not scanned either.** They are reportable by any student
+  and an admin can take one down, but nothing reads them automatically.
+  On a single campus at MVP scale that is the right trade; it will not
+  hold at ten campuses.
+- **Content-level blocking is client-side.** See above. This now covers
+  comments too: someone she blocked is filtered out of the thread by her
+  app, not by a rule.
