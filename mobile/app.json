@@ -7,12 +7,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.joinloane.loane",
@@ -28,7 +22,6 @@
         "monochromeImage": "./assets/android-icon-monochrome.png",
         "backgroundColor": "#FFFFFF"
       },
-      "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.RECORD_AUDIO"
       ]
@@ -40,7 +33,14 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF"
+        }
+      ],
       [
         "expo-image-picker",
         {
