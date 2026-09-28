@@ -1,102 +1,176 @@
 /**
- * The side menu from the mockups.
+ * The side panel behind the hamburger.
  *
- * Every row goes somewhere. The ones whose real screens are later phases
- * land on a small "coming in Phase N" placeholder rather than dead-ending
- * on nothing — a row that does nothing feels broken.
+ * Built as a slide-in panel rather than a real navigation Drawer. A
+ * Drawer would give edge-swipe for free, but it means wrapping the tab
+ * layout in another navigator, and that is a lot of structural risk for
+ * a panel opened from one button. If we later want the swipe, that is
+ * the moment to switch.
+ *
+ * Quick access sits at the top — Liked, Saved, Recently Rented — because
+ * those are the three things people come back for. Everything else is
+ * the settings-shaped list underneath.
  */
 
+import { useEffect, useRef } from 'react';
 import { useRouter, type Href } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Dimensions, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { signOut } from 'firebase/auth';
-import {
-  color,
-  controls,
-  iconSize,
-  spacing,
-  type,
-} from '@loane/shared';
+import { color, controls, iconSize, spacing } from '@loane/shared';
+import { Icon, type IconName } from '../src/components/Icon';
 import { IconButton } from '../src/components/IconButton';
 import { Logo } from '../src/components/Logo';
+import { Text } from '../src/components/Text';
 import { auth } from '../src/firebase/config';
 import { useUnreadMessageCount } from '../src/hooks/useMessaging';
 
+const WIDTH = Math.min(320, Dimensions.get('window').width * 0.84);
+
 interface Item {
   label: string;
+  icon: IconName;
   href: Href;
-  /** Shown as a count on the right, e.g. unread messages. */
   badge?: number;
 }
 
+/** The three things people come back for. */
+const QUICK: Item[] = [
+  { label: 'Liked', icon: 'heart-outline', href: '/liked' },
+  { label: 'Saved', icon: 'bookmark-outline', href: '/my-wishlist' },
+  { label: 'Recently Rented', icon: 'time-outline', href: '/recently-rented' },
+];
+
 const ITEMS: Item[] = [
-  { label: 'Post a Look / Add to My Closet', href: '/post-sheet' },
-  { label: 'Liked', href: '/(tabs)/activity' },
-  { label: 'Saved', href: '/my-wishlist' },
-  { label: 'Recently Rented', href: '/my-rentals' },
-  { label: 'My Listings', href: '/my-listings' },
-  { label: 'My Rentals', href: '/my-rentals' },
-  { label: 'My Wishlist', href: '/my-wishlist' },
-  { label: 'Activity', href: '/(tabs)/activity' },
-  { label: 'Messages', href: '/(tabs)/messages' },
-  { label: 'Find Friends', href: '/find-friends' },
-  { label: 'Invite Friends', href: '/invite-friends' },
-  { label: 'Payouts & Payment Info', href: '/payouts' },
-  { label: 'Safety', href: '/help' },
-  { label: 'Help & Support', href: '/help' },
+  // Posting is reachable from the Feed and the Profile too; it is here
+  // because the menu is where people look when they cannot find a thing.
+  { label: 'Post or list something', icon: 'add-circle-outline', href: '/post-sheet' },
+  { label: 'My Listings', icon: 'pricetags-outline', href: '/my-listings' },
+  { label: 'My Rentals', icon: 'calendar-outline', href: '/my-rentals' },
+  { label: 'Messages', icon: 'chatbubble-outline', href: '/(tabs)/messages' },
+  { label: 'Activity', icon: 'notifications-outline', href: '/(tabs)/activity' },
+  { label: 'Find Friends', icon: 'person-add-outline', href: '/find-friends' },
+  { label: 'Invite Friends', icon: 'share-outline', href: '/invite-friends' },
+  { label: 'Payouts & Payment Info', icon: 'card-outline', href: '/payouts' },
+  { label: 'Safety', icon: 'shield-checkmark-outline', href: '/help' },
+  { label: 'Help & Support', icon: 'help-circle-outline', href: '/help' },
+  { label: 'Settings', icon: 'settings-outline', href: '/settings' },
 ];
 
 export default function Menu() {
   const router = useRouter();
   const unreadMessages = useUnreadMessageCount();
+  const slide = useRef(new Animated.Value(-WIDTH)).current;
+
+  useEffect(() => {
+    Animated.timing(slide, {
+      toValue: 0,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [slide]);
+
+  /** Slide out first, so it does not just vanish. */
+  const close = (then?: () => void) => {
+    Animated.timing(slide, {
+      toValue: -WIDTH,
+      duration: 180,
+      useNativeDriver: true,
+    }).start(() => {
+      router.back();
+      then?.();
+    });
+  };
+
+  const go = (href: Href) => close(() => router.push(href));
 
   return (
-    <View style={styles.sheet}>
-      <View style={styles.header}>
-        <Logo size={30} lockup="below" />
-        <IconButton name="close" onPress={() => router.back()} accessibilityLabel="Close menu" />
-      </View>
+    <View style={styles.backdrop}>
+      {/* Tapping the dimmed area closes it, as a panel should. */}
+      <Pressable
+        style={styles.scrim}
+        accessibilityRole="button"
+        accessibilityLabel="Close menu"
+        onPress={() => close()}
+      />
 
-      <ScrollView>
-        {ITEMS.map((raw) => {
-          const item =
-            raw.href === '/(tabs)/messages' ? { ...raw, badge: unreadMessages } : raw;
-          return (
+      <Animated.View style={[styles.panel, { transform: [{ translateX: slide }] }]}>
+        <View style={styles.header}>
+          <Logo size={28} lockup="below" />
+          <IconButton name="close" onPress={() => close()} accessibilityLabel="Close menu" />
+        </View>
+
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <View style={styles.quick}>
+            {QUICK.map((item) => (
+              <Pressable
+                key={item.label}
+                accessibilityRole="button"
+                onPress={() => go(item.href)}
+                style={({ pressed }) => [styles.quickItem, pressed && styles.pressed]}
+              >
+                <Icon name={item.icon} size={iconSize.md} />
+                <Text variant="caption" tone="secondary" style={styles.quickLabel}>
+                  {item.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {ITEMS.map((raw) => {
+            const item =
+              raw.href === '/(tabs)/messages' ? { ...raw, badge: unreadMessages } : raw;
+            return (
+              <Pressable
+                key={item.label}
+                accessibilityRole="button"
+                onPress={() => go(item.href)}
+                style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+              >
+                <Icon name={item.icon} size={iconSize.sm} tint={color.text.secondary} />
+                <Text style={styles.rowLabel}>{item.label}</Text>
+                {item.badge ? (
+                  <View style={styles.badge}>
+                    <Text variant="caption" tone="inverse">
+                      {item.badge > 9 ? '9+' : item.badge}
+                    </Text>
+                  </View>
+                ) : null}
+              </Pressable>
+            );
+          })}
+
           <Pressable
-            key={item.label}
-            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             accessibilityRole="button"
-            onPress={() => router.push(item.href)}
+            onPress={() => close(() => void signOut(auth))}
+            style={({ pressed }) => [styles.row, styles.logOut, pressed && styles.pressed]}
           >
-            <Text style={styles.rowLabel}>{item.label}</Text>
-            <View style={styles.rowRight}>
-              {item.badge ? (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{item.badge > 9 ? '9+' : item.badge}</Text>
-                </View>
-              ) : null}
-              <Text style={styles.chevron}>›</Text>
-            </View>
+            <Icon name="log-out-outline" size={iconSize.sm} tint={color.text.secondary} />
+            <Text style={styles.rowLabel}>Log out</Text>
           </Pressable>
-          );
-        })}
-
-        <Pressable
-          style={({ pressed }) => [styles.row, styles.logOut, pressed && styles.rowPressed]}
-          accessibilityRole="button"
-          onPress={async () => {
-            router.back();
-            await signOut(auth);
-          }}
-        >
-          <Text style={styles.rowLabel}>Log out</Text>
-        </Pressable>
-      </ScrollView>
+        </ScrollView>
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: { flex: 1, backgroundColor: color.surface.page, paddingTop: spacing.md },
+  backdrop: { flex: 1, flexDirection: 'row' },
+  scrim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  panel: {
+    width: WIDTH,
+    height: '100%',
+    backgroundColor: color.surface.page,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderRightColor: color.border.default,
+    paddingTop: spacing.xxl,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -104,19 +178,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
   },
+  quick: {
+    flexDirection: 'row',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: color.border.default,
+  },
+  quickItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    minHeight: controls.minTapTarget + 16,
+  },
+  quickLabel: { textAlign: 'center' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    minHeight: controls.minTapTarget + 12,
-    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+    minHeight: controls.minTapTarget,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: color.border.default,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: color.border.default,
   },
-  rowPressed: { backgroundColor: color.surface.muted },
-  rowLabel: { fontSize: type.body.size, color: color.text.primary },
-  rowRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  pressed: { backgroundColor: color.surface.muted },
+  rowLabel: { flex: 1 },
   badge: {
     minWidth: 20,
     paddingHorizontal: 6,
@@ -124,7 +211,5 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: color.surface.inverse,
   },
-  badgeText: { fontSize: type.caption.size, color: color.text.inverse, textAlign: 'center' },
-  chevron: { fontSize: iconSize.sm, color: color.text.muted },
-  logOut: { marginTop: spacing.lg },
+  logOut: { marginTop: spacing.lg, marginBottom: spacing.xxl },
 });

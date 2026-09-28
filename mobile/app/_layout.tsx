@@ -74,7 +74,15 @@ function RootNavigator() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="post-sheet" options={{ presentation: 'modal' }} />
-      <Stack.Screen name="menu" options={{ presentation: 'modal' }} />
+      <Stack.Screen
+        name="menu"
+        options={{
+          // Transparent so the panel can sit over the screen it came
+          // from, with the rest of the app dimmed behind it.
+          presentation: 'transparentModal',
+          animation: 'none',
+        }}
+      />
       <Stack.Screen name="help" options={{ presentation: 'card' }} />
       <Stack.Screen name="messages" options={{ presentation: 'card' }} />
       <Stack.Screen name="my-rentals" options={{ presentation: 'card' }} />
@@ -98,6 +106,8 @@ function RootNavigator() {
       <Stack.Screen name="blocked-dates" options={{ presentation: 'card' }} />
       <Stack.Screen name="chat/[id]" options={{ presentation: 'card' }} />
       <Stack.Screen name="blocked-users" options={{ presentation: 'card' }} />
+      <Stack.Screen name="liked" options={{ presentation: 'card' }} />
+      <Stack.Screen name="recently-rented" options={{ presentation: 'card' }} />
       <Stack.Screen name="edit-listing" options={{ presentation: 'card' }} />
       <Stack.Screen name="listing/[id]" options={{ presentation: 'card' }} />
     </Stack>
