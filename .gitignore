@@ -12,10 +12,18 @@ serviceAccountKey*.json
 google-services.json
 GoogleService-Info.plist
 
-# Build output
+# Build output.
+#
+# These are anchored to the directories that actually produce build
+# output. A bare `lib/` matches a directory called lib at ANY depth,
+# which silently swallowed mobile/src/lib and backend/functions/src/lib
+# — real source that had never been committed. Everything worked on
+# this laptop and the first EAS build died on "Unable to resolve module
+# ../../src/lib/photo". Keep these anchored.
 dist/
 build/
-lib/
+/backend/functions/lib/
+/shared/lib/
 *.tsbuildinfo
 .vite/
 
