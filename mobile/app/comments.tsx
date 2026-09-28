@@ -51,24 +51,29 @@ export default function Comments() {
     postAuthorUid?: string;
   }>();
   const { profile } = useAuth();
-  const { comments, loading, busy, add, remove, canDelete } = useComments(postId);
+  const { threaded, loading, busy, add, remove, canDelete } = useComments(postId);
   const hidden = useHiddenUids();
   const [draft, setDraft] = useState('');
   const [reporting, setReporting] = useState<Comment | null>(null);
+  /** Who she is answering, if anyone. */
+  const [replyTo, setReplyTo] = useState<Comment | null>(null);
 
   // The on-device half of blocking: someone she blocked simply is not
   // in the thread. See docs/security.md.
-  const visible = comments.filter((c) => !hidden.has(c.authorUid));
+  const visible = threaded.filter((row) => !hidden.has(row.comment.authorUid));
 
   const onSend = async () => {
     const text = draft.trim();
     if (!text || busy) return;
+    const parent = replyTo;
     setDraft('');
+    setReplyTo(null);
     try {
-      await add(text);
+      await add(text, parent?.id);
     } catch (err) {
       // Put it back rather than losing what she typed.
       setDraft(text);
+      setReplyTo(parent);
       Alert.alert('Loane', err instanceof Error ? err.message : 'Could not post that.');
     }
   };
@@ -106,28 +111,48 @@ export default function Comments() {
         ) : (
           <FlatList
             data={visible}
-            keyExtractor={(c) => c.id}
+            keyExtractor={(row) => row.comment.id}
             contentContainerStyle={styles.list}
             keyboardDismissMode="on-drag"
             renderItem={({ item }) => (
               <Row
-                comment={item}
-                canDelete={canDelete(item, postAuthorUid)}
-                isMine={item.authorUid === profile?.uid}
-                onOpenAuthor={() => router.push(`/u/${item.author.username}`)}
-                onDelete={() => onDelete(item)}
-                onReport={() => setReporting(item)}
+                comment={item.comment}
+                depth={item.depth}
+                canDelete={canDelete(item.comment, postAuthorUid)}
+                isMine={item.comment.authorUid === profile?.uid}
+                onOpenAuthor={() => router.push(`/u/${item.comment.author.username}`)}
+                onDelete={() => onDelete(item.comment)}
+                onReport={() => setReporting(item.comment)}
+                // Replying to a reply lands on its parent, so the thread
+                // never goes deeper than one level.
+                onReply={() => setReplyTo(item.comment)}
               />
             )}
           />
         )}
+
+        {replyTo ? (
+          <View style={styles.replyBar}>
+            <Text variant="caption" tone="muted" uppercase={false} style={styles.replyBarText}>
+              Replying to @{replyTo.author.username}
+            </Text>
+            <Pressable
+              onPress={() => setReplyTo(null)}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Stop replying"
+            >
+              <Icon name="close" size={16} tint={color.icon.muted} />
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={styles.composer}>
           <Avatar url={profile?.photoUrl} name={profile?.displayName} size={32} />
           <TextInput
             value={draft}
             onChangeText={setDraft}
-            placeholder="Add a comment"
+            placeholder={replyTo ? `Reply to @${replyTo.author.username}` : 'Add a comment'}
             placeholderTextColor={color.text.muted}
             maxLength={LIMITS.commentBody.max}
             multiline
@@ -161,23 +186,35 @@ export default function Comments() {
 
 function Row({
   comment,
+  depth,
   canDelete,
   isMine,
   onOpenAuthor,
   onDelete,
   onReport,
+  onReply,
 }: {
   comment: Comment;
+  depth: 0 | 1;
   canDelete: boolean;
   isMine: boolean;
   onOpenAuthor: () => void;
   onDelete: () => void;
   onReport: () => void;
+  onReply: () => void;
 }) {
   return (
-    <View style={styles.row}>
-      <Pressable onPress={onOpenAuthor} accessibilityRole="button" accessibilityLabel={`Open @${comment.author.username}'s closet`}>
-        <Avatar url={comment.author.photoUrl} name={comment.author.displayName} size={32} />
+    <View style={[styles.row, depth === 1 && styles.reply]}>
+      <Pressable
+        onPress={onOpenAuthor}
+        accessibilityRole="button"
+        accessibilityLabel={`Open @${comment.author.username}'s closet`}
+      >
+        <Avatar
+          url={comment.author.photoUrl}
+          name={comment.author.displayName}
+          size={depth === 1 ? 26 : 32}
+        />
       </Pressable>
 
       <View style={styles.rowText}>
@@ -187,9 +224,20 @@ function Row({
           </Text>
           {comment.body}
         </Text>
-        <Text variant="caption" tone="muted" style={styles.when}>
-          {timeAgo(comment.createdAt)}
-        </Text>
+        <View style={styles.meta}>
+          <Text variant="caption" tone="muted">
+            {timeAgo(comment.createdAt)}
+          </Text>
+          <Text
+            variant="caption"
+            tone="muted"
+            accessibilityRole="button"
+            onPress={onReply}
+            style={styles.replyLink}
+          >
+            Reply
+          </Text>
+        </View>
       </View>
 
       {canDelete ? (
@@ -227,8 +275,21 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   rowText: { flex: 1 },
   rowAction: { paddingHorizontal: spacing.xs, paddingTop: 2 },
+  // One level of indentation, and only one. See useComments.
+  reply: { paddingLeft: spacing.xl },
+  meta: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: 2 },
+  replyLink: { fontWeight: '600' },
+  replyBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: color.surface.muted,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: color.border.default,
+  },
+  replyBarText: { flex: 1 },
   strong: { fontWeight: '600' },
-  when: { marginTop: 2 },
   composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',

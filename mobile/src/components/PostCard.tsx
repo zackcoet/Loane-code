@@ -124,8 +124,12 @@ export function PostCard({
           onPress={() => onPressAuthor(post.author.username)}
         >
           <Avatar url={post.author.photoUrl} name={post.author.displayName} size={36} />
+          {/* Her name, not her handle. A feed of @handles reads like a
+              directory; "Juliet J" reads like a person you might rent a
+              dress from. The handle still prefixes the caption below,
+              which is where it belongs. */}
           <Text variant="bodySmall" style={styles.username} numberOfLines={1}>
-            @{post.author.username}
+            {post.author.displayName}
           </Text>
         </Pressable>
         {onEdit ? (

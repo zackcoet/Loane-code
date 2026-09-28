@@ -179,10 +179,10 @@ export const requestBooking = httpsCallable<
  * has to move with the comment, and the name on it has to really be
  * hers.
  */
-export const addComment = httpsCallable<{ postId: string; body: string }, { commentId: string }>(
-  functions,
-  'addComment',
-);
+export const addComment = httpsCallable<
+  { postId: string; body: string; parentCommentId?: string },
+  { commentId: string }
+>(functions, 'addComment');
 export const deleteComment = httpsCallable<{ commentId: string }, { ok: true }>(
   functions,
   'deleteComment',

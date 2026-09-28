@@ -28,6 +28,8 @@ import { assertNotBlocked } from '../moderation/block';
 interface AddInput {
   postId: string;
   body: string;
+  /** Answering another comment. One level deep, never more. */
+  parentCommentId?: string;
 }
 
 interface DeleteInput {
@@ -58,6 +60,7 @@ export const addComment = onCall<AddInput, Promise<{ commentId: string }>>(
     const user = await requireVerifiedStudent(request);
     const postId = request.data?.postId;
     const body = (request.data?.body ?? '').trim();
+    const parentCommentId = request.data?.parentCommentId ?? null;
 
     if (!postId) throw invalidArgument('Which look?');
     if (body.length < LIMITS.commentBody.min) throw invalidArgument('Say something first.');
@@ -74,6 +77,23 @@ export const addComment = onCall<AddInput, Promise<{ commentId: string }>>(
     // her comments is exactly what blocking is supposed to prevent.
     await assertNotBlocked(user.uid, post.authorUid);
 
+    // A reply has to answer a real, still-visible, top-level comment on
+    // THIS post. The last check is what keeps the thread one level
+    // deep: you cannot reply to a reply.
+    if (parentCommentId) {
+      const parentSnap = await db()
+        .collection(COLLECTIONS.comments)
+        .doc(parentCommentId)
+        .get();
+      if (!parentSnap.exists) throw notFound('That comment is gone.');
+      const parent = parentSnap.data() as Comment;
+      if (parent.postId !== postId) throw invalidArgument('That comment is on another look.');
+      if (parent.status !== 'active') throw failed('That comment is no longer there.');
+      if (parent.parentCommentId) {
+        throw invalidArgument('You can reply to a comment, but not to a reply.');
+      }
+    }
+
     const ref = db().collection(COLLECTIONS.comments).doc();
     const comment: Omit<Comment, 'createdAt' | 'updatedAt'> = {
       id: ref.id,
@@ -82,6 +102,7 @@ export const addComment = onCall<AddInput, Promise<{ commentId: string }>>(
       authorUid: user.uid,
       author: summarize(user),
       body,
+      parentCommentId,
       status: 'active',
       suspendedReason: null,
     };

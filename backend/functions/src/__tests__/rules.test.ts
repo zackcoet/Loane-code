@@ -1088,6 +1088,7 @@ describe('comments', () => {
         authorUid: MADDIE,
         author: { uid: MADDIE, username: 'maddie', displayName: 'Maddie', photoUrl: null },
         body: 'obsessed with this',
+        parentCommentId: null,
         status: 'active',
         suspendedReason: null,
         createdAt: new Date(),

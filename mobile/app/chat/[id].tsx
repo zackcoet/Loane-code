@@ -231,23 +231,24 @@ function Bubble({
             ) : (
               <View style={styles.sharedPhoto} />
             )}
+            {/* The card sets its own colours instead of taking the
+                bubble's. It sat on a pale panel while inheriting the
+                dark bubble's inverse text, which on my own messages
+                came out white on near-white. A card is a card whoever
+                sent it. */}
             <View style={styles.sharedText}>
-              <Text variant="caption" tone={mine ? 'inverse' : 'muted'}>
+              <Text variant="caption" tone="muted">
                 @{message.sharedPost.authorUsername}
               </Text>
-              {message.sharedPost.caption ? (
-                <Text
-                  variant="bodySmall"
-                  tone={mine ? 'inverse' : 'primary'}
-                  numberOfLines={2}
-                >
-                  {message.sharedPost.caption}
+              <Text variant="bodySmall" tone="primary" numberOfLines={2}>
+                {message.sharedPost.caption || 'Shared a look'}
+              </Text>
+              <View style={styles.sharedCta}>
+                <Text variant="caption" tone="muted" uppercase={false}>
+                  Tap to open
                 </Text>
-              ) : (
-                <Text variant="bodySmall" tone={mine ? 'inverse' : 'primary'}>
-                  Shared a look
-                </Text>
-              )}
+                <Icon name="chevron-forward" size={14} tint={color.icon.muted} />
+              </View>
             </View>
           </Pressable>
         ) : null}
@@ -337,11 +338,16 @@ const styles = StyleSheet.create({
   },
   captionUnderPhoto: { marginTop: spacing.sm },
   sharedPost: {
-    width: 220,
-    borderRadius: radius.sm,
+    width: 232,
+    borderRadius: radius.md,
     overflow: 'hidden',
-    backgroundColor: color.surface.muted,
+    // Always the page colour, never the bubble's. On my own messages
+    // the bubble is near-black and anything inheriting it disappeared.
+    backgroundColor: color.surface.page,
+    borderWidth: 1,
+    borderColor: color.border.default,
   },
-  sharedPhoto: { width: 220, height: 220, backgroundColor: color.surface.muted },
-  sharedText: { padding: spacing.sm, gap: 2 },
+  sharedPhoto: { width: '100%', height: 232, backgroundColor: color.surface.muted },
+  sharedText: { paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, gap: 3 },
+  sharedCta: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
 });

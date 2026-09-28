@@ -207,6 +207,17 @@ export interface Comment extends BaseDoc, CampusScoped {
   authorUid: string;
   author: UserSummary;
   body: string;
+
+  /**
+   * The comment this one answers, or null for a top-level comment.
+   *
+   * ONE LEVEL ONLY. A reply cannot itself be replied to — the server
+   * refuses a parent that already has a parent. Arbitrary nesting turns
+   * a comment section into a thread you have to navigate, and on a
+   * phone the indentation runs out after two levels anyway.
+   */
+  parentCommentId: string | null;
+
   status: 'active' | 'removed' | 'suspended';
   /** Set when an admin takes it down. */
   suspendedReason: string | null;

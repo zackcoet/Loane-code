@@ -1015,6 +1015,7 @@ async function main(): Promise<void> {
         authorUid: author.uid,
         author: summaryOf(author),
         body: pick(COMMENTS),
+        parentCommentId: null,
         status: 'active',
         suspendedReason: null,
         createdAt: FieldValue.serverTimestamp(),
