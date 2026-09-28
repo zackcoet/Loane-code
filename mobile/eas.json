@@ -9,12 +9,10 @@
       "distribution": "internal",
       "ios": {
         "simulator": false
-      },
-      "channel": "development"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview",
       "env": {
         "EXPO_PUBLIC_USE_EMULATORS": "false",
         "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAL5iE73tRc9YbY7jGWya65Q8Pl_Kd831M",
@@ -27,7 +25,6 @@
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production",
       "env": {
         "EXPO_PUBLIC_USE_EMULATORS": "false",
         "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAL5iE73tRc9YbY7jGWya65Q8Pl_Kd831M",
