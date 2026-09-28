@@ -16,6 +16,7 @@ import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import {
   color,
@@ -33,12 +34,19 @@ function RootNavigator() {
     if (loading) return;
 
     const group = segments[0];
-    const inTabs = group === '(tabs)';
     const inOnboarding = group === '(onboarding)';
     const inAuth = group === '(auth)';
 
     if (profile) {
-      if (!inTabs) router.replace('/(tabs)/feed');
+      // ONLY rescue her from a screen she should not still be on.
+      //
+      // This used to say `if (!inTabs)`, which meant every screen
+      // outside the tab bar — a chat, a listing, the side menu, the
+      // comments sheet — was bounced straight back to the Feed the
+      // instant it opened. Anything that is not onboarding or sign-in
+      // is somewhere she deliberately navigated to, and this guard has
+      // no business having an opinion about it.
+      if (inOnboarding || inAuth) router.replace('/(tabs)/feed');
       return;
     }
 
@@ -107,6 +115,7 @@ function RootNavigator() {
       <Stack.Screen name="chat/[id]" options={{ presentation: 'card' }} />
       <Stack.Screen name="blocked-users" options={{ presentation: 'card' }} />
       <Stack.Screen name="liked" options={{ presentation: 'card' }} />
+      <Stack.Screen name="post-likes" options={{ presentation: 'card' }} />
       {/* Both slide up from the bottom: they belong to the post you are
           looking at rather than being somewhere you navigated to. */}
       <Stack.Screen name="comments" options={{ presentation: 'modal' }} />
@@ -120,18 +129,24 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <SignupDraftProvider>
-          <StatusBar style="dark" />
-          <RootNavigator />
-        </SignupDraftProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    // Gesture handler needs a root of its own, outside everything, or
+    // no gesture below it fires at all. Pinch-to-zoom on a post photo
+    // is the first thing that depends on it.
+    <GestureHandlerRootView style={styles.root}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <SignupDraftProvider>
+            <StatusBar style="dark" />
+            <RootNavigator />
+          </SignupDraftProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   loading: {
     flex: 1,
     alignItems: 'center',

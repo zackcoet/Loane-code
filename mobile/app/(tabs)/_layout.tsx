@@ -1,5 +1,10 @@
 /**
  * The five-tab bar: Feed, Discover, Messages, Activity, Profile.
+ *
+ * Icons only. The labels were a word under every icon for five icons
+ * everybody already recognises, and they cost a row of height on a
+ * screen whose whole job is showing photographs. The titles stay set
+ * because that is what a screen reader announces.
  */
 
 import { Tabs } from 'expo-router';
@@ -31,7 +36,7 @@ export default function TabsLayout() {
           tabBarActiveTintColor: color.icon.default,
           tabBarInactiveTintColor: color.text.muted,
           tabBarStyle: styles.bar,
-          tabBarLabelStyle: styles.barLabel,
+          tabBarShowLabel: false,
           tabBarItemStyle: styles.barItem,
         }}
       >
@@ -85,14 +90,9 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: color.border.default,
     height: controls.tabBarHeight,
-    paddingTop: 10,
-  },
-  barLabel: {
-    fontSize: type.caption.size,
-    lineHeight: type.caption.lineHeight,
-    letterSpacing: type.caption.letterSpacing,
-    textTransform: 'uppercase',
-    marginTop: 4,
+    // With no label underneath, the icons need centring in the bar
+    // rather than being pushed to the top of it.
+    paddingTop: 12,
   },
   barItem: { paddingVertical: 4 },
   badge: {

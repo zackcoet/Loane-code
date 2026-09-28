@@ -10,7 +10,10 @@
  * school yet, then carries her answers to the username step, where one
  * server-side call builds the login and the profile together.
  *
- * We do NOT send a verification email or link. University security scanners
+ * TODO-BEFORE-BETA: we still do NOT send a verification email or link, and
+ * the screen no longer says so — Zack's call, because it is coming. Until
+ * it exists, `verificationMethod` records `domain_claimed` so we know which
+ * accounts were never actually proven. University security scanners
  * follow links in incoming mail and would burn a one-time link before she
  * ever opened it. A 6-digit code is the plan — see docs/roadmap.md.
  */
@@ -108,8 +111,7 @@ export default function CreateAccount() {
           <Text style={text.h2}>One tap and you&apos;re in.</Text>
           <Text style={[text.label, styles.caption]}>Create your account</Text>
           <Text style={[text.small, styles.explainer]}>
-            Use your school email — it&apos;s how we keep Loane to students on your campus. No
-            confirmation email will be sent.
+            Use your school email — it&apos;s how we keep Loane to students on your campus.
           </Text>
 
           <Input

@@ -9,6 +9,12 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { Animated, Image, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Reanimated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { color, controls, fontSize, formatCentsShort, radius, spacing } from '@loane/shared';
 import { Icon } from './Icon';
 import { Text } from './Text';
@@ -39,6 +45,12 @@ interface Props {
   onExpandTag?: (listingId: string) => void;
   /** Double tap to like, Instagram-style. View mode only. */
   onDoubleTap?: () => void;
+  /**
+   * Pinch to zoom, Instagram-style. View mode only, and off while she is
+   * placing tags — zooming a photo she is trying to pin a dot onto would
+   * put the dot in the wrong place.
+   */
+  zoomable?: boolean;
   aspectRatio?: number;
 }
 
@@ -57,6 +69,7 @@ export function TaggablePhoto({
   expandedListingId,
   onExpandTag,
   onDoubleTap,
+  zoomable = false,
   aspectRatio = 0.8,
 }: Props) {
   let size = { width: 0, height: 0 };
@@ -120,9 +133,60 @@ export function TaggablePhoto({
 
   const showDots = mode === 'compose' || tagsVisible;
 
+  // --- Pinch to zoom -------------------------------------------------------
+  // Two fingers, so it never competes with the single tap that reveals
+  // the tags or the double tap that likes. It springs back on release
+  // rather than staying zoomed: a photo left at 3x in the middle of a
+  // feed is a photo she then has to work out how to un-zoom.
+  const scale = useSharedValue(1);
+  const panX = useSharedValue(0);
+  const panY = useSharedValue(0);
+
+  const pinch = Gesture.Pinch()
+    .enabled(zoomable && mode === 'view')
+    .onUpdate((event) => {
+      // Never smaller than life size, and a ceiling so it cannot be
+      // thrown off into a blur.
+      scale.value = Math.min(4, Math.max(1, event.scale));
+    })
+    .onEnd(() => {
+      scale.value = withTiming(1, { duration: 180 });
+      panX.value = withTiming(0, { duration: 180 });
+      panY.value = withTiming(0, { duration: 180 });
+    });
+
+  // Moving the zoomed photo around under two fingers. One finger is left
+  // alone so the carousel can still be swiped.
+  const drag = Gesture.Pan()
+    .enabled(zoomable && mode === 'view')
+    .minPointers(2)
+    .onUpdate((event) => {
+      if (scale.value <= 1) return;
+      panX.value = event.translationX;
+      panY.value = event.translationY;
+    })
+    .onEnd(() => {
+      panX.value = withTiming(0, { duration: 180 });
+      panY.value = withTiming(0, { duration: 180 });
+    });
+
+  const zoom = Gesture.Simultaneous(pinch, drag);
+
+  const zoomStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: panX.value },
+      { translateY: panY.value },
+      { scale: scale.value },
+    ],
+  }));
+
   return (
     <Pressable onPress={handlePress} onLayout={onLayout} style={[styles.wrapper, { aspectRatio }]}>
-      <Image source={{ uri }} style={styles.image} resizeMode="cover" />
+      <GestureDetector gesture={zoom}>
+        <Reanimated.View style={[styles.image, zoomStyle]}>
+          <Image source={{ uri }} style={styles.image} resizeMode="cover" />
+        </Reanimated.View>
+      </GestureDetector>
 
       {showDots
         ? tags.map((tag) => {

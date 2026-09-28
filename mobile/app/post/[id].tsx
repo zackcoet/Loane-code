@@ -82,8 +82,9 @@ export default function PostScreen() {
                 params: { postId: post.id, postAuthorUid: post.authorUid },
               })
             }
-            onPressSend={() =>
-              router.push({ pathname: '/send-post', params: { postId: post.id } })
+            onPressSend={() => router.push({ pathname: '/send-post', params: { postId: post.id } })}
+            onPressLikes={() =>
+              router.push({ pathname: '/post-likes', params: { postId: post.id } })
             }
             onMessageSeller={(ownerUid, listingId) => void chat.open(ownerUid, { listingId })}
             isMine={post.authorUid === profile?.uid}

@@ -46,6 +46,7 @@ interface Props {
   onPressAuthor: (username: string) => void;
   onPressComments: () => void;
   onPressSend: () => void;
+  onPressLikes: () => void;
   onMessageSeller: (ownerUid: string, listingId: string) => void;
   /** Shown on her own posts. */
   onEdit?: () => void;
@@ -59,6 +60,7 @@ export function PostCard({
   onPressAuthor,
   onPressComments,
   onPressSend,
+  onPressLikes,
   onMessageSeller,
   onEdit,
   isMine = false,
@@ -108,6 +110,7 @@ export function PostCard({
     onOpenTag: onPressTag,
     onDoubleTap,
     expandedListingId: expandedTag,
+    zoomable: true,
   });
 
   return (
@@ -215,8 +218,8 @@ export function PostCard({
             <Pressable
               style={styles.likedBy}
               accessibilityRole="button"
-              accessibilityLabel={`Open @${post.lastLiker.username}'s closet`}
-              onPress={() => onPressAuthor(post.lastLiker!.username)}
+              accessibilityLabel={`See everyone who liked this, ${post.stats.likeCount} people`}
+              onPress={onPressLikes}
             >
               <Avatar
                 url={post.lastLiker.photoUrl}
@@ -237,7 +240,12 @@ export function PostCard({
               </Text>
             </Pressable>
           ) : (
-            <Text variant="bodySmall" style={styles.strong}>
+            <Text
+              variant="bodySmall"
+              style={styles.strong}
+              accessibilityRole="button"
+              onPress={onPressLikes}
+            >
               {post.stats.likeCount} {post.stats.likeCount === 1 ? 'like' : 'likes'}
             </Text>
           )

@@ -65,7 +65,11 @@ export default function Feed() {
   return (
     <Screen flush>
       <View style={styles.header}>
-        <IconButton name="menu" onPress={() => router.push('/menu')} accessibilityLabel="Open menu" />
+        <IconButton
+          name="menu"
+          onPress={() => router.push('/menu')}
+          accessibilityLabel="Open menu"
+        />
         <Logo size={30} lockup="below" />
         <IconButton
           name="add"
@@ -113,8 +117,14 @@ export default function Feed() {
               ? 'Follow a few closets and their looks show up here.'
               : 'Be the first to post an outfit from your campus.'
           }
-          actionLabel={tab === 'campus' ? 'Post a look' : undefined}
-          onAction={tab === 'campus' ? () => router.push('/post-look') : undefined}
+          // An empty Following tab used to be a dead end. The only way
+          // out of it is to go and find someone to follow.
+          actionLabel={tab === 'campus' ? 'Post a look' : 'Find closets to follow'}
+          onAction={
+            tab === 'campus'
+              ? () => router.push('/post-look')
+              : () => router.push('/(tabs)/discover')
+          }
         />
       ) : (
         <FlatList
@@ -150,6 +160,9 @@ export default function Feed() {
               }
               onPressSend={() =>
                 router.push({ pathname: '/send-post', params: { postId: item.id } })
+              }
+              onPressLikes={() =>
+                router.push({ pathname: '/post-likes', params: { postId: item.id } })
               }
               onMessageSeller={(ownerUid, listingId) => void chat.open(ownerUid, { listingId })}
               isMine={item.authorUid === profile?.uid}

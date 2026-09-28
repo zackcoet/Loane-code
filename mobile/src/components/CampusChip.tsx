@@ -1,5 +1,10 @@
 /**
- * The campus selector in the feed header.
+ * The campus label in the feed header.
+ *
+ * It is a label, not a picker: a student belongs to one campus and
+ * cannot switch. It had a chevron on it, which promised a dropdown that
+ * does not exist. `onPress` stays for the day there is more than one
+ * campus to choose between.
  *
  * Shows the student's actual school name with a small dot in the school's
  * color — the color only, never the university's logo, which is trademarked.
@@ -16,7 +21,6 @@ import {
   type,
 } from '@loane/shared';
 import { useCampus } from '../hooks/useCampus';
-import { Icon } from './Icon';
 
 export function CampusChip({ onPress }: { onPress?: () => void }) {
   const { name, dotColor } = useCampus();
@@ -32,7 +36,6 @@ export function CampusChip({ onPress }: { onPress?: () => void }) {
       <Text style={styles.text} numberOfLines={1}>
         {name}
       </Text>
-      <Icon name="chevron-down" size={14} tint={color.text.secondary} />
     </Pressable>
   );
 }
@@ -56,5 +59,4 @@ const styles = StyleSheet.create({
     fontSize: type.bodySmall.size,
     color: color.text.primary,
   },
-  chevron: { marginLeft: spacing.sm, fontSize: type.caption.size, color: color.text.secondary },
 });

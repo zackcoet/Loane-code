@@ -1,9 +1,11 @@
 /**
- * The Posts / Closet / Reviews tabs and their contents.
+ * The tabs on a profile and their contents.
  *
- * Shared between her own profile and another student's, so both show the
- * same thing. Posts and Closet read real data; Reviews is an honest empty
- * state until reviews exist in Phase 6.
+ * Everyone sees Posts, Closet and Reviews. On her OWN profile there are
+ * two more — Saved and Liked — which is where Instagram puts them and
+ * where people look for them. They are private to her: what she saved is
+ * a shopping list, and a public list of everything she liked is a
+ * different and much more exposing thing than a like on a post.
  */
 
 import { useState } from 'react';
@@ -25,13 +27,16 @@ import { EmptyState } from './EmptyState';
 import { ListingCard } from './ListingCard';
 import { useUserListings, useUserPosts } from '../hooks/useProfile';
 import { useReviews } from '../hooks/useReviews';
+import { useSavedPosts } from '../hooks/usePostEngagement';
+import { useLikedPosts } from '../hooks/useLikedPosts';
 import { ReportSheet } from './ReportSheet';
 import { Avatar } from './Avatar';
 import { Icon } from './Icon';
 import { Text } from './Text';
 
-const TABS = ['posts', 'closet', 'reviews'] as const;
-type ProfileTab = (typeof TABS)[number];
+const PUBLIC_TABS = ['posts', 'closet', 'reviews'] as const;
+const MY_TABS = ['posts', 'closet', 'saved', 'liked', 'reviews'] as const;
+type ProfileTab = (typeof MY_TABS)[number];
 
 interface Props {
   uid: string;
@@ -47,14 +52,49 @@ export function ProfileTabs({ uid, isMe }: Props) {
   const posts = useUserPosts(uid);
   const listings = useUserListings(uid);
   const reviews = useReviews(uid);
+  // Only ever her own, and only fetched when she is looking at her own
+  // profile — these hooks read by the signed-in uid, not by `uid`.
+  const saved = useSavedPosts();
+  const liked = useLikedPosts();
   const [reporting, setReporting] = useState<Review | null>(null);
 
   const cardWidth = (width - spacing.md * 3) / 2;
+  const tabs = isMe ? MY_TABS : PUBLIC_TABS;
+
+  /** Saved and Liked are the same grid of looks, twice. */
+  const lookGrid = (items: typeof posts.items) => (
+    <View style={styles.postGrid}>
+      {items.map((post) => (
+        <Pressable
+          key={post.id}
+          accessibilityRole="button"
+          accessibilityLabel={post.caption || `Look by @${post.author.username}`}
+          onPress={() => router.push({ pathname: '/post/[id]', params: { id: post.id } })}
+          style={[styles.postTile, { width: cardWidth }]}
+        >
+          {post.photos[0] ? (
+            <Image
+              source={{ uri: post.photos[0].url }}
+              style={styles.postImage}
+              resizeMode="cover"
+            />
+          ) : null}
+          {post.taggedListings.length > 0 ? (
+            <View style={styles.postBadge}>
+              <Text variant="caption" tone="inverse">
+                {post.taggedListings.length}
+              </Text>
+            </View>
+          ) : null}
+        </Pressable>
+      ))}
+    </View>
+  );
 
   return (
     <View style={styles.wrapper}>
       <View style={styles.tabRow}>
-        {TABS.map((value) => (
+        {tabs.map((value) => (
           <Pressable
             key={value}
             accessibilityRole="tab"
@@ -135,6 +175,28 @@ export function ProfileTabs({ uid, isMe }: Props) {
               />
             ))}
           </View>
+        )
+      ) : tab === 'saved' ? (
+        saved.loading ? (
+          <Loading />
+        ) : saved.posts.length === 0 ? (
+          <EmptyState
+            title="Nothing saved yet"
+            body="Tap the bookmark on a look and it collects here."
+          />
+        ) : (
+          lookGrid(saved.posts)
+        )
+      ) : tab === 'liked' ? (
+        liked.loading ? (
+          <Loading />
+        ) : liked.posts.length === 0 ? (
+          <EmptyState
+            title="Nothing liked yet"
+            body="Double tap a look you love and it collects here."
+          />
+        ) : (
+          lookGrid(liked.posts)
         )
       ) : reviews.loading ? (
         <Loading />
