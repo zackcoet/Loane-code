@@ -31,20 +31,24 @@ export function PostsPage({ data, campusId }: { data: AdminData; campusId: strin
 
   return (
     <>
-    <Panel title="Posts" kicker={`${posts.length} loaded`}>
-      <ModerationGrid
-        emptyTitle="No posts yet"
-        items={posts.map((post) => ({
-          id: post.id,
-          imageUrl: post.photos[0]?.url ?? null,
-          title: post.caption || 'Untitled post',
-          subtitle: post.author.displayName,
-          status: post.status,
-          meta: `${post.stats.viewCount} views · ${post.stats.likeCount} likes · ${post.stats.tagTapCount} tagged-item taps`,
-          actionLabel: 'Hide post',
-        }))}
-      />
-    </Panel>
+      <Panel title="Posts" kicker={`${posts.length} loaded`}>
+        <ModerationGrid
+          emptyTitle="No posts yet"
+          items={posts.map((post) => ({
+            id: post.id,
+            imageUrl: post.photos[0]?.url ?? null,
+            title: post.caption || 'Untitled post',
+            subtitle: post.author.displayName,
+            status: post.status,
+            meta: `${post.stats.viewCount} views · ${post.stats.likeCount} likes · ${post.stats.tagTapCount} tagged-item taps`,
+            actionLabel: post.status === 'suspended' ? 'Put it back' : 'Hide post',
+          }))}
+          // Without this the grid disables its own button — the dialog,
+          // the state and the hidePost call below it were all wired up to
+          // something that could never be clicked.
+          onAction={(id, status) => setTarget({ id, hide: status !== 'suspended' })}
+        />
+      </Panel>
 
       <ActionDialog
         open={target !== null}
