@@ -1,11 +1,19 @@
 /**
- * The tabs on a profile and their contents.
+ * The two tabs on a profile: Closet and Posts.
  *
- * Everyone sees Posts, Closet and Reviews. On her OWN profile there are
- * two more — Saved and Liked — which is where Instagram puts them and
- * where people look for them. They are private to her: what she saved is
- * a shopping list, and a public list of everything she liked is a
- * different and much more exposing thing than a like on a post.
+ * CLOSET IS FIRST AND OPEN BY DEFAULT, on purpose. Loane is a rental
+ * app — the merchandise leads and the looks support it. A profile that
+ * opened on Posts made her closet something you had to go and find.
+ *
+ * Three across, like Instagram, because a rail of thumbnails reads as a
+ * collection where two big cards read as a list of two things. Closet
+ * tiles carry the rent price, so the grid answers "what does this cost"
+ * without a single tap.
+ *
+ * Saved and Liked used to live here as tabs. They are hers, not a
+ * visitor's, and they are not merchandise — they moved to the side
+ * panel. Reviews moved to the rating in the header, which is where
+ * somebody deciding whether to trust her is already looking.
  */
 
 import { useState } from 'react';
@@ -18,25 +26,17 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import {
-  type Review,
-  color,
-  spacing,
-} from '@loane/shared';
+import { color, formatCentsShort, spacing, type Listing, type Post } from '@loane/shared';
 import { EmptyState } from './EmptyState';
-import { ListingCard } from './ListingCard';
-import { useUserListings, useUserPosts } from '../hooks/useProfile';
-import { useReviews } from '../hooks/useReviews';
-import { useSavedPosts } from '../hooks/usePostEngagement';
-import { useLikedPosts } from '../hooks/useLikedPosts';
-import { ReportSheet } from './ReportSheet';
-import { Avatar } from './Avatar';
-import { Icon } from './Icon';
 import { Text } from './Text';
+import { useUserListings, useUserPosts } from '../hooks/useProfile';
 
-const PUBLIC_TABS = ['posts', 'closet', 'reviews'] as const;
-const MY_TABS = ['posts', 'closet', 'saved', 'liked', 'reviews'] as const;
-type ProfileTab = (typeof MY_TABS)[number];
+const TABS = ['closet', 'posts'] as const;
+type ProfileTab = (typeof TABS)[number];
+
+const COLUMNS = 3;
+/** The hairline between tiles. Instagram uses a gap this small. */
+const GUTTER = 2;
 
 interface Props {
   uid: string;
@@ -46,55 +46,18 @@ interface Props {
 
 export function ProfileTabs({ uid, isMe }: Props) {
   const router = useRouter();
-  const [tab, setTab] = useState<ProfileTab>('posts');
+  const [tab, setTab] = useState<ProfileTab>('closet');
   const { width } = useWindowDimensions();
 
   const posts = useUserPosts(uid);
   const listings = useUserListings(uid);
-  const reviews = useReviews(uid);
-  // Only ever her own, and only fetched when she is looking at her own
-  // profile — these hooks read by the signed-in uid, not by `uid`.
-  const saved = useSavedPosts();
-  const liked = useLikedPosts();
-  const [reporting, setReporting] = useState<Review | null>(null);
 
-  const cardWidth = (width - spacing.md * 3) / 2;
-  const tabs = isMe ? MY_TABS : PUBLIC_TABS;
-
-  /** Saved and Liked are the same grid of looks, twice. */
-  const lookGrid = (items: typeof posts.items) => (
-    <View style={styles.postGrid}>
-      {items.map((post) => (
-        <Pressable
-          key={post.id}
-          accessibilityRole="button"
-          accessibilityLabel={post.caption || `Look by @${post.author.username}`}
-          onPress={() => router.push({ pathname: '/post/[id]', params: { id: post.id } })}
-          style={[styles.postTile, { width: cardWidth }]}
-        >
-          {post.photos[0] ? (
-            <Image
-              source={{ uri: post.photos[0].url }}
-              style={styles.postImage}
-              resizeMode="cover"
-            />
-          ) : null}
-          {post.taggedListings.length > 0 ? (
-            <View style={styles.postBadge}>
-              <Text variant="caption" tone="inverse">
-                {post.taggedListings.length}
-              </Text>
-            </View>
-          ) : null}
-        </Pressable>
-      ))}
-    </View>
-  );
+  const tileWidth = (width - GUTTER * (COLUMNS - 1)) / COLUMNS;
 
   return (
     <View style={styles.wrapper}>
       <View style={styles.tabRow}>
-        {tabs.map((value) => (
+        {TABS.map((value) => (
           <Pressable
             key={value}
             accessibilityRole="tab"
@@ -109,47 +72,7 @@ export function ProfileTabs({ uid, isMe }: Props) {
         ))}
       </View>
 
-      {tab === 'posts' ? (
-        posts.loading ? (
-          <Loading />
-        ) : posts.items.length === 0 ? (
-          <EmptyState
-            title="No posts yet"
-            body={
-              isMe
-                ? 'Looks you post will show up here.'
-                : 'She has not posted a look yet.'
-            }
-          />
-        ) : (
-          <View style={styles.postGrid}>
-            {posts.items.map((post) => (
-              <Pressable
-                key={post.id}
-                accessibilityRole="button"
-                accessibilityLabel={post.caption || 'Open look'}
-                onPress={() => router.push({ pathname: '/post/[id]', params: { id: post.id } })}
-                style={[styles.postTile, { width: cardWidth }]}
-              >
-                {post.photos[0] ? (
-                  <Image
-                    source={{ uri: post.photos[0].url }}
-                    style={styles.postImage}
-                    resizeMode="cover"
-                  />
-                ) : null}
-                {post.taggedListings.length > 0 ? (
-                  <View style={styles.postBadge}>
-                    <Text variant="caption" tone="inverse">
-                      {post.taggedListings.length}
-                    </Text>
-                  </View>
-                ) : null}
-              </Pressable>
-            ))}
-          </View>
-        )
-      ) : tab === 'closet' ? (
+      {tab === 'closet' ? (
         listings.loading ? (
           <Loading />
         ) : listings.items.length === 0 ? (
@@ -160,101 +83,108 @@ export function ProfileTabs({ uid, isMe }: Props) {
                 ? 'Pieces you list to rent or sell will live here.'
                 : 'She has not listed anything yet.'
             }
+            actionLabel={isMe ? 'Add a piece' : undefined}
+            onAction={isMe ? () => router.push('/add-to-closet') : undefined}
           />
         ) : (
           <View style={styles.grid}>
             {listings.items.map((listing) => (
-              <ListingCard
+              <ClosetTile
                 key={listing.id}
                 listing={listing}
-                width={cardWidth}
-                hideSave={isMe}
-                onPress={(listingId) =>
-                  router.push({ pathname: '/listing/[id]', params: { id: listingId } })
+                size={tileWidth}
+                onPress={() =>
+                  router.push({ pathname: '/listing/[id]', params: { id: listing.id } })
                 }
               />
             ))}
           </View>
         )
-      ) : tab === 'saved' ? (
-        saved.loading ? (
-          <Loading />
-        ) : saved.posts.length === 0 ? (
-          <EmptyState
-            title="Nothing saved yet"
-            body="Tap the bookmark on a look and it collects here."
-          />
-        ) : (
-          lookGrid(saved.posts)
-        )
-      ) : tab === 'liked' ? (
-        liked.loading ? (
-          <Loading />
-        ) : liked.posts.length === 0 ? (
-          <EmptyState
-            title="Nothing liked yet"
-            body="Double tap a look you love and it collects here."
-          />
-        ) : (
-          lookGrid(liked.posts)
-        )
-      ) : reviews.loading ? (
+      ) : posts.loading ? (
         <Loading />
-      ) : reviews.reviews.length === 0 ? (
-        <EmptyState title="No reviews yet" body="Reviews appear after a completed rental." />
+      ) : posts.items.length === 0 ? (
+        <EmptyState
+          title="No posts yet"
+          body={isMe ? 'Looks you post will show up here.' : 'She has not posted a look yet.'}
+          actionLabel={isMe ? 'Post a look' : undefined}
+          onAction={isMe ? () => router.push('/post-look') : undefined}
+        />
       ) : (
-        <View style={styles.reviewList}>
-          {reviews.reviews.map((review) => (
-            <View key={review.id} style={styles.review}>
-              <View style={styles.reviewHead}>
-                <Avatar url={review.author.photoUrl} name={review.author.displayName} size={32} />
-                <View style={styles.reviewWho}>
-                  <Text variant="bodySmall">@{review.author.username}</Text>
-                  <Text variant="caption" tone="muted">
-                    {review.authorRole === 'lender' ? 'lent to her' : 'rented from her'}
-                  </Text>
-                </View>
-                <View style={styles.reviewStars}>
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <Icon
-                      key={n}
-                      name={n <= review.rating ? 'star' : 'star-outline'}
-                      size={12}
-                      tint={color.text.primary}
-                    />
-                  ))}
-                </View>
-              </View>
-              {review.body ? (
-                <Text variant="bodySmall" style={styles.reviewBody}>
-                  {review.body}
-                </Text>
-              ) : null}
-              {/* A nasty review used to leave blocking as the only
-                  option. Reporting one is its own thing. */}
-              <Text
-                variant="caption"
-                tone="muted"
-                accessibilityRole="button"
-                onPress={() => setReporting(review)}
-                style={styles.reviewReport}
-              >
-                Report this review
-              </Text>
-            </View>
+        <View style={styles.grid}>
+          {posts.items.map((post) => (
+            <PostTile
+              key={post.id}
+              post={post}
+              size={tileWidth}
+              onPress={() => router.push({ pathname: '/post/[id]', params: { id: post.id } })}
+            />
           ))}
         </View>
       )}
-
-      <ReportSheet
-        visible={reporting !== null}
-        targetType="user"
-        targetId={reporting?.id ?? ''}
-        targetUid={reporting?.authorUid}
-        targetLabel={`a review by @${reporting?.author.username ?? ''}`}
-        onClose={() => setReporting(null)}
-      />
     </View>
+  );
+}
+
+/** A piece, with what it costs to rent for three days. */
+function ClosetTile({
+  listing,
+  size,
+  onPress,
+}: {
+  listing: Listing;
+  size: number;
+  onPress: () => void;
+}) {
+  const rent = listing.pricing?.threeDayCents;
+  const buy = listing.salePriceCents;
+  const price = rent != null ? formatCentsShort(rent) : buy != null ? formatCentsShort(buy) : null;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={
+        price
+          ? `${listing.name}, ${price}${rent != null ? ' for three days' : ' to buy'}`
+          : listing.name
+      }
+      style={({ pressed }) => [styles.tile, { width: size, height: size }, pressed && styles.pressed]}
+    >
+      {listing.coverUrl ? (
+        <Image source={{ uri: listing.coverUrl }} style={styles.image} resizeMode="cover" />
+      ) : null}
+      {price ? (
+        <View style={styles.price}>
+          <Text variant="caption" tone="inverse" uppercase={false}>
+            {price}
+            {rent == null ? ' buy' : ''}
+          </Text>
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}
+
+/** A look, with how many pieces it tags. */
+function PostTile({ post, size, onPress }: { post: Post; size: number; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={post.caption || `Look by @${post.author.username}`}
+      style={({ pressed }) => [styles.tile, { width: size, height: size }, pressed && styles.pressed]}
+    >
+      {post.photos[0] ? (
+        <Image source={{ uri: post.photos[0].url }} style={styles.image} resizeMode="cover" />
+      ) : null}
+      {post.taggedListings.length > 0 ? (
+        <View style={styles.tagged}>
+          <Text variant="caption" tone="inverse" uppercase={false}>
+            {post.taggedListings.length}
+          </Text>
+        </View>
+      ) : null}
+    </Pressable>
   );
 }
 
@@ -275,48 +205,31 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
   tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.inverse },
-  loading: { paddingVertical: spacing.xxl, alignItems: 'center' },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    padding: spacing.md,
-  },
-  postGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    padding: spacing.md,
-  },
-  postTile: {
-    aspectRatio: 1,
-    borderWidth: 1,
-    borderColor: color.border.default,
-    backgroundColor: color.surface.muted,
-    overflow: 'hidden',
-  },
-  postImage: { width: '100%', height: '100%' },
-  postBadge: {
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GUTTER },
+  tile: { backgroundColor: color.surface.muted },
+  pressed: { opacity: 0.7 },
+  image: { width: '100%', height: '100%' },
+  price: {
     position: 'absolute',
-    right: spacing.sm,
-    top: spacing.sm,
-    minWidth: 20,
+    left: 4,
+    bottom: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    // A translucent black rather than a token: it has to read on top of
+    // an arbitrary photograph, which no flat surface colour does.
+    backgroundColor: 'rgba(0,0,0,0.65)',
+  },
+  tagged: {
+    position: 'absolute',
+    right: 4,
+    top: 4,
+    minWidth: 18,
+    alignItems: 'center',
     paddingHorizontal: 5,
     paddingVertical: 1,
-    borderRadius: 10,
-    backgroundColor: color.surface.inverse,
-    alignItems: 'center',
+    borderRadius: 9,
+    backgroundColor: 'rgba(0,0,0,0.65)',
   },
-  reviewList: { padding: spacing.md, gap: spacing.md },
-  review: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: color.border.default,
-    paddingBottom: spacing.md,
-  },
-  reviewHead: { flexDirection: 'row', alignItems: 'center' },
-  reviewWho: { flex: 1, marginLeft: spacing.sm },
-  reviewStars: { flexDirection: 'row', gap: 1 },
-  reviewBody: { marginTop: spacing.sm },
-  reviewReport: { marginTop: spacing.sm, textDecorationLine: 'underline' },
-
+  loading: { paddingVertical: spacing.xl, alignItems: 'center' },
 });
