@@ -27,6 +27,7 @@ import { useUserListings, useUserPosts } from '../hooks/useProfile';
 import { useReviews } from '../hooks/useReviews';
 import { ReportSheet } from './ReportSheet';
 import { Avatar } from './Avatar';
+import { Icon } from './Icon';
 import { Text } from './Text';
 
 const TABS = ['posts', 'closet', 'reviews'] as const;
@@ -151,7 +152,16 @@ export function ProfileTabs({ uid, isMe }: Props) {
                     {review.authorRole === 'lender' ? 'lent to her' : 'rented from her'}
                   </Text>
                 </View>
-                <Text variant="bodySmall">{'★'.repeat(review.rating)}</Text>
+                <View style={styles.reviewStars}>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Icon
+                      key={n}
+                      name={n <= review.rating ? 'star' : 'star-outline'}
+                      size={12}
+                      tint={color.text.primary}
+                    />
+                  ))}
+                </View>
               </View>
               {review.body ? (
                 <Text variant="bodySmall" style={styles.reviewBody}>
@@ -243,6 +253,7 @@ const styles = StyleSheet.create({
   },
   reviewHead: { flexDirection: 'row', alignItems: 'center' },
   reviewWho: { flex: 1, marginLeft: spacing.sm },
+  reviewStars: { flexDirection: 'row', gap: 1 },
   reviewBody: { marginTop: spacing.sm },
   reviewReport: { marginTop: spacing.sm, textDecorationLine: 'underline' },
 

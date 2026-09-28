@@ -17,6 +17,7 @@ import {
   spacing,
   type,
 } from '@loane/shared';
+import { Icon } from '../src/components/Icon';
 import { Screen } from '../src/components/Screen';
 import { Header } from '../src/components/Header';
 import { useAuth } from '../src/auth/AuthProvider';
@@ -104,7 +105,7 @@ export default function Settings() {
                     {row.value}
                   </Text>
                 ) : null}
-                <Text style={styles.chevron}>›</Text>
+                <Icon name="chevron-forward" size={18} tint={color.text.muted} />
               </View>
             </Pressable>
           ),

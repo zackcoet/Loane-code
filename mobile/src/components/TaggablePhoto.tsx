@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Animated, Image, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { color, controls, fontSize, formatCentsShort, radius, spacing } from '@loane/shared';
+import { Icon } from './Icon';
 import { Text } from './Text';
 
 export interface PlacedTag {
@@ -156,9 +157,9 @@ export function TaggablePhoto({
                   }
                   style={styles.dot}
                 >
-                  <Text variant="caption" tone="inverse">
-                    {mode === 'compose' ? '✕' : ''}
-                  </Text>
+                  {mode === 'compose' ? (
+                    <Icon name="close" size={12} tint={color.text.inverse} />
+                  ) : null}
                 </Pressable>
 
                 {expanded ? (
@@ -196,7 +197,7 @@ export function TaggablePhoto({
           },
         ]}
       >
-        <Text style={styles.burstHeart}>♥</Text>
+        <Icon name="heart" size={fontSize['6xl']} tint={color.text.inverse} />
       </Animated.View>
 
       {mode === 'view' && tags.length > 0 && !tagsVisible ? (

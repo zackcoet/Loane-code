@@ -11,6 +11,7 @@ import {
   spacing,
   type,
 } from '@loane/shared';
+import { Icon } from './Icon';
 import { Text } from './Text';
 import { useIsSaved } from '../hooks/useSaved';
 
@@ -54,9 +55,11 @@ export function ListingCard({ listing, width, onPress, onPressOwner, hideSave }:
             accessibilityLabel={saved ? 'Remove from wishlist' : 'Save to wishlist'}
             style={styles.heart}
           >
-            <Text variant="bodySmall" tone="inverse">
-              {saved ? '♥' : '♡'}
-            </Text>
+            <Icon
+              name={saved ? 'heart' : 'heart-outline'}
+              size={16}
+              tint={color.text.inverse}
+            />
           </Pressable>
         )}
       </View>

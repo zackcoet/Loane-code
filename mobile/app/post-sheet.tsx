@@ -10,6 +10,7 @@ import {
   spacing,
   type,
 } from '@loane/shared';
+import { Icon } from '../src/components/Icon';
 import { Logo } from '../src/components/Logo';
 
 interface Option {
@@ -49,7 +50,7 @@ export default function PostSheet() {
           accessibilityLabel="Close"
           style={styles.spacer}
         >
-          <Text style={styles.close}>✕</Text>
+          <Icon name="close" size={iconSize.md} />
         </Pressable>
       </View>
 
@@ -68,7 +69,7 @@ export default function PostSheet() {
             <Text style={styles.optionTitle}>{option.title}</Text>
             <Text style={styles.optionBody}>{option.body}</Text>
           </View>
-          <Text style={styles.chevron}>›</Text>
+          <Icon name="chevron-forward" size={20} tint={color.text.muted} />
         </Pressable>
       ))}
     </View>

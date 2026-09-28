@@ -63,7 +63,11 @@ export function ProfileHeader({ user, children, onPressPhoto }: Props) {
               {campusName}
             </Text>
           </View>
-          <StarRating average={user.stats.ratingAverage} count={user.stats.ratingCount} />
+          <StarRating
+            average={user.stats.ratingAverage}
+            count={user.stats.ratingCount}
+            emptyLabel="No reviews yet"
+          />
         </View>
       </View>
 

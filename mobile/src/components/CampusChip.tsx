@@ -16,6 +16,7 @@ import {
   type,
 } from '@loane/shared';
 import { useCampus } from '../hooks/useCampus';
+import { Icon } from './Icon';
 
 export function CampusChip({ onPress }: { onPress?: () => void }) {
   const { name, dotColor } = useCampus();
@@ -31,7 +32,7 @@ export function CampusChip({ onPress }: { onPress?: () => void }) {
       <Text style={styles.text} numberOfLines={1}>
         {name}
       </Text>
-      <Text style={styles.chevron}>⌄</Text>
+      <Icon name="chevron-down" size={14} tint={color.text.secondary} />
     </Pressable>
   );
 }

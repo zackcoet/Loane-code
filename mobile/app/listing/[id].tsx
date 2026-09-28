@@ -37,9 +37,11 @@ import { Header } from '../../src/components/Header';
 import { IconButton } from '../../src/components/IconButton';
 import { Screen } from '../../src/components/Screen';
 import { StarRating } from '../../src/components/StarRating';
+import { Icon } from '../../src/components/Icon';
 import { Text } from '../../src/components/Text';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useListing } from '../../src/hooks/useListing';
+import { useUserById } from '../../src/hooks/useProfile';
 import { useIsSaved } from '../../src/hooks/useSaved';
 import { usePostsTagging } from '../../src/hooks/usePostsTagging';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
@@ -64,6 +66,9 @@ export default function ListingDetail() {
   const { saved, toggle } = useIsSaved(id);
   const seenIn = usePostsTagging(id);
   const chat = useOpenChat();
+  // Read live: a rating copied onto the listing would go stale the
+  // moment somebody reviewed her.
+  const owner = useUserById(listing?.ownerUid);
   const [reporting, setReporting] = useState(false);
 
   const [page, setPage] = useState(0);
@@ -223,11 +228,13 @@ export default function ListingDetail() {
                 From the closet of
               </Text>
               <Text numberOfLines={1}>@{listing.owner.username}</Text>
-              <StarRating average={null} count={0} />
+              <StarRating
+              average={owner?.stats.ratingAverage ?? null}
+              count={owner?.stats.ratingCount ?? 0}
+              emptyLabel="No reviews yet"
+            />
             </View>
-            <Text variant="h3" tone="muted">
-              ›
-            </Text>
+            <Icon name="chevron-forward" size={20} tint={color.text.muted} />
           </Pressable>
 
           <Text

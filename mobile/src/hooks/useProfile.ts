@@ -79,6 +79,33 @@ export function useProfileByUsername(username: string | undefined) {
   return { user, loading, notFound };
 }
 
+/**
+ * One student, live, by uid.
+ *
+ * Used where a rating has to be current — the lender card on a listing,
+ * for instance. The denormalized UserSummary carried on a listing
+ * deliberately does NOT include the rating: it would have to be fanned
+ * out to every listing and post she owns each time somebody reviewed
+ * her, and a stale star count is worse than an extra read.
+ */
+export function useUserById(uid: string | undefined) {
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    if (!uid) {
+      setUser(null);
+      return;
+    }
+    return onSnapshot(
+      doc(db, COLLECTIONS.users, uid),
+      (snap) => setUser(snap.exists() ? (snap.data() as User) : null),
+      () => setUser(null),
+    );
+  }, [uid]);
+
+  return user;
+}
+
 /** Live posts by one author. */
 export function useUserPosts(uid: string | undefined) {
   const [items, setItems] = useState<Post[]>([]);

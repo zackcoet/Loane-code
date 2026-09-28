@@ -12,6 +12,7 @@ import { REVIEW_MAX_RATING, color, fontSize, spacing } from '@loane/shared';
 import { Button } from './Button';
 import { Header } from './Header';
 import { Input } from './Input';
+import { Icon } from './Icon';
 import { Text } from './Text';
 import { writeReview } from '../firebase/callables';
 import { callableErrorMessage } from '../firebase/errors';
@@ -68,9 +69,11 @@ export function ReviewSheet({ visible, bookingId, aboutUsername, onClose }: Prop
                 accessibilityState={{ selected: rating >= value }}
                 hitSlop={6}
               >
-                <Text style={[styles.star, rating >= value && styles.starOn]}>
-                  {rating >= value ? '★' : '☆'}
-                </Text>
+                <Icon
+                  name={rating >= value ? 'star' : 'star-outline'}
+                  size={fontSize['5xl']}
+                  tint={rating >= value ? color.text.primary : color.text.disabled}
+                />
               </Pressable>
             ))}
           </View>
@@ -111,8 +114,6 @@ const styles = StyleSheet.create({
   sheet: { flex: 1, backgroundColor: color.surface.page },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
   stars: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
-  star: { fontSize: fontSize['5xl'], lineHeight: 44, color: color.text.disabled },
-  starOn: { color: color.text.primary },
   hint: { marginTop: spacing.xs },
   multiline: { height: 110, textAlignVertical: 'top', marginTop: spacing.lg },
   submit: { marginTop: spacing.lg },

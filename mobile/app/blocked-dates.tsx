@@ -132,7 +132,7 @@ export default function BlockedDates() {
               {upcoming.map((date) => (
                 <Chip
                   key={date}
-                  label={`${formatShortDate(date)}  ✕`}
+                  label={`${formatShortDate(date)}  ×`}
                   active
                   onPress={() => toggle(date)}
                 />

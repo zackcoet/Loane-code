@@ -25,12 +25,13 @@ import {
 import {
   OCCASIONS,
   OCCASION_LABELS,
+  type Occasion,
   color,
   controls,
+  iconSize,
   radius,
   spacing,
   type,
-  type Occasion,
 } from '@loane/shared';
 import { Chip } from '../../src/components/Chip';
 import { EmptyState } from '../../src/components/EmptyState';
@@ -38,6 +39,7 @@ import { FilterSheet } from '../../src/components/FilterSheet';
 import { ListingCard } from '../../src/components/ListingCard';
 import { Logo } from '../../src/components/Logo';
 import { Screen } from '../../src/components/Screen';
+import { Icon } from '../../src/components/Icon';
 import { Text } from '../../src/components/Text';
 import { useListings } from '../../src/hooks/useFeed';
 import { useFollowingUids } from '../../src/hooks/useFollowing';
@@ -137,9 +139,7 @@ export default function Discover() {
       </View>
 
       <View style={styles.searchWrap}>
-        <Text variant="h3" tone="muted" style={styles.searchGlyph}>
-          ⌕
-        </Text>
+        <Icon name="search" size={iconSize.sm} tint={color.text.muted} />
         <TextInput
           value={search}
           onChangeText={(value) => {
@@ -160,15 +160,15 @@ export default function Discover() {
           style={styles.searchInput}
         />
         {search.length > 0 ? (
-          <Text
-            tone="muted"
+          <Pressable
             onPress={() => setSearch('')}
             accessibilityRole="button"
             accessibilityLabel="Clear search"
+            hitSlop={10}
             style={styles.clear}
           >
-            ✕
-          </Text>
+            <Icon name="close-circle" size={iconSize.sm} tint={color.text.muted} />
+          </Pressable>
         ) : null}
       </View>
 
