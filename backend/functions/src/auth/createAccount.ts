@@ -145,7 +145,6 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
           bio: '',
           photoUrl: null,
           campusId: campus.id,
-          campusEmail: email,
           // Her domain is approved, so she may use the app.
           isVerified: true,
           verificationMethod: 'domain_claimed',
@@ -185,6 +184,8 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
         const settings: Omit<UserPrivate, 'updatedAt'> = {
           uid,
           accountEmail: email,
+          // Not on the public profile — see UserPrivate.campusEmail.
+          campusEmail: email,
           phone: null,
           handoffNotes: null,
           notificationPreferences: {

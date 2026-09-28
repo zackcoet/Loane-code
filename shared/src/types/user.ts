@@ -21,8 +21,6 @@ export interface User extends BaseDoc, CampusScoped {
   photoUrl: string | null;
 
   // --- Campus verification ------------------------------------------------
-  /** The campus email she entered. Lowercased. */
-  campusEmail: string | null;
   /**
    * Whether we consider her a verified student.
    *
@@ -141,6 +139,21 @@ export interface UserPrivate {
   uid: string;
   /** The email she signed up with, which may not be her campus email. */
   accountEmail: string;
+  /**
+   * The campus email she signed up with. Lowercased.
+   *
+   * THIS IS NOT PUBLIC. It used to sit on the user document, which any
+   * signed-in student could read — meaning every student could read
+   * every other student's school address. On a campus app that is how
+   * somebody gets found by a person they are avoiding.
+   *
+   * It lives here because Firestore rules are all-or-nothing per
+   * document: there is no way to hide one field of a readable doc, so
+   * the field has to move. Written only by Cloud Functions — her campus
+   * claim rests on this address, so she must not be able to edit it
+   * even though she can edit the rest of this document.
+   */
+  campusEmail: string | null;
   phone: string | null;
   /** Free text she gives a renter about where to meet, e.g. a dorm lobby. */
   handoffNotes: string | null;

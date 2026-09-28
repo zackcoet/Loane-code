@@ -475,7 +475,6 @@ async function main(): Promise<void> {
       bio: student.bio ?? 'usc • sharing my closet',
       photoUrl: peoplePhoto(users.length),
       campusId: CAMPUS_ID,
-      campusEmail: email,
       isVerified: true,
       // Founding closets are verified by hand; everyone else by domain match.
       verificationMethod: student.founding ? 'manual_admin' : 'domain_claimed',
@@ -526,6 +525,7 @@ async function main(): Promise<void> {
       .set({
         uid: record.uid,
         accountEmail: email,
+        campusEmail: email,
         phone: null,
         handoffNotes: 'Usually around Russell House between classes.',
         notificationPreferences: {

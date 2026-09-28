@@ -16,7 +16,7 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
 const ELLA = 'uid-ella';
@@ -37,7 +37,6 @@ function userDoc(uid: string, overrides: Record<string, unknown> = {}) {
     bio: '',
     photoUrl: null,
     campusId: CAMPUS,
-    campusEmail: `${uid}@email.sc.edu`,
     isVerified: true,
     verificationMethod: 'domain_claimed',
     verifiedAt: new Date(),
@@ -197,7 +196,7 @@ describe('users', () => {
 
   it('stops her changing her campus email', async () => {
     await assertFails(
-      updateDoc(doc(asElla(), 'users', ELLA), { campusEmail: 'ella@harvard.edu' }),
+      updateDoc(doc(asElla(), 'users', ELLA), { campusId: 'harvard' }),
     );
   });
 
@@ -272,7 +271,6 @@ describe('listings', () => {
   });
 
   it('stops her hard-deleting a listing (history has to survive)', async () => {
-    const { deleteDoc } = await import('firebase/firestore');
     await assertFails(deleteDoc(doc(asElla(), 'listings', 'listing-1')));
   });
 
@@ -512,7 +510,6 @@ describe('posts', () => {
   });
 
   it('stops her deleting a post outright — deletePost hands back tag counts', async () => {
-    const { deleteDoc } = await import('firebase/firestore');
     await assertFails(deleteDoc(doc(asElla(), 'posts', 'post-1')));
     await assertFails(updateDoc(doc(asElla(), 'posts', 'post-1'), { status: 'removed' }));
   });
@@ -651,7 +648,6 @@ describe('bookings, in detail', () => {
   });
 
   it('cannot be deleted', async () => {
-    const { deleteDoc } = await import('firebase/firestore');
     await assertFails(deleteDoc(doc(asElla(), 'bookings', 'booking-1')));
   });
 });
@@ -958,7 +954,6 @@ describe('admin-only data', () => {
   it('makes the audit log append-only, even for an admin', async () => {
     // An audit log an admin can rewrite is not an audit log.
     await assertFails(updateDoc(doc(asAdmin(), 'adminActions', 'action-1'), { notes: 'nicer' }));
-    const { deleteDoc } = await import('firebase/firestore');
     await assertFails(deleteDoc(doc(asAdmin(), 'adminActions', 'action-1')));
   });
 });
@@ -1187,5 +1182,56 @@ describe('post counters', () => {
     await assertSucceeds(
       updateDoc(doc(asElla(), 'posts', 'post-s'), { caption: 'formal szn', updatedAt: new Date() }),
     );
+  });
+});
+
+describe('private settings', () => {
+  const PRIVATE = ['users', ELLA, 'private', 'settings'] as const;
+
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), ...PRIVATE), {
+        uid: ELLA,
+        accountEmail: 'ella@email.sc.edu',
+        campusEmail: 'ella@email.sc.edu',
+        phone: null,
+        handoffNotes: null,
+        notificationPreferences: { pushEnabled: true },
+        updatedAt: new Date(),
+      });
+    });
+  });
+
+  it('is readable by her', async () => {
+    await assertSucceeds(getDoc(doc(asElla(), ...PRIVATE)));
+  });
+
+  it('is readable by an admin', async () => {
+    await assertSucceeds(getDoc(doc(asAdmin(), ...PRIVATE)));
+  });
+
+  it('is NOT readable by another student', async () => {
+    // This is the whole point of the move: her school email used to sit
+    // on a document every signed-in student could read.
+    await assertFails(getDoc(doc(asMaddie(), ...PRIVATE)));
+  });
+
+  it('lets her change her phone number', async () => {
+    await assertSucceeds(
+      updateDoc(doc(asElla(), ...PRIVATE), { phone: '803-555-0100', updatedAt: new Date() }),
+    );
+  });
+
+  it('stops her rewriting her own campus email', async () => {
+    // Her claim to be a student at this school rests on that address.
+    await assertFails(updateDoc(doc(asElla(), ...PRIVATE), { campusEmail: 'ella@harvard.edu' }));
+  });
+
+  it('stops her rewriting her account email', async () => {
+    await assertFails(updateDoc(doc(asElla(), ...PRIVATE), { accountEmail: 'other@gmail.com' }));
+  });
+
+  it('stops her deleting it', async () => {
+    await assertFails(deleteDoc(doc(asElla(), ...PRIVATE)));
   });
 });

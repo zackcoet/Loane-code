@@ -20,7 +20,7 @@ import {
 import { Icon } from '../src/components/Icon';
 import { Screen } from '../src/components/Screen';
 import { Header } from '../src/components/Header';
-import { useAuth } from '../src/auth/AuthProvider';
+import { useUserSettings } from '../src/hooks/useUserSettings';
 import { auth } from '../src/firebase/config';
 
 interface Row {
@@ -35,7 +35,9 @@ interface Row {
 
 export default function Settings() {
   const router = useRouter();
-  const { profile } = useAuth();
+  // Her campus email is no longer on the public profile — it is hers
+  // and an admin's to read, and nobody else's.
+  const { settings } = useUserSettings();
 
   const rows: Row[] = [
     { label: 'Edit Profile', href: '/edit-profile' },
@@ -51,7 +53,7 @@ export default function Settings() {
     },
     {
       label: 'Campus Email',
-      value: profile?.campusEmail ?? '—',
+      value: settings?.campusEmail ?? '—',
       readOnly: true,
     },
     { label: 'Change Password', href: '/change-password' },

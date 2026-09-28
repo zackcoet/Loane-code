@@ -39,7 +39,11 @@ export function UsersPage({ data, campusId, onCampusChange, onSelectUser }: Prop
       .filter((user) => status === 'all' || user.status === status)
       .filter((user) => joined === 'all' || isInWindow(user.createdAt, joinedWindow))
       .filter((user) => {
-        const text = `${user.displayName} ${user.username} ${user.campusEmail ?? ''}`.toLowerCase();
+        // School email is no longer searchable here: it lives in her
+        // private document now, and pulling 250 of them to filter a
+        // table is exactly the kind of casual bulk access moving it was
+        // meant to stop. It is on her detail page, one read at a time.
+        const text = `${user.displayName} ${user.username}`.toLowerCase();
         return text.includes(query.toLowerCase().trim());
       })
       .sort((a, b) => sortUsers(a, b, sort));
@@ -54,7 +58,6 @@ export function UsersPage({ data, campusId, onCampusChange, onSelectUser }: Prop
       users.map((user) => ({
         name: user.displayName,
         username: user.username,
-        schoolEmail: user.campusEmail,
         campus: campusName(data.campuses, user.campusId),
         signupDate: formatDate(user.createdAt),
         lastActive: formatDate(user.lastActiveAt),
@@ -74,7 +77,7 @@ export function UsersPage({ data, campusId, onCampusChange, onSelectUser }: Prop
           className="search-input"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search name, username, or school email"
+          placeholder="Search name or username"
         />
         <CampusSelect campuses={data.campuses} value={campusId} onChange={onCampusChange} />
         <select value={status} onChange={(event) => setStatus(event.target.value)}>
@@ -109,7 +112,6 @@ export function UsersPage({ data, campusId, onCampusChange, onSelectUser }: Prop
                 <tr>
                   <th>Name</th>
                   <th>@username</th>
-                  <th>School email</th>
                   <th>Campus</th>
                   <th>Signup</th>
                   <th>Last active</th>
@@ -126,7 +128,6 @@ export function UsersPage({ data, campusId, onCampusChange, onSelectUser }: Prop
                   <tr key={user.uid} className="clickable-row" onClick={() => onSelectUser(user.uid)}>
                     <td>{user.displayName}</td>
                     <td>@{user.username}</td>
-                    <td>{user.campusEmail ?? 'Not recorded'}</td>
                     <td>{campusName(data.campuses, user.campusId)}</td>
                     <td>{formatShortDate(user.createdAt)}</td>
                     <td>{formatShortDate(user.lastActiveAt)}</td>

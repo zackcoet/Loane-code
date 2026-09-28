@@ -1,5 +1,7 @@
-import { useState } from 'react';
-import { CATEGORY_LABELS, type AppEvent, type User } from '@loane/shared';
+import { useEffect, useState } from 'react';
+import { COLLECTIONS, CATEGORY_LABELS, type AppEvent, type User, type UserPrivate } from '@loane/shared';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import type { AdminData } from '../data/adminData';
 import { toDate } from '../data/adminData';
 import { Avatar, MetricCard, Panel } from '../components/ui';
@@ -25,6 +27,25 @@ export function UserDetailPage({ user, data, onBack }: Props) {
   const listings = data.listings.filter((listing) => listing.ownerUid === user.uid);
   const posts = data.posts.filter((post) => post.authorUid === user.uid);
   const events = recentUserEvents(data.events, user.uid);
+
+  // Her school email lives in her private document now, so it is one
+  // read for the one student an admin is actually looking at, rather
+  // than part of every list.
+  const [privateDoc, setPrivateDoc] = useState<UserPrivate | null>(null);
+  useEffect(() => {
+    let live = true;
+    setPrivateDoc(null);
+    void getDoc(doc(db, COLLECTIONS.users, user.uid, 'private', 'settings'))
+      .then((snap) => {
+        if (live && snap.exists()) setPrivateDoc(snap.data() as UserPrivate);
+      })
+      .catch(() => {
+        /* An admin who cannot read it sees "no school email recorded". */
+      });
+    return () => {
+      live = false;
+    };
+  }, [user.uid]);
 
   const [dialog, setDialog] = useState<Dialog>(null);
   const [busy, setBusy] = useState(false);
@@ -89,7 +110,7 @@ export function UserDetailPage({ user, data, onBack }: Props) {
           <p className="label">{campusName(data.campuses, user.campusId)}</p>
           <h2>{user.displayName}</h2>
           <p className="muted">
-            @{user.username} · {user.campusEmail ?? 'No school email recorded'}
+            @{user.username} · {privateDoc?.campusEmail ?? 'No school email recorded'}
           </p>
         </div>
         <div className="profile-actions">

@@ -91,7 +91,8 @@ service cloud.firestore {
       // Deliberately absent, and each for a reason:
       //   username        — a handle is a lock; changeUsername owns it
       //   campusId        — she cannot move herself to another school
-      //   campusEmail     — the address is what her campus claim rests on
+      //   campusEmail     — moved to private/settings entirely; it was
+      //                     readable by every signed-in student
       //   isVerified      — otherwise "verified student" means nothing
       //   emailConfirmed  — only a real confirmation may set this
       //   role, status    — nobody promotes or un-suspends themselves
@@ -113,9 +114,20 @@ service cloud.firestore {
       allow delete: if false;
 
       // Private settings: only hers, only ever read by her or an admin.
+      //
+      // She may change her phone, her handoff notes and her notification
+      // preferences. She may NOT touch campusEmail or accountEmail: her
+      // claim to be a student at this school rests on that address, and
+      // letting her rewrite it here would undo the whole point of
+      // checking the domain at signup. Those are written once, by
+      // createAccount.
       match /private/{docId} {
         allow read: if isSelf(userId) || isAdmin();
-        allow write: if isSelf(userId) && isActive();
+        allow create: if false;
+        allow update: if isSelf(userId)
+          && isActive()
+          && onlyChanges(['phone', 'handoffNotes', 'notificationPreferences', 'updatedAt']);
+        allow delete: if false;
       }
 
       // Who she has blocked. Written only by blockUser, so the reverse
