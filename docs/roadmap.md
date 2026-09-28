@@ -233,3 +233,58 @@ the long pole, not the code.
 - Development build → TestFlight → App Store
 - Onboard the 10–20 founding closets
 - Seed inventory, pricing guidance, launch content
+
+---
+
+## Contacts import — what it would actually take
+
+**Not built. This is the explanation Zack asked for, not a plan we have
+committed to.**
+
+The obvious version of "find who's on Loane" is: read her iPhone address
+book, send it to us, tell her which of her contacts already have
+accounts. Instagram and Venmo both do it. For us it does not work
+cleanly, and the reason is our own signup.
+
+**An address book is phone numbers. A Loane account is a school email.**
+There is no overlap to match on. Her friend Harper is `harperhues@
+email.sc.edu` to us and `(803) 555-0147` in her phone. Nothing connects
+those two facts today, so a contacts import would match almost nobody.
+
+To make it work, one of three things has to happen:
+
+1. **Collect phone numbers at signup.** Then we can match. It adds a
+   field to a flow we deliberately kept to one tap, and a phone number
+   is a more sensitive thing to hold than a campus email — it is how
+   people get found by someone they are avoiding.
+2. **Ask for it later, optionally.** "Add your number so friends can
+   find you." Honest, skippable, and it only works for the people who
+   opt in, which at the start is nobody.
+3. **Match on email instead.** Address books do hold emails, and some
+   students will have their school address saved. The hit rate is much
+   lower than phone matching, but it needs no new field from us.
+
+**The part that matters more than any of that.** Uploading her contacts
+means sending us other people's personal data — names and numbers of
+people who never agreed to anything and may not use Loane at all. Doing
+it properly means:
+
+- never storing the raw numbers, only one-way hashes, and salting them
+  so the stored values cannot be reversed with a rainbow table of every
+  possible US phone number (which is a small, cheap table — this is a
+  real attack, not a theoretical one)
+- discarding every hash that does not match an existing account, rather
+  than keeping a shadow profile of her friends who have not joined
+- a clear prompt saying what is being sent before the OS permission
+  dialog, not after
+- a way to delete it that actually deletes it
+
+That is a week of careful work and a privacy policy that says all of it
+out loud. It also puts us inside the scope of things app review looks
+at closely.
+
+**Recommendation.** Not now. Username search plus the share-sheet invite
+covers the same job — she sends a link to her group chat and the people
+who want in, get in — without holding anybody else's contact details.
+Revisit when a campus is big enough that search stops being enough, and
+do option 2 if we do it at all.

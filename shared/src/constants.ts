@@ -449,6 +449,7 @@ export const EVENT_TYPES = [
   'comment_created',
   'comment_deleted',
   'post_shared',
+  'invite_shared',
   'review_written',
   'report_submitted',
   'user_blocked',
