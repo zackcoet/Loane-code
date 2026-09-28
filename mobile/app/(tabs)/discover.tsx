@@ -8,7 +8,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActionSheetIOS,
   ActivityIndicator,
@@ -59,6 +59,10 @@ const GRID_COLUMNS = 2;
 
 export default function Discover() {
   const router = useRouter();
+  // Arriving from an occasion chip on a listing: "more things like this
+  // one, for the same occasion". Read once into the same quick-filter
+  // state the chips above the grid use, so the two cannot disagree.
+  const { occasion: occasionParam } = useLocalSearchParams<{ occasion?: string }>();
   const { width } = useWindowDimensions();
   const { items: listings, loading, error } = useListings();
   const { uids: followingUids } = useFollowingUids();
@@ -72,7 +76,9 @@ export default function Discover() {
 
   const { search, setSearch, filters, setFilters, sort, setSort } = useDiscoverState();
   const [tab, setTab] = useState<'explore' | 'following'>('explore');
-  const [quickOccasion, setQuickOccasion] = useState<Occasion | null>(null);
+  const [quickOccasion, setQuickOccasion] = useState<Occasion | null>(
+    OCCASIONS.includes(occasionParam as Occasion) ? (occasionParam as Occasion) : null,
+  );
   const [sheetOpen, setSheetOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState<Filters>(EMPTY_FILTERS);
 

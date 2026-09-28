@@ -206,7 +206,16 @@ export default function ListingDetail() {
           {listing.occasions.length > 0 ? (
             <View style={styles.chipRow}>
               {listing.occasions.map((occasion) => (
-                <Chip key={occasion} label={OCCASION_LABELS[occasion]} onPress={() => {}} />
+                <Chip
+                  key={occasion}
+                  label={OCCASION_LABELS[occasion]}
+                  // It looked tappable and did nothing. Tapping an
+                  // occasion on a dress means "show me more of these",
+                  // so it opens Discover already filtered.
+                  onPress={() =>
+                    router.push({ pathname: '/(tabs)/discover', params: { occasion } })
+                  }
+                />
               ))}
             </View>
           ) : null}
