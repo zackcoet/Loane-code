@@ -249,3 +249,92 @@ npm run start:clear --workspace @loane/mobile
 ```bash
 rm -rf node_modules */node_modules backend/functions/node_modules && npm install
 ```
+
+---
+
+## Deploying to a real Firebase project
+
+### The trap that cost us a day
+
+`backend/functions/package.json` must NOT list `@loane/shared` under
+`dependencies`. It is a workspace package that exists only inside this
+repo, and Firebase uploads the `backend/functions` folder on its own —
+so Cloud Build runs `npm install` in a container where `@loane/shared`
+cannot be resolved from any registry, the build fails, and you get
+function records with no Cloud Run service behind them. The symptom is
+maddening: `firebase deploy` reports success, `firebase functions:list`
+shows every function, and every call returns 404.
+
+`build.mjs` already bundles the shared code into `lib/index.js` with
+esbuild, so it is a build-time dependency only. It belongs in
+`devDependencies`, which Firebase does not install in the container.
+
+### Indexes
+
+The emulator does not validate `firestore.indexes.json` and happily
+serves queries with no index behind them. Real Firestore does neither.
+Two things to know:
+
+- a single-field index is rejected outright — Firestore builds those
+  itself
+- every `where` + `orderBy` combination needs a composite index
+  declared, or the query fails in production while working perfectly on
+  your laptop
+
+After adding any query, add its index.
+
+### Order of operations
+
+```bash
+# 1. rules, indexes and storage — these work on the free plan
+cd backend && npx firebase-tools deploy \
+  --only firestore:rules,firestore:indexes,storage --project <id>
+
+# 2. functions — needs the Blaze plan
+npx firebase-tools deploy --only functions --project <id>
+
+# 3. the campus document and an admin, without which signup rejects
+#    everybody and the dashboard is unusable
+cd functions && npx tsx scripts/bootstrapProject.ts \
+  --project <id> --admin you@example.com
+
+# 4. the functions service account needs to mint custom tokens
+gcloud iam service-accounts add-iam-policy-binding \
+  <project-number>-compute@developer.gserviceaccount.com \
+  --member="serviceAccount:<project-number>-compute@developer.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountTokenCreator" --project <id>
+```
+
+`bootstrapProject.ts` deliberately does not load the fake students that
+`seed.ts` makes. Those belong in an emulator, never in front of real
+users.
+
+### If a deploy leaves functions in UNKNOWN or FAILED
+
+They cannot be updated in place, and a function that was registered as
+HTTPS cannot become a background trigger. Delete them and deploy again:
+
+```bash
+npx firebase-tools functions:delete <names...> \
+  --project <id> --region us-central1 --force
+```
+
+## EAS build profiles
+
+- **development** — a dev client that still talks to the emulators on
+  your laptop over Wi-Fi. For working on native modules.
+- **preview** — a standalone app installed from a link, pointed at the
+  live backend. This is the one to test on a real phone.
+- **production** — the TestFlight / App Store build.
+
+The Firebase web config in `eas.json` is not a secret. It identifies the
+project; the security rules are what grant access. See docs/security.md.
+
+First iOS build needs an interactive run, because it signs into the
+Apple Developer account:
+
+```bash
+cd mobile
+npx eas-cli device:create                        # register your iPhone
+npx eas-cli build --platform ios --profile preview
+```

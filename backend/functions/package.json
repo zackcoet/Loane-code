@@ -17,12 +17,12 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@loane/shared": "*",
     "firebase-admin": "^12.7.0",
     "firebase-functions": "^6.5.0"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.2",
+    "@loane/shared": "*",
     "@types/node": "^20.17.10",
     "esbuild": "^0.24.0",
     "firebase": "^12.19.0",
