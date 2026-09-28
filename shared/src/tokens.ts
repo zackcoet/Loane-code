@@ -55,6 +55,21 @@ export const palette = {
   green700: '#1F7A4D',
   amber700: '#B8860B',
   red700: '#B3261E',
+
+  /**
+   * Translucent blacks.
+   *
+   * The only colours in Loane that are not opaque, and they exist for
+   * one reason: a label or a dimmed backdrop has to work on top of an
+   * arbitrary photograph, and no flat surface colour does that. A price
+   * on a white dress and a price on a black dress need the same chip.
+   *
+   * Deliberately few. Two weights of scrim and one shadow; if a fourth
+   * is ever needed, it probably wants to be one of these instead.
+   */
+  scrim65: 'rgba(0, 0, 0, 0.65)',
+  scrim35: 'rgba(0, 0, 0, 0.35)',
+  shadow35: 'rgba(0, 0, 0, 0.35)',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -128,6 +143,23 @@ export const color = {
    * which is trademarked.
    */
   campus: { dotFallback: palette.ink900 },
+
+  /**
+   * Sitting on top of a photograph.
+   *
+   * `onPhoto` is the chip behind a price or a counter laid over an
+   * image — it has to stay readable whether the dress underneath is
+   * white or black. `behindPanel` dims the screen behind the side
+   * menu. `textOnPhoto` is the shadow that keeps the double-tap heart
+   * visible on a pale photo.
+   */
+  scrim: {
+    onPhoto: palette.scrim65,
+    behindPanel: palette.scrim35,
+  },
+  shadow: {
+    textOnPhoto: palette.shadow35,
+  },
 } as const;
 
 // ---------------------------------------------------------------------------

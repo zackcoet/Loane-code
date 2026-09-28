@@ -375,9 +375,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 3,
     borderRadius: radius.pill,
-    // Deliberately a translucent black rather than a token: it has to
-    // read on top of an arbitrary photo, which no surface colour does.
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: color.scrim.onPhoto,
   },
   dots: { flexDirection: 'row', justifyContent: 'center', paddingTop: spacing.sm, gap: 5 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: color.border.default },

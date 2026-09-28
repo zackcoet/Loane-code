@@ -216,9 +216,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-    // A translucent black rather than a token: it has to read on top of
-    // an arbitrary photograph, which no flat surface colour does.
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: color.scrim.onPhoto,
   },
   tagged: {
     position: 'absolute',
@@ -229,7 +227,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     paddingVertical: 1,
     borderRadius: 9,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: color.scrim.onPhoto,
   },
   loading: { paddingVertical: spacing.xl, alignItems: 'center' },
 });

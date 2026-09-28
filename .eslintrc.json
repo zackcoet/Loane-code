@@ -59,6 +59,10 @@
         "message": "Raw colours are not allowed outside shared/src/tokens.ts. Use a semantic token, e.g. color.text.primary or color.border.default. See docs/design-system.md."
       },
       {
+        "selector": "Literal[value=/^\\s*(?:rgba?|hsla?)\\s*\\(/]",
+        "message": "Raw colours are not allowed outside shared/src/tokens.ts — this rule only caught #hex before, and five rgba() values slipped past it. For a label or backdrop over a photo use color.scrim.onPhoto, color.scrim.behindPanel or color.shadow.textOnPhoto. See docs/design-system.md."
+      },
+      {
         "selector": "Property[key.name='fontSize'] > Literal",
         "message": "Raw font sizes are not allowed. Use a token, e.g. type.body.size or fontSize.md. See docs/design-system.md."
       }

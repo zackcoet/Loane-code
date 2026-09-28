@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     lineHeight: 110,
     color: color.text.inverse,
     // A shadow so it reads on a pale photo as well as a dark one.
-    textShadowColor: 'rgba(0,0,0,0.35)',
+    textShadowColor: color.shadow.textOnPhoto,
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 8,
   },
