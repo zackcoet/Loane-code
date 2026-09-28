@@ -696,14 +696,14 @@ async function main(): Promise<void> {
         circleId: null,
         status: 'active',
         stats: {
-        likeCount: 0,
-        saveCount: 0,
-        viewCount: 0,
-        tagTapCount: 0,
-        commentCount: 0,
-        shareCount: 0,
-      },
-      lastLiker: null,
+          likeCount: 0,
+          saveCount: 0,
+          viewCount: 0,
+          tagTapCount: 0,
+          commentCount: 0,
+          shareCount: 0,
+        },
+        lastLiker: null,
         suspendedReason: null,
         removedAt: null,
         createdAt: FieldValue.serverTimestamp() as never,
@@ -907,7 +907,13 @@ async function main(): Promise<void> {
         campusId: CAMPUS_ID,
         createdAt: FieldValue.serverTimestamp(),
       });
-      await doc.ref.update({ 'stats.likeCount': FieldValue.increment(1) });
+      // likePost stamps the liker on the post so the feed can say
+      // "Liked by Harper" without a query. The seed has to do the same
+      // or every post shows a bare count.
+      await doc.ref.update({
+        'stats.likeCount': FieldValue.increment(1),
+        lastLiker: summaryOf(follower),
+      });
       likeCount += 1;
     }
 
@@ -964,6 +970,8 @@ async function main(): Promise<void> {
         conversationId,
         senderUid: i === 0 ? a.uid : b.uid,
         body,
+        photo: null,
+        sharedPost: null,
         readBy: [i === 0 ? a.uid : b.uid],
         isDeleted: false,
         createdAt: FieldValue.serverTimestamp(),
@@ -974,6 +982,87 @@ async function main(): Promise<void> {
     chatCount += 1;
   }
   console.warn(`Created ${chatCount} chats with ${messageCount} messages`);
+
+  // --- Comments -----------------------------------------------------------
+  // A look with no comments under it tells you nothing about whether the
+  // comment row works, so a third of them get one or two.
+  const COMMENTS = [
+    'obsessed with this',
+    'where is the top from??',
+    'you wore this so well',
+    'need this for gameday',
+    'the shoes are everything',
+    'is the dress still available?',
+  ];
+
+  let commentCount = 0;
+  for (const doc of allPosts.docs) {
+    const post = doc.data() as Post;
+    if (random() > 0.35) continue;
+
+    const howMany = random() > 0.6 ? 2 : 1;
+    let added = 0;
+    for (let i = 0; i < howMany; i += 1) {
+      const author = pick(users);
+      // Talking to yourself under your own look is not a comment.
+      if (author.uid === post.authorUid) continue;
+
+      const ref = db.collection(COLLECTIONS.comments).doc();
+      await ref.set({
+        id: ref.id,
+        campusId: CAMPUS_ID,
+        postId: post.id,
+        authorUid: author.uid,
+        author: summaryOf(author),
+        body: pick(COMMENTS),
+        status: 'active',
+        suspendedReason: null,
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+      added += 1;
+      commentCount += 1;
+    }
+    if (added > 0) {
+      await doc.ref.update({ 'stats.commentCount': FieldValue.increment(added) });
+    }
+  }
+  console.warn(`Created ${commentCount} comments`);
+
+  // --- One shared look ----------------------------------------------------
+  // So the chat screen has a post-preview bubble in it and the share
+  // count on a post is not zero everywhere.
+  const sharedSource = allPosts.docs[0];
+  if (sharedSource && chatCount > 0) {
+    const post = sharedSource.data() as Post;
+    const a = users[0]!;
+    const b = users[3 % users.length]!;
+    if (a.uid !== b.uid) {
+      const conversationId = ids.conversation(a.uid, b.uid);
+      await db
+        .collection(COLLECTIONS.conversations)
+        .doc(conversationId)
+        .collection('messages')
+        .add({
+          conversationId,
+          senderUid: a.uid,
+          body: 'this is the one I meant',
+          photo: null,
+          sharedPost: {
+            postId: post.id,
+            photoUrl: post.photos[0]?.url ?? null,
+            caption: (post.caption ?? '').slice(0, 140),
+            authorUsername: post.author.username,
+          },
+          readBy: [a.uid],
+          isDeleted: false,
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+      await sharedSource.ref.update({ 'stats.shareCount': FieldValue.increment(1) });
+      console.warn('Created 1 shared look in a chat');
+    }
+  }
 
   // Reviews on the completed rental, both directions.
   const completed = (

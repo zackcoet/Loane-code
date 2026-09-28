@@ -782,6 +782,41 @@ describe('conversations', () => {
     );
   });
 
+  it('refuses a shared look written by the app', async () => {
+    // sharePost writes these, because it moves the post's share count
+    // and the snapshot has to be the real post. The app writing one
+    // directly would be a bubble nobody counted.
+    await assertFails(
+      setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm-share'), {
+        conversationId: 'chat-1',
+        senderUid: ELLA,
+        body: 'look at this',
+        readBy: [ELLA],
+        isDeleted: false,
+        sharedPost: {
+          postId: 'post-1',
+          photoUrl: null,
+          caption: 'forged',
+          authorUsername: 'someone',
+        },
+      }),
+    );
+  });
+
+  it('still allows an ordinary message that says sharedPost is null', async () => {
+    await assertSucceeds(
+      setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm-plain'), {
+        conversationId: 'chat-1',
+        senderUid: ELLA,
+        body: 'hello',
+        readBy: [ELLA],
+        isDeleted: false,
+        photo: null,
+        sharedPost: null,
+      }),
+    );
+  });
+
   it('stops an outsider posting into the thread', async () => {
     await assertFails(
       setDoc(
@@ -1038,5 +1073,118 @@ describe('moderation', () => {
 describe('usernames', () => {
   it('cannot be claimed directly — only inside the signup transaction', async () => {
     await assertFails(setDoc(doc(asElla(), 'usernames', 'stolen'), { username: 'stolen', uid: ELLA }));
+  });
+});
+
+describe('comments', () => {
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'posts', 'post-c'), postDoc(ELLA));
+      await setDoc(doc(db, 'comments', 'comment-1'), {
+        id: 'comment-1',
+        campusId: CAMPUS,
+        postId: 'post-c',
+        authorUid: MADDIE,
+        author: { uid: MADDIE, username: 'maddie', displayName: 'Maddie', photoUrl: null },
+        body: 'obsessed with this',
+        status: 'active',
+        suspendedReason: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    });
+  });
+
+  it('is readable by any signed-in student', async () => {
+    await assertSucceeds(getDoc(doc(asElla(), 'comments', 'comment-1')));
+  });
+
+  it('is not readable by someone signed out', async () => {
+    await assertFails(getDoc(doc(asStranger(), 'comments', 'comment-1')));
+  });
+
+  it('refuses a comment written straight from the app', async () => {
+    // addComment writes these, because the count under the post has to
+    // move with the comment.
+    await assertFails(
+      setDoc(doc(asMaddie(), 'comments', 'comment-2'), {
+        id: 'comment-2',
+        campusId: CAMPUS,
+        postId: 'post-c',
+        authorUid: MADDIE,
+        author: { uid: MADDIE, username: 'maddie', displayName: 'Maddie', photoUrl: null },
+        body: 'straight from the phone',
+        status: 'active',
+        suspendedReason: null,
+      }),
+    );
+  });
+
+  it('refuses a comment signed with somebody else\'s name', async () => {
+    await assertFails(
+      setDoc(doc(asMaddie(), 'comments', 'comment-3'), {
+        id: 'comment-3',
+        campusId: CAMPUS,
+        postId: 'post-c',
+        authorUid: ELLA,
+        author: { uid: ELLA, username: 'ella', displayName: 'Ella', photoUrl: null },
+        body: 'forged',
+        status: 'active',
+        suspendedReason: null,
+      }),
+    );
+  });
+
+  it('stops her deleting her own comment directly', async () => {
+    // Soft-deleting has to hand back the count, so it goes through
+    // deleteComment rather than a write from here.
+    await assertFails(updateDoc(doc(asMaddie(), 'comments', 'comment-1'), { status: 'removed' }));
+  });
+
+  it('stops the post author quietly editing what somebody said', async () => {
+    await assertFails(
+      updateDoc(doc(asElla(), 'comments', 'comment-1'), { body: 'something else entirely' }),
+    );
+  });
+
+  it('stops even an admin writing one by hand', async () => {
+    // hideComment writes the audit row in the same batch. A hand write
+    // would change the comment with no record of who did it.
+    await assertFails(
+      updateDoc(doc(asAdmin(), 'comments', 'comment-1'), { status: 'suspended' }),
+    );
+  });
+});
+
+describe('post counters', () => {
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'posts', 'post-s'), postDoc(ELLA));
+    });
+  });
+
+  it('stops her inflating her own comment count', async () => {
+    await assertFails(
+      updateDoc(doc(asElla(), 'posts', 'post-s'), { 'stats.commentCount': 99 }),
+    );
+  });
+
+  it('stops her inflating her own share count', async () => {
+    await assertFails(updateDoc(doc(asElla(), 'posts', 'post-s'), { 'stats.shareCount': 99 }));
+  });
+
+  it('stops her putting a made-up name on the "liked by" line', async () => {
+    await assertFails(
+      updateDoc(doc(asElla(), 'posts', 'post-s'), {
+        lastLiker: { uid: MADDIE, username: 'maddie', displayName: 'Maddie', photoUrl: null },
+      }),
+    );
+  });
+
+  it('still lets her fix her own caption', async () => {
+    await assertSucceeds(
+      updateDoc(doc(asElla(), 'posts', 'post-s'), { caption: 'formal szn', updatedAt: new Date() }),
+    );
   });
 });
