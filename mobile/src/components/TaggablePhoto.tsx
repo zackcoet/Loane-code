@@ -69,12 +69,21 @@ export function TaggablePhoto({
   zoomable = false,
   aspectRatio = 0.8,
 }: Props) {
-  // A ref, not a local: the old code kept this in a `let` that was
-  // recreated on every render, so the measurement was thrown away each
-  // time and only survived by luck of ordering.
-  const layout = useRef({ width: 0, height: 0 });
+  // SHARED VALUES, not a ref. The gesture callbacks below are turned
+  // into worklets by the reanimated babel plugin, and a worklet cannot
+  // close over a React ref object — reading one throws "Property
+  // 'layout' doesn't exist" the moment you tap a photo. Shared values
+  // are the thing worklets are allowed to see, and they are writable
+  // from the JS thread, so onLayout can still fill them.
+  //
+  // (Before the ref it was a plain `let`, recreated on every render, so
+  // the measurement was thrown away each time. Both were wrong in
+  // different ways.)
+  const photoWidth = useSharedValue(0);
+  const photoHeight = useSharedValue(0);
   const onLayout = (event: LayoutChangeEvent) => {
-    layout.current = event.nativeEvent.layout;
+    photoWidth.value = event.nativeEvent.layout.width;
+    photoHeight.value = event.nativeEvent.layout.height;
   };
 
   // Single tap shows the tags, double tap likes, two fingers zoom.
@@ -122,8 +131,8 @@ export function TaggablePhoto({
       }
       if (!onPlaceTag) return;
       // Clamp, so a tap right on the edge still lands inside the photo.
-      const x = Math.min(1, Math.max(0, event.x / Math.max(1, layout.current.width)));
-      const y = Math.min(1, Math.max(0, event.y / Math.max(1, layout.current.height)));
+      const x = Math.min(1, Math.max(0, event.x / Math.max(1, photoWidth.value)));
+      const y = Math.min(1, Math.max(0, event.y / Math.max(1, photoHeight.value)));
       onPlaceTag(x, y);
     });
 
