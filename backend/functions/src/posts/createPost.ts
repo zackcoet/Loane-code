@@ -166,7 +166,15 @@ export const createPost = onCall<CreatePostInput, Promise<CreatePostResult>>(
       taggedListingIds: uniqueIds,
       circleId: null,
       status: 'active',
-      stats: { likeCount: 0, saveCount: 0, viewCount: 0, tagTapCount: 0 },
+      stats: {
+        likeCount: 0,
+        saveCount: 0,
+        viewCount: 0,
+        tagTapCount: 0,
+        commentCount: 0,
+        shareCount: 0,
+      },
+      lastLiker: null,
       suspendedReason: null,
       removedAt: null,
     };

@@ -112,3 +112,55 @@ export function formatShortDate(value: IsoDate): string {
 export function formatRange(range: DateRange): string {
   return `${formatShortDate(range.startDate)} – ${formatShortDate(range.endDate)}`;
 }
+
+/**
+ * "just now", "2h", "3 days ago" — how long since something happened.
+ *
+ * Deliberately coarse. Nobody reading a feed cares whether a post is 47
+ * or 52 minutes old, and a precise number invites her to keep checking.
+ *
+ * Accepts anything a Firestore timestamp turns into: a Date, a number of
+ * milliseconds, or an object with `toDate()`. Returns an empty string for
+ * anything it cannot read, because a missing timestamp should show
+ * nothing rather than "NaN days ago".
+ */
+export function timeAgo(value: unknown, nowMs: number = Date.now()): string {
+  const ms = toMillis(value);
+  if (ms == null) return '';
+
+  // A clock skew of a few seconds between the phone and the server can
+  // put a brand new post in the future. Treat that as "just now".
+  const seconds = Math.max(0, Math.round((nowMs - ms) / 1000));
+  if (seconds < 60) return 'just now';
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return days === 1 ? '1 day ago' : `${days} days ago`;
+
+  const weeks = Math.floor(days / 7);
+  if (weeks < 5) return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return months === 1 ? '1 month ago' : `${months} months ago`;
+
+  const years = Math.floor(days / 365);
+  return years === 1 ? '1 year ago' : `${years} years ago`;
+}
+
+function toMillis(value: unknown): number | null {
+  if (value == null) return null;
+  if (value instanceof Date) return value.getTime();
+  if (typeof value === 'number') return value;
+  const maybe = value as { toDate?: () => Date; seconds?: number };
+  if (typeof maybe.toDate === 'function') {
+    const d = maybe.toDate();
+    return Number.isNaN(d.getTime()) ? null : d.getTime();
+  }
+  if (typeof maybe.seconds === 'number') return maybe.seconds * 1000;
+  return null;
+}

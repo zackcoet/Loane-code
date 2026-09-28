@@ -18,12 +18,14 @@ import { PostCard } from '../../src/components/PostCard';
 import { Screen } from '../../src/components/Screen';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { db } from '../../src/firebase/config';
+import { useOpenChat } from '../../src/hooks/useOpenChat';
 import { logEvent } from '../../src/analytics/events';
 
 export default function PostScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
+  const chat = useOpenChat();
 
   const [post, setPost] = useState<Post | null>(null);
   const [loading, setLoading] = useState(true);
@@ -74,6 +76,17 @@ export default function PostScreen() {
               router.push({ pathname: '/listing/[id]', params: { id: listingId } });
             }}
             onPressAuthor={(username) => router.push(`/u/${username}`)}
+            onPressComments={() =>
+              router.push({
+                pathname: '/comments',
+                params: { postId: post.id, postAuthorUid: post.authorUid },
+              })
+            }
+            onPressSend={() =>
+              router.push({ pathname: '/send-post', params: { postId: post.id } })
+            }
+            onMessageSeller={(ownerUid, listingId) => void chat.open(ownerUid, { listingId })}
+            isMine={post.authorUid === profile?.uid}
             onEdit={
               post.authorUid === profile?.uid
                 ? () => router.push({ pathname: '/edit-post', params: { id: post.id } })

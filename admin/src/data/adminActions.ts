@@ -28,6 +28,10 @@ export const hideListing = call<{ id: string; reason: string }, { ok: true }>('h
 export const restoreListing = call<{ id: string; reason: string }, { ok: true }>('restoreListing');
 export const hidePost = call<{ id: string; reason: string }, { ok: true }>('hidePost');
 export const restorePost = call<{ id: string; reason: string }, { ok: true }>('restorePost');
+export const hideComment = call<{ id: string; reason: string }, { ok: true }>('hideComment');
+export const restoreComment = call<{ id: string; reason: string }, { ok: true }>(
+  'restoreComment',
+);
 export const hideReview = call<{ id: string; reason: string }, { ok: true }>('hideReview');
 
 export const resolveReport = call<

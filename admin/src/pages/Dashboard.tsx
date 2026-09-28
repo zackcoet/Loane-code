@@ -10,6 +10,7 @@ import { ClaimsPage } from './ClaimsPage';
 import { FoundingClosetsPage } from './FoundingClosetsPage';
 import { ListingsPage } from './ListingsPage';
 import { OverviewPage } from './OverviewPage';
+import { CommentsPage } from './CommentsPage';
 import { PostsPage } from './PostsPage';
 import { RentalsPage } from './RentalsPage';
 import { ReportsPage } from './ReportsPage';
@@ -112,6 +113,7 @@ function CurrentPage({
   if (page === 'rentals') return <RentalsPage data={data} campusId={campusId} />;
   if (page === 'listings') return <ListingsPage data={data} campusId={campusId} />;
   if (page === 'posts') return <PostsPage data={data} campusId={campusId} />;
+  if (page === 'comments') return <CommentsPage data={data} campusId={campusId} />;
   if (page === 'reports') return <ReportsPage data={data} campusId={campusId} />;
   if (page === 'claims') return <ClaimsPage data={data} campusId={campusId} />;
   if (page === 'campuses') return <CampusesPage campuses={data.campuses} />;

@@ -107,6 +107,10 @@ function RootNavigator() {
       <Stack.Screen name="chat/[id]" options={{ presentation: 'card' }} />
       <Stack.Screen name="blocked-users" options={{ presentation: 'card' }} />
       <Stack.Screen name="liked" options={{ presentation: 'card' }} />
+      {/* Both slide up from the bottom: they belong to the post you are
+          looking at rather than being somewhere you navigated to. */}
+      <Stack.Screen name="comments" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="send-post" options={{ presentation: 'modal' }} />
       <Stack.Screen name="recently-rented" options={{ presentation: 'card' }} />
       <Stack.Screen name="edit-listing" options={{ presentation: 'card' }} />
       <Stack.Screen name="listing/[id]" options={{ presentation: 'card' }} />

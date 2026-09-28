@@ -35,13 +35,18 @@ interface BlockInput {
   uid: string;
 }
 
-/** Throws if either person has blocked the other. */
-export async function assertNotBlocked(a: string, b: string): Promise<void> {
+/** Has either person blocked the other? */
+export async function isBlockedEitherWay(a: string, b: string): Promise<boolean> {
   const [aBlockedB, bBlockedA] = await Promise.all([
     db().collection(COLLECTIONS.users).doc(a).collection('blocked').doc(b).get(),
     db().collection(COLLECTIONS.users).doc(b).collection('blocked').doc(a).get(),
   ]);
-  if (aBlockedB.exists || bBlockedA.exists) {
+  return aBlockedB.exists || bBlockedA.exists;
+}
+
+/** Throws if either person has blocked the other. */
+export async function assertNotBlocked(a: string, b: string): Promise<void> {
+  if (await isBlockedEitherWay(a, b)) {
     // Deliberately vague. Telling one side "she blocked you" turns a
     // quiet boundary into a confrontation.
     throw failed('That is not available.');

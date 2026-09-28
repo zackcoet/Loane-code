@@ -42,6 +42,25 @@ async function setEdge(
     const post = postSnap.data() as Post;
     const counter = kind === 'like' ? 'stats.likeCount' : 'stats.saveCount';
 
+    // "Liked by Harper and others" — written here so the feed does not
+    // pay a likes query and a profile read per post just to show a name.
+    const likerPatch: Record<string, unknown> = {};
+    if (kind === 'like') {
+      if (on) {
+        likerPatch.lastLiker = {
+          uid: user.uid,
+          username: user.username,
+          displayName: user.displayName,
+          photoUrl: user.photoUrl,
+          campusId: user.campusId,
+          isVerified: user.isVerified,
+        };
+      } else if (post.lastLiker?.uid === user.uid) {
+        // We do not know who liked it before her, so show the count alone.
+        likerPatch.lastLiker = null;
+      }
+    }
+
     if (on) {
       if (kind === 'like') {
         const like: Like = {
@@ -63,10 +82,10 @@ async function setEdge(
         };
         tx.set(edgeRef, save);
       }
-      tx.update(postRef, { [counter]: FieldValue.increment(1) });
+      tx.update(postRef, { [counter]: FieldValue.increment(1), ...likerPatch });
     } else {
       tx.delete(edgeRef);
-      tx.update(postRef, { [counter]: FieldValue.increment(-1) });
+      tx.update(postRef, { [counter]: FieldValue.increment(-1), ...likerPatch });
     }
   });
 

@@ -134,7 +134,9 @@ export default function Chat() {
             keyExtractor={(m) => m.id}
             inverted
             contentContainerStyle={styles.list}
-            renderItem={({ item }) => <Bubble message={item} mine={item.senderUid === profile?.uid} />}
+            renderItem={({ item }) => (
+              <Bubble message={item} mine={item.senderUid === profile?.uid} router={router} />
+            )}
           />
         )}
 
@@ -176,10 +178,61 @@ export default function Chat() {
   );
 }
 
-function Bubble({ message, mine }: { message: Message; mine: boolean }) {
+function Bubble({
+  message,
+  mine,
+  router,
+}: {
+  message: Message;
+  mine: boolean;
+  router: ReturnType<typeof useRouter>;
+}) {
   return (
     <View style={[styles.bubbleRow, mine ? styles.rowMine : styles.rowTheirs]}>
       <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
+        {/* A look somebody sent. The snapshot is what renders; tapping
+            opens the live post, which is where the truth is. */}
+        {message.sharedPost ? (
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: '/post/[id]',
+                params: { id: message.sharedPost!.postId },
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel={`Open @${message.sharedPost.authorUsername}'s look`}
+            style={styles.sharedPost}
+          >
+            {message.sharedPost.photoUrl ? (
+              <Image
+                source={{ uri: message.sharedPost.photoUrl }}
+                style={styles.sharedPhoto}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.sharedPhoto} />
+            )}
+            <View style={styles.sharedText}>
+              <Text variant="caption" tone={mine ? 'inverse' : 'muted'}>
+                @{message.sharedPost.authorUsername}
+              </Text>
+              {message.sharedPost.caption ? (
+                <Text
+                  variant="bodySmall"
+                  tone={mine ? 'inverse' : 'primary'}
+                  numberOfLines={2}
+                >
+                  {message.sharedPost.caption}
+                </Text>
+              ) : (
+                <Text variant="bodySmall" tone={mine ? 'inverse' : 'primary'}>
+                  Shared a look
+                </Text>
+              )}
+            </View>
+          </Pressable>
+        ) : null}
         {message.photo ? (
           <Image
             source={{ uri: message.photo.url }}
@@ -191,7 +244,7 @@ function Bubble({ message, mine }: { message: Message; mine: boolean }) {
           <Text
             variant="bodySmall"
             tone={mine ? 'inverse' : 'primary'}
-            style={message.photo ? styles.captionUnderPhoto : undefined}
+            style={message.photo || message.sharedPost ? styles.captionUnderPhoto : undefined}
           >
             {message.body}
           </Text>
@@ -259,4 +312,12 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface.muted,
   },
   captionUnderPhoto: { marginTop: spacing.sm },
+  sharedPost: {
+    width: 220,
+    borderRadius: radius.sm,
+    overflow: 'hidden',
+    backgroundColor: color.surface.muted,
+  },
+  sharedPhoto: { width: 220, height: 220, backgroundColor: color.surface.muted },
+  sharedText: { padding: spacing.sm, gap: 2 },
 });

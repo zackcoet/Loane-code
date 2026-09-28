@@ -39,6 +39,21 @@ export interface Message extends BaseDoc {
    * already like this" — both of which are pictures, not sentences.
    */
   photo: ImageRef | null;
+
+  /**
+   * A look sent into the chat.
+   *
+   * Stored as a snapshot rather than just a post id so the bubble
+   * renders immediately, and so a shared look does not turn into a
+   * blank card if the post is later taken down. Tapping it opens the
+   * live post, which is where the truth is.
+   */
+  sharedPost: {
+    postId: string;
+    photoUrl: string | null;
+    caption: string;
+    authorUsername: string;
+  } | null;
   readBy: string[];
   /** Soft delete so moderation can still see it. */
   isDeleted: boolean;

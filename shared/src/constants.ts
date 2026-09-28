@@ -311,7 +311,15 @@ export type VerificationMethod = (typeof VERIFICATION_METHODS)[number];
 // Moderation
 // ---------------------------------------------------------------------------
 
-export const REPORT_TARGET_TYPES = ['user', 'listing', 'post', 'booking', 'message'] as const;
+export const REPORT_TARGET_TYPES = [
+  'user',
+  'listing',
+  'post',
+  'booking',
+  'message',
+  'comment',
+  'review',
+] as const;
 export type ReportTargetType = (typeof REPORT_TARGET_TYPES)[number];
 
 export const REPORT_REASONS = [
@@ -438,6 +446,9 @@ export const EVENT_TYPES = [
   'rental_returned',
   'rental_disputed',
   'message_sent',
+  'comment_created',
+  'comment_deleted',
+  'post_shared',
   'review_written',
   'report_submitted',
   'user_blocked',
@@ -476,6 +487,7 @@ export const LIMITS = {
   brand: { max: 60 },
   postCaption: { max: 1000 },
   messageBody: { max: 2000 },
+  commentBody: { min: 1, max: 500 },
   reportDetails: { max: 1000 },
   /** Photos per listing / per post. */
   listingPhotos: { min: 1, max: 8 },
@@ -491,6 +503,8 @@ export const LIMITS = {
   garmentValue: { minCents: 1_000, maxCents: 500_000 },
   /** How far ahead a rental may be booked. */
   bookingHorizonDays: 180,
+  /** People you can send one look to at a time. */
+  sharePostRecipients: { max: 10 },
 } as const;
 
 /** Usernames that belong to Loane or would be confusing. */

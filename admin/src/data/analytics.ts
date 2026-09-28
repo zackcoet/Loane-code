@@ -17,6 +17,7 @@ export function scopeData(data: AdminData, campusId: string): AdminData {
     campuses: data.campuses.filter((item) => campusId === 'all' || item.id === campusId),
     listings: data.listings.filter((item) => matchesCampus(item, campusId)),
     posts: data.posts.filter((item) => matchesCampus(item, campusId)),
+    comments: data.comments.filter((item) => matchesCampus(item, campusId)),
     bookings: data.bookings.filter((item) => matchesCampus(item, campusId)),
     reports: data.reports.filter((item) => matchesCampus(item, campusId)),
     damageClaims: data.damageClaims.filter((item) => matchesCampus(item, campusId)),

@@ -26,6 +26,7 @@ import { Text } from '../../src/components/Text';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { usePagedPosts } from '../../src/hooks/usePagedPosts';
 import { useFollowingUids } from '../../src/hooks/useFollowing';
+import { useOpenChat } from '../../src/hooks/useOpenChat';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
 import { logEvent } from '../../src/analytics/events';
 
@@ -35,6 +36,7 @@ export default function Feed() {
   const { posts, loading, loadingMore, error, exhausted, refresh, loadMore } = usePagedPosts();
   const { uids: followingUids } = useFollowingUids();
   const hidden = useHiddenUids();
+  const chat = useOpenChat();
   const [tab, setTab] = useState<'campus' | 'following'>('campus');
 
   const visible = useMemo(() => {
@@ -140,6 +142,17 @@ export default function Feed() {
               post={item}
               onPressTag={(listingId) => onPressTag(listingId, item.id)}
               onPressAuthor={(username) => router.push(`/u/${username}`)}
+              onPressComments={() =>
+                router.push({
+                  pathname: '/comments',
+                  params: { postId: item.id, postAuthorUid: item.authorUid },
+                })
+              }
+              onPressSend={() =>
+                router.push({ pathname: '/send-post', params: { postId: item.id } })
+              }
+              onMessageSeller={(ownerUid, listingId) => void chat.open(ownerUid, { listingId })}
+              isMine={item.authorUid === profile?.uid}
               onEdit={
                 item.authorUid === profile?.uid
                   ? () => router.push({ pathname: '/edit-post', params: { id: item.id } })

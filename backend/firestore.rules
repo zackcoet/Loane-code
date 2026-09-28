@@ -292,6 +292,26 @@ service cloud.firestore {
     }
 
     // -----------------------------------------------------------------
+    // comments — what people say under a look
+    //
+    // Readable by any signed-in student; the app filters out the ones
+    // whose status is not 'active'. Hiding them in rules instead would
+    // mean the author of a removed comment could not see it was gone,
+    // and it would cost a query filter on every read for no real gain
+    // — a removed comment is untidy, not secret.
+    //
+    // WRITTEN ONLY BY FUNCTIONS. Two reasons, both of which rules
+    // cannot cover: the count under the post has to move with the
+    // comment, and the name and photo stamped on it have to really be
+    // hers. If the app could write those, anyone could post a comment
+    // signed by somebody else.
+    // -----------------------------------------------------------------
+    match /comments/{commentId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // -----------------------------------------------------------------
     // Social edges — follows, likes, saves
     //
     // All written by Cloud Functions so the counters they drive stay
@@ -382,10 +402,16 @@ service cloud.firestore {
 
         allow read: if inThread() || isAdmin();
 
+        // A shared look is written by the sharePost function, never by
+        // the app: it moves the post's share count and the snapshot in
+        // the bubble has to be the real post. So an app-written message
+        // must carry sharedPost == null.
         allow create: if inThread()
           && isVerifiedStudent()
           && request.resource.data.senderUid == uid()
-          && request.resource.data.isDeleted == false;
+          && request.resource.data.isDeleted == false
+          && (!('sharedPost' in request.resource.data)
+              || request.resource.data.sharedPost == null);
 
         // She may mark a message read; she may not edit what was said.
         allow update: if inThread() && onlyChanges(['readBy', 'updatedAt']);

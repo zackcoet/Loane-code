@@ -4,6 +4,7 @@ import {
   type AppEvent,
   type Booking,
   type Campus,
+  type Comment,
   type DamageClaim,
   type Listing,
   type Post,
@@ -19,6 +20,7 @@ export interface AdminData {
   campuses: Campus[];
   listings: Listing[];
   posts: Post[];
+  comments: Comment[];
   bookings: Booking[];
   reports: Report[];
   damageClaims: DamageClaim[];
@@ -31,6 +33,7 @@ const COLLECTION_LIMITS = {
   campuses: 50,
   listings: 250,
   posts: 250,
+  comments: 250,
   bookings: 250,
   reports: 100,
   damageClaims: 100,
@@ -55,6 +58,7 @@ export async function loadAdminData(): Promise<AdminData> {
     campuses,
     listings,
     posts,
+    comments,
     bookings,
     reports,
     damageClaims,
@@ -65,6 +69,7 @@ export async function loadAdminData(): Promise<AdminData> {
     getCollection<Campus>(COLLECTIONS.campuses, COLLECTION_LIMITS.campuses, false),
     getCollection<Listing>(COLLECTIONS.listings, COLLECTION_LIMITS.listings, true),
     getCollection<Post>(COLLECTIONS.posts, COLLECTION_LIMITS.posts, true),
+    getCollection<Comment>(COLLECTIONS.comments, COLLECTION_LIMITS.comments, true),
     getCollection<Booking>(COLLECTIONS.bookings, COLLECTION_LIMITS.bookings, true),
     getCollection<Report>(COLLECTIONS.reports, COLLECTION_LIMITS.reports, true),
     getCollection<DamageClaim>(COLLECTIONS.damageClaims, COLLECTION_LIMITS.damageClaims, true),
@@ -72,7 +77,18 @@ export async function loadAdminData(): Promise<AdminData> {
     getCollection<AppEvent>(COLLECTIONS.events, COLLECTION_LIMITS.events, true),
   ]);
 
-  return { users, campuses, listings, posts, bookings, reports, damageClaims, adminActions, events };
+  return {
+    users,
+    campuses,
+    listings,
+    posts,
+    comments,
+    bookings,
+    reports,
+    damageClaims,
+    adminActions,
+    events,
+  };
 }
 
 async function getCollection<T>(

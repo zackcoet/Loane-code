@@ -1,7 +1,7 @@
 import { onCall } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
-import { COLLECTIONS, type Listing, type Post } from '@loane/shared';
-import { db, now } from '../lib/admin';
+import { COLLECTIONS, type Comment, type Listing, type Post } from '@loane/shared';
+import { db, now, FieldValue } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { logAdminAction, requireAdminContext, requireReason } from './audit';
 import { notify } from '../bookings/transitions';
@@ -124,4 +124,81 @@ export const hideReview = onCall<HideInput, Promise<{ ok: true }>>(
     // rating is its own surprise. Revisit if it comes up.
     return { ok: true };
   },
+);
+
+/**
+ * Taking a comment down, and putting it back.
+ *
+ * Separate from `hidePost` because a comment carries no tag counts and
+ * its own count sits on someone else's post, so hiding one has to move
+ * that post's `commentCount` as well. Same `suspended` vs `removed`
+ * split as everywhere else: `removed` is what she chose, `suspended` is
+ * what we did, and she cannot undo ours.
+ */
+async function moderateComment(
+  request: Parameters<typeof requireAdminContext>[0],
+  hide: boolean,
+): Promise<{ ok: true }> {
+  const admin = requireAdminContext(request);
+  const data = (request.data ?? {}) as HideInput;
+  if (!data.id) throw invalidArgument('Which comment?');
+
+  const reason = requireReason(
+    data.reason,
+    hide ? 'Say why it is coming down.' : 'Say why it is going back up.',
+  );
+
+  const ref = db().collection(COLLECTIONS.comments).doc(data.id);
+  const snap = await ref.get();
+  if (!snap.exists) throw notFound('We could not find that comment.');
+
+  const comment = snap.data() as Comment;
+  if (hide && comment.status !== 'active') throw failed('It is already down.');
+  if (!hide && comment.status !== 'suspended') throw failed('It is not suspended.');
+
+  const batch = db().batch();
+  batch.update(ref, {
+    status: hide ? 'suspended' : 'active',
+    suspendedReason: hide ? reason : null,
+    updatedAt: now(),
+  });
+
+  // The count under the post has to follow the comment either way.
+  const postRef = db().collection(COLLECTIONS.posts).doc(comment.postId);
+  if ((await postRef.get()).exists) {
+    batch.update(postRef, {
+      'stats.commentCount': FieldValue.increment(hide ? -1 : 1),
+      updatedAt: now(),
+    });
+  }
+
+  notify(batch, {
+    uid: comment.authorUid,
+    type: 'admin_notice',
+    title: hide ? 'Your comment was taken down' : 'Your comment is back up',
+    body: hide ? reason : 'It is visible again.',
+    bookingId: '',
+  });
+  logAdminAction(batch, {
+    admin,
+    action: hide ? 'hide_comment' : 'restore_comment',
+    targetType: 'comment',
+    targetId: data.id,
+    notes: reason,
+    before: { status: comment.status },
+    after: { status: hide ? 'suspended' : 'active' },
+  });
+  await batch.commit();
+
+  logger.info(`comment ${hide ? 'hidden' : 'restored'}`, { id: data.id, by: admin.uid });
+  return { ok: true };
+}
+
+export const hideComment = onCall<HideInput, Promise<{ ok: true }>>(
+  { region: 'us-central1' },
+  (r) => moderateComment(r, true),
+);
+export const restoreComment = onCall<HideInput, Promise<{ ok: true }>>(
+  { region: 'us-central1' },
+  (r) => moderateComment(r, false),
 );

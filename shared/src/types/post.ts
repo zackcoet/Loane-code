@@ -104,7 +104,23 @@ export interface Post extends BaseDoc, CampusScoped {
     viewCount: number;
     /** Taps from this post through to a tagged listing. The key MVP metric. */
     tagTapCount: number;
+    commentCount: number;
+    /** Times this look was sent to someone in a chat. */
+    shareCount: number;
   };
+
+  /**
+   * The last person to like this look, for the "Liked by ... " line.
+   *
+   * Stored on the post rather than looked up, because otherwise every
+   * post scrolling past the feed costs a likes query plus a profile
+   * read just to print one name.
+   *
+   * Cleared when that same person un-likes: we do not know who liked it
+   * before her, and showing the count alone is better than showing a
+   * name belonging to somebody who took their like back.
+   */
+  lastLiker: UserSummary | null;
 
   suspendedReason: string | null;
   removedAt: Timestampish | null;
@@ -172,4 +188,26 @@ export interface CircleMember {
   uid: string;
   role: 'owner' | 'member';
   joinedAt: Timestampish;
+}
+
+/**
+ * `comments/{commentId}`
+ *
+ * A comment on a look.
+ *
+ * Top-level rather than nested under the post, because the admin tools
+ * need to sweep every comment on the platform and a collection-group
+ * query needs an index of its own where a plain collection does not.
+ *
+ * Soft-deleted like everything else: `removed` is what she chose,
+ * `suspended` is what an admin did, and the row survives either way.
+ */
+export interface Comment extends BaseDoc, CampusScoped {
+  postId: string;
+  authorUid: string;
+  author: UserSummary;
+  body: string;
+  status: 'active' | 'removed' | 'suspended';
+  /** Set when an admin takes it down. */
+  suspendedReason: string | null;
 }

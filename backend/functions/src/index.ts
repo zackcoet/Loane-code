@@ -27,13 +27,15 @@
  *   - cancelBooking      either side, before the garment changes hands
  *   - setBlockedDates    the lender's own unavailable days
  *   - openConversation   the one thread between two students
+ *   - sharePost          sends a look into one or more chats
+ *   - addComment / deleteComment   comments on a look, and taking one down
  *   - writeReview        only from someone who actually rented with you
  *   - submitReport       flags a user, listing, post or rental for admins
  *   - blockUser          refuses messaging, renting and following both ways
  *
  * Admin only, every one of which writes an audit row in the same commit:
  *   - suspendUser / unsuspendUser / addAdminNote
- *   - hideListing / hidePost / hideReview and their restores
+ *   - hideListing / hidePost / hideReview / hideComment and their restores
  *   - resolveReport      can hide content and suspend in the same call
  *   - resolveDispute     decides a flagged return
  *
@@ -82,6 +84,8 @@ export {
 } from './bookings/lifecycle';
 export { sweepBookings, runBookingSweep } from './bookings/sweep';
 export { openConversation } from './messaging/openConversation';
+export { sharePost } from './messaging/sharePost';
+export { addComment, deleteComment } from './posts/comments';
 export { writeReview, editReview } from './reviews/writeReview';
 export { submitReport } from './moderation/report';
 export { blockUser, unblockUser } from './moderation/block';
@@ -92,6 +96,8 @@ export {
   hidePost,
   restorePost,
   hideReview,
+  hideComment,
+  restoreComment,
 } from './admin/moderateContent';
 export { resolveReport } from './admin/resolveReport';
 export { resolveDispute } from './admin/resolveDispute';

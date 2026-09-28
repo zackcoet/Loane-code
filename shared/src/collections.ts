@@ -14,6 +14,7 @@ export const COLLECTIONS = {
   follows: 'follows',
   likes: 'likes',
   postSaves: 'postSaves',
+  comments: 'comments',
   saves: 'saves',
   bookings: 'bookings',
   reviews: 'reviews',

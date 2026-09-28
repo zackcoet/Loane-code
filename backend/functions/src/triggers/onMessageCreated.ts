@@ -33,7 +33,15 @@ export const onMessageCreated = onDocumentCreated(
 
     const patch: Record<string, unknown> = {
       lastMessage: {
-        body: message.body.slice(0, 140),
+        // A photo or a shared look with no words still needs a preview,
+        // or the inbox row reads as an empty message.
+        body: message.body
+          ? message.body.slice(0, 140)
+          : message.sharedPost
+            ? 'Sent a look'
+            : message.photo
+              ? 'Sent a photo'
+              : '',
         senderUid: message.senderUid,
         sentAt: now(),
       },

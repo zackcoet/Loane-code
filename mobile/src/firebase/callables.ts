@@ -155,7 +155,7 @@ export const editReview = httpsCallable<
 
 export const submitReport = httpsCallable<
   {
-    targetType: 'user' | 'listing' | 'post' | 'booking' | 'message';
+    targetType: 'user' | 'listing' | 'post' | 'booking' | 'message' | 'comment' | 'review';
     targetId: string;
     targetUid?: string;
     reason: string;
@@ -171,3 +171,25 @@ export const requestBooking = httpsCallable<
   { listingId: string; startDate: string; endDate: string; message?: string },
   { bookingId: string; status: string }
 >(functions, 'requestBooking');
+
+/**
+ * Comments on a look.
+ *
+ * Functions rather than direct writes because the count under the post
+ * has to move with the comment, and the name on it has to really be
+ * hers.
+ */
+export const addComment = httpsCallable<{ postId: string; body: string }, { commentId: string }>(
+  functions,
+  'addComment',
+);
+export const deleteComment = httpsCallable<{ commentId: string }, { ok: true }>(
+  functions,
+  'deleteComment',
+);
+
+/** Sends a look into one or more chats. */
+export const sharePost = httpsCallable<
+  { postId: string; toUids: string[]; note?: string },
+  { sentTo: number; conversationId: string | null }
+>(functions, 'sharePost');
