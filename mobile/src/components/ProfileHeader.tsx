@@ -1,42 +1,69 @@
 /**
- * The top of a profile: photo, handle, campus, rating, bio, sizing and the
- * four stats. Shared by "my profile" and another student's profile so the
- * two can never drift apart — only the buttons underneath differ.
+ * The top of a profile — a shop window, not a social profile.
+ *
+ * Loane is a rental app, so what matters here is what she has, what it
+ * costs and how to ask for it. That is why the four big stat boxes are
+ * gone: "Items" and "Rentals" as numbers in a grid told you nothing you
+ * could act on, and they pushed the closet below the fold. What is left
+ * is her identity, her sizes, one line saying what renting from her
+ * costs, and the buttons to act.
+ *
+ * Followers and Following survive as small tappable counts on the right,
+ * the way Instagram does it — they are worth a number and not worth a
+ * quarter of the screen.
+ *
+ * Shared by "my profile" and another student's so the two can never
+ * drift apart. Only the buttons underneath differ.
  */
 
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import {
   SIZE_FIELDS,
   SIZE_FIELD_LABELS,
-  type User,
   color,
+  formatCentsShort,
   spacing,
-  type,
+  type User,
 } from '@loane/shared';
 import { Avatar } from './Avatar';
 import { StarRating } from './StarRating';
+import { Text } from './Text';
 import { useCampusName } from '../hooks/useCampus';
+import { useUserListings } from '../hooks/useProfile';
 
 interface Props {
   user: User;
   children?: React.ReactNode;
   onPressPhoto?: () => void;
+  onPressFollowers?: () => void;
+  onPressFollowing?: () => void;
+  /** Opens the reviews she has received. */
+  onPressRating?: () => void;
 }
 
-export function ProfileHeader({ user, children, onPressPhoto }: Props) {
+export function ProfileHeader({
+  user,
+  children,
+  onPressPhoto,
+  onPressFollowers,
+  onPressFollowing,
+  onPressRating,
+}: Props) {
   const { name: campusName, dotColor } = useCampusName(user.campusId);
-
-  const stats = [
-    { label: 'Followers', value: user.stats.followerCount },
-    { label: 'Following', value: user.stats.followingCount },
-    { label: 'Items', value: user.stats.listingCount },
-    { label: 'Rentals', value: user.stats.rentalsAsLender + user.stats.rentalsAsRenter },
-  ];
+  const { items: listings } = useUserListings(user.uid);
 
   const sizes = SIZE_FIELDS.map((field) => ({
     label: SIZE_FIELD_LABELS[field],
     value: user.sizes[field],
   })).filter((entry) => entry.value);
+
+  // "12 pieces · from $15 / 3 days" — the shop-window line. The cheapest
+  // way in is the number somebody actually decides on, and having it up
+  // here means she never has to scroll the grid to find the floor.
+  const rentPrices = listings
+    .map((listing) => listing.pricing?.threeDayCents)
+    .filter((cents): cents is number => typeof cents === 'number');
+  const cheapest = rentPrices.length > 0 ? Math.min(...rentPrices) : null;
 
   return (
     <View>
@@ -47,75 +74,150 @@ export function ProfileHeader({ user, children, onPressPhoto }: Props) {
             accessibilityRole="button"
             accessibilityLabel="Change profile photo"
           >
-            <Avatar url={user.photoUrl} name={user.displayName} size={84} />
+            <Avatar url={user.photoUrl} name={user.displayName} size={72} />
           </Pressable>
         ) : (
-          <Avatar url={user.photoUrl} name={user.displayName} size={84} />
+          <Avatar url={user.photoUrl} name={user.displayName} size={72} />
         )}
-        <View style={styles.identityText}>
-          <Text style={styles.displayName} numberOfLines={1}>
-            {user.displayName}
+
+        <View style={styles.counts}>
+          <Count
+            value={user.stats.followerCount}
+            label="Followers"
+            onPress={onPressFollowers}
+          />
+          <Count
+            value={user.stats.followingCount}
+            label="Following"
+            onPress={onPressFollowing}
+          />
+        </View>
+      </View>
+
+      <View style={styles.nameBlock}>
+        <Text variant="h3" numberOfLines={1}>
+          {user.displayName}
+        </Text>
+        <Text variant="bodySmall" tone="secondary">
+          @{user.username}
+        </Text>
+
+        <View style={styles.campusRow}>
+          <View style={[styles.campusDot, { backgroundColor: dotColor }]} />
+          <Text variant="bodySmall" tone="secondary" numberOfLines={1} style={styles.campus}>
+            {campusName}
           </Text>
-          <Text style={styles.handle}>@{user.username}</Text>
-          <View style={styles.campusRow}>
-            <View style={[styles.campusDot, { backgroundColor: dotColor }]} />
-            <Text style={styles.campus} numberOfLines={1}>
-              {campusName}
-            </Text>
-          </View>
+        </View>
+
+        {/* The rating is the way in to her reviews. Nothing else on a
+            profile is a more natural place to tap for them. */}
+        <Pressable
+          onPress={onPressRating}
+          disabled={!onPressRating}
+          accessibilityRole={onPressRating ? 'button' : undefined}
+          accessibilityLabel={
+            user.stats.ratingCount > 0
+              ? `See all ${user.stats.ratingCount} reviews`
+              : undefined
+          }
+          style={styles.rating}
+        >
           <StarRating
             average={user.stats.ratingAverage}
             count={user.stats.ratingCount}
             emptyLabel="No reviews yet"
           />
-        </View>
-      </View>
+        </Pressable>
 
-      {user.bio ? <Text style={styles.bio}>{user.bio}</Text> : null}
+        {user.bio ? (
+          <Text variant="body" style={styles.bio}>
+            {user.bio}
+          </Text>
+        ) : null}
+      </View>
 
       {sizes.length > 0 ? (
         <View style={styles.sizeRow}>
           {sizes.map((entry) => (
             <View key={entry.label} style={styles.sizePill}>
-              <Text style={styles.sizeLabel}>{entry.label}</Text>
-              <Text style={styles.sizeValue}>{entry.value}</Text>
+              <Text variant="caption" tone="muted">
+                {entry.label}
+              </Text>
+              <Text variant="bodySmall" style={styles.sizeValue}>
+                {entry.value}
+              </Text>
             </View>
           ))}
         </View>
       ) : null}
 
-      <View style={styles.statsRow}>
-        {stats.map((stat, index) => (
-          <View
-            key={stat.label}
-            style={[styles.stat, index === stats.length - 1 && styles.statLast]}
-          >
-            <Text style={styles.statValue}>{stat.value}</Text>
-            <Text style={styles.statLabel}>{stat.label}</Text>
-          </View>
-        ))}
-      </View>
+      {listings.length > 0 ? (
+        <Text variant="bodySmall" tone="secondary" style={styles.shopLine}>
+          <Text variant="bodySmall" style={styles.strong}>
+            {listings.length} {listings.length === 1 ? 'piece' : 'pieces'}
+          </Text>
+          {cheapest != null ? (
+            <Text variant="bodySmall" tone="secondary">
+              {'  ·  from '}
+              <Text variant="bodySmall" style={styles.strong}>
+                {formatCentsShort(cheapest)}
+              </Text>
+              {' / 3 days'}
+            </Text>
+          ) : null}
+        </Text>
+      ) : null}
 
       {children ? <View style={styles.actions}>{children}</View> : null}
     </View>
   );
 }
 
+/** A follower or following count. Tappable when there is a list to open. */
+function Count({
+  value,
+  label,
+  onPress,
+}: {
+  value: number;
+  label: string;
+  onPress?: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={`${value} ${label}`}
+      style={({ pressed }) => [styles.count, pressed && onPress ? styles.pressed : null]}
+    >
+      <Text variant="body" style={styles.strong}>
+        {value}
+      </Text>
+      <Text variant="caption" tone="muted">
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  identity: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.md },
-  identityText: { marginLeft: spacing.md, flex: 1 },
-  displayName: { fontSize: type.h3.size, fontWeight: '600', color: color.text.primary },
-  handle: { fontSize: type.bodySmall.size, color: color.text.secondary, marginTop: 1 },
+  identity: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+  },
+  counts: { flex: 1, flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.lg },
+  count: { alignItems: 'center', minWidth: 64, paddingVertical: spacing.xs },
+  pressed: { opacity: 0.6 },
+  nameBlock: { paddingHorizontal: spacing.md, marginTop: spacing.md },
   campusRow: { flexDirection: 'row', alignItems: 'center', marginTop: 5 },
   campusDot: { width: 10, height: 10, borderRadius: 5, marginRight: 6 },
-  campus: { flexShrink: 1, fontSize: type.bodySmall.size, color: color.text.secondary },
-  bio: {
-    paddingHorizontal: spacing.md,
-    marginTop: spacing.md,
-    fontSize: type.body.size,
-    lineHeight: type.body.lineHeight,
-    color: color.text.primary,
-  },
+  campus: { flexShrink: 1 },
+  rating: { alignSelf: 'flex-start', marginTop: 5 },
+  bio: { marginTop: spacing.sm },
+  strong: { fontWeight: '600' },
   sizeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -126,43 +228,15 @@ const styles = StyleSheet.create({
   sizePill: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
     borderWidth: 1,
     borderColor: color.border.default,
     borderRadius: 999,
     paddingHorizontal: spacing.md,
     paddingVertical: 5,
   },
-  sizeLabel: {
-    fontSize: type.caption.size,
-    letterSpacing: type.caption.letterSpacing,
-    textTransform: 'uppercase',
-    color: color.text.muted,
-    marginRight: 6,
-  },
-  sizeValue: { fontSize: type.bodySmall.size, color: color.text.primary },
-  statsRow: {
-    flexDirection: 'row',
-    marginTop: spacing.lg,
-    marginHorizontal: spacing.md,
-    borderWidth: 1,
-    borderColor: color.border.default,
-  },
-  stat: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderRightWidth: 1,
-    borderRightColor: color.border.default,
-  },
-  statLast: { borderRightWidth: 0 },
-  statValue: { fontSize: type.h3.size, fontWeight: '600', color: color.text.primary },
-  statLabel: {
-    fontSize: type.caption.size,
-    letterSpacing: type.caption.letterSpacing,
-    textTransform: 'uppercase',
-    color: color.text.muted,
-    marginTop: 2,
-  },
+  sizeValue: {},
+  shopLine: { paddingHorizontal: spacing.md, marginTop: spacing.md },
   actions: {
     flexDirection: 'row',
     gap: spacing.sm,

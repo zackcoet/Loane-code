@@ -195,3 +195,63 @@ export function useStudentSearch(term: string) {
 
   return { results, searching };
 }
+
+/**
+ * Everyone who follows a student, or everyone she follows.
+ *
+ * Live, because the point of opening her Following list on your own
+ * profile is usually to unfollow somebody, and the row should leave the
+ * list when you do.
+ */
+export function useFollowList(uid: string | undefined, side: 'followers' | 'following') {
+  const [people, setPeople] = useState<UserSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!uid) {
+      setPeople([]);
+      setLoading(false);
+      return;
+    }
+    let live = true;
+    setLoading(true);
+
+    // Followers are the rows pointing AT her; following are the rows
+    // pointing away from her.
+    const field = side === 'followers' ? 'followingUid' : 'followerUid';
+    const other = side === 'followers' ? 'followerUid' : 'followingUid';
+
+    const unsubscribe = onSnapshot(
+      query(collection(db, COLLECTIONS.follows), where(field, '==', uid)),
+      (snap) => {
+        const uids = snap.docs.map((d) => (d.data() as Follow)[other]);
+        if (uids.length === 0) {
+          if (live) {
+            setPeople([]);
+            setLoading(false);
+          }
+          return;
+        }
+        void readUsers(uids)
+          .then((found) => {
+            if (!live) return;
+            setPeople(found.sort((a, b) => a.displayName.localeCompare(b.displayName)));
+            setLoading(false);
+          })
+          .catch(() => {
+            if (live) setLoading(false);
+          });
+      },
+      () => {
+        if (live) setLoading(false);
+      },
+    );
+
+    return () => {
+      live = false;
+      unsubscribe();
+    };
+  }, [uid, side]);
+
+  return { people, loading };
+}

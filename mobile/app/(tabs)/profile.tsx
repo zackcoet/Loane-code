@@ -48,15 +48,40 @@ export default function Profile() {
         <Text style={styles.handle} numberOfLines={1}>
           @{profile.username}
         </Text>
-        <IconButton
-          name="add"
-          onPress={() => router.push('/post-sheet')}
-          accessibilityLabel="Create a post or listing"
-        />
+        <View style={styles.headerRight}>
+          <IconButton
+            name="settings-outline"
+            onPress={() => router.push('/settings')}
+            accessibilityLabel="Settings"
+          />
+          <IconButton
+            name="add"
+            onPress={() => router.push('/post-sheet')}
+            accessibilityLabel="Create a post or listing"
+          />
+        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <ProfileHeader user={profile} onPressPhoto={photo.change}>
+        <ProfileHeader
+          user={profile}
+          onPressPhoto={photo.change}
+          onPressFollowers={() =>
+            router.push({
+              pathname: '/follow-list',
+              params: { uid: profile.uid, side: 'followers' },
+            })
+          }
+          onPressFollowing={() =>
+            router.push({
+              pathname: '/follow-list',
+              params: { uid: profile.uid, side: 'following' },
+            })
+          }
+          onPressRating={() =>
+            router.push({ pathname: '/reviews', params: { uid: profile.uid } })
+          }
+        >
           <Button
             label="Edit profile"
             variant="outline"
@@ -79,6 +104,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.sm,
   },
+  headerRight: { flexDirection: 'row', alignItems: 'center' },
   handle: {
     flex: 1,
     textAlign: 'center',

@@ -125,7 +125,16 @@ export default function OtherProfile() {
       />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <ProfileHeader user={user}>
+        <ProfileHeader
+          user={user}
+          onPressFollowers={() =>
+            router.push({ pathname: '/follow-list', params: { uid: user.uid, side: 'followers' } })
+          }
+          onPressFollowing={() =>
+            router.push({ pathname: '/follow-list', params: { uid: user.uid, side: 'following' } })
+          }
+          onPressRating={() => router.push({ pathname: '/reviews', params: { uid: user.uid } })}
+        >
           {isMe ? (
             <Button
               label="Edit profile"

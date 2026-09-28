@@ -39,6 +39,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
+    // flex:1 centres it in a full-height screen, but inside a
+    // ScrollView there is no height to fill, so it collapses to its
+    // own text and ends up jammed under whatever is above it — which
+    // is what "No posts yet" was doing on a profile. A floor keeps it
+    // breathing either way.
+    minHeight: 220,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.xxl,
   },
   title: {
