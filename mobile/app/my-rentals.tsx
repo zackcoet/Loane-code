@@ -10,33 +10,20 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import {
-  BOOKING_STATUS_LABELS,
   TERMINAL_BOOKING_STATUSES,
   color,
   controls,
-  formatRange,
   radius,
   spacing,
-  type Booking,
 } from '@loane/shared';
+import { BookingRow, needsMe } from '../src/components/BookingRow';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useMyBookings } from '../src/hooks/useBookings';
-
-/** Does this booking need something from me right now? */
-function needsMe(booking: Booking, isLender: boolean): boolean {
-  if (booking.status === 'requested') return isLender;
-  if (booking.status === 'confirmed') {
-    return isLender ? !booking.handoff.dropoffAt : Boolean(booking.handoff.dropoffAt);
-  }
-  if (booking.status === 'with_renter') return true;
-  if (booking.status === 'returned') return isLender;
-  return false;
-}
 
 export default function MyRentals() {
   const router = useRouter();
@@ -111,7 +98,7 @@ export default function MyRentals() {
                 {item.header}
               </Text>
             ) : (
-              <Row
+              <BookingRow
                 booking={item.booking}
                 isLender={isLender}
                 onPress={() =>
@@ -123,59 +110,6 @@ export default function MyRentals() {
         />
       )}
     </Screen>
-  );
-}
-
-function Row({
-  booking,
-  isLender,
-  onPress,
-}: {
-  booking: Booking;
-  isLender: boolean;
-  onPress: () => void;
-}) {
-  const them = isLender ? booking.renter : booking.lender;
-  const wants = needsMe(booking, isLender);
-  const over = TERMINAL_BOOKING_STATUSES.includes(booking.status);
-
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${booking.listing.name}, ${BOOKING_STATUS_LABELS[booking.status]}`}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-    >
-      <View style={[styles.thumb, over && styles.dimmed]}>
-        {booking.listing.coverUrl ? (
-          <Image
-            source={{ uri: booking.listing.coverUrl }}
-            style={styles.image}
-            resizeMode="cover"
-          />
-        ) : null}
-      </View>
-
-      <View style={styles.rowText}>
-        <Text numberOfLines={1} tone={over ? 'muted' : 'primary'}>
-          {booking.listing.name}
-        </Text>
-        <Text variant="bodySmall" tone="secondary">
-          {isLender ? 'to' : 'from'} @{them.username}
-        </Text>
-        {booking.startDate && booking.endDate ? (
-          <Text variant="caption" tone="muted">
-            {formatRange({ startDate: booking.startDate, endDate: booking.endDate })}
-          </Text>
-        ) : null}
-      </View>
-
-      <View style={[styles.badge, wants && styles.badgeAttention]}>
-        <Text variant="caption" tone={wants ? 'inverse' : 'secondary'}>
-          {wants ? 'Your turn' : BOOKING_STATUS_LABELS[booking.status]}
-        </Text>
-      </View>
-    </Pressable>
   );
 }
 

@@ -7,6 +7,7 @@ import {
   REQUEST_EXPIRY_HOURS,
   calculateFees,
   daysBetween,
+  formatRange,
   rangeHitsBlackout,
   rangesOverlap,
   toIsoDate,
@@ -16,6 +17,7 @@ import { db, now, Timestamp } from '../lib/admin';
 import { alreadyTaken, failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
 import { assertNotBlocked } from '../moderation/block';
+import { notify } from './transitions';
 
 /**
  * `requestBooking`
@@ -219,12 +221,30 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
 
       tx.set(bookingRef, { ...booking, createdAt: now(), updatedAt: now() });
 
+      // Tell the lender, in the same transaction as the booking.
+      //
+      // This was a TODO, and it meant a request arrived in total
+      // silence: the renter waited, the lender never knew, and the
+      // request expired after 48 hours having been seen by nobody.
+      // A marketplace where asking to rent notifies no one is not a
+      // marketplace.
+      notify(tx, {
+        uid: listing.ownerUid,
+        type: 'rental_requested',
+        title: `@${renter.username} wants to rent your ${listing.name}`,
+        body:
+          startDate && endDate
+            ? `${formatRange({ startDate, endDate })} — accept or decline within 48 hours.`
+            : 'Accept or decline within 48 hours.',
+        bookingId: bookingRef.id,
+        actor: { uid: renter.uid, username: renter.username, photoUrl: renter.photoUrl },
+      });
+
       return booking.status;
     });
 
     logger.info('Booking requested', { bookingId: bookingRef.id, listingId, renterUid: renter.uid });
 
-    // TODO-PHASE4: notify the lender.
     // TODO-PHASE5: authorize the renter's card here, before confirming.
 
     return { bookingId: bookingRef.id, status };

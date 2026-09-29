@@ -316,7 +316,11 @@ export default function ListingDetail() {
           />
           {rentable ? (
             <Button
-              label="Request to rent"
+              // "Check availability" rather than "Request to rent".
+              // It already opens a calendar of her free dates, but the
+              // old label sounded like committing to something rather
+              // than looking, so nobody found the calendar behind it.
+              label="Check availability"
               onPress={() =>
                 router.push({ pathname: '/request-rental', params: { id: listing.id } })
               }
