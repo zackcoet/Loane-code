@@ -4,6 +4,10 @@
  * Drawn rather than imported as an image so it stays crisp at any size and
  * we are not blocked on an asset export.
  *
+ * The rings and the letters share one weight — see RING_RATIO and
+ * LETTER_WEIGHT. They used to disagree, hairline rings against light
+ * letters, and the mark read as two drawings on top of each other.
+ *
  * Two lockups, matching the mockups:
  *
  *   - `across` (the splash): the letters sit on the circles, widely spaced.
@@ -22,6 +26,27 @@ import {
 
 /** Below this circle diameter the wordmark always drops beneath the mark. */
 const WORDMARK_INSIDE_MIN = 64;
+
+/**
+ * ONE weight for the whole mark.
+ *
+ * The rings and the letters have to look like they were drawn with the
+ * same pen — that is the whole point of Ella's reference, and the old
+ * mark missed it badly: hairline rings at 1.4% of the diameter against
+ * letters at weight 400. At splash size that is a 1.5pt ring beside a
+ * strokes-look-2.5pt letterform, and it read as two logos overlaid.
+ *
+ * So the ring is derived from the diameter and the letters are set to
+ * the weight that matches it optically. Both come from here, so they
+ * cannot drift apart again.
+ */
+const RING_RATIO = 0.045;
+const LETTER_WEIGHT = '700' as const;
+
+function ringWeight(diameter: number): number {
+  // Never thinner than 2pt, or the rings disappear in a 28pt header.
+  return Math.max(2, Math.round(diameter * RING_RATIO));
+}
 
 type Lockup = 'auto' | 'across' | 'below' | 'mark';
 
@@ -46,7 +71,7 @@ export function Logo({ size = 96, lockup = 'auto', tint = color.icon.default }: 
     width: diameter,
     height: diameter,
     borderRadius: diameter / 2,
-    borderWidth: Math.max(1, diameter * 0.014),
+    borderWidth: ringWeight(diameter),
     borderColor: tint,
   };
 
@@ -104,6 +129,6 @@ const styles = StyleSheet.create({
     // Slight inset so L and E sit inside the circle edges.
     paddingHorizontal: '6%',
   },
-  letter: { fontWeight: '400', letterSpacing: 2 },
-  wordmarkBelow: { marginTop: 5, letterSpacing: 4, fontWeight: '500' },
+  letter: { fontWeight: LETTER_WEIGHT, letterSpacing: 1 },
+  wordmarkBelow: { marginTop: 5, letterSpacing: 3, fontWeight: LETTER_WEIGHT },
 });
