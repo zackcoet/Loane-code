@@ -103,7 +103,7 @@ export function ProfileHeader({
         <Text variant="h3" numberOfLines={1}>
           {user.displayName}
         </Text>
-        <Text variant="bodySmall" tone="secondary">
+        <Text variant="bodySmall" tone="secondary" style={styles.handle}>
           @{user.username}
         </Text>
 
@@ -223,6 +223,9 @@ const styles = StyleSheet.create({
   rating: { alignSelf: 'flex-start', marginTop: 5 },
   bio: { marginTop: spacing.sm },
   strong: { fontWeight: '600' },
+  // The handle is how people refer to each other here, so it carries
+  // more weight than a secondary line usually would.
+  handle: { fontWeight: '600' },
   sizeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',

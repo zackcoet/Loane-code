@@ -27,7 +27,10 @@ const OPTIONS: Option[] = [
   },
   {
     title: 'Add to my closet',
-    body: 'List a garment to rent, sell, or just showcase.',
+    // Not "or just showcase" — showcasing is what Post a Look is for,
+    // and offering it here made the two options sound like the same
+    // thing with different names.
+    body: 'List a garment to rent or sell.',
     href: '/add-to-closet',
   },
 ];

@@ -7,6 +7,7 @@
 
 import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   CATEGORIES,
   CATEGORY_LABELS,
@@ -58,7 +59,12 @@ export function FilterSheet({
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.sheet}>
+      {/* A Modal gets no safe-area inset of its own, and this sheet was
+          a plain View — so on a notched iPhone the header sat UNDER the
+          Dynamic Island and the back arrow could not be tapped at all.
+          Every other screen goes through Screen, which handles this.
+          The button was never broken; it was off the top of the glass. */}
+      <SafeAreaView style={styles.sheet} edges={['top', 'left', 'right']}>
         <Header
           title="Filter"
           onBack={onClose}
@@ -162,7 +168,7 @@ export function FilterSheet({
             onPress={() => onApply(draft)}
           />
         </View>
-      </View>
+      </SafeAreaView>
     </Modal>
   );
 }
