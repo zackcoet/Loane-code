@@ -102,6 +102,29 @@ async function sweep(): Promise<SweepResult> {
     batch.update(db().collection(COLLECTIONS.listings).doc(booking.listingId), {
       'stats.completedRentals': FieldValue.increment(1),
     });
+
+    // Ask both of them for a review, now, while it is fresh.
+    //
+    // The rental screen has always had a Review button once a booking
+    // completes, but nothing told anybody it was there — a booking
+    // completes on a timer, days after the handoff, on a screen nobody
+    // has open. Reviews are what makes a stranger's closet feel safe to
+    // rent from, so they are worth asking for out loud.
+    notify(batch, {
+      uid: booking.renterUid,
+      type: 'review_requested',
+      title: `How was renting from @${booking.lender.username}?`,
+      body: 'Leave a review — it helps the next person decide.',
+      bookingId: doc.id,
+    });
+    notify(batch, {
+      uid: booking.lenderUid,
+      type: 'review_requested',
+      title: `How was lending to @${booking.renter.username}?`,
+      body: 'Leave a review — it helps the next lender decide.',
+      bookingId: doc.id,
+    });
+
     await batch.commit();
     completed += 1;
   }

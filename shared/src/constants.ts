@@ -392,6 +392,7 @@ export const NOTIFICATION_TYPES = [
   'new_follower',
   'post_liked',
   'new_message',
+  'review_requested',
   'review_received',
   'claim_opened',
   'claim_resolved',
