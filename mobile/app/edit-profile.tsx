@@ -44,6 +44,7 @@ import { Button } from '../src/components/Button';
 import { Chip } from '../src/components/Chip';
 import { Input } from '../src/components/Input';
 import { Screen } from '../src/components/Screen';
+import { Toggle } from '../src/components/Toggle';
 import { Header } from '../src/components/Header';
 import { useAuth } from '../src/auth/AuthProvider';
 import { db } from '../src/firebase/config';
@@ -61,6 +62,7 @@ export default function EditProfile() {
   const [username, setUsername] = useState(profile?.username ?? '');
   const [bio, setBio] = useState(profile?.bio ?? '');
   const [photoUrl, setPhotoUrl] = useState<string | null>(profile?.photoUrl ?? null);
+  const [showSizes, setShowSizes] = useState(profile?.showSizes ?? false);
   const [sizes, setSizes] = useState({
     tops: profile?.sizes.tops ?? null,
     bottoms: profile?.sizes.bottoms ?? null,
@@ -137,6 +139,7 @@ export default function EditProfile() {
         bio: bio.trim(),
         photoUrl,
         sizes,
+        showSizes,
         updatedAt: serverTimestamp(),
       });
 
@@ -206,8 +209,20 @@ export default function EditProfile() {
 
           <Text style={[text.label, styles.sizeHeading]}>My sizes</Text>
           <Text style={[text.small, styles.sizeHelp]}>
-            Shown on your profile so renters can judge fit.
+            Worth filling in either way — this is what &quot;will it fit me?&quot; is answered
+            from when you are the one renting.
           </Text>
+
+          <Toggle
+            label="Show my sizes on my profile"
+            help={
+              showSizes
+                ? 'Anyone at your school can see them.'
+                : 'Only you can see them. Renters judging fit will not.'
+            }
+            value={showSizes}
+            onValueChange={setShowSizes}
+          />
 
           <SizePicker
             label="Tops"

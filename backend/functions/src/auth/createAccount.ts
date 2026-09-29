@@ -150,7 +150,8 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
           verificationMethod: 'domain_claimed',
           // We have NOT proven she controls the inbox. See the User type.
           emailConfirmed: false,
-          sizes: { tops: null, bottoms: null, dresses: null, shoe: null },
+          showSizes: false,
+      sizes: { tops: null, bottoms: null, dresses: null, shoe: null },
           role: 'student',
           status: 'active',
           suspendedReason: null,

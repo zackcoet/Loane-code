@@ -55,7 +55,20 @@ export interface User extends BaseDoc, CampusScoped {
   emailConfirmed: boolean;
   emailConfirmedAt: Timestampish | null;
 
-  // --- Sizing (shown on her profile so renters can judge fit) -------------
+  // --- Sizing --------------------------------------------------------------
+  /**
+   * Whether her sizes appear on her public profile.
+   *
+   * OFF unless she turns it on. Her sizes are useful to a renter
+   * judging fit, but they are also a fact about her body on a page
+   * anyone at her school can open, and that is not a thing to publish
+   * on somebody's behalf by default.
+   *
+   * She still fills them in either way — they are what "will this fit
+   * me?" is answered from when she is the one renting.
+   */
+  showSizes: boolean;
+
   sizes: {
     tops: Size | null;
     bottoms: Size | null;

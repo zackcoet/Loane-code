@@ -482,6 +482,9 @@ async function main(): Promise<void> {
       // Nobody has proven inbox control — we do not email a code yet.
       emailConfirmed: false,
       emailConfirmedAt: null,
+      // Half the seeded students show their sizes, half do not, so both
+      // states are visible without editing a profile by hand.
+      showSizes: users.length % 2 === 0,
       sizes: student.sizes ?? {
         tops: pick(SIZES),
         bottoms: pick(SIZES),

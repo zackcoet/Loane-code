@@ -1316,3 +1316,15 @@ describe('private settings', () => {
     await assertFails(deleteDoc(doc(asElla(), ...PRIVATE)));
   });
 });
+
+describe('the show-sizes toggle', () => {
+  it('lets her turn her sizes on', async () => {
+    await assertSucceeds(
+      updateDoc(doc(asElla(), 'users', ELLA), { showSizes: true, updatedAt: new Date() }),
+    );
+  });
+
+  it('stops her flipping it on someone else', async () => {
+    await assertFails(updateDoc(doc(asElla(), 'users', MADDIE), { showSizes: true }));
+  });
+});

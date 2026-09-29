@@ -106,6 +106,7 @@ service cloud.firestore {
              'bio',
              'photoUrl',
              'sizes',
+             'showSizes',
              'pushTokens',
              'lastActiveAt',
              'updatedAt'

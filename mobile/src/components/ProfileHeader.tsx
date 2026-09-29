@@ -52,10 +52,15 @@ export function ProfileHeader({
   const { name: campusName, dotColor } = useCampusName(user.campusId);
   const { items: listings } = useUserListings(user.uid);
 
-  const sizes = SIZE_FIELDS.map((field) => ({
-    label: SIZE_FIELD_LABELS[field],
-    value: user.sizes[field],
-  })).filter((entry) => entry.value);
+  // Hidden unless she has turned them on. Her sizes help a renter judge
+  // fit, but they are also a fact about her body on a page anyone at her
+  // school can open — that is hers to publish, not ours.
+  const sizes = user.showSizes
+    ? SIZE_FIELDS.map((field) => ({
+        label: SIZE_FIELD_LABELS[field],
+        value: user.sizes[field],
+      })).filter((entry) => entry.value)
+    : [];
 
   // "12 pieces · from $15 / 3 days" — the shop-window line. The cheapest
   // way in is the number somebody actually decides on, and having it up
