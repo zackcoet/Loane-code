@@ -60,3 +60,9 @@ emulator-data/
 
 # Test / coverage
 coverage/
+
+# Throwaway diagnostic scripts. Anything under scripts/ starting with an
+# underscore is a one-off written to poke at a live project — they hold
+# ad-hoc queries and sometimes real ids, and none of them belong in the
+# repo. The committed scripts next to them have real names.
+backend/functions/scripts/_*.ts
