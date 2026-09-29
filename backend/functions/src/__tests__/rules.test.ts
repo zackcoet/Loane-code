@@ -249,6 +249,29 @@ describe('listings', () => {
     );
   });
 
+  it('lets her create one with "Available now" off', async () => {
+    // The form writes status 'paused' when that toggle is off. create
+    // used to allow only draft and active, so turning it off meant the
+    // listing was refused — and the app blamed her connection for it.
+    await assertSucceeds(
+      setDoc(
+        doc(asElla(), 'listings', 'listing-paused'),
+        listingDoc(ELLA, { id: 'listing-paused', status: 'paused' }),
+      ),
+    );
+  });
+
+  it('still refuses a status the app never writes', async () => {
+    for (const status of ['sold', 'suspended', 'removed']) {
+      await assertFails(
+        setDoc(
+          doc(asElla(), 'listings', `listing-${status}`),
+          listingDoc(ELLA, { id: `listing-${status}`, status }),
+        ),
+      );
+    }
+  });
+
   it('stops her creating a listing owned by someone else', async () => {
     await assertFails(
       setDoc(doc(asMaddie(), 'listings', 'listing-fake'), listingDoc(ELLA, { id: 'listing-fake' })),

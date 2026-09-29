@@ -25,6 +25,7 @@ import {
   type User,
 } from '@loane/shared';
 import { db } from '../firebase/config';
+import { saveErrorMessage } from '../firebase/errors';
 import { uploadListingPhoto, type PickedPhoto } from '../lib/photo';
 
 /** Photos in the form are either freshly picked or already uploaded. */
@@ -247,8 +248,12 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
         }
 
         return ref.id;
-      } catch {
-        setError('Could not save that. Check your connection and try again.');
+      } catch (err) {
+        // "Check your connection" was wrong and actively misleading:
+        // the real failure here was the server refusing the write, and
+        // blaming her wifi sent her retrying something that could never
+        // work. Tell the truth about which of the two it was.
+        setError(saveErrorMessage(err));
         return null;
       } finally {
         setSaving(false);

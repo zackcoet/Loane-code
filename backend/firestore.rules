@@ -245,7 +245,13 @@ service cloud.firestore {
       allow create: if isVerifiedStudent()
         && draft().ownerUid == uid()
         && draft().campusId == existingUser().campusId
-        && draft().status in ['draft', 'active']
+        // 'paused' belongs here as much as the other two. The form
+        // writes it whenever "Available now" is off, and leaving it out
+        // meant anyone who turned that toggle off got their listing
+        // refused — with "check your connection", because the catch
+        // below could not tell a permission error from a dropped one.
+        // `update` has always allowed it; only `create` disagreed.
+        && draft().status in ['draft', 'active', 'paused']
         && hasRequiredFields()
         && pricingMatchesIntent()
         // She does not get to invent a view count.
