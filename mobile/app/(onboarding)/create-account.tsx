@@ -1,5 +1,10 @@
 /**
- * Step 3 — school email and password. "One tap and you're in."
+ * Step 2 (of 3) — name, school email and password.
+ *
+ * The first name used to have a screen of its own. One text field does
+ * not earn a screen: it is part of "make me an account", and splitting
+ * it out added a tap between somebody who has already decided and the
+ * thing they decided to do.
  *
  * ONE email, and it must be a school address. There is no separate personal
  * email any more: the address we check the campus against is the address
@@ -26,6 +31,7 @@ import {
   color,
   spacing,
   type,
+  validateDisplayName,
   validateEmail,
   validatePassword,
 } from '@loane/shared';
@@ -40,7 +46,8 @@ import { text } from '../../src/theme';
 
 export default function CreateAccount() {
   const router = useRouter();
-  const { campusEmail, setCampusEmail, setPassword: storePassword } = useSignupDraft();
+  const { firstName, setFirstName, campusEmail, setCampusEmail, setPassword: storePassword } =
+    useSignupDraft();
 
   const [password, setPasswordInput] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +84,12 @@ export default function CreateAccount() {
   }, [campusEmail]);
 
   const onContinue = async () => {
+    const nameCheck = validateDisplayName(firstName);
+    if (!nameCheck.ok) {
+      setError(nameCheck.error ?? 'Enter your first name.');
+      return;
+    }
+
     const emailCheck = validateEmail(campusEmail);
     if (!emailCheck.ok) return setError(emailCheck.error ?? null);
 
@@ -108,12 +121,24 @@ export default function CreateAccount() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.body}>
-          <Text style={text.h2}>One tap and you&apos;re in.</Text>
+          <Text style={text.h2}>Every great closet has{'\n'}a name behind it.</Text>
           <Text style={[text.label, styles.caption]}>Create your account</Text>
           <Text style={[text.small, styles.explainer]}>
             Use your school email — it&apos;s how we keep Loane to students on your campus.
           </Text>
 
+          <Input
+            value={firstName}
+            onChangeText={(value) => {
+              setFirstName(value);
+              if (error) setError(null);
+            }}
+            placeholder="First name"
+            autoCapitalize="words"
+            autoComplete="given-name"
+            autoFocus
+            returnKeyType="next"
+          />
           <Input
             value={campusEmail}
             onChangeText={(value) => {
@@ -125,7 +150,6 @@ export default function CreateAccount() {
             autoCapitalize="none"
             autoComplete="email"
             autoCorrect={false}
-            autoFocus
             hint={campusName ?? undefined}
           />
           <Input
@@ -146,7 +170,11 @@ export default function CreateAccount() {
             label="Continue"
             onPress={onContinue}
             loading={busy}
-            disabled={campusEmail.length === 0 || password.length === 0}
+            disabled={
+              firstName.trim().length === 0 ||
+              campusEmail.length === 0 ||
+              password.length === 0
+            }
           />
         </View>
 

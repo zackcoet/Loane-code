@@ -1,5 +1,10 @@
 /**
- * Step 4 (last) — claim a username, and create the account.
+ * Step 3 (last) — claim a username, and create the account.
+ *
+ * Straight into the feed from here. There used to be three intro
+ * slides between this and the app: a carousel explaining a feed, shown
+ * to somebody who had just finished signing up to see the feed. The
+ * feed explains itself faster.
  *
  * This is where everything actually happens. One call to `createAccount`
  * checks the school domain, creates the login, writes the profile and
@@ -104,7 +109,7 @@ export default function ClaimUsername() {
 
       logEvent('signup_completed', { surface: 'onboarding' });
       reset();
-      router.replace('/(onboarding)/intro');
+      router.replace('/(tabs)/feed');
     } catch (err) {
       setError(callableErrorMessage(err, 'Could not finish setting up your account. Try again.'));
     } finally {

@@ -55,7 +55,7 @@ function RootNavigator() {
       // created — createAccount writes the login and the profile together
       // or neither — but accounts made by the old two-step flow may still
       // be stuck here, so the safety net stays.
-      if (!inOnboarding) router.replace('/(onboarding)/name');
+      if (!inOnboarding) router.replace('/(onboarding)/create-account');
       return;
     }
 

@@ -106,7 +106,7 @@ export default function SignIn() {
         <View style={styles.footer}>
           <Text style={styles.altRow}>
             Don&apos;t have an account?{' '}
-            <Link href="/(onboarding)/name" style={text.link}>
+            <Link href="/(onboarding)/create-account" style={text.link}>
               Create one
             </Link>
           </Text>

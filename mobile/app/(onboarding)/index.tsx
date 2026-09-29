@@ -27,7 +27,7 @@ export default function Splash() {
       </View>
 
       <View style={styles.footer}>
-        <Button label="Find your campus closet" onPress={() => router.push('/(onboarding)/name')} />
+        <Button label="Find your campus closet" onPress={() => router.push('/(onboarding)/create-account')} />
         <Link href="/(auth)/sign-in" style={styles.signIn}>
           Sign in
         </Link>
