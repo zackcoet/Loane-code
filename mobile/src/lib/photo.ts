@@ -34,7 +34,19 @@ export interface PickedPhoto {
  */
 export async function pickPhoto(
   source: PhotoSource,
-  /** Square crop for avatars; free crop for garments. */
+  /**
+   * 'square' opens the crop tool locked to a square — right for an
+   * avatar, which is always rendered in a circle.
+   *
+   * 'free' KEEPS THE WHOLE PHOTO and opens no crop tool at all.
+   *
+   * It used to pass `aspect: undefined` alongside `allowsEditing: true`
+   * and hope for a free-form crop. On iOS that does not exist:
+   * allowsEditing always presents a square crop tool, whatever aspect
+   * says. So a full-length dress arrived in the closet as a square
+   * chopped out of the middle, which is what Ella reported. The only
+   * way to keep a portrait photo whole is not to open the editor.
+   */
   shape: 'square' | 'free' = 'square',
 ): Promise<PickedPhoto | null> {
   const permission =
@@ -46,7 +58,7 @@ export async function pickPhoto(
 
   const options: ImagePicker.ImagePickerOptions = {
     mediaTypes: ['images'],
-    allowsEditing: true,
+    allowsEditing: shape === 'square',
     ...(shape === 'square' ? { aspect: [1, 1] as [number, number] } : {}),
     quality: 1,
   };
@@ -209,4 +221,39 @@ export async function uploadMessagePhoto(uid: string, photo: PickedPhoto): Promi
   const url = await getDownloadURL(target);
 
   return { path, url, width: compressed.width, height: compressed.height };
+}
+
+/**
+ * Crop a picked photo to a centred square, on request.
+ *
+ * The counterpart to not cropping automatically. Nothing is forced on
+ * her, and a square is still one tap away for the shot that wants it —
+ * a folded knit, a bag, a pair of shoes on the floor.
+ *
+ * Centred rather than a drag-to-position cropper. A gesture cropper is
+ * a real piece of UI and this is a convenience; if people start asking
+ * to choose WHICH square, that is the signal to build one.
+ *
+ * Returns the original untouched if it is already square.
+ */
+export async function cropToSquare(photo: PickedPhoto): Promise<PickedPhoto> {
+  const side = Math.min(photo.width, photo.height);
+  if (photo.width === photo.height) return photo;
+
+  const result = await ImageManipulator.manipulateAsync(
+    photo.uri,
+    [
+      {
+        crop: {
+          originX: Math.round((photo.width - side) / 2),
+          originY: Math.round((photo.height - side) / 2),
+          width: side,
+          height: side,
+        },
+      },
+    ],
+    { compress: 1, format: ImageManipulator.SaveFormat.JPEG },
+  );
+
+  return { uri: result.uri, width: result.width, height: result.height };
 }

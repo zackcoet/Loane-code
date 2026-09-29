@@ -22,22 +22,29 @@ interface Props {
   onAdd: () => void;
   onRemove: (index: number) => void;
   onMakeCover: (index: number) => void;
+  /**
+   * Crop this one to a centred square. Optional: photos keep their own
+   * shape now, and this is the way back for a shot that suits a square.
+   */
+  onCrop?: (index: number) => void;
   /** True while an upload is in flight. */
   busy?: boolean;
 }
 
-export function PhotoGrid({ photos, max, onAdd, onRemove, onMakeCover, busy }: Props) {
+export function PhotoGrid({ photos, max, onAdd, onRemove, onMakeCover, onCrop, busy }: Props) {
   const openMenu = (index: number) => {
     const isCover = index === 0;
-    const options = isCover ? ['Cancel', 'Remove photo'] : ['Cancel', 'Make cover', 'Remove photo'];
+    // Built as a list so the two optional entries cannot get out of
+    // step with the indexes the handler checks.
+    const actions: { label: string; run: () => void; destructive?: boolean }[] = [
+      ...(isCover ? [] : [{ label: 'Make cover', run: () => onMakeCover(index) }]),
+      ...(onCrop ? [{ label: 'Crop to square', run: () => onCrop(index) }] : []),
+      { label: 'Remove photo', run: () => onRemove(index), destructive: true },
+    ];
+    const options = ['Cancel', ...actions.map((a) => a.label)];
 
     const handle = (choice: number) => {
-      if (isCover) {
-        if (choice === 1) onRemove(index);
-        return;
-      }
-      if (choice === 1) onMakeCover(index);
-      if (choice === 2) onRemove(index);
+      actions[choice - 1]?.run();
     };
 
     if (Platform.OS === 'ios') {
@@ -47,8 +54,11 @@ export function PhotoGrid({ photos, max, onAdd, onRemove, onMakeCover, busy }: P
       );
     } else {
       Alert.alert('Photo', undefined, [
-        ...(isCover ? [] : [{ text: 'Make cover', onPress: () => onMakeCover(index) }]),
-        { text: 'Remove photo', style: 'destructive' as const, onPress: () => onRemove(index) },
+        ...actions.map((a) => ({
+          text: a.label,
+          style: a.destructive ? ('destructive' as const) : undefined,
+          onPress: a.run,
+        })),
         { text: 'Cancel', style: 'cancel' as const },
       ]);
     }

@@ -56,7 +56,8 @@ interface Props {
 }
 
 export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
-  const { form, set, toggleOccasion, addPhoto, removePhoto, makeCover, error, saving } = controller;
+  const { form, set, toggleOccasion, addPhoto, removePhoto, cropPhoto, makeCover, error, saving } =
+    controller;
 
   const rentable = form.intent === 'rent' || form.intent === 'both';
   const sellable = form.intent === 'sell' || form.intent === 'both';
@@ -120,6 +121,7 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
         onAdd={onAddPhoto}
         onRemove={removePhoto}
         onMakeCover={makeCover}
+        onCrop={(index) => void cropPhoto(index)}
       />
 
       <View style={styles.section}>

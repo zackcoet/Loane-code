@@ -26,7 +26,7 @@ import {
 } from '@loane/shared';
 import { db } from '../firebase/config';
 import { saveErrorMessage } from '../firebase/errors';
-import { uploadListingPhoto, type PickedPhoto } from '../lib/photo';
+import { cropToSquare, uploadListingPhoto, type PickedPhoto } from '../lib/photo';
 
 /** Photos in the form are either freshly picked or already uploaded. */
 export type FormPhoto =
@@ -132,6 +132,29 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
   }, []);
 
   /** Move a photo to the front — the first photo is the cover. */
+  /**
+   * Crop one photo to a centred square, on request.
+   *
+   * Only a local pick can be cropped. An already-uploaded photo would
+   * mean re-uploading and orphaning the old file in Storage, which is
+   * more machinery than "I picked the wrong shape" deserves — remove
+   * it and add it again.
+   */
+  const cropPhoto = useCallback(
+    async (index: number) => {
+      const target = form.photos[index];
+      if (!target || target.kind !== 'local') return;
+      const square = await cropToSquare(target.picked);
+      setForm((current) => ({
+        ...current,
+        photos: current.photos.map((p, i) =>
+          i === index ? { kind: 'local' as const, picked: square } : p,
+        ),
+      }));
+    },
+    [form.photos],
+  );
+
   const makeCover = useCallback((index: number) => {
     setForm((current) => {
       const next = [...current.photos];
@@ -269,6 +292,7 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
     toggleOccasion,
     addPhoto,
     removePhoto,
+    cropPhoto,
     makeCover,
     draft,
     error,
