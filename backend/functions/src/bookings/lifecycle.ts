@@ -13,7 +13,13 @@ import {
 import { db, now, Timestamp, FieldValue } from '../lib/admin';
 import { alreadyTaken, failed, invalidArgument } from '../lib/errors';
 import { requireActiveUser } from '../lib/guards';
-import { assertCanTransition, loadBookingFor, notify, pieceName } from './transitions';
+import {
+  assertCanTransition,
+  completeBooking,
+  loadBookingFor,
+  notify,
+  pieceName,
+} from './transitions';
 
 /**
  * Everything that happens to a booking after it is requested.
@@ -242,6 +248,24 @@ export const confirmReturn = onCall<
 
   await db().runTransaction(async (tx) => {
     const { booking, actor, ref } = await loadBookingFor(bookingId, user.uid, tx);
+
+    // The second half of the handshake: she has said she returned it,
+    // and now he is saying he has it back and it is fine. That ends
+    // the rental there and then — waiting out a 48-hour window that
+    // exists to catch a problem nobody has is just two days of a
+    // rental neither of them can see the end of.
+    if (booking.status === 'returned' && actor === 'lender') {
+      assertCanTransition(booking, 'completed', actor);
+      tx.update(ref, {
+        'handoff.lenderConfirmedReturnAt': now(),
+        ...(photos && photos.length > 0 ? { 'handoff.returnPhotos': photos } : {}),
+      });
+      // Same helper the sweep uses, so confirming promptly and letting
+      // the window lapse leave identical state.
+      completeBooking(tx, ref, booking);
+      return;
+    }
+
     assertCanTransition(booking, 'returned', actor);
 
     const windowEnds = new Date(Date.now() + RETURN_DISPUTE_WINDOW_HOURS * 3600_000);

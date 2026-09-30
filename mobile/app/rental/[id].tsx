@@ -382,6 +382,9 @@ export default function RentalScreen() {
 
           {booking.status === 'with_renter' ? (
             <Button
+              // Either side can still start the return — a lender who
+              // gets it handed back in person should not have to wait
+              // for the renter to tap something.
               label={isLender ? "It's back" : "I've returned it"}
               loading={busy}
               onPress={() =>
@@ -402,7 +405,32 @@ export default function RentalScreen() {
           ) : null}
 
           {booking.status === 'returned' && isLender ? (
-            <Button label="Report a problem" variant="outline" onPress={onFlagProblem} />
+            <>
+              {/* The second half of the handshake. She has said she
+                  returned it; this is him saying he has it and it is
+                  fine, which ends the rental now rather than leaving
+                  it open for two days waiting on a problem report
+                  that is never coming. */}
+              <Button
+                label="Got it back, all good"
+                loading={busy}
+                onPress={() =>
+                  void run('confirm the return', async () => {
+                    const photo = await askPhoto();
+                    await confirmReturn({
+                      bookingId: booking.id,
+                      ...(photo ? { photos: [photo] } : {}),
+                    });
+                    logEvent('rental_returned', {
+                      surface: 'other',
+                      targetType: 'booking',
+                      targetId: booking.id,
+                    });
+                  })
+                }
+              />
+              <Button label="Report a problem" variant="outline" onPress={onFlagProblem} />
+            </>
           ) : null}
 
           {/* Reviews open once the dispute window has closed. Reviewing
@@ -458,8 +486,8 @@ function StatusBanner({ booking, isLender }: { booking: Booking; isLender: boole
         : 'Confirmed. She’ll drop it off and you confirm when you have it.',
     with_renter: isLender ? 'She has it right now.' : 'You have it. Return it by the end date.',
     returned: isLender
-      ? `Back with you. You have ${RETURN_DISPUTE_WINDOW_HOURS} hours to report a problem.`
-      : 'Returned. It closes automatically in 48 hours.',
+      ? `She's returned it. Confirm you have it back, or report a problem within ${RETURN_DISPUTE_WINDOW_HOURS} hours.`
+      : 'Returned. She confirms, or it closes on its own in 48 hours.',
     completed: 'All done.',
     declined: booking.declineReason ?? 'Declined.',
     cancelled: booking.cancellationReason ?? 'Cancelled.',

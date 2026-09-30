@@ -2,9 +2,9 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onCall } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
 import { COLLECTIONS, type Booking } from '@loane/shared';
-import { db, now, Timestamp, FieldValue } from '../lib/admin';
+import { db, now, Timestamp } from '../lib/admin';
 import { requireAdmin } from '../lib/guards';
-import { notify, pieceName } from './transitions';
+import { completeBooking, notify, pieceName } from './transitions';
 
 /**
  * The clock. Four things happen purely because time passed:
@@ -86,45 +86,9 @@ async function sweep(): Promise<SweepResult> {
   for (const doc of settled.docs) {
     const booking = doc.data() as Booking;
     const batch = db().batch();
-    batch.update(doc.ref, {
-      status: 'completed',
-      disputeWindowEndsAt: null,
-      'timeline.completedAt': now(),
-      updatedAt: now(),
-    });
-    // The rental is over, so it counts towards both their histories.
-    batch.update(db().collection(COLLECTIONS.users).doc(booking.lenderUid), {
-      'stats.rentalsAsLender': FieldValue.increment(1),
-    });
-    batch.update(db().collection(COLLECTIONS.users).doc(booking.renterUid), {
-      'stats.rentalsAsRenter': FieldValue.increment(1),
-    });
-    batch.update(db().collection(COLLECTIONS.listings).doc(booking.listingId), {
-      'stats.completedRentals': FieldValue.increment(1),
-    });
-
-    // Ask both of them for a review, now, while it is fresh.
-    //
-    // The rental screen has always had a Review button once a booking
-    // completes, but nothing told anybody it was there — a booking
-    // completes on a timer, days after the handoff, on a screen nobody
-    // has open. Reviews are what makes a stranger's closet feel safe to
-    // rent from, so they are worth asking for out loud.
-    notify(batch, {
-      uid: booking.renterUid,
-      type: 'review_requested',
-      title: `How was renting from @${booking.lender.username}?`,
-      body: 'Leave a review — it helps the next person decide.',
-      bookingId: doc.id,
-    });
-    notify(batch, {
-      uid: booking.lenderUid,
-      type: 'review_requested',
-      title: `How was lending to @${booking.renter.username}?`,
-      body: 'Leave a review — it helps the next lender decide.',
-      bookingId: doc.id,
-    });
-
+    // The same helper confirmReturn uses when the lender closes it by
+    // hand, so the two endings cannot drift apart.
+    completeBooking(batch, doc.ref, booking);
     await batch.commit();
     completed += 1;
   }

@@ -5,7 +5,7 @@ import {
   type BookingStatus,
   type NotificationType,
 } from '@loane/shared';
-import { db, now } from '../lib/admin';
+import { db, now, FieldValue } from '../lib/admin';
 import { failed, notFound, permissionDenied } from '../lib/errors';
 import type { Transaction } from 'firebase-admin/firestore';
 
@@ -71,6 +71,7 @@ export async function loadBookingFor(
  */
 interface Writer {
   set(ref: FirebaseFirestore.DocumentReference, data: FirebaseFirestore.DocumentData): unknown;
+  update(ref: FirebaseFirestore.DocumentReference, data: FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>): unknown;
 }
 
 export function notify(
@@ -117,4 +118,57 @@ export function otherSide(booking: Booking, actor: Actor): string {
 /** A short label for a piece, used in notification copy. */
 export function pieceName(booking: Booking): string {
   return booking.listing?.name ?? 'a piece';
+}
+
+/**
+ * Finish a rental: mark it completed, credit both histories, and ask
+ * both of them for a review.
+ *
+ * ONE DEFINITION, because there are two ways a rental ends. The lender
+ * says "got it back, all good", or nobody says anything for 48 hours
+ * and the sweep closes it. Those must leave identical state — if only
+ * one of them credited the rental counts, a lender who confirms
+ * promptly would be quietly penalised for it.
+ *
+ * Takes a Writer, so a transaction and a batch can both use it.
+ */
+export function completeBooking(
+  writer: Writer,
+  bookingRef: FirebaseFirestore.DocumentReference,
+  booking: Booking,
+): void {
+  writer.update(bookingRef, {
+    status: 'completed',
+    disputeWindowEndsAt: null,
+    'timeline.completedAt': now(),
+    updatedAt: now(),
+  });
+
+  // The rental is over, so it counts towards both their histories.
+  writer.update(db().collection(COLLECTIONS.users).doc(booking.lenderUid), {
+    'stats.rentalsAsLender': FieldValue.increment(1),
+  });
+  writer.update(db().collection(COLLECTIONS.users).doc(booking.renterUid), {
+    'stats.rentalsAsRenter': FieldValue.increment(1),
+  });
+  writer.update(db().collection(COLLECTIONS.listings).doc(booking.listingId), {
+    'stats.completedRentals': FieldValue.increment(1),
+  });
+
+  // Asked for now, while it is fresh. Reviews are what makes a
+  // stranger's closet feel safe to rent from.
+  notify(writer, {
+    uid: booking.renterUid,
+    type: 'review_requested',
+    title: `How was renting from @${booking.lender.username}?`,
+    body: 'Leave a review — it helps the next person decide.',
+    bookingId: booking.id,
+  });
+  notify(writer, {
+    uid: booking.lenderUid,
+    type: 'review_requested',
+    title: `How was lending to @${booking.renter.username}?`,
+    body: 'Leave a review — it helps the next lender decide.',
+    bookingId: booking.id,
+  });
 }

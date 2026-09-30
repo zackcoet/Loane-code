@@ -199,7 +199,12 @@ export const BOOKING_TRANSITIONS: Record<
   returned: [
     // The lender has a window to flag a problem.
     { to: 'disputed', by: 'lender' },
-    // Window passed with no flag.
+    // "Got it back, all good." The handshake is renter-then-lender, so
+    // a rental that went fine closes the moment the lender says so
+    // rather than sitting in limbo for two days.
+    { to: 'completed', by: 'lender' },
+    // Window passed with no flag. The lender never has to do anything;
+    // confirming just ends it sooner.
     { to: 'completed', by: 'system' },
   ],
   // Terminal.
