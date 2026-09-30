@@ -244,8 +244,17 @@ export const iconSize = {
   sm: 18,
   /** Top bar: hamburger, search, settings. */
   md: 26,
-  /** Bottom tab bar. */
+  /** The back chevron, and anything else wanting a large glyph. */
   lg: 28,
+  /**
+   * Bottom tab bar.
+   *
+   * Deliberately its own size rather than sharing `lg` with the back
+   * chevron: a tab icon is the only thing on its row, is aimed at with
+   * a thumb rather than read, and was undersized against the 92pt bar
+   * it sits in.
+   */
+  tab: 31,
 } as const;
 
 /**

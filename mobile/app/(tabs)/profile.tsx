@@ -40,14 +40,26 @@ export default function Profile() {
   return (
     <Screen flush>
       <View style={styles.header}>
+        {/* The handle is centred on the SCREEN, not between the
+            buttons. It used to be a flex child between a single
+            hamburger on the left and two icons on the right, so it
+            centred itself in the leftover space and sat one button's
+            width off. Laying it over the full row fixes that, and it
+            cannot be pushed around as buttons come and go.
+
+            pointerEvents none so it never eats a tap meant for the
+            hamburger underneath it. */}
+        <View style={styles.titleLayer} pointerEvents="none">
+          <Text style={styles.handle} numberOfLines={1}>
+            @{profile.username}
+          </Text>
+        </View>
+
         <IconButton
           name="menu"
           onPress={() => router.push('/menu')}
           accessibilityLabel="Open menu"
         />
-        <Text style={styles.handle} numberOfLines={1}>
-          @{profile.username}
-        </Text>
         <View style={styles.headerRight}>
           <IconButton
             name="settings-outline"
@@ -105,8 +117,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center' },
+  titleLayer: {
+    // Written out rather than StyleSheet.absoluteFillObject, which is
+    // missing from the React Native typings in this project.
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Padded by the width of the WIDER side — two tap targets — on
+    // both sides, so a long handle truncates before it can reach a
+    // button rather than sliding out from under the centre.
+    paddingHorizontal: controls.minTapTarget * 2,
+  },
   handle: {
-    flex: 1,
     textAlign: 'center',
     fontSize: type.label.size,
     letterSpacing: type.label.letterSpacing,

@@ -8,16 +8,45 @@
  */
 
 import { Tabs } from 'expo-router';
+import { Image, StyleSheet, View } from 'react-native';
+import { color, controls, iconSize, radius, type } from '@loane/shared';
+import { useAuth } from '../../src/auth/AuthProvider';
 import { useUnreadCount } from '../../src/hooks/useNotifications';
 import { useUnreadMessageCount } from '../../src/hooks/useMessaging';
 import { SuspendedBanner } from '../../src/components/SuspendedBanner';
-import { StyleSheet } from 'react-native';
-import { color, controls, iconSize, type } from '@loane/shared';
 import { Icon, type IconName } from '../../src/components/Icon';
 
 function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
   return (
-    <Icon name={name} size={iconSize.lg} tint={focused ? color.icon.default : color.text.muted} />
+    <Icon name={name} size={iconSize.tab} tint={focused ? color.icon.default : color.text.muted} />
+  );
+}
+
+/**
+ * The Profile tab shows her own face.
+ *
+ * Her photo is the clearest possible label for "you" — it is what
+ * Instagram does, and it is why nobody has to think about which tab
+ * their own profile is. It comes from the live auth profile, so
+ * changing her picture updates the tab straight away rather than on
+ * the next launch.
+ *
+ * Falls back to the person glyph when she has no photo yet, which is
+ * everybody on their first day.
+ */
+function TabAvatar({ focused }: { focused: boolean }) {
+  const { profile } = useAuth();
+
+  if (!profile?.photoUrl) {
+    return <TabIcon name={focused ? 'person-circle' : 'person-circle-outline'} focused={focused} />;
+  }
+
+  return (
+    // The ring is always drawn and only changes colour, so the icon
+    // does not shift by two points every time she changes tab.
+    <View style={[styles.avatarRing, focused && styles.avatarRingActive]}>
+      <Image source={{ uri: profile.photoUrl }} style={styles.avatarImage} resizeMode="cover" />
+    </View>
   );
 }
 
@@ -76,7 +105,7 @@ export default function TabsLayout() {
           name="profile"
           options={{
             title: 'Profile',
-            tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'person-circle' : 'person-circle-outline'} focused={focused} />,
+            tabBarIcon: ({ focused }) => <TabAvatar focused={focused} />,
           }}
         />
       </Tabs>
@@ -95,6 +124,17 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   barItem: { paddingVertical: 4 },
+  avatarRing: {
+    width: iconSize.tab,
+    height: iconSize.tab,
+    borderRadius: radius.pill,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    overflow: 'hidden',
+    backgroundColor: color.surface.muted,
+  },
+  avatarRingActive: { borderColor: color.icon.default },
+  avatarImage: { width: '100%', height: '100%', borderRadius: radius.pill },
   badge: {
     backgroundColor: color.status.error,
     color: color.text.inverse,
