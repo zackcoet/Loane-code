@@ -9,7 +9,14 @@
 
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+} from 'react-native';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import {
@@ -82,7 +89,15 @@ export default function ChangePassword() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.body}>
+        {/* Scrollable for the same reason as signup: a fixed body
+            inside a keyboard-avoiding view has nowhere to put the
+            button once the keyboard takes half the screen. */}
+        <ScrollView
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={[text.small, styles.explainer]}>
             For your security, confirm your current password first.
           </Text>
@@ -120,7 +135,7 @@ export default function ChangePassword() {
             loading={busy}
             disabled={!current || !next || !confirm}
           />
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
   );
@@ -128,6 +143,6 @@ export default function ChangePassword() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  body: { flex: 1, padding: spacing.md },
+  body: { flexGrow: 1, padding: spacing.md, paddingBottom: spacing.xl },
   explainer: { marginBottom: spacing.lg },
 });

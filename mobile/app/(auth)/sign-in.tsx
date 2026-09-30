@@ -4,7 +4,14 @@
 
 import { useState } from 'react';
 import { Link, useRouter } from 'expo-router';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import {
@@ -70,7 +77,15 @@ export default function SignIn() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.body}>
+        {/* Scrollable for the same reason as signup: a fixed body
+            inside a keyboard-avoiding view has nowhere to put the
+            button once the keyboard takes half the screen. */}
+        <ScrollView
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={text.h2}>Welcome back.</Text>
           <Text style={[text.label, styles.caption]}>Sign in to your closet</Text>
 
@@ -101,16 +116,16 @@ export default function SignIn() {
             loading={busy}
             disabled={email.length === 0 || password.length === 0}
           />
-        </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.altRow}>
-            Don&apos;t have an account?{' '}
-            <Link href="/(onboarding)/create-account" style={text.link}>
-              Create one
-            </Link>
-          </Text>
-        </View>
+          <View style={styles.footer}>
+            <Text style={styles.altRow}>
+              Don&apos;t have an account?{' '}
+              <Link href="/(onboarding)/create-account" style={text.link}>
+                Create one
+              </Link>
+            </Text>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
   );
@@ -118,9 +133,9 @@ export default function SignIn() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  body: { flex: 1, paddingTop: spacing.xxl },
+  body: { flexGrow: 1, justifyContent: 'space-between', paddingTop: spacing.xxl, paddingBottom: spacing.lg },
   caption: { marginTop: spacing.sm, marginBottom: spacing.xl },
-  footer: { paddingBottom: spacing.xl },
+  footer: { paddingTop: spacing.xl },
   altRow: {
     textAlign: 'center',
     fontSize: type.bodySmall.size,

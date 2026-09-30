@@ -25,7 +25,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Link, useRouter } from 'expo-router';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import {
   LIMITS,
   color,
@@ -120,7 +127,18 @@ export default function CreateAccount() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={styles.body}>
+        {/* Scrollable, because the keyboard was hiding Continue.
+            Three fields and a headline do not fit in the half of the
+            screen a keyboard leaves, and a fixed body has nowhere to
+            put the button — it just goes under. Scrolling means the
+            content can always be reached, whatever the keyboard and
+            whatever the phone. */}
+        <ScrollView
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={text.h2}>Every great closet has{'\n'}a name behind it.</Text>
           <Text style={[text.label, styles.caption]}>Create your account</Text>
           <Text style={[text.small, styles.explainer]}>
@@ -176,16 +194,19 @@ export default function CreateAccount() {
               password.length === 0
             }
           />
-        </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.altRow}>
-            Already have an account?{' '}
-            <Link href="/(auth)/sign-in" style={text.link}>
-              Sign in
-            </Link>
-          </Text>
-        </View>
+          {/* Inside the scroll rather than pinned underneath it. Pinned,
+              it sat on top of the keyboard and stole the room the
+              button needed. */}
+          <View style={styles.footer}>
+            <Text style={styles.altRow}>
+              Already have an account?{' '}
+              <Link href="/(auth)/sign-in" style={text.link}>
+                Sign in
+              </Link>
+            </Text>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
   );
@@ -193,10 +214,14 @@ export default function CreateAccount() {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  body: { flex: 1, paddingTop: spacing.lg },
+  // flexGrow, not flex: flex:1 on a scroll container clamps it to
+  // the viewport height, which is the thing we are trying to escape.
+  // space-between keeps the sign-in line at the bottom when there is
+  // room and lets it scroll away when the keyboard takes the room.
+  body: { flexGrow: 1, justifyContent: 'space-between', paddingTop: spacing.lg, paddingBottom: spacing.lg },
   caption: { marginTop: spacing.sm, marginBottom: spacing.md },
   explainer: { marginBottom: spacing.xl },
-  footer: { paddingBottom: spacing.xl },
+  footer: { paddingTop: spacing.xl },
   altRow: {
     textAlign: 'center',
     fontSize: type.bodySmall.size,
