@@ -14,6 +14,7 @@ import { CommentsPage } from './CommentsPage';
 import { PostsPage } from './PostsPage';
 import { RentalsPage } from './RentalsPage';
 import { ReportsPage } from './ReportsPage';
+import { SupportPage } from './SupportPage';
 import { UserDetailPage } from './UserDetailPage';
 import { UsersPage } from './UsersPage';
 
@@ -115,6 +116,7 @@ function CurrentPage({
   if (page === 'posts') return <PostsPage data={data} campusId={campusId} />;
   if (page === 'comments') return <CommentsPage data={data} campusId={campusId} />;
   if (page === 'reports') return <ReportsPage data={data} campusId={campusId} />;
+  if (page === 'support') return <SupportPage data={data} campusId={campusId} />;
   if (page === 'claims') return <ClaimsPage data={data} campusId={campusId} />;
   if (page === 'campuses') return <CampusesPage campuses={data.campuses} />;
   if (page === 'founding') return <FoundingClosetsPage data={data} campusId={campusId} />;

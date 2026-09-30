@@ -5,6 +5,8 @@ import {
   LIMITS,
   REPORT_REASONS,
   REPORT_TARGET_TYPES,
+  type Booking,
+  type ImageRef,
   type Report,
   type ReportReason,
   type ReportTargetType,
@@ -32,13 +34,14 @@ interface ReportInput {
   targetUid?: string;
   reason: ReportReason;
   details?: string;
+  photos?: ImageRef[];
 }
 
 export const submitReport = onCall<ReportInput, Promise<{ reportId: string }>>(
   { region: 'us-central1' },
   async (request: CallableRequest<ReportInput>): Promise<{ reportId: string }> => {
     const reporter = await requireActiveUser(request);
-    const { targetType, targetId, targetUid, reason, details = '' } = request.data ?? {};
+    const { targetType, targetId, targetUid, reason, details = '', photos = [] } = request.data ?? {};
 
     if (!(REPORT_TARGET_TYPES as readonly string[]).includes(targetType)) {
       throw invalidArgument('What are you reporting?');
@@ -50,6 +53,20 @@ export const submitReport = onCall<ReportInput, Promise<{ reportId: string }>>(
     if (details.length > LIMITS.reportDetails.max) {
       throw invalidArgument('That description is too long.');
     }
+    if (!Array.isArray(photos) || photos.length > 4) {
+      throw invalidArgument('Add up to four photos.');
+    }
+
+    let resolvedTargetUid = targetUid ?? null;
+    if (targetType === 'booking') {
+      const bookingSnap = await db().collection(COLLECTIONS.bookings).doc(targetId).get();
+      if (!bookingSnap.exists) throw invalidArgument('We could not find that rental.');
+      const booking = bookingSnap.data() as Booking;
+      const isLender = booking.lenderUid === reporter.uid;
+      const isRenter = booking.renterUid === reporter.uid;
+      if (!isLender && !isRenter) throw invalidArgument('That rental is not yours.');
+      resolvedTargetUid = isLender ? booking.renterUid : booking.lenderUid;
+    }
 
     const ref = db().collection(COLLECTIONS.reports).doc();
 
@@ -59,9 +76,10 @@ export const submitReport = onCall<ReportInput, Promise<{ reportId: string }>>(
       reporterUid: reporter.uid,
       targetType,
       targetId,
-      targetUid: targetUid ?? null,
+      targetUid: resolvedTargetUid,
       reason,
       details: details.trim(),
+      photos,
       status: 'open',
       resolution: { adminUid: null, action: null, notes: null, resolvedAt: null },
     };

@@ -31,6 +31,7 @@
  *   - addComment / deleteComment   comments on a look, and taking one down
  *   - writeReview        only from someone who actually rented with you
  *   - submitReport       flags a user, listing, post or rental for admins
+ *   - submitSupportRequest  contact-us messages for the support inbox
  *   - blockUser          refuses messaging, renting and following both ways
  *
  * Admin only, every one of which writes an audit row in the same commit:
@@ -39,6 +40,7 @@
  *     (hiding a review recomputes the subject's rating from what is left)
  *   - resolveReport      can hide content and suspend in the same call
  *   - resolveDispute     decides a flagged return
+ *   - resolveSupportRequest  closes a contact-us message
  *
  * Background triggers:
  *   - countListingView          moves a listing's view count
@@ -89,6 +91,7 @@ export { sharePost } from './messaging/sharePost';
 export { addComment, deleteComment } from './posts/comments';
 export { writeReview, editReview } from './reviews/writeReview';
 export { submitReport } from './moderation/report';
+export { submitSupportRequest } from './support/contact';
 export { blockUser, unblockUser } from './moderation/block';
 export { suspendUser, unsuspendUser, addAdminNote } from './admin/moderateUsers';
 export {
@@ -103,6 +106,7 @@ export {
 } from './admin/moderateContent';
 export { resolveReport } from './admin/resolveReport';
 export { resolveDispute } from './admin/resolveDispute';
+export { resolveSupportRequest } from './admin/resolveSupportRequest';
 
 // --- Later phases -----------------------------------------------------------
 // export { saveListing }             from './social/save';        // Phase 3

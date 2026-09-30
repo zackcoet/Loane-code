@@ -21,6 +21,7 @@ export const COLLECTIONS = {
   conversations: 'conversations',
   notifications: 'notifications',
   reports: 'reports',
+  supportRequests: 'supportRequests',
   damageClaims: 'damageClaims',
   adminActions: 'adminActions',
   events: 'events',

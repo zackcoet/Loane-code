@@ -53,7 +53,7 @@ const ITEMS: Item[] = [
   { label: 'Find Friends', icon: 'person-add-outline', href: '/find-friends' },
   { label: 'Invite Friends', icon: 'share-outline', href: '/invite-friends' },
   { label: 'Payouts & Payment Info', icon: 'card-outline', href: '/payouts' },
-  { label: 'Safety', icon: 'shield-checkmark-outline', href: '/help' },
+  { label: 'Safety', icon: 'shield-checkmark-outline', href: '/safety' },
   { label: 'Help & Support', icon: 'help-circle-outline', href: '/help' },
   { label: 'Settings', icon: 'settings-outline', href: '/settings' },
 ];

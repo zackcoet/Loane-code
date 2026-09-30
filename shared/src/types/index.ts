@@ -7,4 +7,5 @@ export * from './booking';
 export * from './messaging';
 export * from './notification';
 export * from './moderation';
+export * from './support';
 export * from './event';

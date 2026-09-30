@@ -92,6 +92,15 @@ export function ReportsPage({ data, campusId }: { data: AdminData; campusId: str
                   <td>{humanize(report.reason)}</td>
                   <td>
                     {report.details}
+                    {(report.photos ?? []).length > 0 ? (
+                      <div className="media-row">
+                        {(report.photos ?? []).map((photo) => (
+                          <a key={photo.path} href={photo.url} target="_blank" rel="noreferrer">
+                            <img src={photo.url} alt="Report evidence" className="thumb" />
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
                     {report.resolution?.notes ? (
                       <div className="cell-note">Decision: {report.resolution.notes}</div>
                     ) : null}

@@ -20,6 +20,7 @@ export function scopeData(data: AdminData, campusId: string): AdminData {
     comments: data.comments.filter((item) => matchesCampus(item, campusId)),
     bookings: data.bookings.filter((item) => matchesCampus(item, campusId)),
     reports: data.reports.filter((item) => matchesCampus(item, campusId)),
+    supportRequests: data.supportRequests.filter((item) => matchesCampus(item, campusId)),
     damageClaims: data.damageClaims.filter((item) => matchesCampus(item, campusId)),
     adminActions: data.adminActions,
     events: data.events.filter((item) => matchesCampus(item, campusId)),

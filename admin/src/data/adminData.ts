@@ -9,6 +9,7 @@ import {
   type Listing,
   type Post,
   type Report,
+  type SupportRequest,
   type Timestampish,
   type User,
 } from '@loane/shared';
@@ -23,6 +24,7 @@ export interface AdminData {
   comments: Comment[];
   bookings: Booking[];
   reports: Report[];
+  supportRequests: SupportRequest[];
   damageClaims: DamageClaim[];
   adminActions: AdminAction[];
   events: AppEvent[];
@@ -36,6 +38,7 @@ const COLLECTION_LIMITS = {
   comments: 250,
   bookings: 250,
   reports: 100,
+  supportRequests: 100,
   damageClaims: 100,
   adminActions: 100,
   events: 500,
@@ -61,6 +64,7 @@ export async function loadAdminData(): Promise<AdminData> {
     comments,
     bookings,
     reports,
+    supportRequests,
     damageClaims,
     adminActions,
     events,
@@ -72,6 +76,11 @@ export async function loadAdminData(): Promise<AdminData> {
     getCollection<Comment>(COLLECTIONS.comments, COLLECTION_LIMITS.comments, true),
     getCollection<Booking>(COLLECTIONS.bookings, COLLECTION_LIMITS.bookings, true),
     getCollection<Report>(COLLECTIONS.reports, COLLECTION_LIMITS.reports, true),
+    getCollection<SupportRequest>(
+      COLLECTIONS.supportRequests,
+      COLLECTION_LIMITS.supportRequests,
+      true,
+    ),
     getCollection<DamageClaim>(COLLECTIONS.damageClaims, COLLECTION_LIMITS.damageClaims, true),
     getCollection<AdminAction>(COLLECTIONS.adminActions, COLLECTION_LIMITS.adminActions, true),
     getCollection<AppEvent>(COLLECTIONS.events, COLLECTION_LIMITS.events, true),
@@ -85,6 +94,7 @@ export async function loadAdminData(): Promise<AdminData> {
     comments,
     bookings,
     reports,
+    supportRequests,
     damageClaims,
     adminActions,
     events,

@@ -445,7 +445,12 @@ service cloud.firestore {
     // are not readable by the people involved.
     // -----------------------------------------------------------------
     match /reports/{reportId} {
-      allow read: if isAdmin();
+      allow read: if isAdmin() || (signedIn() && resource.data.reporterUid == uid());
+      allow write: if false;
+    }
+
+    match /supportRequests/{requestId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.requesterUid == uid());
       allow write: if false;
     }
 

@@ -1151,6 +1151,7 @@ async function main(): Promise<void> {
       targetUid: target.uid,
       reason: seedReport.reason,
       details: seedReport.details,
+      photos: [],
       status: 'open',
       resolution: { adminUid: null, action: null, notes: null, resolvedAt: null },
       createdAt: FieldValue.serverTimestamp(),

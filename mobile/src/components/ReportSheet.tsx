@@ -26,6 +26,10 @@ import { callableErrorMessage } from '../firebase/errors';
 import { logEvent } from '../analytics/events';
 
 const REASON_LABELS: Record<ReportReason, string> = {
+  item_damaged: 'Item damaged',
+  never_received: 'Never received the item',
+  item_not_returned: 'Item not returned',
+  item_stolen_or_lost: 'Item stolen or lost',
   not_as_described: 'Not as described',
   no_show: "She didn't turn up",
   harassment: 'Harassment',

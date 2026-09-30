@@ -1,5 +1,5 @@
 import type { ReportReason, ReportStatus, ReportTargetType } from '../constants';
-import type { BaseDoc, CampusScoped, Timestampish } from './common';
+import type { BaseDoc, CampusScoped, ImageRef, Timestampish } from './common';
 
 /**
  * `reports/{reportId}`
@@ -17,6 +17,7 @@ export interface Report extends BaseDoc, CampusScoped {
   targetUid: string | null;
   reason: ReportReason;
   details: string;
+  photos: ImageRef[];
   status: ReportStatus;
 
   /** Admin follow-up. */
@@ -37,7 +38,7 @@ export interface Report extends BaseDoc, CampusScoped {
 export interface AdminAction extends BaseDoc {
   adminUid: string;
   action: string;
-  targetType: ReportTargetType | 'campus' | 'claim' | 'report';
+  targetType: ReportTargetType | 'campus' | 'claim' | 'report' | 'supportRequest';
   targetId: string;
   notes: string | null;
   /** Snapshot of what changed, for the audit trail. */

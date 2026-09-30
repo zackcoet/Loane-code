@@ -1132,6 +1132,18 @@ describe('events', () => {
 });
 
 describe('moderation', () => {
+  it('lets a student read her own report status', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'reports', 'report-1'), {
+        reporterUid: MADDIE,
+        targetUid: ELLA,
+        targetType: 'user',
+        status: 'open',
+      });
+    });
+    await assertSucceeds(getDoc(doc(asMaddie(), 'reports', 'report-1')));
+  });
+
   it('stops a student reading reports about her', async () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), 'reports', 'report-1'), {
@@ -1143,6 +1155,63 @@ describe('moderation', () => {
     });
     await assertFails(getDoc(doc(asElla(), 'reports', 'report-1')));
     await assertSucceeds(getDoc(doc(asAdmin(), 'reports', 'report-1')));
+  });
+
+  it('stops the app writing reports directly', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'reports', 'report-2'), {
+        reporterUid: ELLA,
+        targetUid: MADDIE,
+        targetType: 'user',
+        status: 'open',
+      }),
+    );
+  });
+});
+
+describe('support requests', () => {
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'supportRequests', 'support-1'), {
+        id: 'support-1',
+        campusId: CAMPUS,
+        requesterUid: ELLA,
+        topic: 'account_help',
+        message: 'I need help.',
+        status: 'open',
+        resolvedAt: null,
+        resolvedByUid: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    });
+  });
+
+  it('lets a student read her own support submission', async () => {
+    await assertSucceeds(getDoc(doc(asElla(), 'supportRequests', 'support-1')));
+  });
+
+  it('keeps support submissions hidden from other students', async () => {
+    await assertFails(getDoc(doc(asMaddie(), 'supportRequests', 'support-1')));
+  });
+
+  it('lets admins read support submissions', async () => {
+    await assertSucceeds(getDoc(doc(asAdmin(), 'supportRequests', 'support-1')));
+  });
+
+  it('stops the app writing support submissions directly', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'supportRequests', 'support-2'), {
+        requesterUid: ELLA,
+        topic: 'bug',
+        message: 'Forged from the phone.',
+        status: 'open',
+      }),
+    );
+  });
+
+  it('stops even an admin resolving one by hand', async () => {
+    await assertFails(updateDoc(doc(asAdmin(), 'supportRequests', 'support-1'), { status: 'resolved' }));
   });
 });
 

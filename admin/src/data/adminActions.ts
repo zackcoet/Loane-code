@@ -52,6 +52,10 @@ export const resolveDispute = call<
   { ok: true }
 >('resolveDispute');
 
+export const resolveSupportRequest = call<{ requestId: string; notes: string }, { ok: true }>(
+  'resolveSupportRequest',
+);
+
 /** Turns a callable error into something worth showing an admin. */
 export function adminErrorMessage(error: unknown, fallback: string): string {
   const raw = error instanceof Error ? error.message : '';

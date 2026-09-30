@@ -57,6 +57,7 @@ export default function Settings() {
       readOnly: true,
     },
     { label: 'Change Password', href: '/change-password' },
+    { label: 'Safety', href: '/safety' },
     { label: 'Help & Support', href: '/help' },
     {
       label: 'Terms of Service',

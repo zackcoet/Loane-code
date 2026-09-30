@@ -6,6 +6,7 @@ export type Page =
   | 'posts'
   | 'comments'
   | 'reports'
+  | 'support'
   | 'claims'
   | 'campuses'
   | 'founding'
@@ -19,6 +20,7 @@ export const PAGE_LABELS: Record<Page, string> = {
   posts: 'Posts',
   comments: 'Comments',
   reports: 'Reports',
+  support: 'Support',
   claims: 'Damage Claims',
   campuses: 'Campuses',
   founding: 'Founding Closets',
@@ -33,6 +35,7 @@ export const NAV_ITEMS: Page[] = [
   'posts',
   'comments',
   'reports',
+  'support',
   'claims',
   'campuses',
   'founding',

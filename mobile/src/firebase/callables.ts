@@ -6,7 +6,7 @@
  */
 
 import { httpsCallable } from 'firebase/functions';
-import type { ImageRef, Occasion } from '@loane/shared';
+import type { ImageRef, Occasion, SupportTopic } from '@loane/shared';
 import { functions } from './config';
 
 /**
@@ -160,9 +160,15 @@ export const submitReport = httpsCallable<
     targetUid?: string;
     reason: string;
     details?: string;
+    photos?: ImageRef[];
   },
   { reportId: string }
 >(functions, 'submitReport');
+
+export const submitSupportRequest = httpsCallable<
+  { topic: SupportTopic; message: string },
+  { requestId: string }
+>(functions, 'submitSupportRequest');
 
 export const blockUser = httpsCallable<{ uid: string }, { ok: true }>(functions, 'blockUser');
 export const unblockUser = httpsCallable<{ uid: string }, { ok: true }>(functions, 'unblockUser');

@@ -323,6 +323,10 @@ export const REPORT_TARGET_TYPES = [
 export type ReportTargetType = (typeof REPORT_TARGET_TYPES)[number];
 
 export const REPORT_REASONS = [
+  'item_damaged',
+  'never_received',
+  'item_not_returned',
+  'item_stolen_or_lost',
   'not_as_described',
   'no_show',
   'harassment',
@@ -336,6 +340,12 @@ export type ReportReason = (typeof REPORT_REASONS)[number];
 
 export const REPORT_STATUSES = ['open', 'reviewing', 'actioned', 'dismissed'] as const;
 export type ReportStatus = (typeof REPORT_STATUSES)[number];
+
+export const SUPPORT_TOPICS = ['account_help', 'feedback', 'bug', 'other'] as const;
+export type SupportTopic = (typeof SUPPORT_TOPICS)[number];
+
+export const SUPPORT_REQUEST_STATUSES = ['open', 'resolved'] as const;
+export type SupportRequestStatus = (typeof SUPPORT_REQUEST_STATUSES)[number];
 
 export const CLAIM_TYPES = ['excessive_cleaning', 'repairable_damage', 'irreparable', 'not_returned'] as const;
 export type ClaimType = (typeof CLAIM_TYPES)[number];
@@ -491,6 +501,7 @@ export const LIMITS = {
   messageBody: { max: 2000 },
   commentBody: { min: 1, max: 500 },
   reportDetails: { max: 1000 },
+  supportMessage: { min: 1, max: 2000 },
   /** Photos per listing / per post. */
   listingPhotos: { min: 1, max: 8 },
   postPhotos: { min: 1, max: 6 },
