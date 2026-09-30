@@ -303,11 +303,36 @@ gcloud iam service-accounts add-iam-policy-binding \
   <project-number>-compute@developer.gserviceaccount.com \
   --member="serviceAccount:<project-number>-compute@developer.gserviceaccount.com" \
   --role="roles/iam.serviceAccountTokenCreator" --project <id>
+
+# 5. PROVE IT WORKS. Not optional after anything touching functions,
+#    rules or indexes.
+cd functions && npx tsx scripts/coreFlowLive.ts --project <id>
 ```
 
 `bootstrapProject.ts` deliberately does not load the fake students that
 `seed.ts` makes. Those belong in an emulator, never in front of real
 users.
+
+### Always finish with the live core flow
+
+```bash
+cd backend/functions && npx tsx scripts/coreFlowLive.ts --project loane-code
+```
+
+It walks the whole thing as two real students — sign up, profile,
+listing, post, tag, request, accept, chat, handoff, return, complete,
+review, decline, cancel, expiry — and deletes every trace afterwards.
+Expect `19 passed, 0 failed`.
+
+**Run it after every deploy that touches functions, rules or indexes.**
+The hourly booking sweep crashed on a missing index from the day it was
+first deployed, and nobody noticed for weeks, because everything works
+against an emulator that does not enforce indexes. This script is what
+would have caught it the same afternoon.
+
+`smokeTestLive.ts` is the smaller, faster version — it answers "is the
+backend up?" rather than "can two students complete a rental?". Use it
+when you only changed one function.
 
 ### If a deploy leaves functions in UNKNOWN or FAILED
 

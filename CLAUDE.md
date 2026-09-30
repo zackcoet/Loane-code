@@ -169,6 +169,24 @@ npm run typecheck
 npm run lint
 ```
 
+**After any deploy that touches functions, rules or indexes, run the
+live core flow. This is not optional.**
+
+```bash
+cd backend/functions && npx tsx scripts/coreFlowLive.ts --project loane-code
+```
+
+It walks the whole thing as two throwaway students — sign up, profile,
+listing, post, tag, request, accept, chat, handoff, return, complete,
+review, decline, cancel, expiry — then deletes every trace. Expect
+`19 passed, 0 failed`.
+
+The reason it exists: the hourly booking sweep crashed on a missing
+index from the day it was first deployed and nobody noticed for weeks,
+because the emulator does not enforce indexes and everything passed on
+a laptop. Emulator-green means nothing about production. Prove it
+against the real project.
+
 Seeded accounts all use `loane1234`. Student:
 `ellapetrickcloset@email.sc.edu`. Admin: `admin@joinloane.com`.
 
