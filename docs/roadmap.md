@@ -161,9 +161,13 @@ The condition photos are required anyway — with no card on file and no
 hold, a before-and-after photo record is the only protection either side
 has.
 
-## Phase 5 — Payments + Protection 🚧 IN PROGRESS
+## Phase 5 — Payments + Protection ⏸ PAUSED after step 2
 
-**Unpaused 2026-10-05.** Built and tested against a separate "Loane Test"
+**Unpaused 2026-10-05, paused again the same day after step 2** at Zack's
+call, to let Production Polish (5a) run first while the Stripe test account
+is set up. Steps 1 and 2 are done and pushed.
+
+**Originally:** Built and tested against a separate "Loane Test"
 Stripe account with Connect enabled in test mode, because Loane, Inc.'s own
 Stripe account cannot enable Connect until its Stripe Atlas incorporation
 finishes (~mid-October). Going live is then a key swap and nothing else —
@@ -189,42 +193,53 @@ All five open decisions are settled; see `docs/decisions.md` (2026-10-05).
 **Deliberately not in Phase 5:** Apple Pay and the native payment sheet.
 Hosted Checkout works in Expo Go; the native SDK does not. See Phase 5c.
 
-## Phase 5a — Production polish 📋 NEXT
+## Phase 5a — Production polish 🚧 IN PROGRESS
 
-**Agreed 2026-10-05. Starts when payments is finished and Zack says go.**
-Make Loane feel like a real, high-quality app rather than a working one.
+**Ordering set by Zack 2026-10-05.** Payments is paused mid-phase (steps 1
+and 2 landed) until the Stripe test account and Connect are ready, so this
+runs first. Make Loane feel like a real, high-quality app rather than a
+working one. Commit after each item.
 
-**Begins with a screen-by-screen review and a ranked list, before any
-building.** The point is to find what actually feels unfinished, not to
-guess.
+- [ ] **a. Date-aware browsing.** "I need something for [date]" — Discover
+      filters to pieces actually free then. Half-open ranges and blackout
+      dates already exist on every listing; this is the first screen that
+      asks them a question.
+- [ ] **b. Branded loading + skeletons.** The Loane rings gently spinning,
+      ONE reusable component from the design tokens, for every full-screen
+      wait: launch, sign-up, upload, payment. Skeleton placeholders — not
+      spinners — for feeds and grids. Also where the in-app success banner
+      gets built, since `Alert.alert` is a native dialog that cannot be
+      branded.
+- [ ] **c. Onboarding in as few steps as possible.** Download to browsing in
+      under a minute.
+- [ ] **d. Lender onboarding checklist.** Photos, pricing, occasions,
+      handoff — so a first listing is a good listing.
+- [ ] **e. Growth-oriented empty states.** Push posting, following and
+      inviting rather than apologising for being empty. At launch most
+      lists are empty for a while, so these are the product.
+- [ ] **f. "Similar pieces" on listing detail.** A dead end becomes a
+      second thing to want.
+- [ ] **g. FAQ in Help & Support**, editable from the admin panel so an
+      answer can change without shipping a build. Covers renting, lending,
+      payments and fees, cancellations, damage, safety, accounts.
 
-- Onboarding in as few steps as possible — download to browsing in under a
-  minute
-- Smooth transitions between screens; consistent layout and spacing
-  everywhere
-- **Branded loading animation**: the Loane rings (two overlapping circles)
-  gently spinning. ONE reusable component, built from the design tokens.
-  Used for every full-screen wait — app launch, sign-up, payment
-  processing, uploading a post or listing
-- **Skeleton placeholders, not spinners**, for feeds, grids and lists, so
-  they feel instant
-- A helpful empty state and a clear error-with-retry on every screen
-- Speed: fast feed and Discover, images cached and quick to appear
-- Details: haptics on key actions, pull-to-refresh, the keyboard never
-  covering an input, correct on both small and large iPhones
+**Carried, not dropped** (from the original polish list): smooth transitions
+and consistent spacing, a clear error-with-retry on every screen, image
+caching and feed speed, haptics, pull-to-refresh, keyboard never covering an
+input, correct on small and large iPhones. These get folded into the items
+above as each screen is touched rather than being a pass of their own.
 
-## Phase 5b — FAQ + AI support assistant 📋 THEN
+## Phase 5b — Finish payments ⏸ PAUSED MID-PHASE
 
-**Agreed 2026-10-05.** In this order, FAQ first — the assistant answers out
-of it, so it cannot exist first.
+Steps 1 and 2 are done and pushed. Resumes when the "Loane Test" Stripe
+account has Connect enabled in test mode and `STRIPE_SECRET_KEY` is set.
+The remaining steps are listed under Phase 5 above.
 
-**FAQ**
-- A real FAQ in Help & Support: renting, lending, payments and fees,
-  cancellations, damage, safety, accounts
-- **Editable from the admin panel**, so an answer can change without
-  shipping a build
+## Phase 5c — AI support assistant 📋 LATER
 
-**AI support assistant (Claude API)**
+**Deferred by Zack 2026-10-05.** Needs the FAQ (5a item g) to exist first —
+the assistant answers out of it, so it cannot come earlier.
+
 - A chat in Help & Support answering from our FAQ and policies
 - Can look up the user's OWN rentals and reports, read-only, for
   "where's my dress" questions
@@ -237,9 +252,9 @@ of it, so it cannot exist first.
 - **Rate limited per user**, so it cannot be abused or run up a bill
 - Admin panel: AI conversations, and the tickets it handed off
 
-## Phase 5c — Apple Pay 📋 THEN
+## Phase 5d — Apple Pay 📋 LATER
 
-**Agreed 2026-10-05. Only once payments are proven working.**
+**Deferred by Zack 2026-10-05. Only once payments are proven working.**
 
 - Swap hosted browser Checkout for `@stripe/stripe-react-native`'s native
   payment sheet, with Apple Pay
