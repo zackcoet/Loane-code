@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { color, spacing, type LegalDocKind, type User } from '@loane/shared';
 import { acceptLegalDocs } from '../firebase/callables';
 import { callableErrorMessage } from '../firebase/errors';
 import { useLatestLegalDocs } from '../hooks/useLegalDocs';
 import { Button } from './Button';
+import { LoaneLoader } from './LoaneLoader';
 import { LegalDocumentModal } from './LegalDocumentModal';
 import { Screen } from './Screen';
 import { Text } from './Text';
@@ -31,7 +32,7 @@ export function LegalGate({ profile, children }: Props) {
   if (loading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator color={color.icon.default} />
+        <LoaneLoader size={44} />
       </View>
     );
   }

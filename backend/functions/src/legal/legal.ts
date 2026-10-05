@@ -33,13 +33,28 @@ function requireEffectiveDate(value: unknown): string {
   return date;
 }
 
+/**
+ * The current published version of one document.
+ *
+ * One read, not the whole collection. Every published version is kept
+ * forever and carries its full text — up to 100,000 characters — so
+ * fetching them all to sort in memory meant every signup and every
+ * acceptance downloaded the entire legal history of the app.
+ *
+ * Needs the legalDocs(kind ASC, version DESC) composite index. The
+ * emulator does not enforce indexes, so this is one to confirm against
+ * the real project after deploying.
+ */
 export async function latestLegalDoc(kind: LegalDocKind): Promise<LegalDoc | null> {
-  const snap = await db().collection(COLLECTIONS.legalDocs).where('kind', '==', kind).get();
-  return (
-    snap.docs
-      .map((doc) => ({ id: doc.id, ...doc.data() }) as LegalDoc)
-      .sort((a, b) => b.version - a.version)[0] ?? null
-  );
+  const snap = await db()
+    .collection(COLLECTIONS.legalDocs)
+    .where('kind', '==', kind)
+    .orderBy('version', 'desc')
+    .limit(1)
+    .get();
+
+  const doc = snap.docs[0];
+  return doc ? ({ id: doc.id, ...doc.data() } as LegalDoc) : null;
 }
 
 async function nextVersion(kind: LegalDocKind): Promise<number> {

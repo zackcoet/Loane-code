@@ -116,6 +116,8 @@ service cloud.firestore {
       //   emailConfirmed  — only a real confirmation may set this
       //   role, status    — nobody promotes or un-suspends themselves
       //   stats           — every counter is a Cloud Function's job
+      //   legalAccepted   — acceptLegalDocs checks the version she claims
+      //                     against the published one before writing it
       //   isFoundingCloset, stripe, verifiedAt, createdAt
       allow update: if isSelf(userId)
         && isActive()
