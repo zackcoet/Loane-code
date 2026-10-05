@@ -299,9 +299,16 @@ export const controls = {
   buttonHeight: 56,
   buttonHeightSmall: 44,
   inputHeight: 48,
-  /** Bottom tab bar, excluding the home-indicator safe area. */
-  tabBarHeight: 92,
-  tabBarPlus: 46,
+  /**
+   * Bottom tab bar CONTENT height, excluding the home-indicator safe
+   * area. The layout adds `insets.bottom` on top of this.
+   *
+   * It was 92, which was this number plus a hard-coded guess at an
+   * iPhone's home indicator — so on a notched phone the bar was right by
+   * accident and the icons still crowded the indicator, and on a phone
+   * with a home button it was 30pt of empty space.
+   */
+  tabBarHeight: 60,
   headerHeight: 56,
   /** Single-line rounded chip, e.g. the occasion filters on Discover. */
   chipHeight: 34,

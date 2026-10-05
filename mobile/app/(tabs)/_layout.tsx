@@ -9,6 +9,7 @@
 
 import { Tabs } from 'expo-router';
 import { Image, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, controls, iconSize, radius, spacing, type } from '@loane/shared';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useUnreadCount } from '../../src/hooks/useNotifications';
@@ -71,6 +72,18 @@ export default function TabsLayout() {
   const unread = useUnreadCount();
   const unreadMessages = useUnreadMessageCount();
 
+  /**
+   * The home indicator's height, which is 34 on a notched iPhone and 0 on
+   * one with a home button.
+   *
+   * Setting an explicit `height` on tabBarStyle opts out of the padding
+   * React Navigation would otherwise add for this, so the icons sat on
+   * top of the indicator and looked cut off. Screen.tsx deliberately
+   * leaves the bottom edge alone precisely so the bar can own it — it
+   * just never did.
+   */
+  const insets = useSafeAreaInsets();
+
   return (
     <>
       <SuspendedBanner />
@@ -79,7 +92,13 @@ export default function TabsLayout() {
           headerShown: false,
           tabBarActiveTintColor: color.icon.default,
           tabBarInactiveTintColor: color.text.muted,
-          tabBarStyle: styles.bar,
+          tabBarStyle: [
+            styles.bar,
+            {
+              height: controls.tabBarHeight + insets.bottom,
+              paddingBottom: insets.bottom,
+            },
+          ],
           tabBarShowLabel: false,
           tabBarItemStyle: styles.barItem,
         }}
@@ -142,10 +161,12 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface.page,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: color.border.default,
-    height: controls.tabBarHeight,
-    // With no label underneath, the icons need centring in the bar
-    // rather than being pushed to the top of it.
-    paddingTop: 12,
+    // Height and bottom padding are applied in the component, where the
+    // safe-area inset is known.
+    //
+    // With no label underneath, the icons need centring in the content
+    // area rather than being pushed to the top of it.
+    paddingTop: 8,
   },
   barItem: { paddingVertical: 4 },
   // Always drawn, only the colour changes, so the glyph never shifts by
