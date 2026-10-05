@@ -107,8 +107,19 @@ Cloud Function. No exceptions.
 ## Design
 
 Clean and minimal: mostly black and white, lots of white space, thin
-hairline borders, small uppercase letter-spaced labels, bold black primary
-buttons, square corners.
+hairline borders, small uppercase letter-spaced labels, square corners.
+
+**Bright Chartreuse `#B5BF50` is the accent** (Pantone 14-0445 TCX, confirmed
+by Ella). Black and white are the base; chartreuse marks the primary action
+and anything small and active — primary buttons, the tab you are on, the +
+that creates something, selected chips and dates, price tags, unread badges,
+"Your turn" pills, the rating and closet count on a profile.
+
+**Chartreuse is always a background with black text on it. Never chartreuse
+ink on white** — it sits at about 1.9:1 contrast, which is unreadable. There
+is deliberately no `color.text.accent` token. `Button`'s `primary` variant is
+chartreuse; `dark` is the black one, for a primary action that should not feel
+celebratory (submitting a report).
 
 - Logo: two overlapping circles with L O A N E spaced across them.
 - Brand tokens are in `shared/src/tokens.ts`. **Three colors are marked

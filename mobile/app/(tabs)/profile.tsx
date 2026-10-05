@@ -68,6 +68,7 @@ export default function Profile() {
           />
           <IconButton
             name="add"
+            accent
             onPress={() => router.push('/post-sheet')}
             accessibilityLabel="Create a post or listing"
           />

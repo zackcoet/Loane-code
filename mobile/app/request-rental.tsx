@@ -224,7 +224,6 @@ export default function RequestRental() {
           onPress={onSend}
           loading={sending}
           disabled={!startDate}
-          tone="accent"
           style={styles.send}
         />
         <Text variant="caption" tone="muted" style={styles.footnote}>

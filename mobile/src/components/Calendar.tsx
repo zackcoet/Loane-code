@@ -129,7 +129,7 @@ export function Calendar({
               >
                 <Text
                   variant="bodySmall"
-                  tone={isSelected ? 'inverse' : disabled ? 'disabled' : 'primary'}
+                  tone={disabled ? 'disabled' : 'primary'}
                   style={disabled && !past ? styles.struck : undefined}
                 >
                   {Number(date.slice(-2))}
@@ -159,7 +159,8 @@ const styles = StyleSheet.create({
   weekRow: { flexDirection: 'row' },
   cell: { flex: 1, aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
   day: { borderRadius: radius.pill, minHeight: controls.minTapTarget / 1.2 },
-  daySelected: { backgroundColor: color.surface.inverse },
+  // The date she picked is a brand moment, not just a selection.
+  daySelected: { backgroundColor: color.accent.background },
   struck: { textDecorationLine: 'line-through' },
   legend: { marginTop: spacing.sm },
 });

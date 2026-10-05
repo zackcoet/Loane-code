@@ -73,6 +73,7 @@ export default function Feed() {
         <Logo size={30} lockup="below" />
         <IconButton
           name="add"
+          accent
           onPress={() => router.push('/post-sheet')}
           accessibilityLabel="Create a post or listing"
         />

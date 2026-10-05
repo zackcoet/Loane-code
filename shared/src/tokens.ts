@@ -121,8 +121,19 @@ export const color = {
   },
 
   button: {
-    primary: { background: palette.black, label: palette.white },
-    accent: { background: palette.brightChartreuse, label: palette.black },
+    /**
+     * The primary action is chartreuse, because the primary action is
+     * where the brand should be loudest — "Request to rent", "Publish
+     * look", "Continue". Label is black: #B5BF50 is a light yellow-green
+     * and carries dark text only.
+     */
+    primary: { background: palette.brightChartreuse, label: palette.black },
+    /**
+     * Black. For a primary action that should NOT feel celebratory —
+     * submitting a report about another student, mainly. Same weight on
+     * the screen, none of the brand's enthusiasm.
+     */
+    dark: { background: palette.black, label: palette.white },
     outline: { background: palette.white, border: palette.black, label: palette.black },
     disabled: { background: palette.grey100, label: palette.ink300 },
   },
@@ -142,6 +153,15 @@ export const color = {
     sage: palette.sage,
   },
 
+  /**
+   * The brand accent, for anything small and active: a selected chip, an
+   * unread badge, a price tag, a chosen date, the tab you are on.
+   *
+   * `label` is black and there is deliberately no "accent text on white"
+   * token. #B5BF50 on white is about 1.9:1 contrast — unreadable as text
+   * and barely visible as a glyph. Chartreuse is always a BACKGROUND with
+   * black on top of it, never ink.
+   */
   accent: {
     background: palette.brightChartreuse,
     border: palette.brightChartreuse,

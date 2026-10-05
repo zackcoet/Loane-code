@@ -9,16 +9,31 @@
 
 import { Tabs } from 'expo-router';
 import { Image, StyleSheet, View } from 'react-native';
-import { color, controls, iconSize, radius, type } from '@loane/shared';
+import { color, controls, iconSize, radius, spacing, type } from '@loane/shared';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useUnreadCount } from '../../src/hooks/useNotifications';
 import { useUnreadMessageCount } from '../../src/hooks/useMessaging';
 import { SuspendedBanner } from '../../src/components/SuspendedBanner';
 import { Icon, type IconName } from '../../src/components/Icon';
 
+/**
+ * A tab icon, with a chartreuse pill behind the one you are on.
+ *
+ * The accent is the PILL and not the glyph on purpose. #B5BF50 is a
+ * light yellow-green: as an icon on a white bar it sits at roughly
+ * 1.9:1 contrast, which is not a subtle look, it is an invisible one.
+ * Behind a black glyph it reads instantly and keeps the rule that
+ * chartreuse is always a background with black on top.
+ */
 function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
   return (
-    <Icon name={name} size={iconSize.tab} tint={focused ? color.icon.default : color.text.muted} />
+    <View style={[styles.iconPill, focused && styles.iconPillActive]}>
+      <Icon
+        name={name}
+        size={iconSize.tab}
+        tint={focused ? color.accent.label : color.text.muted}
+      />
+    </View>
   );
 }
 
@@ -73,22 +88,29 @@ export default function TabsLayout() {
           name="feed"
           options={{
             title: 'Feed',
-            tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />,
+            tabBarIcon: ({ focused }) => (
+              <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />
+            ),
           }}
         />
         <Tabs.Screen
           name="discover"
           options={{
             title: 'Discover',
-            tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'search' : 'search-outline'} focused={focused} />,
+            tabBarIcon: ({ focused }) => (
+              <TabIcon name={focused ? 'search' : 'search-outline'} focused={focused} />
+            ),
           }}
         />
         <Tabs.Screen
           name="messages"
           options={{
             title: 'Messages',
-            tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'chatbubble' : 'chatbubble-outline'} focused={focused} />,
-            tabBarBadge: unreadMessages > 0 ? (unreadMessages > 9 ? '9+' : unreadMessages) : undefined,
+            tabBarIcon: ({ focused }) => (
+              <TabIcon name={focused ? 'chatbubble' : 'chatbubble-outline'} focused={focused} />
+            ),
+            tabBarBadge:
+              unreadMessages > 0 ? (unreadMessages > 9 ? '9+' : unreadMessages) : undefined,
             tabBarBadgeStyle: styles.badge,
           }}
         />
@@ -96,7 +118,9 @@ export default function TabsLayout() {
           name="activity"
           options={{
             title: 'Activity',
-            tabBarIcon: ({ focused }) => <TabIcon name={focused ? 'heart' : 'heart-outline'} focused={focused} />,
+            tabBarIcon: ({ focused }) => (
+              <TabIcon name={focused ? 'heart' : 'heart-outline'} focused={focused} />
+            ),
             tabBarBadge: unread > 0 ? (unread > 9 ? '9+' : unread) : undefined,
             tabBarBadgeStyle: styles.badge,
           }}
@@ -124,6 +148,17 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   barItem: { paddingVertical: 4 },
+  // Always drawn, only the colour changes, so the glyph never shifts by
+  // a few points as you move between tabs.
+  iconPill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconPillActive: { backgroundColor: color.accent.background },
   avatarRing: {
     width: iconSize.tab,
     height: iconSize.tab,

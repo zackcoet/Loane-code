@@ -8,7 +8,7 @@
  */
 
 import { StyleSheet, View } from 'react-native';
-import { color, iconSize } from '@loane/shared';
+import { color, iconSize, radius, spacing } from '@loane/shared';
 import { Icon } from './Icon';
 import { Text } from './Text';
 
@@ -17,9 +17,18 @@ interface Props {
   count: number;
   /** Shown in place of nothing when there are no reviews. */
   emptyLabel?: string;
+  /**
+   * Leads with the score in a chartreuse tag.
+   *
+   * For the top of a profile, where a good rating is the strongest
+   * reason to rent from someone and deserves to be the thing the eye
+   * lands on. Lists of reviews keep the plain stars — a column of
+   * accent tags would be noise, not emphasis.
+   */
+  highlight?: boolean;
 }
 
-export function StarRating({ average, count, emptyLabel }: Props) {
+export function StarRating({ average, count, emptyLabel, highlight = false }: Props) {
   if (count === 0 || average == null) {
     return emptyLabel ? (
       <Text variant="caption" tone="muted" style={styles.empty}>
@@ -32,6 +41,13 @@ export function StarRating({ average, count, emptyLabel }: Props) {
 
   return (
     <View style={styles.row} accessibilityLabel={`${average} out of 5, ${count} reviews`}>
+      {highlight ? (
+        <View style={styles.scoreTag}>
+          <Text variant="caption" style={styles.scoreTagText} uppercase={false}>
+            {average.toFixed(1)}
+          </Text>
+        </View>
+      ) : null}
       {[1, 2, 3, 4, 5].map((n) => (
         <Icon
           key={n}
@@ -49,6 +65,14 @@ export function StarRating({ average, count, emptyLabel }: Props) {
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 4 },
+  scoreTag: {
+    borderRadius: radius.sm,
+    backgroundColor: color.accent.background,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 1,
+    marginRight: spacing.xs,
+  },
+  scoreTagText: { color: color.accent.label, fontWeight: '600' },
   count: { marginLeft: 4 },
   empty: { marginTop: 4 },
 });

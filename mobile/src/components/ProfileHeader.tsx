@@ -22,6 +22,7 @@ import {
   SIZE_FIELD_LABELS,
   color,
   formatCentsShort,
+  radius,
   spacing,
   type User,
 } from '@loane/shared';
@@ -86,16 +87,8 @@ export function ProfileHeader({
         )}
 
         <View style={styles.counts}>
-          <Count
-            value={user.stats.followerCount}
-            label="Followers"
-            onPress={onPressFollowers}
-          />
-          <Count
-            value={user.stats.followingCount}
-            label="Following"
-            onPress={onPressFollowing}
-          />
+          <Count value={user.stats.followerCount} label="Followers" onPress={onPressFollowers} />
+          <Count value={user.stats.followingCount} label="Following" onPress={onPressFollowing} />
         </View>
       </View>
 
@@ -121,9 +114,7 @@ export function ProfileHeader({
           disabled={!onPressRating}
           accessibilityRole={onPressRating ? 'button' : undefined}
           accessibilityLabel={
-            user.stats.ratingCount > 0
-              ? `See all ${user.stats.ratingCount} reviews`
-              : undefined
+            user.stats.ratingCount > 0 ? `See all ${user.stats.ratingCount} reviews` : undefined
           }
           style={styles.rating}
         >
@@ -131,6 +122,7 @@ export function ProfileHeader({
             average={user.stats.ratingAverage}
             count={user.stats.ratingCount}
             emptyLabel="No reviews yet"
+            highlight
           />
         </Pressable>
 
@@ -156,21 +148,27 @@ export function ProfileHeader({
         </View>
       ) : null}
 
+      {/* The shop-window line. The closet size is the one number that
+          says "there is something here to rent", so it carries the
+          accent; the price stays plain text beside it rather than
+          competing with it for attention. */}
       {listings.length > 0 ? (
-        <Text variant="bodySmall" tone="secondary" style={styles.shopLine}>
-          <Text variant="bodySmall" style={styles.strong}>
-            {listings.length} {listings.length === 1 ? 'piece' : 'pieces'}
-          </Text>
+        <View style={styles.shopLine}>
+          <View style={styles.countTag}>
+            <Text variant="caption" style={styles.countTagText} uppercase={false}>
+              {listings.length} {listings.length === 1 ? 'piece' : 'pieces'}
+            </Text>
+          </View>
           {cheapest != null ? (
             <Text variant="bodySmall" tone="secondary">
-              {'  ·  from '}
+              {'from '}
               <Text variant="bodySmall" style={styles.strong}>
                 {formatCentsShort(cheapest)}
               </Text>
               {' / 3 days'}
             </Text>
           ) : null}
-        </Text>
+        </View>
       ) : null}
 
       {children ? <View style={styles.actions}>{children}</View> : null}
@@ -179,15 +177,7 @@ export function ProfileHeader({
 }
 
 /** A follower or following count. Tappable when there is a list to open. */
-function Count({
-  value,
-  label,
-  onPress,
-}: {
-  value: number;
-  label: string;
-  onPress?: () => void;
-}) {
+function Count({ value, label, onPress }: { value: number; label: string; onPress?: () => void }) {
   return (
     <Pressable
       onPress={onPress}
@@ -244,7 +234,20 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   sizeValue: {},
-  shopLine: { paddingHorizontal: spacing.md, marginTop: spacing.md },
+  shopLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
+  },
+  countTag: {
+    borderRadius: radius.sm,
+    backgroundColor: color.accent.background,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  countTagText: { color: color.accent.label, fontWeight: '600' },
   actions: {
     flexDirection: 'row',
     gap: spacing.sm,

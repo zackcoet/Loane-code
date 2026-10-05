@@ -134,6 +134,7 @@ export function ReportSheet({
 
           <Button
             label="Send report"
+            variant="dark"
             onPress={submit}
             loading={sending}
             disabled={!reason}

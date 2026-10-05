@@ -1,6 +1,18 @@
 /**
- * The bold black primary button from the mockups, plus its outline and text
- * variants. Small uppercase letter-spaced label, square corners.
+ * Loane's button. Small uppercase letter-spaced label, square corners.
+ *
+ * The primary action is CHARTREUSE with a black label, because the
+ * primary action is where the brand should be loudest — "Request to
+ * rent", "Publish look", "Continue". Everything else stays black and
+ * white so the accent keeps its meaning.
+ *
+ * `dark` is the same weight in black, for a primary action that should
+ * not feel celebratory. Reporting another student is the case that
+ * needs it.
+ *
+ * This replaced a `tone="accent"` prop that had to be remembered at
+ * every call site. Making the default carry the brand means a new
+ * screen is branded because it exists, not because someone remembered.
  */
 
 import {
@@ -13,14 +25,12 @@ import {
 } from 'react-native';
 import { color, controls, radius, spacing, type } from '@loane/shared';
 
-type Variant = 'primary' | 'outline' | 'text';
-type Tone = 'default' | 'accent';
+type Variant = 'primary' | 'dark' | 'outline' | 'text';
 
 interface Props {
   label: string;
   onPress: () => void;
   variant?: Variant;
-  tone?: Tone;
   disabled?: boolean;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -30,13 +40,22 @@ export function Button({
   label,
   onPress,
   variant = 'primary',
-  tone = 'default',
   disabled = false,
   loading = false,
   style,
 }: Props) {
   const inactive = disabled || loading;
-  const accent = variant === 'primary' && tone === 'accent';
+  // Both filled variants grey out the whole button rather than just
+  // fading it, so a disabled primary does not look like a pale brand.
+  const filled = variant === 'primary' || variant === 'dark';
+
+  const labelColor = inactive
+    ? color.text.disabled
+    : variant === 'primary'
+      ? color.button.primary.label
+      : variant === 'dark'
+        ? color.button.dark.label
+        : color.icon.default;
 
   return (
     <Pressable
@@ -46,38 +65,19 @@ export function Button({
       disabled={inactive}
       style={({ pressed }) => [
         styles.base,
-        variant === 'primary' && (accent ? styles.primaryAccent : styles.primary),
+        variant === 'primary' && styles.primary,
+        variant === 'dark' && styles.dark,
         variant === 'outline' && styles.outline,
         variant === 'text' && styles.textOnly,
-        inactive && (variant === 'primary' ? styles.primaryDisabled : styles.disabled),
+        inactive && (filled ? styles.filledDisabled : styles.disabled),
         pressed && !inactive && styles.pressed,
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator
-          color={
-            accent
-              ? color.accent.label
-              : variant === 'primary'
-                ? color.surface.page
-                : color.icon.default
-          }
-        />
+        <ActivityIndicator color={labelColor} />
       ) : (
-        <Text
-          style={[
-            styles.label,
-            accent
-              ? styles.labelAccent
-              : variant === 'primary'
-                ? styles.labelOnDark
-                : styles.labelOnLight,
-            inactive && styles.labelDisabled,
-          ]}
-        >
-          {label}
-        </Text>
+        <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
       )}
     </Pressable>
   );
@@ -91,15 +91,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     borderRadius: radius.sm,
   },
-  primary: { backgroundColor: color.surface.inverse },
-  primaryAccent: { backgroundColor: color.button.accent.background },
+  primary: { backgroundColor: color.button.primary.background },
+  dark: { backgroundColor: color.button.dark.background },
   outline: {
     backgroundColor: color.surface.page,
     borderWidth: 1,
     borderColor: color.border.inverse,
   },
   textOnly: { height: controls.minTapTarget, backgroundColor: 'transparent' },
-  primaryDisabled: { backgroundColor: color.surface.disabled },
+  filledDisabled: { backgroundColor: color.surface.disabled },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.8 },
   label: {
@@ -108,8 +108,4 @@ const styles = StyleSheet.create({
     letterSpacing: type.button.letterSpacing,
     textTransform: 'uppercase',
   },
-  labelOnDark: { color: color.text.inverse },
-  labelOnLight: { color: color.icon.default },
-  labelAccent: { color: color.button.accent.label },
-  labelDisabled: { color: color.text.disabled },
 });

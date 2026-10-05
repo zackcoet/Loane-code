@@ -208,6 +208,7 @@ export default function Help() {
 
           <Button
             label="Submit rental report"
+            variant="dark"
             onPress={submitRentalReport}
             loading={reporting}
             disabled={!selectedBookingId || !issue || details.trim().length === 0}

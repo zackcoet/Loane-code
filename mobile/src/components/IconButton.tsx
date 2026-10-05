@@ -7,11 +7,7 @@
  */
 
 import { Pressable, StyleSheet, type ViewStyle } from 'react-native';
-import {
-  color,
-  controls,
-  iconSize,
-} from '@loane/shared';
+import { color, controls, iconSize, radius } from '@loane/shared';
 import { Icon, type IconName } from './Icon';
 
 interface Props {
@@ -21,6 +17,15 @@ interface Props {
   size?: number;
   /** Overrides the default glyph colour. */
   tint?: string;
+  /**
+   * Fills the tap target with a chartreuse circle.
+   *
+   * For the one icon on a screen that CREATES something — the + that
+   * opens "Post a Look / Add to My Closet". A header full of outline
+   * glyphs gives no clue which one makes a thing, and that is the tap
+   * Loane most wants.
+   */
+  accent?: boolean;
   style?: ViewStyle;
 }
 
@@ -29,7 +34,8 @@ export function IconButton({
   onPress,
   accessibilityLabel,
   size = iconSize.md,
-  tint = color.icon.default,
+  tint,
+  accent = false,
   style,
 }: Props) {
   return (
@@ -37,9 +43,18 @@ export function IconButton({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      style={({ pressed }) => [styles.target, pressed && styles.pressed, style]}
+      style={({ pressed }) => [
+        styles.target,
+        accent && styles.accent,
+        pressed && styles.pressed,
+        style,
+      ]}
     >
-      <Icon name={name} size={size} tint={tint} />
+      <Icon
+        name={name}
+        size={size}
+        tint={tint ?? (accent ? color.accent.label : color.icon.default)}
+      />
     </Pressable>
   );
 }
@@ -50,6 +65,15 @@ const styles = StyleSheet.create({
     height: controls.minTapTarget,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // Inset so the circle is a comfortable 36pt inside the 44pt target,
+  // rather than a disc that touches its neighbours.
+  accent: {
+    backgroundColor: color.accent.background,
+    borderRadius: radius.pill,
+    margin: 4,
+    width: controls.minTapTarget - 8,
+    height: controls.minTapTarget - 8,
   },
   pressed: { opacity: 0.5 },
 });
