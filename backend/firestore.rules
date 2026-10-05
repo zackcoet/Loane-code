@@ -73,6 +73,25 @@ service cloud.firestore {
     }
 
     // -----------------------------------------------------------------
+    // legalDocs — published legal versions
+    // -----------------------------------------------------------------
+    match /legalDocs/{docId} {
+      // Public because signup, App Store review and joinloane.com all need
+      // Terms and Privacy before someone has an account.
+      allow read: if true;
+      // Published legal versions are immutable and written only by Cloud
+      // Functions. Never overwrite an old version.
+      allow write: if false;
+    }
+
+    // Drafts are only for the admin dashboard and are still written through
+    // Cloud Functions, so every publish has an audit row.
+    match /legalDrafts/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // -----------------------------------------------------------------
     // users — public profile
     // -----------------------------------------------------------------
     match /users/{userId} {

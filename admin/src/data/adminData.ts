@@ -7,13 +7,22 @@ import {
   type Comment,
   type DamageClaim,
   type Listing,
+  type LegalDoc,
+  type LegalDraft,
   type Post,
   type Report,
   type SupportRequest,
   type Timestampish,
   type User,
 } from '@loane/shared';
-import { collection, getDocs, limit, orderBy, query, type QueryConstraint } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  type QueryConstraint,
+} from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 export interface AdminData {
@@ -28,6 +37,8 @@ export interface AdminData {
   damageClaims: DamageClaim[];
   adminActions: AdminAction[];
   events: AppEvent[];
+  legalDocs: LegalDoc[];
+  legalDrafts: LegalDraft[];
 }
 
 const COLLECTION_LIMITS = {
@@ -42,6 +53,8 @@ const COLLECTION_LIMITS = {
   damageClaims: 100,
   adminActions: 100,
   events: 500,
+  legalDocs: 100,
+  legalDrafts: 10,
 } as const;
 
 export type DateRangeKey = '7d' | '30d' | 'all';
@@ -68,6 +81,8 @@ export async function loadAdminData(): Promise<AdminData> {
     damageClaims,
     adminActions,
     events,
+    legalDocs,
+    legalDrafts,
   ] = await Promise.all([
     getCollection<User>(COLLECTIONS.users, COLLECTION_LIMITS.users, true),
     getCollection<Campus>(COLLECTIONS.campuses, COLLECTION_LIMITS.campuses, false),
@@ -84,6 +99,8 @@ export async function loadAdminData(): Promise<AdminData> {
     getCollection<DamageClaim>(COLLECTIONS.damageClaims, COLLECTION_LIMITS.damageClaims, true),
     getCollection<AdminAction>(COLLECTIONS.adminActions, COLLECTION_LIMITS.adminActions, true),
     getCollection<AppEvent>(COLLECTIONS.events, COLLECTION_LIMITS.events, true),
+    getCollection<LegalDoc>(COLLECTIONS.legalDocs, COLLECTION_LIMITS.legalDocs, true),
+    getCollection<LegalDraft>(COLLECTIONS.legalDrafts, COLLECTION_LIMITS.legalDrafts, false),
   ]);
 
   return {
@@ -98,6 +115,8 @@ export async function loadAdminData(): Promise<AdminData> {
     damageClaims,
     adminActions,
     events,
+    legalDocs,
+    legalDrafts,
   };
 }
 
@@ -170,9 +189,11 @@ export function matchesCampus<T extends { campusId?: string | null }>(
 export function formatDate(value: Timestampish | null | undefined): string {
   const date = toDate(value);
   if (!date) return 'Not recorded';
-  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(
-    date,
-  );
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(date);
 }
 
 export function formatShortDate(value: Timestampish | null | undefined): string {

@@ -19,7 +19,12 @@ body {
   margin: 0;
   background: var(--white);
   color: var(--loane-text-primary);
-  font-family: Helvetica, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    Helvetica,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
   font-size: 14px;
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
@@ -284,6 +289,13 @@ button.primary:disabled {
   color: var(--loane-text-disabled);
 }
 
+button.primary.compact {
+  width: auto;
+  height: 40px;
+  padding: 0 16px;
+  font-size: 12px;
+}
+
 button.link {
   border: none;
   background: none;
@@ -344,6 +356,64 @@ button.link {
 .panel {
   padding: 20px;
   min-width: 0;
+}
+
+.legal-editor-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
+  gap: 16px;
+}
+
+.legal-editor-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.field-label,
+.checkbox-row {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  color: var(--loane-text-primary);
+}
+
+.legal-textarea {
+  min-height: 520px;
+  margin: 16px 0;
+  font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.legal-preview {
+  max-height: 740px;
+  overflow: auto;
+}
+
+.markdown-preview {
+  display: grid;
+  gap: 8px;
+}
+
+.markdown-preview h1 {
+  font-size: 24px;
+  margin-top: 8px;
+}
+
+.markdown-preview h2 {
+  font-size: 17px;
+  margin-top: 16px;
+}
+
+.markdown-preview p {
+  color: var(--text-secondary);
 }
 
 .card {

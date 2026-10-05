@@ -8,6 +8,7 @@
  */
 
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import type { LegalDocKind } from '@loane/shared';
 import { app } from '../firebase/config';
 
 const functions = getFunctions(app);
@@ -20,21 +21,15 @@ export const suspendUser = call<{ uid: string; reason: string; until?: string },
   'suspendUser',
 );
 export const unsuspendUser = call<{ uid: string; reason: string }, { ok: true }>('unsuspendUser');
-export const addAdminNote = call<{ uid: string; note: string }, { noteId: string }>(
-  'addAdminNote',
-);
+export const addAdminNote = call<{ uid: string; note: string }, { noteId: string }>('addAdminNote');
 
 export const hideListing = call<{ id: string; reason: string }, { ok: true }>('hideListing');
 export const restoreListing = call<{ id: string; reason: string }, { ok: true }>('restoreListing');
 export const hidePost = call<{ id: string; reason: string }, { ok: true }>('hidePost');
 export const restorePost = call<{ id: string; reason: string }, { ok: true }>('restorePost');
-export const restoreReview = call<{ id: string; reason: string }, { ok: true }>(
-  'restoreReview',
-);
+export const restoreReview = call<{ id: string; reason: string }, { ok: true }>('restoreReview');
 export const hideComment = call<{ id: string; reason: string }, { ok: true }>('hideComment');
-export const restoreComment = call<{ id: string; reason: string }, { ok: true }>(
-  'restoreComment',
-);
+export const restoreComment = call<{ id: string; reason: string }, { ok: true }>('restoreComment');
 export const hideReview = call<{ id: string; reason: string }, { ok: true }>('hideReview');
 
 export const resolveReport = call<
@@ -55,6 +50,16 @@ export const resolveDispute = call<
 export const resolveSupportRequest = call<{ requestId: string; notes: string }, { ok: true }>(
   'resolveSupportRequest',
 );
+
+export const saveLegalDraft = call<
+  { kind: LegalDocKind; text: string; effectiveDate: string; significantChange: boolean },
+  { ok: true; nextVersion: number }
+>('saveLegalDraft');
+
+export const publishLegalDoc = call<
+  { kind: LegalDocKind; text: string; effectiveDate: string; significantChange: boolean },
+  { id: string; version: number }
+>('publishLegalDoc');
 
 /** Turns a callable error into something worth showing an admin. */
 export function adminErrorMessage(error: unknown, fallback: string): string {

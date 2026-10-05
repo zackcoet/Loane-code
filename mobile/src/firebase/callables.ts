@@ -199,3 +199,8 @@ export const sharePost = httpsCallable<
   { postId: string; toUids: string[]; note?: string },
   { sentTo: number; conversationId: string | null }
 >(functions, 'sharePost');
+
+export const acceptLegalDocs = httpsCallable<
+  { termsVersion: number; privacyVersion: number },
+  { ok: true }
+>(functions, 'acceptLegalDocs');

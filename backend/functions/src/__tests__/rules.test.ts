@@ -49,6 +49,12 @@ function userDoc(uid: string, overrides: Record<string, unknown> = {}) {
     suspendedReason: null,
     suspendedUntil: null,
     isFoundingCloset: false,
+    legalAccepted: {
+      termsVersion: 1,
+      termsAcceptedAt: new Date(),
+      privacyVersion: 1,
+      privacyAcceptedAt: new Date(),
+    },
     stats: {
       followerCount: 0,
       followingCount: 0,
@@ -58,6 +64,7 @@ function userDoc(uid: string, overrides: Record<string, unknown> = {}) {
       rentalsAsRenter: 0,
       ratingAverage: null,
       ratingCount: 0,
+      cancellations: 0,
     },
     lastActiveAt: null,
     pushTokens: [],
@@ -91,7 +98,12 @@ function listingDoc(ownerUid: string, overrides: Record<string, unknown> = {}) {
     occasions: ['formal'],
     colorNames: [],
     photos: [
-      { path: `users/${ownerUid}/listings/listing-1/1.jpg`, url: 'https://example.test/1.jpg', width: 1200, height: 1600 },
+      {
+        path: `users/${ownerUid}/listings/listing-1/1.jpg`,
+        url: 'https://example.test/1.jpg',
+        width: 1200,
+        height: 1600,
+      },
     ],
     coverUrl: 'https://example.test/1.jpg',
     intent: 'rent',
@@ -145,7 +157,9 @@ const asStranger = () => testEnv.unauthenticatedContext().firestore();
 
 describe('users', () => {
   it('lets her edit her own bio', async () => {
-    await assertSucceeds(updateDoc(doc(asElla(), 'users', ELLA), { bio: 'usc • sharing my closet' }));
+    await assertSucceeds(
+      updateDoc(doc(asElla(), 'users', ELLA), { bio: 'usc • sharing my closet' }),
+    );
   });
 
   it('stops her editing someone else’s profile', async () => {
@@ -153,9 +167,7 @@ describe('users', () => {
   });
 
   it('stops her inventing her own follower count', async () => {
-    await assertFails(
-      updateDoc(doc(asElla(), 'users', ELLA), { 'stats.followerCount': 10_000 }),
-    );
+    await assertFails(updateDoc(doc(asElla(), 'users', ELLA), { 'stats.followerCount': 10_000 }));
   });
 
   it('stops her marking herself verified', async () => {
@@ -196,9 +208,7 @@ describe('users', () => {
   });
 
   it('stops her changing her campus email', async () => {
-    await assertFails(
-      updateDoc(doc(asElla(), 'users', ELLA), { campusId: 'harvard' }),
-    );
+    await assertFails(updateDoc(doc(asElla(), 'users', ELLA), { campusId: 'harvard' }));
   });
 
   it('stops her confirming her own email', async () => {
@@ -239,6 +249,65 @@ describe('private settings', () => {
     });
     await assertFails(getDoc(doc(asMaddie(), 'users', ELLA, 'private', 'settings')));
     await assertSucceeds(getDoc(doc(asElla(), 'users', ELLA, 'private', 'settings')));
+  });
+});
+
+describe('legal documents', () => {
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'legalDocs', 'terms_v1'), {
+        id: 'terms_v1',
+        kind: 'terms',
+        title: 'Terms & Conditions',
+        text: '# Terms',
+        version: 1,
+        effectiveDate: '2026-10-05',
+        significantChange: false,
+        publishedAt: new Date(),
+        publishedByUid: ADMIN,
+        publishedByEmail: 'admin@joinloane.com',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      await setDoc(doc(ctx.firestore(), 'legalDrafts', 'terms'), {
+        id: 'terms',
+        kind: 'terms',
+        title: 'Terms & Conditions',
+        text: '# Draft terms',
+        nextVersion: 2,
+        effectiveDate: '2026-10-06',
+        significantChange: true,
+        updatedByUid: ADMIN,
+        updatedByEmail: 'admin@joinloane.com',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    });
+  });
+
+  it('lets anyone read published legal docs', async () => {
+    await assertSucceeds(getDoc(doc(asStranger(), 'legalDocs', 'terms_v1')));
+    await assertSucceeds(getDoc(doc(asElla(), 'legalDocs', 'terms_v1')));
+  });
+
+  it('stops direct writes to published legal docs, even by admins', async () => {
+    await assertFails(
+      setDoc(doc(asAdmin(), 'legalDocs', 'terms_v2'), {
+        id: 'terms_v2',
+        kind: 'terms',
+        title: 'Terms & Conditions',
+        text: '# New terms',
+        version: 2,
+      }),
+    );
+    await assertFails(updateDoc(doc(asAdmin(), 'legalDocs', 'terms_v1'), { text: 'changed' }));
+  });
+
+  it('keeps drafts admin-readable but function-written', async () => {
+    await assertFails(getDoc(doc(asStranger(), 'legalDrafts', 'terms')));
+    await assertFails(getDoc(doc(asElla(), 'legalDrafts', 'terms')));
+    await assertSucceeds(getDoc(doc(asAdmin(), 'legalDrafts', 'terms')));
+    await assertFails(updateDoc(doc(asAdmin(), 'legalDrafts', 'terms'), { text: 'changed' }));
   });
 });
 
@@ -491,7 +560,9 @@ describe('posts', () => {
     // A post reaches outside its own document: tagging bumps tagCount on
     // a listing, and taggedListingIds has to match the photos. Rules
     // cannot do either, so there is exactly one path.
-    await assertFails(setDoc(doc(asElla(), 'posts', 'post-new'), postDoc(ELLA, { id: 'post-new' })));
+    await assertFails(
+      setDoc(doc(asElla(), 'posts', 'post-new'), postDoc(ELLA, { id: 'post-new' })),
+    );
   });
 
   it('lets her fix her own caption and occasions', async () => {
@@ -847,7 +918,13 @@ describe('conversations', () => {
           'messages',
           'm4',
         ),
-        { conversationId: 'chat-1', senderUid: OUTSIDER2, body: 'hi', readBy: [], isDeleted: false },
+        {
+          conversationId: 'chat-1',
+          senderUid: OUTSIDER2,
+          body: 'hi',
+          readBy: [],
+          isDeleted: false,
+        },
       ),
     );
   });
@@ -965,9 +1042,7 @@ describe('admin-only data', () => {
   });
 
   it('stops anyone writing an admin note from the app', async () => {
-    await assertFails(
-      setDoc(doc(asAdmin(), 'users', ELLA, 'adminNotes', 'note-2'), { note: 'x' }),
-    );
+    await assertFails(setDoc(doc(asAdmin(), 'users', ELLA, 'adminNotes', 'note-2'), { note: 'x' }));
   });
 
   it('keeps the audit log readable by admins and nobody else', async () => {
@@ -1211,13 +1286,17 @@ describe('support requests', () => {
   });
 
   it('stops even an admin resolving one by hand', async () => {
-    await assertFails(updateDoc(doc(asAdmin(), 'supportRequests', 'support-1'), { status: 'resolved' }));
+    await assertFails(
+      updateDoc(doc(asAdmin(), 'supportRequests', 'support-1'), { status: 'resolved' }),
+    );
   });
 });
 
 describe('usernames', () => {
   it('cannot be claimed directly — only inside the signup transaction', async () => {
-    await assertFails(setDoc(doc(asElla(), 'usernames', 'stolen'), { username: 'stolen', uid: ELLA }));
+    await assertFails(
+      setDoc(doc(asElla(), 'usernames', 'stolen'), { username: 'stolen', uid: ELLA }),
+    );
   });
 });
 
@@ -1267,7 +1346,7 @@ describe('comments', () => {
     );
   });
 
-  it('refuses a comment signed with somebody else\'s name', async () => {
+  it("refuses a comment signed with somebody else's name", async () => {
     await assertFails(
       setDoc(doc(asMaddie(), 'comments', 'comment-3'), {
         id: 'comment-3',
@@ -1297,9 +1376,7 @@ describe('comments', () => {
   it('stops even an admin writing one by hand', async () => {
     // hideComment writes the audit row in the same batch. A hand write
     // would change the comment with no record of who did it.
-    await assertFails(
-      updateDoc(doc(asAdmin(), 'comments', 'comment-1'), { status: 'suspended' }),
-    );
+    await assertFails(updateDoc(doc(asAdmin(), 'comments', 'comment-1'), { status: 'suspended' }));
   });
 });
 
@@ -1311,9 +1388,7 @@ describe('post counters', () => {
   });
 
   it('stops her inflating her own comment count', async () => {
-    await assertFails(
-      updateDoc(doc(asElla(), 'posts', 'post-s'), { 'stats.commentCount': 99 }),
-    );
+    await assertFails(updateDoc(doc(asElla(), 'posts', 'post-s'), { 'stats.commentCount': 99 }));
   });
 
   it('stops her inflating her own share count', async () => {

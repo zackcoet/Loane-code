@@ -20,9 +20,18 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { signInWithCustomToken } from 'firebase/auth';
-import { normalizeUsername, spacing, suggestUsernames, validateUsername } from '@loane/shared';
+import {
+  color,
+  normalizeUsername,
+  spacing,
+  suggestUsernames,
+  type as typography,
+  type LegalDocKind,
+  validateUsername,
+} from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { Input } from '../../src/components/Input';
+import { LegalDocumentModal } from '../../src/components/LegalDocumentModal';
 import { Logo } from '../../src/components/Logo';
 import { Screen } from '../../src/components/Screen';
 import { Header } from '../../src/components/Header';
@@ -41,6 +50,7 @@ export default function ClaimUsername() {
   const [error, setError] = useState<string | null>(null);
   const [available, setAvailable] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
+  const [legalOpen, setLegalOpen] = useState<LegalDocKind | null>(null);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
@@ -190,6 +200,25 @@ export default function ClaimUsername() {
         </View>
 
         <View style={styles.footer}>
+          <Text style={styles.finePrint}>
+            By tapping Create account, you agree to our{' '}
+            <Text
+              style={styles.link}
+              accessibilityRole="link"
+              onPress={() => setLegalOpen('terms')}
+            >
+              Terms & Conditions
+            </Text>{' '}
+            and{' '}
+            <Text
+              style={styles.link}
+              accessibilityRole="link"
+              onPress={() => setLegalOpen('privacy')}
+            >
+              Privacy Policy
+            </Text>
+            .
+          </Text>
           <Button
             label="Create account"
             onPress={onSubmit}
@@ -198,6 +227,7 @@ export default function ClaimUsername() {
           />
         </View>
       </KeyboardAvoidingView>
+      <LegalDocumentModal kind={legalOpen} onClose={() => setLegalOpen(null)} />
     </Screen>
   );
 }
@@ -207,5 +237,18 @@ const styles = StyleSheet.create({
   body: { flex: 1, paddingTop: spacing.lg },
   heading: { marginTop: spacing.lg },
   explainer: { marginTop: spacing.sm, marginBottom: spacing.xl },
-  footer: { paddingBottom: spacing.xl },
+  footer: { paddingBottom: spacing.xxxl },
+  finePrint: {
+    marginBottom: spacing.md,
+    color: color.text.secondary,
+    textAlign: 'center',
+    fontSize: typography.caption.size,
+    lineHeight: typography.caption.lineHeight,
+  },
+  link: {
+    color: color.text.primary,
+    fontSize: typography.caption.size,
+    lineHeight: typography.caption.lineHeight,
+    textDecorationLine: 'underline',
+  },
 });

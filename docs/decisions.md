@@ -6,6 +6,18 @@ much as the answer.
 
 ---
 
+## 2026-10-05 — Legal documents are append-only once published
+
+**Decision:** Published Terms and Privacy versions live in `legalDocs` as
+append-only documents. Admin drafts live separately in `legalDrafts`.
+
+**Why:** Apple and signed-out students need public read access to the latest
+legal text, but unfinished drafts should never be public. Published versions
+are legal history, so they are never overwritten; publishing creates a new
+version through a Cloud Function and writes an admin audit row.
+
+---
+
 ## 2026-09-27 — An admin action and its audit row are one write
 
 **Decision:** Every admin Cloud Function queues the change and the
@@ -389,13 +401,13 @@ handoff is blocked until she does. Surprising someone at the handoff with
 
 **Decision:**
 
-| Who, when | Result |
-|---|---|
-| Renter cancels before the lender accepts | Nothing charged. Authorization released. |
-| Renter cancels 48h+ before the start date | Full refund, Loane fee included. |
-| Renter cancels inside 48h | Lender keeps 50% of the rental. Loane fee refunded. |
-| Lender cancels, ever | Renter fully refunded. Counted against the lender. |
-| Lender never answers | Request expires at 48h. Nothing charged. |
+| Who, when                                 | Result                                              |
+| ----------------------------------------- | --------------------------------------------------- |
+| Renter cancels before the lender accepts  | Nothing charged. Authorization released.            |
+| Renter cancels 48h+ before the start date | Full refund, Loane fee included.                    |
+| Renter cancels inside 48h                 | Lender keeps 50% of the rental. Loane fee refunded. |
+| Lender cancels, ever                      | Renter fully refunded. Counted against the lender.  |
+| Lender never answers                      | Request expires at 48h. Nothing charged.            |
 
 **Why:** a lender who turned down other requests for a dress now sitting in
 her closet on gameday is owed something. A renter who cancels a week out cost

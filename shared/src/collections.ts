@@ -26,6 +26,8 @@ export const COLLECTIONS = {
   adminActions: 'adminActions',
   events: 'events',
   circles: 'circles',
+  legalDocs: 'legalDocs',
+  legalDrafts: 'legalDrafts',
 } as const;
 
 export const SUBCOLLECTIONS = {
@@ -44,7 +46,8 @@ export const SUBCOLLECTIONS = {
 export const paths = {
   campus: (campusId: string) => `${COLLECTIONS.campuses}/${campusId}`,
   user: (uid: string) => `${COLLECTIONS.users}/${uid}`,
-  userPrivate: (uid: string) => `${COLLECTIONS.users}/${uid}/${SUBCOLLECTIONS.userPrivate}/settings`,
+  userPrivate: (uid: string) =>
+    `${COLLECTIONS.users}/${uid}/${SUBCOLLECTIONS.userPrivate}/settings`,
   userBlocked: (uid: string, blockedUid: string) =>
     `${COLLECTIONS.users}/${uid}/${SUBCOLLECTIONS.userBlocked}/${blockedUid}`,
   notification: (uid: string, notificationId: string) =>

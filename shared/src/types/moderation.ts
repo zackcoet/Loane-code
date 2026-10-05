@@ -38,7 +38,7 @@ export interface Report extends BaseDoc, CampusScoped {
 export interface AdminAction extends BaseDoc {
   adminUid: string;
   action: string;
-  targetType: ReportTargetType | 'campus' | 'claim' | 'report' | 'supportRequest';
+  targetType: ReportTargetType | 'campus' | 'claim' | 'report' | 'supportRequest' | 'legalDoc';
   targetId: string;
   notes: string | null;
   /** Snapshot of what changed, for the audit trail. */

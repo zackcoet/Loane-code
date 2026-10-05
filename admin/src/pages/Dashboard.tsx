@@ -9,6 +9,7 @@ import { CampusesPage } from './CampusesPage';
 import { ClaimsPage } from './ClaimsPage';
 import { FoundingClosetsPage } from './FoundingClosetsPage';
 import { ListingsPage } from './ListingsPage';
+import { LegalPage } from './LegalPage';
 import { OverviewPage } from './OverviewPage';
 import { CommentsPage } from './CommentsPage';
 import { PostsPage } from './PostsPage';
@@ -120,5 +121,6 @@ function CurrentPage({
   if (page === 'claims') return <ClaimsPage data={data} campusId={campusId} />;
   if (page === 'campuses') return <CampusesPage campuses={data.campuses} />;
   if (page === 'founding') return <FoundingClosetsPage data={data} campusId={campusId} />;
+  if (page === 'legal') return <LegalPage data={data} />;
   return <ActivityLogPage data={data} />;
 }

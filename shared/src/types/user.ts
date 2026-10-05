@@ -1,5 +1,6 @@
 import type { AccountStatus, Size, ShoeSize, UserRole, VerificationMethod } from '../constants';
 import type { BaseDoc, CampusScoped, Timestampish } from './common';
+import type { LegalAcceptance } from './legal';
 
 /**
  * `users/{uid}`
@@ -86,6 +87,9 @@ export interface User extends BaseDoc, CampusScoped {
 
   /** True for the 10-20 seeded launch closets. Used by the admin tracker. */
   isFoundingCloset: boolean;
+
+  /** Which published legal versions she agreed to, and when. */
+  legalAccepted: LegalAcceptance;
 
   // --- Counters, all written by Cloud Functions ---------------------------
   stats: {

@@ -6,20 +6,22 @@
  * change it. Linked Bank Account is a placeholder until Phase 5.
  */
 
+import { useState } from 'react';
 import { useRouter, type Href } from 'expo-router';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { signOut } from 'firebase/auth';
 import {
-  brand,
   color,
   controls,
   iconSize,
   spacing,
-  type,
+  type as typography,
+  type LegalDocKind,
 } from '@loane/shared';
 import { Icon } from '../src/components/Icon';
 import { Screen } from '../src/components/Screen';
 import { Header } from '../src/components/Header';
+import { LegalDocumentModal } from '../src/components/LegalDocumentModal';
 import { useUserSettings } from '../src/hooks/useUserSettings';
 import { auth } from '../src/firebase/config';
 
@@ -35,6 +37,7 @@ interface Row {
 
 export default function Settings() {
   const router = useRouter();
+  const [legalOpen, setLegalOpen] = useState<LegalDocKind | null>(null);
   // Her campus email is no longer on the public profile — it is hers
   // and an admin's to read, and nobody else's.
   const { settings } = useUserSettings();
@@ -59,10 +62,8 @@ export default function Settings() {
     { label: 'Change Password', href: '/change-password' },
     { label: 'Safety', href: '/safety' },
     { label: 'Help & Support', href: '/help' },
-    {
-      label: 'Terms of Service',
-      onPress: () => void Linking.openURL(`${brand.website}/terms`),
-    },
+    { label: 'Terms & Conditions', onPress: () => setLegalOpen('terms') },
+    { label: 'Privacy Policy', onPress: () => setLegalOpen('privacy') },
   ];
 
   const onLogOut = () => {
@@ -122,6 +123,7 @@ export default function Settings() {
           <Text style={styles.label}>Log Out</Text>
         </Pressable>
       </ScrollView>
+      <LegalDocumentModal kind={legalOpen} onClose={() => setLegalOpen(null)} />
     </Screen>
   );
 }
@@ -140,8 +142,12 @@ const styles = StyleSheet.create({
   },
   rowPressed: { backgroundColor: color.surface.muted },
   rowRight: { flexDirection: 'row', alignItems: 'center', flexShrink: 1, marginLeft: spacing.md },
-  label: { fontSize: type.body.size, color: color.text.primary },
-  value: { flexShrink: 1, fontSize: type.bodySmall.size, color: color.text.muted },
+  label: { fontSize: typography.body.size, color: color.text.primary },
+  value: { flexShrink: 1, fontSize: typography.bodySmall.size, color: color.text.muted },
   chevron: { fontSize: iconSize.sm, color: color.text.muted, marginLeft: spacing.sm },
-  logOut: { marginTop: spacing.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.border.default },
+  logOut: {
+    marginTop: spacing.lg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: color.border.default,
+  },
 });

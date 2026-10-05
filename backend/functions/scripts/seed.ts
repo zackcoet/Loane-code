@@ -25,6 +25,7 @@ import { initializeApp, deleteApp } from 'firebase-admin/app';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore';
 import { garmentPhoto, peoplePhoto } from './seedPhotos';
+import { LEGAL_V1_EFFECTIVE_DATE, PRIVACY_V1, TERMS_V1 } from '../src/legal/v1';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
@@ -163,7 +164,6 @@ const STUDENTS: SeedStudent[] = [
   { first: 'Juliet', username: 'julietj', founding: false },
 ];
 
-
 /**
  * A curated catalogue rather than random combinations, so the seeded
  * marketplace looks like a real campus: every occasion is represented,
@@ -190,135 +190,385 @@ interface SeedItem {
 
 const CATALOGUE: SeedItem[] = [
   // --- Formals and weddings ------------------------------------------
-  { name: 'Black Satin Slip Dress', brand: 'Reformation', category: 'dresses', size: 'S', shoeSize: null,
-    occasions: ['formal', 'going_out', 'date_function'], condition: 'like_new',
-    rent: 32, sale: null, value: 220,
-    description: 'Bias cut, midi length. Worn once to a formal. Runs true to size.' },
-  { name: 'Emerald Satin Gown', brand: 'Show Me Your Mumu', category: 'dresses', size: 'M', shoeSize: null,
-    occasions: ['formal', 'wedding'], condition: 'like_new',
-    rent: 45, sale: 160, value: 280,
-    description: 'Floor length with a low back. Steamed and ready. Zero alterations.' },
-  { name: 'Champagne Sequin Mini', brand: 'For Love & Lemons', category: 'dresses', size: 'XS', shoeSize: null,
-    occasions: ['formal', 'going_out', 'graduation'], condition: 'good',
-    rent: 38, sale: null, value: 240,
-    description: 'Fully lined, heavier than it looks. A few sequins replaced, invisible when worn.' },
-  { name: 'Navy Wrap Midi', brand: 'Aritzia', category: 'dresses', size: 'L', shoeSize: null,
-    occasions: ['wedding', 'formal', 'graduation'], condition: 'like_new',
-    rent: 30, sale: null, value: 180,
-    description: 'The safe wedding-guest dress. Adjustable wrap so it fits a range.' },
-  { name: 'White Eyelet Two-Piece', brand: 'Free People', category: 'sets', size: 'M', shoeSize: null,
-    occasions: ['graduation', 'vacation'], condition: 'new_with_tags',
-    rent: 28, sale: 95, value: 150,
-    description: 'Never worn. Perfect for grad photos. Top and skirt sold together.' },
+  {
+    name: 'Black Satin Slip Dress',
+    brand: 'Reformation',
+    category: 'dresses',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['formal', 'going_out', 'date_function'],
+    condition: 'like_new',
+    rent: 32,
+    sale: null,
+    value: 220,
+    description: 'Bias cut, midi length. Worn once to a formal. Runs true to size.',
+  },
+  {
+    name: 'Emerald Satin Gown',
+    brand: 'Show Me Your Mumu',
+    category: 'dresses',
+    size: 'M',
+    shoeSize: null,
+    occasions: ['formal', 'wedding'],
+    condition: 'like_new',
+    rent: 45,
+    sale: 160,
+    value: 280,
+    description: 'Floor length with a low back. Steamed and ready. Zero alterations.',
+  },
+  {
+    name: 'Champagne Sequin Mini',
+    brand: 'For Love & Lemons',
+    category: 'dresses',
+    size: 'XS',
+    shoeSize: null,
+    occasions: ['formal', 'going_out', 'graduation'],
+    condition: 'good',
+    rent: 38,
+    sale: null,
+    value: 240,
+    description: 'Fully lined, heavier than it looks. A few sequins replaced, invisible when worn.',
+  },
+  {
+    name: 'Navy Wrap Midi',
+    brand: 'Aritzia',
+    category: 'dresses',
+    size: 'L',
+    shoeSize: null,
+    occasions: ['wedding', 'formal', 'graduation'],
+    condition: 'like_new',
+    rent: 30,
+    sale: null,
+    value: 180,
+    description: 'The safe wedding-guest dress. Adjustable wrap so it fits a range.',
+  },
+  {
+    name: 'White Eyelet Two-Piece',
+    brand: 'Free People',
+    category: 'sets',
+    size: 'M',
+    shoeSize: null,
+    occasions: ['graduation', 'vacation'],
+    condition: 'new_with_tags',
+    rent: 28,
+    sale: 95,
+    value: 150,
+    description: 'Never worn. Perfect for grad photos. Top and skirt sold together.',
+  },
 
   // --- Gameday ---------------------------------------------------------
-  { name: 'Garnet Gameday Dress', brand: 'Princess Polly', category: 'dresses', size: 'S', shoeSize: null,
-    occasions: ['gameday'], condition: 'like_new',
-    rent: 22, sale: null, value: 90,
-    description: 'Exactly the right garnet. Stretchy, survives a whole Saturday.' },
-  { name: 'Garnet Corset Top', brand: 'Princess Polly', category: 'tops', size: 'XS', shoeSize: null,
-    occasions: ['gameday', 'going_out'], condition: 'good',
-    rent: 14, sale: 35, value: 60,
-    description: 'Boned corset, hook and eye back. Pairs with white denim.' },
-  { name: 'White Denim Mini Skirt', brand: 'Zara', category: 'bottoms', size: 'M', shoeSize: null,
-    occasions: ['gameday', 'going_out', 'vacation'], condition: 'good',
-    rent: 12, sale: 28, value: 55,
-    description: 'The gameday staple. Mid rise, slight stretch.' },
-  { name: 'Black Cowboy Boots', brand: null, category: 'shoes', size: null, shoeSize: '8',
-    occasions: ['gameday', 'going_out'], condition: 'well_loved',
-    rent: 20, sale: null, value: 140,
-    description: 'Broken in, which is the point. Genuinely comfortable all day.' },
+  {
+    name: 'Garnet Gameday Dress',
+    brand: 'Princess Polly',
+    category: 'dresses',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['gameday'],
+    condition: 'like_new',
+    rent: 22,
+    sale: null,
+    value: 90,
+    description: 'Exactly the right garnet. Stretchy, survives a whole Saturday.',
+  },
+  {
+    name: 'Garnet Corset Top',
+    brand: 'Princess Polly',
+    category: 'tops',
+    size: 'XS',
+    shoeSize: null,
+    occasions: ['gameday', 'going_out'],
+    condition: 'good',
+    rent: 14,
+    sale: 35,
+    value: 60,
+    description: 'Boned corset, hook and eye back. Pairs with white denim.',
+  },
+  {
+    name: 'White Denim Mini Skirt',
+    brand: 'Zara',
+    category: 'bottoms',
+    size: 'M',
+    shoeSize: null,
+    occasions: ['gameday', 'going_out', 'vacation'],
+    condition: 'good',
+    rent: 12,
+    sale: 28,
+    value: 55,
+    description: 'The gameday staple. Mid rise, slight stretch.',
+  },
+  {
+    name: 'Black Cowboy Boots',
+    brand: null,
+    category: 'shoes',
+    size: null,
+    shoeSize: '8',
+    occasions: ['gameday', 'going_out'],
+    condition: 'well_loved',
+    rent: 20,
+    sale: null,
+    value: 140,
+    description: 'Broken in, which is the point. Genuinely comfortable all day.',
+  },
 
   // --- Rush ------------------------------------------------------------
-  { name: 'Ivory Linen Set', brand: 'Aritzia', category: 'sets', size: 'S', shoeSize: null,
-    occasions: ['rush', 'vacation'], condition: 'like_new',
-    rent: 26, sale: null, value: 170,
-    description: 'Rush week day three. Breathable, does not wrinkle badly.' },
-  { name: 'Pastel Pink Midi', brand: 'Zara', category: 'dresses', size: 'L', shoeSize: null,
-    occasions: ['rush', 'wedding'], condition: 'like_new',
-    rent: 24, sale: null, value: 110,
-    description: 'Soft pink, knee grazing. Sleeves so no reapplying sunscreen.' },
-  { name: 'Structured Tote', brand: null, category: 'bags', size: null, shoeSize: null,
-    occasions: ['rush', 'graduation'], condition: 'good',
-    rent: 10, sale: 40, value: 70,
-    description: 'Fits a folder and a water bottle. Looks put together.' },
+  {
+    name: 'Ivory Linen Set',
+    brand: 'Aritzia',
+    category: 'sets',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['rush', 'vacation'],
+    condition: 'like_new',
+    rent: 26,
+    sale: null,
+    value: 170,
+    description: 'Rush week day three. Breathable, does not wrinkle badly.',
+  },
+  {
+    name: 'Pastel Pink Midi',
+    brand: 'Zara',
+    category: 'dresses',
+    size: 'L',
+    shoeSize: null,
+    occasions: ['rush', 'wedding'],
+    condition: 'like_new',
+    rent: 24,
+    sale: null,
+    value: 110,
+    description: 'Soft pink, knee grazing. Sleeves so no reapplying sunscreen.',
+  },
+  {
+    name: 'Structured Tote',
+    brand: null,
+    category: 'bags',
+    size: null,
+    shoeSize: null,
+    occasions: ['rush', 'graduation'],
+    condition: 'good',
+    rent: 10,
+    sale: 40,
+    value: 70,
+    description: 'Fits a folder and a water bottle. Looks put together.',
+  },
 
   // --- Going out -------------------------------------------------------
-  { name: 'Vintage Silk Slip Dress', brand: null, category: 'dresses', size: 'XS', shoeSize: null,
-    occasions: ['going_out', 'date_function'], condition: 'well_loved',
-    rent: 18, sale: 45, value: 80,
-    description: 'True vintage, real silk. Tiny mark on the hem, does not show.' },
-  { name: 'Black Faux Leather Pants', brand: 'Urban Outfitters', category: 'bottoms', size: 'M', shoeSize: null,
-    occasions: ['going_out', 'date_function'], condition: 'like_new',
-    rent: 16, sale: null, value: 75,
-    description: 'High waisted, actually stretchy. Not the plasticky kind.' },
-  { name: 'Ruffle Halter Top', brand: 'Princess Polly', category: 'tops', size: 'XL', shoeSize: null,
-    occasions: ['going_out', 'date_function'], condition: 'like_new',
-    rent: 12, sale: 30, value: 50,
-    description: 'Ties at the neck so it adjusts. Fully lined.' },
-  { name: 'Strappy Heels', brand: null, category: 'shoes', size: null, shoeSize: '7.5',
-    occasions: ['going_out', 'formal'], condition: 'good',
-    rent: 14, sale: null, value: 85,
-    description: 'Three inch block heel, so you can walk in them.' },
+  {
+    name: 'Vintage Silk Slip Dress',
+    brand: null,
+    category: 'dresses',
+    size: 'XS',
+    shoeSize: null,
+    occasions: ['going_out', 'date_function'],
+    condition: 'well_loved',
+    rent: 18,
+    sale: 45,
+    value: 80,
+    description: 'True vintage, real silk. Tiny mark on the hem, does not show.',
+  },
+  {
+    name: 'Black Faux Leather Pants',
+    brand: 'Urban Outfitters',
+    category: 'bottoms',
+    size: 'M',
+    shoeSize: null,
+    occasions: ['going_out', 'date_function'],
+    condition: 'like_new',
+    rent: 16,
+    sale: null,
+    value: 75,
+    description: 'High waisted, actually stretchy. Not the plasticky kind.',
+  },
+  {
+    name: 'Ruffle Halter Top',
+    brand: 'Princess Polly',
+    category: 'tops',
+    size: 'XL',
+    shoeSize: null,
+    occasions: ['going_out', 'date_function'],
+    condition: 'like_new',
+    rent: 12,
+    sale: 30,
+    value: 50,
+    description: 'Ties at the neck so it adjusts. Fully lined.',
+  },
+  {
+    name: 'Strappy Heels',
+    brand: null,
+    category: 'shoes',
+    size: null,
+    shoeSize: '7.5',
+    occasions: ['going_out', 'formal'],
+    condition: 'good',
+    rent: 14,
+    sale: null,
+    value: 85,
+    description: 'Three inch block heel, so you can walk in them.',
+  },
 
   // --- Date functions --------------------------------------------------
-  { name: 'Gingham Mini Dress', brand: 'Free People', category: 'dresses', size: 'S', shoeSize: null,
-    occasions: ['date_function', 'gameday', 'vacation'], condition: 'like_new',
-    rent: 20, sale: 55, value: 95,
-    description: 'Red gingham, square neck. Photographs beautifully.' },
-  { name: 'Cropped Denim Jacket', brand: 'Zara', category: 'outerwear', size: 'M', shoeSize: null,
-    occasions: ['date_function', 'gameday', 'going_out'], condition: 'good',
-    rent: 12, sale: 35, value: 65,
-    description: 'Throw over anything. Slightly oversized.' },
+  {
+    name: 'Gingham Mini Dress',
+    brand: 'Free People',
+    category: 'dresses',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['date_function', 'gameday', 'vacation'],
+    condition: 'like_new',
+    rent: 20,
+    sale: 55,
+    value: 95,
+    description: 'Red gingham, square neck. Photographs beautifully.',
+  },
+  {
+    name: 'Cropped Denim Jacket',
+    brand: 'Zara',
+    category: 'outerwear',
+    size: 'M',
+    shoeSize: null,
+    occasions: ['date_function', 'gameday', 'going_out'],
+    condition: 'good',
+    rent: 12,
+    sale: 35,
+    value: 65,
+    description: 'Throw over anything. Slightly oversized.',
+  },
 
   // --- Vacation --------------------------------------------------------
-  { name: 'Crochet Beach Set', brand: 'Free People', category: 'sets', size: 'XS', shoeSize: null,
-    occasions: ['vacation'], condition: 'like_new',
-    rent: 18, sale: 48, value: 90,
-    description: 'Spring break staple. Top and shorts, lined.' },
-  { name: 'Woven Straw Bag', brand: null, category: 'bags', size: null, shoeSize: null,
-    occasions: ['vacation', 'going_out'], condition: 'good',
-    rent: 8, sale: 25, value: 45,
-    description: 'Roomy enough for a towel and sunscreen.' },
-  { name: 'Tortoise Sunglasses', brand: null, category: 'accessories', size: null, shoeSize: null,
-    occasions: ['vacation', 'gameday'], condition: 'good',
-    rent: 6, sale: 18, value: 40,
-    description: 'Oversized frames. Case included.' },
+  {
+    name: 'Crochet Beach Set',
+    brand: 'Free People',
+    category: 'sets',
+    size: 'XS',
+    shoeSize: null,
+    occasions: ['vacation'],
+    condition: 'like_new',
+    rent: 18,
+    sale: 48,
+    value: 90,
+    description: 'Spring break staple. Top and shorts, lined.',
+  },
+  {
+    name: 'Woven Straw Bag',
+    brand: null,
+    category: 'bags',
+    size: null,
+    shoeSize: null,
+    occasions: ['vacation', 'going_out'],
+    condition: 'good',
+    rent: 8,
+    sale: 25,
+    value: 45,
+    description: 'Roomy enough for a towel and sunscreen.',
+  },
+  {
+    name: 'Tortoise Sunglasses',
+    brand: null,
+    category: 'accessories',
+    size: null,
+    shoeSize: null,
+    occasions: ['vacation', 'gameday'],
+    condition: 'good',
+    rent: 6,
+    sale: 18,
+    value: 40,
+    description: 'Oversized frames. Case included.',
+  },
 
   // --- Graduation and jewellery ----------------------------------------
-  { name: 'Gold Hoop Set', brand: null, category: 'jewelry', size: null, shoeSize: null,
-    occasions: ['graduation', 'formal', 'going_out'], condition: 'like_new',
-    rent: 5, sale: 20, value: 35,
-    description: 'Three pairs, small to large. Gold plated, not real gold.' },
-  { name: 'Pearl Drop Earrings', brand: null, category: 'jewelry', size: null, shoeSize: null,
-    occasions: ['wedding', 'formal', 'graduation'], condition: 'new_with_tags',
-    rent: 6, sale: 22, value: 40,
-    description: 'Freshwater pearls. Never worn.' },
-  { name: 'Cream Cropped Cardigan', brand: 'Aritzia', category: 'outerwear', size: 'L', shoeSize: null,
-    occasions: ['graduation', 'rush'], condition: 'like_new',
-    rent: 10, sale: 32, value: 60,
-    description: 'Layer for a cold lecture hall or a chilly evening.' },
-  { name: 'Black Wide Leg Trousers', brand: 'Aritzia', category: 'bottoms', size: 'XL', shoeSize: null,
-    occasions: ['graduation', 'formal'], condition: 'like_new',
-    rent: 15, sale: null, value: 110,
-    description: 'Tailored, full length. Hemmed for about 5 foot 7 in flats.' },
-  { name: 'Linen Button Down', brand: 'Zara', category: 'tops', size: 'M', shoeSize: null,
-    occasions: ['vacation', 'rush', 'graduation'], condition: 'good',
-    rent: 9, sale: 24, value: 45,
-    description: 'Oversized, wears as a shirt or a cover-up.' },
+  {
+    name: 'Gold Hoop Set',
+    brand: null,
+    category: 'jewelry',
+    size: null,
+    shoeSize: null,
+    occasions: ['graduation', 'formal', 'going_out'],
+    condition: 'like_new',
+    rent: 5,
+    sale: 20,
+    value: 35,
+    description: 'Three pairs, small to large. Gold plated, not real gold.',
+  },
+  {
+    name: 'Pearl Drop Earrings',
+    brand: null,
+    category: 'jewelry',
+    size: null,
+    shoeSize: null,
+    occasions: ['wedding', 'formal', 'graduation'],
+    condition: 'new_with_tags',
+    rent: 6,
+    sale: 22,
+    value: 40,
+    description: 'Freshwater pearls. Never worn.',
+  },
+  {
+    name: 'Cream Cropped Cardigan',
+    brand: 'Aritzia',
+    category: 'outerwear',
+    size: 'L',
+    shoeSize: null,
+    occasions: ['graduation', 'rush'],
+    condition: 'like_new',
+    rent: 10,
+    sale: 32,
+    value: 60,
+    description: 'Layer for a cold lecture hall or a chilly evening.',
+  },
+  {
+    name: 'Black Wide Leg Trousers',
+    brand: 'Aritzia',
+    category: 'bottoms',
+    size: 'XL',
+    shoeSize: null,
+    occasions: ['graduation', 'formal'],
+    condition: 'like_new',
+    rent: 15,
+    sale: null,
+    value: 110,
+    description: 'Tailored, full length. Hemmed for about 5 foot 7 in flats.',
+  },
+  {
+    name: 'Linen Button Down',
+    brand: 'Zara',
+    category: 'tops',
+    size: 'M',
+    shoeSize: null,
+    occasions: ['vacation', 'rush', 'graduation'],
+    condition: 'good',
+    rent: 9,
+    sale: 24,
+    value: 45,
+    description: 'Oversized, wears as a shirt or a cover-up.',
+  },
 
   // --- Sale only, so the buy-without-renting path has real data --------
-  { name: 'Polka Dot Mini Dress', brand: 'Urban Outfitters', category: 'dresses', size: 'S', shoeSize: null,
-    occasions: ['going_out', 'date_function'], condition: 'good',
-    rent: null, sale: 32, value: 70,
-    description: 'Selling, not renting — it no longer fits me. Great condition.' },
-  { name: 'Suede Ankle Boots', brand: null, category: 'shoes', size: null, shoeSize: '9',
-    occasions: ['going_out', 'gameday'], condition: 'well_loved',
-    rent: null, sale: 45, value: 120,
-    description: 'Selling these on. Scuff on the left toe, priced for it.' },
+  {
+    name: 'Polka Dot Mini Dress',
+    brand: 'Urban Outfitters',
+    category: 'dresses',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['going_out', 'date_function'],
+    condition: 'good',
+    rent: null,
+    sale: 32,
+    value: 70,
+    description: 'Selling, not renting — it no longer fits me. Great condition.',
+  },
+  {
+    name: 'Suede Ankle Boots',
+    brand: null,
+    category: 'shoes',
+    size: null,
+    shoeSize: '9',
+    occasions: ['going_out', 'gameday'],
+    condition: 'well_loved',
+    rent: null,
+    sale: 45,
+    value: 120,
+    description: 'Selling these on. Scuff on the left toe, priced for it.',
+  },
 ];
-
-
 
 const CAPTIONS = [
   'gameday fit secured',
@@ -427,12 +677,45 @@ async function main(): Promise<void> {
       bookingCount: 0,
     },
   };
-  await db.collection(COLLECTIONS.campuses).doc(CAMPUS_ID).set({
-    ...campus,
+  await db
+    .collection(COLLECTIONS.campuses)
+    .doc(CAMPUS_ID)
+    .set({
+      ...campus,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  console.warn('Created campus: University of South Carolina');
+
+  await db.collection(COLLECTIONS.legalDocs).doc('terms_v1').set({
+    id: 'terms_v1',
+    kind: 'terms',
+    title: 'Terms & Conditions',
+    text: TERMS_V1,
+    version: 1,
+    effectiveDate: LEGAL_V1_EFFECTIVE_DATE,
+    significantChange: false,
+    publishedAt: FieldValue.serverTimestamp(),
+    publishedByUid: 'seed',
+    publishedByEmail: null,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   });
-  console.warn('Created campus: University of South Carolina');
+  await db.collection(COLLECTIONS.legalDocs).doc('privacy_v1').set({
+    id: 'privacy_v1',
+    kind: 'privacy',
+    title: 'Privacy Policy',
+    text: PRIVACY_V1,
+    version: 1,
+    effectiveDate: LEGAL_V1_EFFECTIVE_DATE,
+    significantChange: false,
+    publishedAt: FieldValue.serverTimestamp(),
+    publishedByUid: 'seed',
+    publishedByEmail: null,
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp(),
+  });
+  console.warn('Created legal docs: Terms v1, Privacy v1');
 
   // --- Admin --------------------------------------------------------------
   const adminRecord = await auth.createUser({
@@ -454,7 +737,9 @@ async function main(): Promise<void> {
     await auth.setCustomUserClaims(zackAdminRecord.uid, { admin: true });
     console.warn(`Created admin: ${ZACK_ADMIN_EMAIL} (password read from local .env)`);
   } else {
-    console.warn(`Skipped ${ZACK_ADMIN_EMAIL}: SEED_ADMIN_PASSWORD is not set in backend/functions/.env.`);
+    console.warn(
+      `Skipped ${ZACK_ADMIN_EMAIL}: SEED_ADMIN_PASSWORD is not set in backend/functions/.env.`,
+    );
   }
 
   // --- Students -----------------------------------------------------------
@@ -498,6 +783,12 @@ async function main(): Promise<void> {
       suspendedReason: null,
       suspendedUntil: null,
       isFoundingCloset: student.founding,
+      legalAccepted: {
+        termsVersion: 1,
+        termsAcceptedAt: FieldValue.serverTimestamp() as never,
+        privacyVersion: 1,
+        privacyAcceptedAt: FieldValue.serverTimestamp() as never,
+      },
       stats: {
         followerCount: 0,
         followingCount: 0,
@@ -807,11 +1098,11 @@ async function main(): Promise<void> {
       },
       timeline: {
         requestedAt: FieldValue.serverTimestamp() as never,
-        respondedAt:
-          plan.status === 'requested' ? null : (FieldValue.serverTimestamp() as never),
-        confirmedAt: handedOver || plan.status === 'confirmed'
-          ? (FieldValue.serverTimestamp() as never)
-          : null,
+        respondedAt: plan.status === 'requested' ? null : (FieldValue.serverTimestamp() as never),
+        confirmedAt:
+          handedOver || plan.status === 'confirmed'
+            ? (FieldValue.serverTimestamp() as never)
+            : null,
         cancelledAt: plan.status === 'cancelled' ? (FieldValue.serverTimestamp() as never) : null,
         completedAt: plan.status === 'completed' ? (FieldValue.serverTimestamp() as never) : null,
       },
@@ -849,16 +1140,24 @@ async function main(): Promise<void> {
 
     // A completed rental counts towards both their histories.
     if (plan.status === 'completed') {
-      await db.collection(COLLECTIONS.users).doc(lender.uid)
+      await db
+        .collection(COLLECTIONS.users)
+        .doc(lender.uid)
         .update({ 'stats.rentalsAsLender': FieldValue.increment(1) });
-      await db.collection(COLLECTIONS.users).doc(renter.uid)
+      await db
+        .collection(COLLECTIONS.users)
+        .doc(renter.uid)
         .update({ 'stats.rentalsAsRenter': FieldValue.increment(1) });
-      await db.collection(COLLECTIONS.listings).doc(listing.id)
+      await db
+        .collection(COLLECTIONS.listings)
+        .doc(listing.id)
         .update({ 'stats.completedRentals': FieldValue.increment(1) });
     }
   }
 
-  await db.collection(COLLECTIONS.campuses).doc(CAMPUS_ID)
+  await db
+    .collection(COLLECTIONS.campuses)
+    .doc(CAMPUS_ID)
     .update({ 'stats.bookingCount': bookingCount });
   console.warn(`Created ${bookingCount} bookings, one in every status`);
 
@@ -1070,7 +1369,13 @@ async function main(): Promise<void> {
   let reviewCount = 0;
   for (const doc of completed) {
     const booking = doc.data() as Booking;
-    const pairs: { author: User; subject: string; role: 'lender' | 'renter'; rating: number; body: string }[] = [
+    const pairs: {
+      author: User;
+      subject: string;
+      role: 'lender' | 'renter';
+      rating: number;
+      body: string;
+    }[] = [
       {
         author: users.find((u) => u.uid === booking.lenderUid)!,
         subject: booking.renterUid,
@@ -1105,10 +1410,13 @@ async function main(): Promise<void> {
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       });
-      await db.collection(COLLECTIONS.users).doc(p.subject).update({
-        'stats.ratingCount': FieldValue.increment(1),
-        'stats.ratingAverage': p.rating,
-      });
+      await db
+        .collection(COLLECTIONS.users)
+        .doc(p.subject)
+        .update({
+          'stats.ratingCount': FieldValue.increment(1),
+          'stats.ratingAverage': p.rating,
+        });
       await doc.ref.update({
         [p.role === 'lender' ? 'reviews.lenderReviewId' : 'reviews.renterReviewId']: reviewRef.id,
       });

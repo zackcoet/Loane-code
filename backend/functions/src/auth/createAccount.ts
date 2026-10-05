@@ -14,6 +14,7 @@ import {
 } from '@loane/shared';
 import { auth, db, now, FieldValue } from '../lib/admin';
 import { alreadyTaken, failed, internal, invalidArgument } from '../lib/errors';
+import { latestLegalVersions } from '../legal/legal';
 
 /**
  * `createAccount`
@@ -91,7 +92,10 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
     // --- Is this school on the approved list? ----------------------------
     // Checked here, before any account exists, so a rejected signup leaves
     // nothing behind at all.
-    const campusSnap = await db().collection(COLLECTIONS.campuses).where('isLive', '==', true).get();
+    const campusSnap = await db()
+      .collection(COLLECTIONS.campuses)
+      .where('isLive', '==', true)
+      .get();
     const campus = campusSnap.docs
       .map((d) => ({ ...(d.data() as Campus), id: d.id }))
       .find((c) => matchesCampusDomain(email, c.emailDomains));
@@ -104,6 +108,8 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
     if (takenSnap.exists) throw alreadyTaken('That username is taken. Try another.');
 
     // --- Create the login ------------------------------------------------
+    const legalVersions = await latestLegalVersions();
+
     let uid: string;
     try {
       const record = await auth().createUser({ email, password, displayName: firstName });
@@ -152,12 +158,18 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
           // We have NOT proven she controls the inbox. See the User type.
           emailConfirmed: false,
           showSizes: false,
-      sizes: { tops: null, bottoms: null, dresses: null, shoe: null },
+          sizes: { tops: null, bottoms: null, dresses: null, shoe: null },
           role: 'student',
           status: 'active',
           suspendedReason: null,
           suspendedUntil: null,
           isFoundingCloset: false,
+          legalAccepted: {
+            termsVersion: legalVersions.termsVersion,
+            termsAcceptedAt: now() as never,
+            privacyVersion: legalVersions.privacyVersion,
+            privacyAcceptedAt: now() as never,
+          },
           stats: {
             followerCount: 0,
             followingCount: 0,
@@ -246,5 +258,7 @@ export const checkCampusEmail = onCall<
     .map((d) => d.data() as Campus)
     .find((c) => matchesCampusDomain(email, c.emailDomains));
 
-  return campus ? { allowed: true, campusName: campus.name } : { allowed: false, reason: NOT_YET_MESSAGE };
+  return campus
+    ? { allowed: true, campusName: campus.name }
+    : { allowed: false, reason: NOT_YET_MESSAGE };
 });

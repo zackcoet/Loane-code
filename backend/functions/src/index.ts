@@ -107,6 +107,7 @@ export {
 export { resolveReport } from './admin/resolveReport';
 export { resolveDispute } from './admin/resolveDispute';
 export { resolveSupportRequest } from './admin/resolveSupportRequest';
+export { acceptLegalDocs, publishLegalDoc, saveLegalDraft } from './legal/legal';
 
 // --- Later phases -----------------------------------------------------------
 // export { saveListing }             from './social/save';        // Phase 3

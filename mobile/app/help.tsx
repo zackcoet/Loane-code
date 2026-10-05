@@ -12,6 +12,7 @@ import {
   spacing,
   type Booking,
   type ImageRef,
+  type LegalDocKind,
   type ReportReason,
   type SupportTopic,
 } from '@loane/shared';
@@ -23,6 +24,7 @@ import { Input } from '../src/components/Input';
 import { PhotoGrid } from '../src/components/PhotoGrid';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
+import { LegalDocumentModal } from '../src/components/LegalDocumentModal';
 import { useAuth } from '../src/auth/AuthProvider';
 import { submitReport, submitSupportRequest } from '../src/firebase/callables';
 import { callableErrorMessage } from '../src/firebase/errors';
@@ -77,6 +79,7 @@ export default function Help() {
   const [topic, setTopic] = useState<SupportTopic>('account_help');
   const [message, setMessage] = useState('');
   const [contacting, setContacting] = useState(false);
+  const [legalOpen, setLegalOpen] = useState<LegalDocKind | null>(null);
 
   const bookings = useMemo(
     () => [
@@ -99,7 +102,9 @@ export default function Help() {
     try {
       const uploaded: ImageRef[] = [];
       for (const [index, photo] of photos.entries()) {
-        uploaded.push(await uploadBookingPhoto(profile.uid, selected.id, photo, Date.now() + index));
+        uploaded.push(
+          await uploadBookingPhoto(profile.uid, selected.id, photo, Date.now() + index),
+        );
       }
       await submitReport({
         targetType: 'booking',
@@ -143,7 +148,10 @@ export default function Help() {
         </Text>
         <View style={styles.panel}>
           {bookings.length === 0 && !renting.loading && !lending.loading ? (
-            <EmptyState title="No rentals yet" body="Your Renting and Lending history will appear here." />
+            <EmptyState
+              title="No rentals yet"
+              body="Your Renting and Lending history will appear here."
+            />
           ) : (
             <View style={styles.stack}>
               {bookings.map(({ booking, side }) => (
@@ -273,6 +281,26 @@ export default function Help() {
         </View>
 
         <Text variant="label" tone="muted" style={styles.sectionLabel}>
+          Legal
+        </Text>
+        <View style={styles.panel}>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => setLegalOpen('terms')}
+            style={({ pressed }) => [styles.legalRow, pressed && styles.pressed]}
+          >
+            <Text variant="body">Terms & Conditions</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => setLegalOpen('privacy')}
+            style={({ pressed }) => [styles.legalRow, pressed && styles.pressed]}
+          >
+            <Text variant="body">Privacy Policy</Text>
+          </Pressable>
+        </View>
+
+        <Text variant="label" tone="muted" style={styles.sectionLabel}>
           Past reports
         </Text>
         <View style={styles.panel}>
@@ -302,6 +330,7 @@ export default function Help() {
           )}
         </View>
       </View>
+      <LegalDocumentModal kind={legalOpen} onClose={() => setLegalOpen(null)} />
     </Screen>
   );
 }
@@ -322,7 +351,11 @@ function RentalChoice({
       accessibilityRole="button"
       accessibilityState={{ selected }}
       onPress={onPress}
-      style={({ pressed }) => [styles.choice, selected && styles.choiceSelected, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.choice,
+        selected && styles.choiceSelected,
+        pressed && styles.pressed,
+      ]}
     >
       <View style={styles.choiceText}>
         <Text variant="body" numberOfLines={1} style={styles.title}>
@@ -418,6 +451,12 @@ const styles = StyleSheet.create({
     minHeight: controls.minTapTarget,
     justifyContent: 'center',
     marginTop: spacing.md,
+  },
+  legalRow: {
+    minHeight: controls.minTapTarget,
+    justifyContent: 'center',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: color.border.default,
   },
   body: { marginTop: 4 },
   statusRow: {

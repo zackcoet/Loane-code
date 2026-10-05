@@ -24,6 +24,8 @@ export function scopeData(data: AdminData, campusId: string): AdminData {
     damageClaims: data.damageClaims.filter((item) => matchesCampus(item, campusId)),
     adminActions: data.adminActions,
     events: data.events.filter((item) => matchesCampus(item, campusId)),
+    legalDocs: data.legalDocs,
+    legalDrafts: data.legalDrafts,
   };
 }
 
@@ -31,7 +33,9 @@ export function makeOverviewMetrics(data: AdminData, window: DateWindow) {
   const usersInWindow = data.users.filter((user) => isInWindow(user.createdAt, window));
   const usersPrevious = data.users.filter((user) => isInPreviousWindow(user.createdAt, window));
   const listingsInWindow = data.listings.filter((listing) => isInWindow(listing.createdAt, window));
-  const listingsPrevious = data.listings.filter((listing) => isInPreviousWindow(listing.createdAt, window));
+  const listingsPrevious = data.listings.filter((listing) =>
+    isInPreviousWindow(listing.createdAt, window),
+  );
   const postsInWindow = data.posts.filter((post) => isInWindow(post.createdAt, window));
   const postsPrevious = data.posts.filter((post) => isInPreviousWindow(post.createdAt, window));
   const requests = data.bookings.filter(
@@ -62,8 +66,16 @@ export function makeOverviewMetrics(data: AdminData, window: DateWindow) {
         value: usersInWindow.length,
         detail: changeLabel(usersInWindow.length, usersPrevious.length, allTime),
       },
-      { label: 'Daily Active', value: uniqueRecentUsers(data.events, 1), detail: 'Unique users in last 24 hours' },
-      { label: 'Weekly Active', value: uniqueRecentUsers(data.events, 7), detail: 'Unique users in last 7 days' },
+      {
+        label: 'Daily Active',
+        value: uniqueRecentUsers(data.events, 1),
+        detail: 'Unique users in last 24 hours',
+      },
+      {
+        label: 'Weekly Active',
+        value: uniqueRecentUsers(data.events, 7),
+        detail: 'Unique users in last 7 days',
+      },
       {
         label: 'Listings',
         value: data.listings.length,
@@ -84,25 +96,60 @@ export function makeOverviewMetrics(data: AdminData, window: DateWindow) {
         value: completed.length,
         detail: changeLabel(completed.length, previousCompleted.length, allTime),
       },
-      { label: 'Views', value: eventCount(data.events, ['post_view', 'listing_view'], window), detail: 'Post + listing views' },
-      { label: 'Likes', value: eventCount(data.events, ['post_like'], window), detail: 'Post likes' },
-      { label: 'Saves', value: eventCount(data.events, ['post_save', 'save'], window), detail: 'Looks + listings saved' },
-      { label: 'Follows', value: eventCount(data.events, ['follow'], window), detail: 'New follows' },
-      { label: 'Tagged-Item Taps', value: eventCount(data.events, ['tagged_item_tap'], window), detail: 'Social to marketplace' },
+      {
+        label: 'Views',
+        value: eventCount(data.events, ['post_view', 'listing_view'], window),
+        detail: 'Post + listing views',
+      },
+      {
+        label: 'Likes',
+        value: eventCount(data.events, ['post_like'], window),
+        detail: 'Post likes',
+      },
+      {
+        label: 'Saves',
+        value: eventCount(data.events, ['post_save', 'save'], window),
+        detail: 'Looks + listings saved',
+      },
+      {
+        label: 'Follows',
+        value: eventCount(data.events, ['follow'], window),
+        detail: 'New follows',
+      },
+      {
+        label: 'Tagged-Item Taps',
+        value: eventCount(data.events, ['tagged_item_tap'], window),
+        detail: 'Social to marketplace',
+      },
     ],
-    signupsChart: seriesByDay(data.users.map((user) => user.createdAt), window),
+    signupsChart: seriesByDay(
+      data.users.map((user) => user.createdAt),
+      window,
+    ),
     activeUsersChart: activeSeries(data.events, window),
-    listingsChart: seriesByDay(data.listings.map((listing) => listing.createdAt), window),
-    postsChart: seriesByDay(data.posts.map((post) => post.createdAt), window),
+    listingsChart: seriesByDay(
+      data.listings.map((listing) => listing.createdAt),
+      window,
+    ),
+    postsChart: seriesByDay(
+      data.posts.map((post) => post.createdAt),
+      window,
+    ),
   };
 }
 
 export function makeFunnel(data: AdminData, window: DateWindow) {
   const users = data.users.filter((user) => isInWindow(user.createdAt, window));
   const userIds = new Set(users.map((user) => user.uid));
-  const listed = new Set(data.listings.filter((listing) => userIds.has(listing.ownerUid)).map((item) => item.ownerUid));
-  const posted = new Set(data.posts.filter((post) => userIds.has(post.authorUid)).map((item) => item.authorUid));
-  const requested = new Set(data.bookings.filter((booking) => userIds.has(booking.renterUid)).map((item) => item.renterUid));
+  const listed = new Set(
+    data.listings.filter((listing) => userIds.has(listing.ownerUid)).map((item) => item.ownerUid),
+  );
+  const posted = new Set(
+    data.posts.filter((post) => userIds.has(post.authorUid)).map((item) => item.authorUid),
+  );
+  const requested = new Set(
+    data.bookings.filter((booking) => userIds.has(booking.renterUid)).map((item) => item.renterUid),
+  );
   const completed = new Set(
     data.bookings
       .filter((booking) => booking.status === 'completed')
@@ -112,7 +159,10 @@ export function makeFunnel(data: AdminData, window: DateWindow) {
 
   return [
     { label: 'Signed up', value: users.length },
-    { label: 'Completed profile', value: users.filter((user) => user.username && user.displayName).length },
+    {
+      label: 'Completed profile',
+      value: users.filter((user) => user.username && user.displayName).length,
+    },
     { label: 'Listed an item', value: listed.size },
     { label: 'Posted', value: posted.size },
     { label: 'Requested a rental', value: requested.size },
@@ -159,12 +209,15 @@ function uniqueRecentUsers(events: AppEvent[], days: number): number {
 }
 
 function eventCount(events: AppEvent[], types: AppEvent['type'][], window: DateWindow) {
-  return events.filter((event) => types.includes(event.type) && isInWindow(event.createdAt, window)).length;
+  return events.filter((event) => types.includes(event.type) && isInWindow(event.createdAt, window))
+    .length;
 }
 
 function seriesByDay(values: Array<Parameters<typeof dayKey>[0]>, window: DateWindow) {
   const counts = new Map<string, number>();
-  values.filter((value) => isInWindow(value, window)).forEach((value) => addCount(counts, dayKey(value)));
+  values
+    .filter((value) => isInWindow(value, window))
+    .forEach((value) => addCount(counts, dayKey(value)));
   return mapToPoints(counts);
 }
 

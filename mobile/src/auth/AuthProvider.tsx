@@ -12,12 +12,10 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
-import {
-  COLLECTIONS,
-  type User,
-} from '@loane/shared';
+import { COLLECTIONS, type User } from '@loane/shared';
 import { auth, db } from '../firebase/config';
 import { setAnalyticsCampus } from '../analytics/events';
+import { LegalGate } from '../components/LegalGate';
 
 interface AuthState {
   /** The Firebase Auth account, or null when signed out. */
@@ -87,7 +85,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [firebaseUser, profile, authResolved, profileResolved],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {profile ? <LegalGate profile={profile}>{children}</LegalGate> : children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthState {
