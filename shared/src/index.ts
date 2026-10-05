@@ -16,3 +16,4 @@ export * from './money';
 export * from './factories';
 export * from './dates';
 export * from './validation';
+export * from './usernameSuggest';

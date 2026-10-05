@@ -16,15 +16,11 @@
  * transaction on the server.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { signInWithCustomToken } from 'firebase/auth';
-import {
-  normalizeUsername,
-  spacing,
-  validateUsername,
-} from '@loane/shared';
+import { normalizeUsername, spacing, suggestUsernames, validateUsername } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { Input } from '../../src/components/Input';
 import { Logo } from '../../src/components/Logo';
@@ -46,6 +42,35 @@ export default function ClaimUsername() {
   const [available, setAvailable] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /**
+   * Prefill from what she already told us.
+   *
+   * She typed a school email one screen ago, so `ellapetrick@email.sc.edu`
+   * fills this in as `ellapetrick` before she sees the field. A blank box
+   * asking a stranger to invent a name is the slowest step in signup, and
+   * the one most likely to lose her.
+   *
+   * `touched` is the whole contract: the moment she edits the field we
+   * never write to it again. A suggestion that keeps reappearing over
+   * what somebody is typing is far worse than no suggestion.
+   */
+  const [touched, setTouched] = useState(false);
+  const candidates = useMemo(
+    () => suggestUsernames({ firstName, campusEmail }),
+    [firstName, campusEmail],
+  );
+  // Which suggestion we are currently offering. Only moves while she has
+  // not touched the field, and only because the one before it was taken.
+  const [suggestionIndex, setSuggestionIndex] = useState(0);
+  const suggested = !touched ? (candidates[suggestionIndex] ?? '') : '';
+
+  useEffect(() => {
+    // Waits for the draft to hydrate from disk, which is when firstName
+    // and campusEmail actually arrive.
+    if (!hydrated || touched || !suggested) return;
+    setUsername(suggested);
+  }, [hydrated, touched, suggested]);
 
   // The password is held in memory only and never written to disk, so an
   // app reload loses it. Send her back one step rather than failing at the
@@ -71,7 +96,16 @@ export default function ClaimUsername() {
       try {
         const result = await checkUsername({ username: normalizeUsername(username) });
         setAvailable(result.data.available);
-        if (!result.data.available) setError(result.data.reason ?? 'That username is taken.');
+        if (result.data.available) return;
+
+        // Our suggestion was taken. Quietly move to the next one rather
+        // than telling her a name she never chose is unavailable — that
+        // reads as her mistake, and it is not.
+        if (!touched && suggestionIndex < candidates.length - 1) {
+          setSuggestionIndex((i) => i + 1);
+          return;
+        }
+        setError(result.data.reason ?? 'That username is taken.');
       } catch {
         // Advisory only; the server decides for real on submit.
         setAvailable(null);
@@ -81,7 +115,7 @@ export default function ClaimUsername() {
     return () => {
       if (debounce.current) clearTimeout(debounce.current);
     };
-  }, [username]);
+  }, [username, touched, suggestionIndex, candidates.length]);
 
   const onSubmit = async () => {
     const check = validateUsername(username);
@@ -134,14 +168,24 @@ export default function ClaimUsername() {
 
           <Input
             value={username}
-            onChangeText={(value) => setUsername(value.toLowerCase())}
+            onChangeText={(value) => {
+              // From here on the field is hers. Nothing writes to it again.
+              setTouched(true);
+              setUsername(value.toLowerCase());
+            }}
             placeholder="@username"
             autoCapitalize="none"
             autoCorrect={false}
             autoFocus
             onSubmitEditing={onSubmit}
             error={error}
-            hint={available === true ? 'Available' : undefined}
+            hint={
+              available === true
+                ? touched
+                  ? 'Available'
+                  : 'Available — tap to change it'
+                : undefined
+            }
           />
         </View>
 
