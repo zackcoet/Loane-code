@@ -6,9 +6,15 @@
  * symlink — that symlink would not survive the upload. So we bundle the
  * shared code directly into the output instead.
  *
- * firebase-admin and firebase-functions stay external: they are installed
- * from package.json on Google's side, and bundling them would be slower
- * and larger for no benefit.
+ * `@loane/shared` must NOT appear in package.json at all, not even under
+ * devDependencies: Cloud Build runs `npm install --package-lock-only`,
+ * which resolves dev dependencies too, and then fails trying to fetch
+ * `@loane/shared` from the public registry.
+ *
+ * Real npm packages stay external and are installed from package.json on
+ * Google's side. Bundling them would be slower and larger for no benefit,
+ * and `stripe` in particular is a large library that expects to be a real
+ * module on disk.
  */
 
 import { build } from 'esbuild';
@@ -21,6 +27,6 @@ await build({
   target: 'node22',
   format: 'cjs',
   sourcemap: true,
-  external: ['firebase-admin', 'firebase-functions'],
+  external: ['firebase-admin', 'firebase-functions', 'stripe'],
   logLevel: 'info',
 });

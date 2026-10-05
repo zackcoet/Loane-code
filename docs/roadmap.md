@@ -173,7 +173,7 @@ All five open decisions are settled; see `docs/decisions.md` (2026-10-05).
 
 - [x] 1. Decisions into code: 15% renter-paid fee, $1.50 minimum, liability
       cap in place of a protection hold, cancellation windows, tests
-- [ ] 2. Stripe plumbing: server SDK, secret in Secret Manager, one client
+- [x] 2. Stripe plumbing: server SDK, secrets in Secret Manager, one client
       module, `docs/payments.md`
 - [ ] 3. Stripe Connect Express onboarding for lenders; `acceptBooking`
       refuses until payouts are set up

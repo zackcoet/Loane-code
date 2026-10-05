@@ -22,7 +22,8 @@
     "node_modules",
     "dist",
     "build",
-    "lib",
+    "/backend/functions/lib/",
+    "/shared/lib/",
     "coverage",
     ".expo",
     "*.config.js"
@@ -60,7 +61,7 @@
       },
       {
         "selector": "Literal[value=/^\\s*(?:rgba?|hsla?)\\s*\\(/]",
-        "message": "Raw colours are not allowed outside shared/src/tokens.ts — this rule only caught #hex before, and five rgba() values slipped past it. For a label or backdrop over a photo use color.scrim.onPhoto, color.scrim.behindPanel or color.shadow.textOnPhoto. See docs/design-system.md."
+        "message": "Raw colours are not allowed outside shared/src/tokens.ts \u2014 this rule only caught #hex before, and five rgba() values slipped past it. For a label or backdrop over a photo use color.scrim.onPhoto, color.scrim.behindPanel or color.shadow.textOnPhoto. See docs/design-system.md."
       },
       {
         "selector": "Property[key.name='fontSize'] > Literal",
