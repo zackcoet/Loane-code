@@ -67,7 +67,7 @@ export function RentalsPage({ data, campusId }: { data: AdminData; campusId: str
                   <td>{booking.listing.name}</td>
                   <td>{booking.lender.displayName}</td>
                   <td>{booking.renter.displayName}</td>
-                  <td>{formatMoney(booking.amounts.protectionHoldCents)}</td>
+                  <td>{formatMoney(booking.amounts.liabilityCapCents)}</td>
                   <td>
                     {/* Before and after, side by side — the only
                         evidence there is, since no money is held. */}

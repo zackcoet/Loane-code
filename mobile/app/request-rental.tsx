@@ -13,7 +13,6 @@ import { useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
 import {
-  PLATFORM_FEE_BPS,
   RENTAL_DURATIONS,
   REQUEST_EXPIRY_HOURS,
   addDays,
@@ -184,7 +183,7 @@ export default function RequestRental() {
               <View style={styles.breakdown}>
                 <Line label={`Rental · ${days} days`} value={formatCents(fees.baseCents)} />
                 <Line
-                  label={`Loane fee (${PLATFORM_FEE_BPS / 100}%)`}
+                  label="Loane fee"
                   value={formatCents(fees.platformFeeCents)}
                 />
                 <Line label="Total" value={formatCents(fees.renterTotalCents)} strong />

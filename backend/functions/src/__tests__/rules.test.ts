@@ -17,7 +17,7 @@ import {
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
-import { EVENT_SURFACES, EVENT_TYPES } from '@loane/shared';
+import { EVENT_SURFACES, EVENT_TYPES, newUserStripe } from '@loane/shared';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
 const ELLA = 'uid-ella';
@@ -61,7 +61,7 @@ function userDoc(uid: string, overrides: Record<string, unknown> = {}) {
     },
     lastActiveAt: null,
     pushTokens: [],
-    stripe: { accountId: null, customerId: null, payoutsEnabled: false },
+    stripe: newUserStripe(),
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,

@@ -13,5 +13,6 @@ export * from './constants';
 export * from './tokens';
 export * from './collections';
 export * from './money';
+export * from './factories';
 export * from './dates';
 export * from './validation';

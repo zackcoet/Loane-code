@@ -302,3 +302,140 @@ repository.
 **Why:** A listing means the same thing in all three. Separate repos would
 mean three copies of that definition drifting apart. One repo, one definition,
 imported everywhere.
+
+---
+
+## 2026-10-05 — The renter pays the Loane fee, 15%, $1.50 minimum
+
+**Decision:** The fee is 15% of the rental, added on top of the price the
+lender listed, with a floor of $1.50. The lender receives exactly the number
+she typed. This supersedes the 2026-09-25 entry leaving it open.
+
+**Why 15% and not 10%:** Stripe takes 2.9% + 30c of whatever the renter pays.
+On a $35 dress at 10% Loane nets about $2 before any support cost. More
+importantly, raising a fee after launch is the most damaging pricing move
+there is — starting at 15% and running "no Loane fee for our first month" as
+a promotion is strictly better than starting low and clawing upward. 15% is
+also mid-market (Airbnb lands around 14–16% all-in, Turo at 15%+).
+
+**Why the renter and not the lender:** supply is the hard side of a
+marketplace, and at a single campus it is the only hard side. "List it at $35,
+you get $35" is the simplest sentence in the business. Charging the lender
+instead just teaches her to list at $41 to clear $35 — renters pay the same
+and the listings look more expensive.
+
+**Why a minimum:** Stripe's flat 30c eats a $5 rental. The floor is capped at
+the rental price itself, so a $1 item carries a $1 fee, never $1.50.
+
+**Still recorded per booking.** `booking.amounts.feePaidBy` and the full
+breakdown are frozen onto each booking, and `calculateFees` still implements
+all three splits, so a booking made under a different rule must still add up
+years later.
+
+---
+
+## 2026-10-05 — No protection hold. A liability cap, charged only on a claim
+
+**Decision:** Nothing is ever held against garment value. The renter saves a
+card with an off-session mandate, agrees explicitly to a liability cap (the
+value the lender documented) before requesting, and that card is charged only
+if an admin rules her at fault on a damage or non-return claim.
+`PROTECTION_HOLD_BPS` is gone; `LIABILITY_CAP_BPS` replaces it and
+`booking.amounts.protectionHoldCents` became `liabilityCapCents`.
+
+**Why:** two reasons, and the second is worse than the first.
+
+1. Card authorizations die after about 7 days. A rental plus the 48-hour
+   return window can outlive one, and nothing tells you when it lapses — we
+   would believe we were covered and not be.
+2. A $200 hold on a student's debit card does not "reserve" money. It makes
+   $200 vanish from her available balance for a week. For a lot of students
+   that is rent. It is the single most likely thing to stop her renting at
+   all, which is question 1 of the MVP.
+
+**The honest cost:** this is collection after the fact. An off-session charge
+can be declined. The failure path is a Stripe payment link, renting paused,
+account flagged, claim left open. We will not recover every claim — but no
+design recovers every claim, and freezing hundreds of dollars of a
+twenty-year-old's balance costs more renters than it saves dresses.
+
+**Rejected alternative:** a small ($25–50) short-window refundable hold. It
+fits inside 7 days and is not ruinous. It is extra moving parts for a partial
+deterrent; revisit only if real damage claims actually appear.
+
+---
+
+## 2026-10-05 — Authorize at request, capture at pickup, pay out at completion
+
+**Decision:** The renter's card is authorized when she requests, captured
+when she confirms she has the piece in her hands, and the lender is paid
+after the rental completes. Not charged at accept.
+
+**Why:** she should not be out of pocket for a piece she has not received,
+and the lender should not be paid for a handoff that never happened. Pickup
+is the moment the rental actually becomes real.
+
+**The cost, and what we do about it:** a 7-day authorization cannot span a
+formal booked three weeks out. Because we hold an off-session mandate, a hold
+about to lapse can be replaced without involving her — the sweep re-authorizes
+inside `REAUTHORIZE_BEFORE_EXPIRY_HOURS` and counts it on the booking. Only if
+that silent replacement fails does she get asked to re-confirm, and the
+handoff is blocked until she does. Surprising someone at the handoff with
+"your payment expired" is the outcome this exists to prevent.
+
+---
+
+## 2026-10-05 — Cancellation and refund rules
+
+**Decision:**
+
+| Who, when | Result |
+|---|---|
+| Renter cancels before the lender accepts | Nothing charged. Authorization released. |
+| Renter cancels 48h+ before the start date | Full refund, Loane fee included. |
+| Renter cancels inside 48h | Lender keeps 50% of the rental. Loane fee refunded. |
+| Lender cancels, ever | Renter fully refunded. Counted against the lender. |
+| Lender never answers | Request expires at 48h. Nothing charged. |
+
+**Why:** a lender who turned down other requests for a dress now sitting in
+her closet on gameday is owed something. A renter who cancels a week out cost
+nobody anything. And Loane never keeps a fee on a rental that did not happen —
+`platformKeepsCents` is 0 in every branch of `calculateRefund`, and there is a
+test asserting exactly that.
+
+---
+
+## 2026-10-05 — Hosted Stripe Checkout first, native payment sheet later
+
+**Decision:** Card entry goes through Stripe's hosted Checkout page, opened
+in a browser. The native `@stripe/stripe-react-native` payment sheet comes
+later as a polish step.
+
+**Why:** the native SDK is a native module, so adding it stops the whole app
+running in Expo Go — including all the work that has nothing to do with
+payments. Hosted Checkout works in Expo Go today, needs no build, and the
+entire server side is identical either way. Swapping to the native sheet
+later touches one screen.
+
+**Cost:** she leaves the app for about twenty seconds, and there is no in-app
+Apple Pay until we swap.
+
+---
+
+## 2026-10-05 — Building against a separate "Loane Test" Stripe account
+
+**Decision:** Phase 5 is built and tested against a throwaway Stripe account
+with Connect enabled in test mode, not the Loane, Inc. account.
+
+**Why:** Loane, Inc.'s Stripe account cannot enable Connect until its Stripe
+Atlas incorporation finishes. Waiting would block all of Phase 5 on
+paperwork.
+
+**What the swap must be:** changing keys and nothing else. No Stripe account
+id, webhook id or price id is ever hardcoded — the secret key and webhook
+signing secret come from Secret Manager, the publishable key from app config.
+The one thing that does not survive a platform swap is per-user Stripe ids:
+Connect accounts and customers belong to the platform that created them. So
+`user.stripe.platformAccountId` records which platform each id came from,
+making a stale id detectable and re-onboardable instead of a silent failure.
+See docs/payments.md for the runbook.

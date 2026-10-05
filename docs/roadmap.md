@@ -161,25 +161,91 @@ The condition photos are required anyway — with no card on file and no
 hold, a before-and-after photo record is the only protection either side
 has.
 
-## Phase 5 — Payments + Protection ⏸ PAUSED
+## Phase 5 — Payments + Protection 🚧 IN PROGRESS
 
-**Blocked until the company is registered.** Stripe Connect needs a legal
-entity and a bank account before any of this can be built or tested, so
-Phase 5 waits. Everything it will need is already designed into the data
-model — every booking carries a `payment` block and a full fee breakdown —
-so nothing has to be migrated when we pick it up.
+**Unpaused 2026-10-05.** Built and tested against a separate "Loane Test"
+Stripe account with Connect enabled in test mode, because Loane, Inc.'s own
+Stripe account cannot enable Connect until its Stripe Atlas incorporation
+finishes (~mid-October). Going live is then a key swap and nothing else —
+see `docs/payments.md` for the runbook.
 
+All five open decisions are settled; see `docs/decisions.md` (2026-10-05).
 
-- Stripe Connect onboarding for lenders
-- Card on file for renters; **card not charged until a rental is confirmed**
-- Rental price + Loane fee shown clearly before paying
-- **Decide: who absorbs the Loane fee** — renter, lender or split
-- **Decide: the protection hold percentage**
-- Lender payouts
-- Cancellations and refunds
-- Protection hold placed and released
-- Damage claims: 48-hour window, photo evidence, renter response, admin
-  decision
+- [x] 1. Decisions into code: 15% renter-paid fee, $1.50 minimum, liability
+      cap in place of a protection hold, cancellation windows, tests
+- [ ] 2. Stripe plumbing: server SDK, secret in Secret Manager, one client
+      module, `docs/payments.md`
+- [ ] 3. Stripe Connect Express onboarding for lenders; `acceptBooking`
+      refuses until payouts are set up
+- [ ] 4. Renters save a card via hosted Stripe Checkout
+- [ ] 5. Authorize at request, capture at pickup, with silent
+      re-authorization before a hold lapses
+- [ ] 6. Lender payout on completion
+- [ ] 7. Cancellations, refunds, and claim charges against the saved card
+- [ ] 8. Webhooks: signature verified, idempotent
+- [ ] 9. Admin panel: payments, refunds, payouts, claim charges
+- [ ] Live test in test mode: `scripts/paymentsFlowLive.ts`, self-cleaning
+
+**Deliberately not in Phase 5:** Apple Pay and the native payment sheet.
+Hosted Checkout works in Expo Go; the native SDK does not. See Phase 5c.
+
+## Phase 5a — Production polish 📋 NEXT
+
+**Agreed 2026-10-05. Starts when payments is finished and Zack says go.**
+Make Loane feel like a real, high-quality app rather than a working one.
+
+**Begins with a screen-by-screen review and a ranked list, before any
+building.** The point is to find what actually feels unfinished, not to
+guess.
+
+- Onboarding in as few steps as possible — download to browsing in under a
+  minute
+- Smooth transitions between screens; consistent layout and spacing
+  everywhere
+- **Branded loading animation**: the Loane rings (two overlapping circles)
+  gently spinning. ONE reusable component, built from the design tokens.
+  Used for every full-screen wait — app launch, sign-up, payment
+  processing, uploading a post or listing
+- **Skeleton placeholders, not spinners**, for feeds, grids and lists, so
+  they feel instant
+- A helpful empty state and a clear error-with-retry on every screen
+- Speed: fast feed and Discover, images cached and quick to appear
+- Details: haptics on key actions, pull-to-refresh, the keyboard never
+  covering an input, correct on both small and large iPhones
+
+## Phase 5b — FAQ + AI support assistant 📋 THEN
+
+**Agreed 2026-10-05.** In this order, FAQ first — the assistant answers out
+of it, so it cannot exist first.
+
+**FAQ**
+- A real FAQ in Help & Support: renting, lending, payments and fees,
+  cancellations, damage, safety, accounts
+- **Editable from the admin panel**, so an answer can change without
+  shipping a build
+
+**AI support assistant (Claude API)**
+- A chat in Help & Support answering from our FAQ and policies
+- Can look up the user's OWN rentals and reports, read-only, for
+  "where's my dress" questions
+- **Clearly labelled as an AI assistant.** Never invents a policy, never
+  issues a refund, never takes an action itself
+- Cannot help, or the user asks for a person → opens a ticket in the admin
+  Support inbox with the conversation attached
+- **Cloud Function only.** API key in Secret Manager, never in the app —
+  an API key shipped in a mobile binary is a public API key
+- **Rate limited per user**, so it cannot be abused or run up a bill
+- Admin panel: AI conversations, and the tickets it handed off
+
+## Phase 5c — Apple Pay 📋 THEN
+
+**Agreed 2026-10-05. Only once payments are proven working.**
+
+- Swap hosted browser Checkout for `@stripe/stripe-react-native`'s native
+  payment sheet, with Apple Pay
+- **Requires a TestFlight or development build** — the native SDK does not
+  run in Expo Go, and adding it stops the whole app running there
+- The server side does not change. This is one screen.
 
 ## Phase 6 — Trust + Messaging ✅ (push notifications still to do)
 

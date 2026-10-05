@@ -34,6 +34,7 @@ import {
   SIZES,
   addDays,
   calculateFees,
+  newBookingPayment,
   ids,
   type Booking,
   type Campus,
@@ -46,6 +47,7 @@ import {
   type ShoeSize,
   type Size,
   type User,
+  newUserStripe,
 } from '@loane/shared';
 
 // ---------------------------------------------------------------------------
@@ -509,7 +511,7 @@ async function main(): Promise<void> {
       },
       lastActiveAt: null,
       pushTokens: [],
-      stripe: { accountId: null, customerId: null, payoutsEnabled: false },
+      stripe: newUserStripe(),
       createdAt: FieldValue.serverTimestamp() as never,
       updatedAt: FieldValue.serverTimestamp() as never,
     };
@@ -792,15 +794,7 @@ async function main(): Promise<void> {
       endDate,
       durationDays: plan.days,
       amounts,
-      payment: {
-        paymentIntentId: null,
-        holdPaymentIntentId: null,
-        transferId: null,
-        refundId: null,
-        authorizedAt: null,
-        capturedAt: null,
-        holdReleasedAt: null,
-      },
+      payment: newBookingPayment(),
       renterMessage: plan.note ?? null,
       handoff: {
         notes: 'Meet outside Russell House.',

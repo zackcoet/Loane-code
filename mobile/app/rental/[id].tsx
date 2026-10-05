@@ -21,7 +21,6 @@ import {
 } from 'react-native';
 import {
   BOOKING_STATUS_LABELS,
-  PLATFORM_FEE_BPS,
   RETURN_DISPUTE_WINDOW_HOURS,
   RETURN_PROBLEMS,
   RETURN_PROBLEM_LABELS,
@@ -274,7 +273,7 @@ export default function RentalScreen() {
           <View style={styles.breakdown}>
             <Line label="Rental" value={formatCents(booking.amounts.baseCents)} />
             <Line
-              label={`Loane fee (${PLATFORM_FEE_BPS / 100}%)`}
+              label="Loane fee"
               value={formatCents(booking.amounts.platformFeeCents)}
             />
             <Line label="Total" value={formatCents(booking.amounts.renterTotalCents)} strong />

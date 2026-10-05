@@ -559,18 +559,78 @@ export const RESERVED_USERNAMES = [
 export const CURRENCY = 'usd' as const;
 
 /**
- * Loane's cut of a rental, in basis points (1000 = 10%).
+ * Loane's cut of a rental, in basis points (1500 = 15%).
  *
- * TODO-DECIDE: who absorbs this — the renter on top of the rental price, the
- * lender out of the payout, or split. Zack to decide in Phase 5. The booking
- * document records the split explicitly so changing this later does not
- * rewrite history.
+ * Decided in Phase 5: the renter pays it on top of the rental price and the
+ * lender receives the full amount she listed. See docs/decisions.md.
+ *
+ * Every booking still records its own `amounts`, so changing this later
+ * never rewrites the history of a booking already made.
  */
-export const PLATFORM_FEE_BPS = 1000;
+export const PLATFORM_FEE_BPS = 1500;
 
 /**
- * Protection hold placed on the renter's card, as a share of the documented
- * garment value, in basis points. Released after a successful return.
- * TODO-DECIDE in Phase 5.
+ * The smallest fee Loane will charge on a booking.
+ *
+ * Stripe takes 2.9% + 30c of whatever the renter pays. On a $5 rental a
+ * percentage-only fee does not cover the flat 30c, so the booking would
+ * cost us money to process.
  */
-export const PROTECTION_HOLD_BPS = 10_000;
+export const PLATFORM_FEE_MINIMUM_CENTS = 150;
+
+/**
+ * Who absorbs the platform fee. The booking records its own copy.
+ */
+export const PLATFORM_FEE_PAID_BY = 'renter' as const;
+
+/**
+ * The most a renter can be charged for damage or non-return, as a share of
+ * the value the lender documented for the piece. 10_000 bps = 100%.
+ *
+ * This is a CAP ON A LATER CHARGE, not money held on her card. Nothing is
+ * ever held against garment value — see docs/decisions.md for why. She
+ * agrees to this number explicitly before requesting, and it is only ever
+ * charged if an admin rules her at fault on a claim.
+ */
+export const LIABILITY_CAP_BPS = 10_000;
+
+// ---------------------------------------------------------------------------
+// Authorization lifetime
+// ---------------------------------------------------------------------------
+
+/**
+ * How long a card authorization survives before the bank drops it.
+ *
+ * Stripe's limit, not ours. It matters because Loane authorizes at REQUEST
+ * and captures at PICKUP, and a formal booked three weeks out would see its
+ * authorization expire in between.
+ */
+export const AUTHORIZATION_VALID_DAYS = 7;
+
+/**
+ * How long before expiry we quietly re-authorize.
+ *
+ * Because we hold an off-session mandate on her card, a hold about to lapse
+ * can be replaced without involving her. Surprising someone at the handoff
+ * with "your payment expired" is a bad moment to discover this.
+ */
+export const REAUTHORIZE_BEFORE_EXPIRY_HOURS = 24;
+
+// ---------------------------------------------------------------------------
+// Cancellations
+// ---------------------------------------------------------------------------
+
+/**
+ * Cancel at least this long before the start date and everything comes
+ * back, fee included. A renter who cancels a week out cost nobody anything.
+ */
+export const FULL_REFUND_CUTOFF_HOURS = 48;
+
+/**
+ * Cancel inside the cutoff and the lender keeps this share of the rental.
+ *
+ * A lender who turned down other requests for a dress now sitting in her
+ * closet on gameday is owed something. The Loane fee is always refunded —
+ * we do not keep a cut of a rental that never happened.
+ */
+export const LATE_CANCEL_LENDER_SHARE_BPS = 5000;

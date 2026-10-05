@@ -4,6 +4,7 @@ import type { Campus, User, UsernameLock, UserPrivate } from '@loane/shared';
 import {
   COLLECTIONS,
   matchesCampusDomain,
+  newUserStripe,
   normalizeEmail,
   normalizeUsername,
   validateDisplayName,
@@ -170,7 +171,7 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
           },
           lastActiveAt: null,
           pushTokens: [],
-          stripe: { accountId: null, customerId: null, payoutsEnabled: false },
+          stripe: newUserStripe(),
         };
 
         tx.set(userRef, {

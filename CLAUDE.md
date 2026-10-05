@@ -137,9 +137,18 @@ Rush, Vacation, Wedding, Graduation.
 - No Firebase App Check, no rate limiting. Phase 8.
 - Blocking users is designed (`users/{uid}/blocked/{uid}`) but not built.
   Phase 6.
-- **Who absorbs the Loane fee is undecided** — renter, lender or split.
-  Defaults to renter. Recorded per booking in `booking.amounts.feePaidBy`
-  so changing it later never rewrites history. Decide in Phase 5.
+- **The Loane fee is 15%, paid by the renter on top of the rental price**,
+  with a $1.50 minimum. Decided 2026-10-05. Still recorded per booking in
+  `booking.amounts.feePaidBy` so changing it later never rewrites history.
+- **Nothing is ever held against garment value.** A renter agrees to a
+  liability cap and is charged only if an admin approves a claim. Card
+  holds expire after ~7 days, so a hold would silently stop protecting us.
+  See `docs/decisions.md`.
+- **Phase 5 is built against a separate "Loane Test" Stripe account**
+  because Loane, Inc.'s own account cannot enable Connect until its Stripe
+  Atlas incorporation finishes. Going live is a key swap and nothing else;
+  the one thing that does not survive it is per-user Stripe ids, which is
+  why `user.stripe.platformAccountId` exists. See `docs/payments.md`.
 - Push notifications need a development build; they don't work in Expo Go.
 
 ## Where things are

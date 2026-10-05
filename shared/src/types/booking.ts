@@ -51,25 +51,62 @@ export interface Booking extends BaseDoc, CampusScoped {
     renterTotalCents: Cents;
     /** What the lender receives. */
     lenderPayoutCents: Cents;
-    /** Hold placed on the renter's card, released after return. */
-    protectionHoldCents: Cents;
     /**
-     * Who absorbed the platform fee for this booking.
-     * TODO-DECIDE (Phase 5): renter, lender or split.
+     * The most the renter can be charged if a damage or non-return claim is
+     * approved against her — the value the lender documented for the piece.
+     *
+     * Nothing is held on her card for this. It is a ceiling on a possible
+     * later charge, and she agrees to the number before requesting.
      */
+    liabilityCapCents: Cents;
+    /** Who absorbed the platform fee for this booking. */
     feePaidBy: 'renter' | 'lender' | 'split';
   };
 
-  /** TODO-PHASE5: Stripe references. Null until payments are built. */
+  /**
+   * Stripe references and the money's timeline.
+   *
+   * The shape follows the real sequence: authorize when she requests,
+   * capture when she picks the piece up, pay the lender when the rental
+   * closes. An authorization can be replaced before pickup if it is about
+   * to lapse, so `paymentIntentId` is whichever one is currently live.
+   */
   payment: {
+    /** The live authorization, or the captured charge once picked up. */
     paymentIntentId: string | null;
-    holdPaymentIntentId: string | null;
+    /** Set when the lender's share is sent to her Connect account. */
     transferId: string | null;
     refundId: string | null;
-    /** Card authorized but not captured until the lender accepts. */
+    refundedCents: Cents | null;
+
+    /** Held at request. */
     authorizedAt: Timestampish | null;
+    /**
+     * When the bank will drop the current authorization. Watched by the
+     * sweep so a hold is replaced rather than discovered dead at handoff.
+     */
+    authorizationExpiresAt: Timestampish | null;
+    /** How many times we have had to replace a lapsing authorization. */
+    reauthorizedCount: number;
+
+    /** Taken at pickup, when she confirms she has the piece. */
     capturedAt: Timestampish | null;
-    holdReleasedAt: Timestampish | null;
+    /** Sent to the lender once the rental completed. */
+    paidOutAt: Timestampish | null;
+
+    /**
+     * Her explicit agreement to the liability cap, captured before the
+     * request goes in. Stored as both a time and the exact number shown,
+     * because "she agreed to $200" has to survive the listing being edited.
+     */
+    liabilityAgreedAt: Timestampish | null;
+    liabilityAgreedCapCents: Cents | null;
+
+    /** Set only if an admin ruled her at fault on a claim. */
+    claimPaymentIntentId: string | null;
+    claimChargedCents: Cents | null;
+    /** An off-session charge can be declined. The claim stays open if so. */
+    claimChargeFailedAt: Timestampish | null;
   };
 
   /** Free-text note the renter sends with her request. */

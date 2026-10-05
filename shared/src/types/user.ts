@@ -119,12 +119,32 @@ export interface User extends BaseDoc, CampusScoped {
    * TODO-PHASE5: Stripe Connect. Left null until Phase 5 so the shape is
    * settled now and we are not migrating documents later.
    */
+  /**
+   * Stripe. Written only by Cloud Functions and the Stripe webhook —
+   * never by the app. If the phone could set `payoutsEnabled` it could
+   * accept paid rentals with nowhere to send the money.
+   */
   stripe: {
     /** Connected account id for receiving payouts. */
     accountId: string | null;
     /** Customer id for charging her card as a renter. */
     customerId: string | null;
+    /** The saved card we charge off-session for claims. */
+    defaultPaymentMethodId: string | null;
+    /** True once Stripe says onboarding is finished and payouts can run. */
     payoutsEnabled: boolean;
+    /** She started onboarding but has not finished it. */
+    onboardingStartedAt: Timestampish | null;
+    /**
+     * Which Stripe platform account the ids above belong to.
+     *
+     * Connect accounts and customers are owned by the platform that created
+     * them, so if Loane ever moves to a different Stripe account these ids
+     * silently stop resolving. Recording the platform means the mismatch is
+     * detectable, and she can be asked to reconnect instead of hitting an
+     * error nobody can explain.
+     */
+    platformAccountId: string | null;
   };
 }
 
