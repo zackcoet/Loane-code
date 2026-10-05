@@ -509,7 +509,10 @@ export const LIMITS = {
   supportMessage: { min: 1, max: 2000 },
   /** Photos per listing / per post. */
   listingPhotos: { min: 1, max: 8 },
-  postPhotos: { min: 1, max: 6 },
+  // 10 to match what the photo picker offers, and what Instagram
+  // trained everyone to expect. Enforced in createPost as well as here,
+  // so raising it is a deploy and not just a build.
+  postPhotos: { min: 1, max: 10 },
   /** Listings a single post may tag. */
   taggedListings: { max: 6 },
   /** Upload constraints, enforced in Storage rules too. */

@@ -2,16 +2,20 @@
  * The sheet behind the + button: "Post a Look" or "Add to My Closet".
  */
 
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { color, iconSize, radius, spacing, type } from '@loane/shared';
 import { Icon, type IconName } from '../src/components/Icon';
 import { Logo } from '../src/components/Logo';
+import { usePostDraft } from '../src/post/postDraft';
+import { startLook } from '../src/post/startLook';
 
 interface Option {
   title: string;
   body: string;
-  href: '/add-to-closet' | '/post-look';
+  /** 'look' opens the photo picker; the rest are plain routes. */
+  action: 'look' | '/add-to-closet';
   icon: IconName;
 }
 
@@ -19,7 +23,7 @@ const OPTIONS: Option[] = [
   {
     title: 'Post a look',
     body: 'Show off an outfit. Tag the pieces from your closet.',
-    href: '/post-look',
+    action: 'look',
     // Posting is the additive, expressive one, so it gets the plus.
     icon: 'add',
   },
@@ -29,7 +33,7 @@ const OPTIONS: Option[] = [
     // and offering it here made the two options sound like the same
     // thing with different names.
     body: 'List a garment to rent or sell.',
-    href: '/add-to-closet',
+    action: '/add-to-closet',
     // A garment, which is what a closet is full of. Ionicons has no
     // hanger, and a shirt reads as clothes faster than a box would.
     icon: 'shirt-outline',
@@ -38,6 +42,29 @@ const OPTIONS: Option[] = [
 
 export default function PostSheet() {
   const router = useRouter();
+  const draft = usePostDraft();
+  const [picking, setPicking] = useState(false);
+
+  /**
+   * Posting a look opens the photo library straight away, the way
+   * Instagram does, rather than landing on a screen of ours that only
+   * exists to hold a "choose photos" button.
+   *
+   * The sheet stays up behind the picker so that cancelling leaves her
+   * exactly where she was.
+   */
+  async function onPostLook() {
+    if (picking) return;
+    setPicking(true);
+    try {
+      await startLook(draft, (path) => {
+        router.back();
+        router.push(path);
+      });
+    } finally {
+      setPicking(false);
+    }
+  }
 
   return (
     <View style={styles.sheet}>
@@ -63,9 +90,14 @@ export default function PostSheet() {
           key={option.title}
           style={styles.option}
           accessibilityRole="button"
+          disabled={picking}
           onPress={() => {
+            if (option.action === 'look') {
+              void onPostLook();
+              return;
+            }
             router.back();
-            router.push(option.href);
+            router.push(option.action);
           }}
         >
           <View style={styles.optionIcon}>

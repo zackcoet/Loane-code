@@ -18,11 +18,11 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import {
-  color,
-} from '@loane/shared';
+import { color } from '@loane/shared';
 import { AuthProvider, useAuth } from '../src/auth/AuthProvider';
 import { SignupDraftProvider } from '../src/auth/signupDraft';
+import { PostDraftProvider } from '../src/post/postDraft';
+import { SuccessBannerProvider } from '../src/components/SuccessBanner';
 import { logEvent } from '../src/analytics/events';
 
 function RootNavigator() {
@@ -77,7 +77,9 @@ function RootNavigator() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.surface.page } }}>
+    <Stack
+      screenOptions={{ headerShown: false, contentStyle: { backgroundColor: color.surface.page } }}
+    >
       <Stack.Screen name="(onboarding)" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
@@ -106,7 +108,12 @@ function RootNavigator() {
       <Stack.Screen name="privacy" options={{ presentation: 'card' }} />
       <Stack.Screen name="u/[username]" options={{ presentation: 'card' }} />
       <Stack.Screen name="add-to-closet" options={{ presentation: 'card' }} />
-      <Stack.Screen name="post-look" options={{ presentation: 'card' }} />
+      <Stack.Screen name="new-post/arrange" options={{ presentation: 'card' }} />
+      <Stack.Screen name="new-post/details" options={{ presentation: 'card' }} />
+      <Stack.Screen name="new-post/occasions" options={{ presentation: 'card' }} />
+      <Stack.Screen name="new-post/tag" options={{ presentation: 'card' }} />
+      <Stack.Screen name="new-post/preview" options={{ presentation: 'card' }} />
+      <Stack.Screen name="new-post/quick-add" options={{ presentation: 'card' }} />
       <Stack.Screen name="edit-post" options={{ presentation: 'card' }} />
       <Stack.Screen name="post/[id]" options={{ presentation: 'card' }} />
       <Stack.Screen name="request-rental" options={{ presentation: 'card' }} />
@@ -139,8 +146,12 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <AuthProvider>
           <SignupDraftProvider>
-            <StatusBar style="dark" />
-            <RootNavigator />
+            <PostDraftProvider>
+              <SuccessBannerProvider>
+                <StatusBar style="dark" />
+                <RootNavigator />
+              </SuccessBannerProvider>
+            </PostDraftProvider>
           </SignupDraftProvider>
         </AuthProvider>
       </SafeAreaProvider>

@@ -18,6 +18,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { usePostDraft } from '../post/postDraft';
+import { startLook } from '../post/startLook';
 import {
   ActivityIndicator,
   Image,
@@ -46,6 +48,7 @@ interface Props {
 
 export function ProfileTabs({ uid, isMe }: Props) {
   const router = useRouter();
+  const draft = usePostDraft();
   const [tab, setTab] = useState<ProfileTab>('closet');
   const { width } = useWindowDimensions();
 
@@ -107,7 +110,7 @@ export function ProfileTabs({ uid, isMe }: Props) {
           title="No posts yet"
           body={isMe ? 'Looks you post will show up here.' : 'She has not posted a look yet.'}
           actionLabel={isMe ? 'Post a look' : undefined}
-          onAction={isMe ? () => router.push('/post-look') : undefined}
+          onAction={isMe ? () => void startLook(draft, router.push) : undefined}
         />
       ) : (
         <View style={styles.grid}>

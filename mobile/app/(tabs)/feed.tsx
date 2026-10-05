@@ -7,6 +7,8 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
+import { usePostDraft } from '../../src/post/postDraft';
+import { startLook } from '../../src/post/startLook';
 import {
   ActivityIndicator,
   FlatList,
@@ -32,6 +34,7 @@ import { logEvent } from '../../src/analytics/events';
 
 export default function Feed() {
   const router = useRouter();
+  const draft = usePostDraft();
   const { profile } = useAuth();
   const { posts, loading, loadingMore, error, exhausted, refresh, loadMore } = usePagedPosts();
   const { uids: followingUids } = useFollowingUids();
@@ -123,7 +126,7 @@ export default function Feed() {
           actionLabel={tab === 'campus' ? 'Post a look' : 'Find closets to follow'}
           onAction={
             tab === 'campus'
-              ? () => router.push('/post-look')
+              ? () => void startLook(draft, router.push)
               : () => router.push('/(tabs)/discover')
           }
         />

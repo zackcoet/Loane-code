@@ -78,6 +78,65 @@ export async function pickPhoto(
   };
 }
 
+/**
+ * Opens the photo library with multi-select, the way Instagram does.
+ *
+ * iOS's own picker already numbers each selection in the order it was
+ * tapped, which is the behaviour we want, so we use it rather than
+ * building a grid. The bigger reason is permissions: a custom grid needs
+ * the whole camera roll, while the system picker works with iOS's
+ * "selected photos only" mode. Asking a student for her entire library
+ * before her first post is a privacy ask we do not need to make.
+ *
+ * No crop here. On iOS `allowsEditing` is ignored for a multi-selection,
+ * so cropping happens afterwards on the Arrange screen.
+ *
+ * Returns an empty array when she cancels or declines permission.
+ */
+export async function pickPhotos(limit: number): Promise<PickedPhoto[]> {
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) return [];
+
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    allowsMultipleSelection: true,
+    selectionLimit: limit,
+    quality: 1,
+  });
+
+  if (result.canceled) return [];
+
+  return result.assets.map((asset) => ({
+    uri: asset.uri,
+    width: asset.width ?? LISTING_MAX_EDGE,
+    height: asset.height ?? LISTING_MAX_EDGE,
+  }));
+}
+
+/**
+ * Crops a photo to an arbitrary rectangle, given in FRACTIONS of the
+ * image (0-1), so the caller never has to know the pixel dimensions.
+ */
+export async function cropPhoto(
+  photo: PickedPhoto,
+  rect: { x: number; y: number; width: number; height: number },
+): Promise<PickedPhoto> {
+  const originX = Math.round(rect.x * photo.width);
+  const originY = Math.round(rect.y * photo.height);
+  // Never let rounding push the crop past the edge; ImageManipulator
+  // throws rather than clamping.
+  const width = Math.min(Math.round(rect.width * photo.width), photo.width - originX);
+  const height = Math.min(Math.round(rect.height * photo.height), photo.height - originY);
+  if (width <= 0 || height <= 0) return photo;
+
+  const result = await ImageManipulator.manipulateAsync(
+    photo.uri,
+    [{ crop: { originX, originY, width, height } }],
+    { compress: QUALITY, format: ImageManipulator.SaveFormat.JPEG },
+  );
+  return { uri: result.uri, width: result.width, height: result.height };
+}
+
 /** Resizes the long edge down and re-compresses as JPEG. */
 export async function compressPhoto(
   photo: PickedPhoto,
