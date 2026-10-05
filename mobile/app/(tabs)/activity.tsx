@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     borderBottomColor: color.border.default,
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.inverse },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.accent },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
   section: { paddingTop: spacing.lg, paddingBottom: spacing.sm },
@@ -287,5 +287,5 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.6 },
   rowText: { flex: 1 },
   meta: { alignItems: 'flex-end', gap: 4 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.status.error },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.accent.background },
 });

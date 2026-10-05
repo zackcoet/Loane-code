@@ -80,7 +80,7 @@ function Row({
       </View>
       {unread > 0 ? (
         <View style={styles.badge}>
-          <Text variant="caption" tone="inverse">
+          <Text variant="caption" tone="primary">
             {unread > 9 ? '9+' : unread}
           </Text>
         </View>
@@ -111,6 +111,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: color.surface.inverse,
+    backgroundColor: color.accent.background,
   },
 });

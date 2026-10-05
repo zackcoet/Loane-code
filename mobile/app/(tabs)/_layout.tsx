@@ -133,11 +133,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: color.surface.muted,
   },
-  avatarRingActive: { borderColor: color.icon.default },
+  avatarRingActive: { borderColor: color.border.accent },
   avatarImage: { width: '100%', height: '100%', borderRadius: radius.pill },
   badge: {
-    backgroundColor: color.status.error,
-    color: color.text.inverse,
+    backgroundColor: color.accent.background,
+    color: color.accent.label,
     fontSize: type.caption.size,
   },
 });

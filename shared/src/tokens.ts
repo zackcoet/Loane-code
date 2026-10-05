@@ -32,6 +32,8 @@ export const palette = {
   cream: '#FFFFF2',
   /** Primary brand accent. Deck hex matched the swatch. */
   maroon: '#6F0C27',
+  /** Ella's confirmed brand accent: Pantone 14-0445 TCX Bright Chartreuse. */
+  brightChartreuse: '#B5BF50',
   /** TODO-CONFIRM: sampled (deck printed #b8406e, a pink). */
   gold: '#D6B04D',
   /** TODO-CONFIRM: sampled (deck printed #180c04, a near-black brown). */
@@ -103,8 +105,10 @@ export const color = {
     /** The hairline used almost everywhere. */
     default: palette.grey200,
     strong: palette.grey300,
-    /** A focused input or a selected tab. */
+    /** A focused input. */
     focus: palette.ink900,
+    /** Selected tabs and small active indicators. */
+    accent: palette.brightChartreuse,
     inverse: palette.black,
     error: palette.red700,
   },
@@ -118,6 +122,7 @@ export const color = {
 
   button: {
     primary: { background: palette.black, label: palette.white },
+    accent: { background: palette.brightChartreuse, label: palette.black },
     outline: { background: palette.white, border: palette.black, label: palette.black },
     disabled: { background: palette.grey100, label: palette.ink300 },
   },
@@ -131,9 +136,16 @@ export const color = {
   brand: {
     cream: palette.cream,
     maroon: palette.maroon,
+    brightChartreuse: palette.brightChartreuse,
     gold: palette.gold,
     terracotta: palette.terracotta,
     sage: palette.sage,
+  },
+
+  accent: {
+    background: palette.brightChartreuse,
+    border: palette.brightChartreuse,
+    label: palette.black,
   },
 
   /**

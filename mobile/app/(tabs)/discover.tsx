@@ -209,7 +209,7 @@ export default function Discover() {
             setSheetOpen(true);
           }}
         >
-          <Text variant="caption" tone={activeCount > 0 ? 'inverse' : 'primary'}>
+          <Text variant="caption" tone="primary">
             {activeCount > 0 ? `Filter · ${activeCount}` : 'Filter'}
           </Text>
         </Pressable>
@@ -365,8 +365,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   toolButtonActive: {
-    backgroundColor: color.surface.inverse,
-    borderColor: color.border.inverse,
+    backgroundColor: color.accent.background,
+    borderColor: color.accent.border,
   },
   tabRow: {
     flexDirection: 'row',
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
     borderBottomColor: color.border.default,
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.inverse },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.accent },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   count: { marginBottom: spacing.sm },
   grid: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.xxl },

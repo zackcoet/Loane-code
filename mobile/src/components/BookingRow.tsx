@@ -84,7 +84,7 @@ export function BookingRow({ booking, isLender, onPress }: Props) {
       </View>
 
       <View style={[styles.badge, wants && styles.badgeAttention]}>
-        <Text variant="caption" tone={wants ? 'inverse' : 'secondary'}>
+        <Text variant="caption" tone={wants ? 'primary' : 'secondary'}>
           {wants ? 'Your turn' : BOOKING_STATUS_LABELS[booking.status]}
         </Text>
       </View>
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     borderColor: color.border.default,
   },
   badgeAttention: {
-    backgroundColor: color.surface.inverse,
-    borderColor: color.border.inverse,
+    backgroundColor: color.accent.background,
+    borderColor: color.accent.border,
   },
 });

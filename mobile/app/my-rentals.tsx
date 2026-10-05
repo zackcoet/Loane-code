@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     borderBottomColor: color.border.default,
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.inverse },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.accent },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { padding: spacing.md, paddingBottom: spacing.xxl },
   sectionHeader: { marginTop: spacing.md, marginBottom: spacing.sm },

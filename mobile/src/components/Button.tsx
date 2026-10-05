@@ -11,20 +11,16 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import {
-  color,
-  controls,
-  radius,
-  spacing,
-  type,
-} from '@loane/shared';
+import { color, controls, radius, spacing, type } from '@loane/shared';
 
 type Variant = 'primary' | 'outline' | 'text';
+type Tone = 'default' | 'accent';
 
 interface Props {
   label: string;
   onPress: () => void;
   variant?: Variant;
+  tone?: Tone;
   disabled?: boolean;
   loading?: boolean;
   style?: StyleProp<ViewStyle>;
@@ -34,11 +30,13 @@ export function Button({
   label,
   onPress,
   variant = 'primary',
+  tone = 'default',
   disabled = false,
   loading = false,
   style,
 }: Props) {
   const inactive = disabled || loading;
+  const accent = variant === 'primary' && tone === 'accent';
 
   return (
     <Pressable
@@ -48,7 +46,7 @@ export function Button({
       disabled={inactive}
       style={({ pressed }) => [
         styles.base,
-        variant === 'primary' && styles.primary,
+        variant === 'primary' && (accent ? styles.primaryAccent : styles.primary),
         variant === 'outline' && styles.outline,
         variant === 'text' && styles.textOnly,
         inactive && (variant === 'primary' ? styles.primaryDisabled : styles.disabled),
@@ -57,12 +55,24 @@ export function Button({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={variant === 'primary' ? color.surface.page : color.icon.default} />
+        <ActivityIndicator
+          color={
+            accent
+              ? color.accent.label
+              : variant === 'primary'
+                ? color.surface.page
+                : color.icon.default
+          }
+        />
       ) : (
         <Text
           style={[
             styles.label,
-            variant === 'primary' ? styles.labelOnDark : styles.labelOnLight,
+            accent
+              ? styles.labelAccent
+              : variant === 'primary'
+                ? styles.labelOnDark
+                : styles.labelOnLight,
             inactive && styles.labelDisabled,
           ]}
         >
@@ -82,6 +92,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   primary: { backgroundColor: color.surface.inverse },
+  primaryAccent: { backgroundColor: color.button.accent.background },
   outline: {
     backgroundColor: color.surface.page,
     borderWidth: 1,
@@ -99,5 +110,6 @@ const styles = StyleSheet.create({
   },
   labelOnDark: { color: color.text.inverse },
   labelOnLight: { color: color.icon.default },
+  labelAccent: { color: color.button.accent.label },
   labelDisabled: { color: color.text.disabled },
 });

@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
   },
-  chipActive: { backgroundColor: color.surface.inverse, borderColor: color.border.inverse },
+  chipActive: { backgroundColor: color.accent.background, borderColor: color.accent.border },
   text: { fontSize: type.bodySmall.size, color: color.text.primary },
-  textActive: { color: color.text.inverse },
+  textActive: { color: color.accent.label },
 });

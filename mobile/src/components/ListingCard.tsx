@@ -3,14 +3,7 @@
  */
 
 import { Image, Pressable, StyleSheet, View } from 'react-native';
-import {
-  type Listing,
-  color,
-  formatCentsShort,
-  radius,
-  spacing,
-  type,
-} from '@loane/shared';
+import { type Listing, color, formatCentsShort, radius, spacing, type } from '@loane/shared';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { useIsSaved } from '../hooks/useSaved';
@@ -55,11 +48,7 @@ export function ListingCard({ listing, width, onPress, onPressOwner, hideSave }:
             accessibilityLabel={saved ? 'Remove from wishlist' : 'Save to wishlist'}
             style={styles.heart}
           >
-            <Icon
-              name={saved ? 'heart' : 'heart-outline'}
-              size={16}
-              tint={color.text.inverse}
-            />
+            <Icon name={saved ? 'heart' : 'heart-outline'} size={16} tint={color.text.inverse} />
           </Pressable>
         )}
       </View>
@@ -68,7 +57,11 @@ export function ListingCard({ listing, width, onPress, onPressOwner, hideSave }:
         {listing.name}
       </Text>
       <View style={styles.metaRow}>
-        {price ? <Text style={styles.price}>{price}</Text> : null}
+        {price ? (
+          <View style={styles.priceTag}>
+            <Text style={styles.price}>{price}</Text>
+          </View>
+        ) : null}
         {listing.size ? <Text style={styles.size}>{listing.size}</Text> : null}
       </View>
       <Text
@@ -104,8 +97,15 @@ const styles = StyleSheet.create({
     fontSize: type.bodySmall.size,
     color: color.text.primary,
   },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  price: { fontSize: type.bodySmall.size, fontWeight: '600', color: color.text.primary },
+  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  priceTag: {
+    alignSelf: 'flex-start',
+    borderRadius: radius.sm,
+    backgroundColor: color.accent.background,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  price: { fontSize: type.caption.size, fontWeight: '600', color: color.accent.label },
   size: {
     marginLeft: spacing.sm,
     fontSize: type.caption.size,

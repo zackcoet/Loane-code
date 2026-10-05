@@ -174,7 +174,7 @@ function RequestRow({
       </View>
 
       <View style={[styles.pill, incoming && styles.pillUrgent]}>
-        <Text variant="caption" tone={incoming ? 'inverse' : 'muted'} uppercase={false}>
+        <Text variant="caption" tone={incoming ? 'primary' : 'muted'} uppercase={false}>
           {incoming ? 'Answer' : BOOKING_STATUS_LABELS[booking.status]}
         </Text>
       </View>
@@ -211,5 +211,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: color.border.default,
   },
-  pillUrgent: { backgroundColor: color.surface.inverse, borderColor: color.border.inverse },
+  pillUrgent: { backgroundColor: color.accent.background, borderColor: color.accent.border },
 });

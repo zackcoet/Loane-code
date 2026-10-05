@@ -324,6 +324,7 @@ export default function ListingDetail() {
               onPress={() =>
                 router.push({ pathname: '/request-rental', params: { id: listing.id } })
               }
+              tone="accent"
               style={styles.primaryAction}
             />
           ) : null}
@@ -332,6 +333,7 @@ export default function ListingDetail() {
               label="Buy"
               // TODO-PHASE5: payments.
               onPress={() => Alert.alert('Coming soon', SOON)}
+              tone="accent"
               style={styles.primaryAction}
             />
           ) : null}

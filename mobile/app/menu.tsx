@@ -136,7 +136,7 @@ export default function Menu() {
                 <Text style={styles.rowLabel}>{item.label}</Text>
                 {item.badge ? (
                   <View style={styles.badge}>
-                    <Text variant="caption" tone="inverse">
+                    <Text variant="caption" tone="primary">
                       {item.badge > 9 ? '9+' : item.badge}
                     </Text>
                   </View>
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 10,
-    backgroundColor: color.surface.inverse,
+    backgroundColor: color.accent.background,
   },
   logOut: { marginTop: spacing.lg, marginBottom: spacing.xxl },
 });

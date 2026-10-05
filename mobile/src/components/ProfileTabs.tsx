@@ -155,7 +155,7 @@ function ClosetTile({
       ) : null}
       {price ? (
         <View style={styles.price}>
-          <Text variant="caption" tone="inverse" uppercase={false}>
+          <Text variant="caption" tone="primary" uppercase={false}>
             {price}
             {rent == null ? ' buy' : ''}
           </Text>
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     borderBottomColor: color.border.default,
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.inverse },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.accent },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GUTTER },
   tile: { backgroundColor: color.surface.muted },
   pressed: { opacity: 0.7 },
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-    backgroundColor: color.scrim.onPhoto,
+    backgroundColor: color.accent.background,
   },
   tagged: {
     position: 'absolute',

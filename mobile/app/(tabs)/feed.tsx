@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
     borderBottomColor: color.border.default,
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.inverse },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.accent },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingTop: spacing.md, paddingBottom: spacing.xxl },
   footer: { paddingVertical: spacing.lg },
