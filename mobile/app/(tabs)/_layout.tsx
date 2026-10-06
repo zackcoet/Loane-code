@@ -9,8 +9,7 @@
 
 import { Tabs } from 'expo-router';
 import { Image, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { color, controls, iconSize, radius, spacing, type } from '@loane/shared';
+import { color, iconSize, radius, type } from '@loane/shared';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useUnreadCount } from '../../src/hooks/useNotifications';
 import { useUnreadMessageCount } from '../../src/hooks/useMessaging';
@@ -18,23 +17,16 @@ import { SuspendedBanner } from '../../src/components/SuspendedBanner';
 import { Icon, type IconName } from '../../src/components/Icon';
 
 /**
- * A tab icon, with a chartreuse pill behind the one you are on.
+ * A tab icon. Black when you are on it, grey when you are not.
  *
- * The accent is the PILL and not the glyph on purpose. #B5BF50 is a
- * light yellow-green: as an icon on a white bar it sits at roughly
- * 1.9:1 contrast, which is not a subtle look, it is an invisible one.
- * Behind a black glyph it reads instantly and keeps the rule that
- * chartreuse is always a background with black on top.
+ * No accent here. A chartreuse pill behind the active glyph was tried
+ * and reverted: it made the icon row taller than the bar, which pushed
+ * every glyph out of the visible area, and a filled selected state is
+ * louder than this bar should be. Selection is weight, not colour.
  */
 function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
   return (
-    <View style={[styles.iconPill, focused && styles.iconPillActive]}>
-      <Icon
-        name={name}
-        size={iconSize.tab}
-        tint={focused ? color.accent.label : color.text.muted}
-      />
-    </View>
+    <Icon name={name} size={iconSize.tab} tint={focused ? color.icon.default : color.text.muted} />
   );
 }
 
@@ -72,18 +64,6 @@ export default function TabsLayout() {
   const unread = useUnreadCount();
   const unreadMessages = useUnreadMessageCount();
 
-  /**
-   * The home indicator's height, which is 34 on a notched iPhone and 0 on
-   * one with a home button.
-   *
-   * Setting an explicit `height` on tabBarStyle opts out of the padding
-   * React Navigation would otherwise add for this, so the icons sat on
-   * top of the indicator and looked cut off. Screen.tsx deliberately
-   * leaves the bottom edge alone precisely so the bar can own it — it
-   * just never did.
-   */
-  const insets = useSafeAreaInsets();
-
   return (
     <>
       <SuspendedBanner />
@@ -92,13 +72,7 @@ export default function TabsLayout() {
           headerShown: false,
           tabBarActiveTintColor: color.icon.default,
           tabBarInactiveTintColor: color.text.muted,
-          tabBarStyle: [
-            styles.bar,
-            {
-              height: controls.tabBarHeight + insets.bottom,
-              paddingBottom: insets.bottom,
-            },
-          ],
+          tabBarStyle: styles.bar,
           tabBarShowLabel: false,
           tabBarItemStyle: styles.barItem,
         }}
@@ -161,25 +135,19 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface.page,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: color.border.default,
-    // Height and bottom padding are applied in the component, where the
-    // safe-area inset is known.
+    // NO EXPLICIT HEIGHT, on purpose.
     //
-    // With no label underneath, the icons need centring in the content
-    // area rather than being pushed to the top of it.
-    paddingTop: 8,
+    // Setting one opts out of the safe-area padding React Navigation adds
+    // for the home indicator, and then every number here has to be right
+    // on every device. Both bugs in this bar came from trying: first a
+    // hard-coded 92 that crowded the indicator, then a computed height
+    // that clipped the icons off the bottom of the screen. Letting the
+    // navigator size its own bar is the thing that actually works.
+    //
+    // With no label underneath, the icons want a little air above them.
+    paddingTop: 6,
   },
   barItem: { paddingVertical: 4 },
-  // Always drawn, only the colour changes, so the glyph never shifts by
-  // a few points as you move between tabs.
-  iconPill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconPillActive: { backgroundColor: color.accent.background },
   avatarRing: {
     width: iconSize.tab,
     height: iconSize.tab,
@@ -189,7 +157,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: color.surface.muted,
   },
-  avatarRingActive: { borderColor: color.border.accent },
+  avatarRingActive: { borderColor: color.icon.default },
   avatarImage: { width: '100%', height: '100%', borderRadius: radius.pill },
   badge: {
     backgroundColor: color.accent.background,
