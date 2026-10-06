@@ -74,7 +74,6 @@ export default function TabsLayout() {
           tabBarInactiveTintColor: color.text.muted,
           tabBarStyle: styles.bar,
           tabBarShowLabel: false,
-          tabBarItemStyle: styles.barItem,
         }}
       >
         <Tabs.Screen
@@ -131,23 +130,24 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
+  /**
+   * Colour and the hairline only. NO HEIGHT, NO PADDING.
+   *
+   * Every version of this bar that set its own numbers was wrong on some
+   * phone. A hard-coded 92 crowded the home indicator. A computed
+   * height clipped the icons off the screen entirely. A paddingTop then
+   * pushed them down into the indicator band so they looked cut short.
+   *
+   * React Navigation already sizes the bar for the device and centres
+   * the icons in the part above the home indicator. The white strip at
+   * the very bottom IS that indicator area — iOS reserves it, Instagram
+   * has it too, and drawing into it is what made the icons look short.
+   */
   bar: {
     backgroundColor: color.surface.page,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: color.border.default,
-    // NO EXPLICIT HEIGHT, on purpose.
-    //
-    // Setting one opts out of the safe-area padding React Navigation adds
-    // for the home indicator, and then every number here has to be right
-    // on every device. Both bugs in this bar came from trying: first a
-    // hard-coded 92 that crowded the indicator, then a computed height
-    // that clipped the icons off the bottom of the screen. Letting the
-    // navigator size its own bar is the thing that actually works.
-    //
-    // With no label underneath, the icons want a little air above them.
-    paddingTop: 6,
   },
-  barItem: { paddingVertical: 4 },
   avatarRing: {
     width: iconSize.tab,
     height: iconSize.tab,
