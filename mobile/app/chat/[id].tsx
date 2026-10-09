@@ -140,10 +140,7 @@ export default function Chat() {
             <ActivityIndicator color={color.icon.default} />
           </View>
         ) : messages.length === 0 ? (
-          <EmptyState
-            title="Say hello"
-            body="Ask about fit, condition, or where to meet."
-          />
+          <EmptyState title="Say hello" body="Ask about fit, condition, or where to meet." />
         ) : (
           <FlatList
             data={messages}
@@ -286,7 +283,12 @@ const styles = StyleSheet.create({
   bubbleRow: { flexDirection: 'row' },
   rowMine: { justifyContent: 'flex-end' },
   rowTheirs: { justifyContent: 'flex-start' },
-  bubble: { maxWidth: '78%', paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.lg },
+  bubble: {
+    maxWidth: '78%',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.lg,
+  },
   mine: { backgroundColor: color.surface.inverse, borderBottomRightRadius: radius.sm },
   theirs: {
     backgroundColor: color.surface.muted,

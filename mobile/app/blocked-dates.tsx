@@ -13,14 +13,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
-import {
-  addDays,
-  color,
-  formatShortDate,
-  spacing,
-  toIsoDate,
-  type IsoDate,
-} from '@loane/shared';
+import { addDays, color, formatShortDate, spacing, toIsoDate, type IsoDate } from '@loane/shared';
 import { Button } from '../src/components/Button';
 import { Calendar } from '../src/components/Calendar';
 import { Card } from '../src/components/Card';
@@ -57,10 +50,7 @@ export default function BlockedDates() {
   const shownAsUnavailable = useMemo(() => new Set([...booked]), [booked]);
 
   const today = toIsoDate(new Date());
-  const upcoming = useMemo(
-    () => [...blocked].filter((d) => d >= today).sort(),
-    [blocked, today],
-  );
+  const upcoming = useMemo(() => [...blocked].filter((d) => d >= today).sort(), [blocked, today]);
 
   if (loading) {
     return (

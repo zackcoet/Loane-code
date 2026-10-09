@@ -24,15 +24,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import {
-  LIMITS,
-  color,
-  controls,
-  radius,
-  spacing,
-  type,
-  type UserSummary,
-} from '@loane/shared';
+import { LIMITS, color, controls, radius, spacing, type, type UserSummary } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { Button } from '../src/components/Button';
 import { EmptyState } from '../src/components/EmptyState';
@@ -64,8 +56,7 @@ export default function SendPost() {
     // anyone the campus-wide search turned up that is not already there.
     const base = q
       ? people.filter(
-          (p) =>
-            p.username.toLowerCase().includes(q) || p.displayName.toLowerCase().includes(q),
+          (p) => p.username.toLowerCase().includes(q) || p.displayName.toLowerCase().includes(q),
         )
       : people;
     const seen = new Set(base.map((p) => p.uid));
@@ -127,7 +118,12 @@ export default function SendPost() {
             style={styles.search}
           />
           {term ? (
-            <Pressable onPress={() => setTerm('')} hitSlop={8} accessibilityRole="button" accessibilityLabel="Clear search">
+            <Pressable
+              onPress={() => setTerm('')}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Clear search"
+            >
               <Icon name="close-circle" size={18} tint={color.icon.muted} />
             </Pressable>
           ) : null}
@@ -240,7 +236,12 @@ const styles = StyleSheet.create({
   search: { flex: 1, fontSize: type.bodySmall.size, color: color.text.primary },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
-  person: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
+  person: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+  },
   pressed: { opacity: 0.6 },
   personText: { flex: 1 },
   strong: { fontWeight: '600' },

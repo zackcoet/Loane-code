@@ -11,11 +11,7 @@
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
-import {
-  color,
-  controls,
-  spacing,
-} from '@loane/shared';
+import { color, controls, spacing } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { EmptyState } from '../../src/components/EmptyState';
 import { ProfileHeader } from '../../src/components/ProfileHeader';

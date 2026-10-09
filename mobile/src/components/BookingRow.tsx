@@ -65,7 +65,11 @@ export function BookingRow({ booking, isLender, onPress }: Props) {
     >
       <View style={[styles.thumb, over && styles.dimmed]}>
         {booking.listing.coverUrl ? (
-          <Image source={{ uri: booking.listing.coverUrl }} style={styles.image} resizeMode="cover" />
+          <Image
+            source={{ uri: booking.listing.coverUrl }}
+            style={styles.image}
+            resizeMode="cover"
+          />
         ) : null}
       </View>
 
@@ -84,7 +88,7 @@ export function BookingRow({ booking, isLender, onPress }: Props) {
       </View>
 
       <View style={[styles.badge, wants && styles.badgeAttention]}>
-        <Text variant="caption" tone={wants ? 'primary' : 'secondary'}>
+        <Text variant="caption" tone={wants ? 'inverse' : 'secondary'}>
           {wants ? 'Your turn' : BOOKING_STATUS_LABELS[booking.status]}
         </Text>
       </View>
@@ -121,7 +125,7 @@ const styles = StyleSheet.create({
     borderColor: color.border.default,
   },
   badgeAttention: {
-    backgroundColor: color.accent.background,
-    borderColor: color.accent.border,
+    backgroundColor: color.attention.background,
+    borderColor: color.attention.border,
   },
 });

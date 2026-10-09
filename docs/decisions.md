@@ -451,3 +451,46 @@ Connect accounts and customers belong to the platform that created them. So
 `user.stripe.platformAccountId` records which platform each id came from,
 making a stale id detectable and re-onboardable instead of a silent failure.
 See docs/payments.md for the runbook.
+
+---
+
+## 2026-10-09 — The October brand palette replaces chartreuse
+
+**Decision:** Cream `#F6EFE4` is the canvas, Merlot `#5E1A2E` the voice,
+Cherry `#C8213F` the primary action, with Butter, Ballet and Denim as
+secondary accents. Bright Chartreuse is gone, along with gold, terracotta
+and sage.
+
+**Why:** a new brand deck, which supersedes the September one.
+
+**What it settles:** three colours had been marked `TODO-CONFIRM` since
+September because the old deck's printed hex codes disagreed with its own
+swatches. Nothing in the palette is provisional now.
+
+**The decisions inside the decision**, since the deck gives colours and not
+rules:
+
+- **Cream is the canvas, white is for cards.** The deck labels cream
+  "canvas". Making every screen cream and leaving cards white is the single
+  change that does most of the work; a white card lifts off cream in a way
+  it cannot off white.
+- **Body text is `#231619`, not black.** A true black beside cream looks
+  like a hole punched in the page. The whole neutral ramp is warmed toward
+  merlot's hue for the same reason — a true grey next to cream reads dirty.
+- **Cherry interrupts, Butter marks.** Cherry gets primary buttons, the +
+  that creates something, unread badges and "Your turn" pills. Butter gets
+  price tags, selected chips and selected dates. Two loud reds on one screen
+  and neither is the primary action any more.
+- **The + is cherry, not butter**, even though it is a "highlight" by
+  category. Butter sits at 1.19:1 against cream, so a butter-filled circle
+  would barely be a shape.
+- **Butter, Ballet and Denim can never be ink.** 1.19:1, 1.59:1 and 2.69:1
+  on cream. Behind near-black text they are 13.9:1, 10.4:1 and 6.1:1 and
+  perfectly readable. There is deliberately no `color.text.accent` token;
+  adding one would repeat exactly the mistake chartreuse made.
+- **Midnight `#1A2D4D` is excluded.** The deck marks it campaign only.
+
+**Cost of being wrong:** low. The two-layer token system meant this was
+`shared/src/tokens.ts` plus a handful of screens that needed cherry instead
+of butter. No screen reaches past the semantic layer, which is the whole
+reason that rule exists.

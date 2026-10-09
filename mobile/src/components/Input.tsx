@@ -5,12 +5,7 @@
  */
 
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
-import {
-  color,
-  controls,
-  spacing,
-  type,
-} from '@loane/shared';
+import { color, controls, spacing, type } from '@loane/shared';
 
 interface Props extends TextInputProps {
   error?: string | null;

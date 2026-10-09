@@ -8,12 +8,7 @@
 
 import { useRouter } from 'expo-router';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
-import {
-  brand,
-  color,
-  spacing,
-  type,
-} from '@loane/shared';
+import { brand, color, spacing, type } from '@loane/shared';
 import { Screen } from '../src/components/Screen';
 import { Header } from '../src/components/Header';
 

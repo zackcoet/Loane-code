@@ -6,13 +6,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { IconButton } from './IconButton';
-import {
-  color,
-  controls,
-  iconSize,
-  spacing,
-  type,
-} from '@loane/shared';
+import { color, controls, iconSize, spacing, type } from '@loane/shared';
 
 interface Props {
   title: string;
@@ -25,7 +19,12 @@ export function Header({ title, onBack, right }: Props) {
     <View style={styles.row}>
       <View style={styles.side}>
         {onBack ? (
-          <IconButton name="chevron-back" onPress={onBack} accessibilityLabel="Go back" size={iconSize.lg} />
+          <IconButton
+            name="chevron-back"
+            onPress={onBack}
+            accessibilityLabel="Go back"
+            size={iconSize.lg}
+          />
         ) : null}
       </View>
       <Text style={styles.title} numberOfLines={1}>

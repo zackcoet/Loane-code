@@ -20,37 +20,55 @@
 // ---------------------------------------------------------------------------
 
 /**
- * Brand colours from the "Loane Brand Strategy Visuals" deck, page 2.
+ * Brand colours, from the 2026-10 brand deck.
  *
- * The deck printed hex codes that did not match its own swatches for three
- * of the five. Zack confirmed we use the values sampled from the swatches;
- * those three stay marked TODO-CONFIRM until a designer supplies exact ones.
+ * This deck SUPERSEDES the September one. It replaces chartreuse and
+ * settles the three colours that sat marked TODO-CONFIRM for a month
+ * because the old deck's printed hexes disagreed with its own swatches.
+ * Nothing here is provisional.
+ *
+ * Every ratio below is measured against Cream, which is the canvas.
  */
 export const palette = {
-  // Brand
-  /** Warm off-white. Deck hex matched the swatch. */
-  cream: '#FFFFF2',
-  /** Primary brand accent. Deck hex matched the swatch. */
-  maroon: '#6F0C27',
-  /** Ella's confirmed brand accent: Pantone 14-0445 TCX Bright Chartreuse. */
-  brightChartreuse: '#B5BF50',
-  /** TODO-CONFIRM: sampled (deck printed #b8406e, a pink). */
-  gold: '#D6B04D',
-  /** TODO-CONFIRM: sampled (deck printed #180c04, a near-black brown). */
-  terracotta: '#B5784C',
-  /** TODO-CONFIRM: sampled (deck printed #d57296, a pink). */
-  sage: '#B8C7C2',
+  // --- Primary, 90% of the app -------------------------------------------
+  /** The canvas. Every screen sits on this, not on white. */
+  cream: '#F6EFE4',
+  /** The voice: headings, icons, the mark. 11.0:1 on cream. */
+  merlot: '#5E1A2E',
+  /** The wink: the primary action. 4.9:1 on cream, 5.6:1 under white. */
+  cherry: '#C8213F',
 
-  // Neutrals, darkest to lightest.
+  // --- Secondary accents --------------------------------------------------
+  //
+  // BACKGROUNDS ONLY, always under near-black text. On cream they measure
+  // 1.19:1, 1.59:1 and 2.69:1 — as ink or a glyph they are invisible,
+  // which is the exact mistake chartreuse made. Behind dark text they are
+  // 13.9:1, 10.4:1 and 6.1:1 and perfectly readable.
+  butter: '#F7DC7A',
+  ballet: '#EFAFC2',
+  denim: '#7F95B0',
+
+  // Midnight (#1A2D4D) is in the deck but marked campaign only, so it is
+  // deliberately absent. Add it here if that ever changes.
+
+  // --- Neutrals, warmed toward the brand ----------------------------------
+  //
+  // Not greys. A true grey next to cream reads as dirty, so the whole
+  // ramp is pulled slightly toward merlot's hue.
+  /** Body text. Warm near-black with a merlot lean. 15.3:1 on cream. */
+  ink900: '#231619',
+  /** Secondary text. 5.5:1 on cream — still passes for body copy. */
+  ink600: '#6B5E52',
+  /** Muted text. 4.5:1, right at the threshold. */
+  ink400: '#7A6B5E',
+  /** Disabled and placeholder. 3.4:1 — large text and glyphs only. */
+  ink300: '#8A7F72',
+  grey300: '#D3C6B2',
+  grey200: '#E2D8C8',
+  grey100: '#EDE5D9',
+  /** A quietly shaded block on the cream canvas. */
+  grey50: '#EFE7DB',
   black: '#000000',
-  ink900: '#111111',
-  ink600: '#6B6B6B',
-  ink400: '#9B9B9B',
-  ink300: '#B0B0B0',
-  grey300: '#CFCFCF',
-  grey200: '#E5E5E5',
-  grey100: '#EFEFEF',
-  grey50: '#F7F7F5',
   white: '#FFFFFF',
 
   // Status
@@ -80,24 +98,29 @@ export const palette = {
 
 export const color = {
   text: {
+    /** Warm near-black, not pure black: a true black beside cream looks
+        like a hole punched in the page. 15.3:1. */
     primary: palette.ink900,
     secondary: palette.ink600,
     muted: palette.ink400,
-    /** On a dark background, e.g. the primary button label. */
+    /** On merlot, cherry, or a photograph. */
     inverse: palette.white,
     disabled: palette.ink300,
-    error: palette.red700,
+    error: palette.cherry,
+    /** Headings and the wordmark. Merlot is the brand's voice. */
+    heading: palette.merlot,
   },
 
   surface: {
-    /** The page background. */
-    page: palette.white,
-    /** A card or sheet sitting on the page. */
+    /** The canvas. Cream, never white — this is the single biggest thing
+        that makes the app look like the deck. */
+    page: palette.cream,
+    /** A card or sheet. WHITE on purpose, so it lifts off the cream. */
     raised: palette.white,
     /** A quietly shaded block — image placeholders, pressed rows. */
     muted: palette.grey50,
-    /** Filled dark, e.g. an active chip. */
-    inverse: palette.black,
+    /** Filled dark, e.g. a pressed state that must read as solid. */
+    inverse: palette.merlot,
     disabled: palette.grey100,
   },
 
@@ -106,66 +129,81 @@ export const color = {
     default: palette.grey200,
     strong: palette.grey300,
     /** A focused input. */
-    focus: palette.ink900,
+    focus: palette.merlot,
     /** Selected tabs and small active indicators. */
-    accent: palette.brightChartreuse,
-    inverse: palette.black,
-    error: palette.red700,
+    accent: palette.butter,
+    inverse: palette.merlot,
+    error: palette.cherry,
   },
 
-  /** Glyphs and icons, which are pure black in the mockups. */
+  /** Glyphs and icons. Merlot, which is the brand's voice. */
   icon: {
-    default: palette.black,
+    default: palette.merlot,
     muted: palette.ink400,
     inverse: palette.white,
   },
 
   button: {
     /**
-     * The primary action is chartreuse, because the primary action is
-     * where the brand should be loudest — "Request to rent", "Publish
-     * look", "Continue". Label is black: #B5BF50 is a light yellow-green
-     * and carries dark text only.
+     * The primary action is CHERRY with a white label — 5.6:1.
+     *
+     * Cherry is the deck's "wink": the one colour allowed to interrupt.
+     * It belongs on the thing we most want tapped, and nowhere that
+     * would dilute it.
      */
-    primary: { background: palette.brightChartreuse, label: palette.black },
+    primary: { background: palette.cherry, label: palette.white },
     /**
-     * Black. For a primary action that should NOT feel celebratory —
+     * Merlot. For a primary action that should NOT feel celebratory —
      * submitting a report about another student, mainly. Same weight on
      * the screen, none of the brand's enthusiasm.
      */
-    dark: { background: palette.black, label: palette.white },
-    outline: { background: palette.white, border: palette.black, label: palette.black },
+    dark: { background: palette.merlot, label: palette.white },
+    outline: { background: palette.cream, border: palette.merlot, label: palette.merlot },
     disabled: { background: palette.grey100, label: palette.ink300 },
   },
 
   status: {
     success: palette.green700,
     warning: palette.amber700,
-    error: palette.red700,
+    error: palette.cherry,
   },
 
   brand: {
     cream: palette.cream,
-    maroon: palette.maroon,
-    brightChartreuse: palette.brightChartreuse,
-    gold: palette.gold,
-    terracotta: palette.terracotta,
-    sage: palette.sage,
+    merlot: palette.merlot,
+    cherry: palette.cherry,
+    butter: palette.butter,
+    ballet: palette.ballet,
+    denim: palette.denim,
   },
 
   /**
-   * The brand accent, for anything small and active: a selected chip, an
-   * unread badge, a price tag, a chosen date, the tab you are on.
+   * The quiet highlight: a price tag, a selected chip, a chosen date.
    *
-   * `label` is black and there is deliberately no "accent text on white"
-   * token. #B5BF50 on white is about 1.9:1 contrast — unreadable as text
-   * and barely visible as a glyph. Chartreuse is always a BACKGROUND with
-   * black on top of it, never ink.
+   * BUTTER, not cherry. Two loud reds on one screen cancel each other
+   * out — if a price tag shouts as loudly as "Request to rent", neither
+   * one is the primary action any more. Butter is warm, calm, and
+   * unmistakably not a button.
+   *
+   * `label` is near-black and there is deliberately NO "accent text"
+   * token. Butter on cream is 1.19:1: invisible as ink, excellent as a
+   * background. That is the same trap chartreuse fell into.
    */
   accent: {
-    background: palette.brightChartreuse,
-    border: palette.brightChartreuse,
-    label: palette.black,
+    background: palette.butter,
+    border: palette.butter,
+    label: palette.ink900,
+  },
+
+  /**
+   * Something that needs answering now: an unread badge, a "Your turn"
+   * pill. Cherry, because this is the other thing worth interrupting
+   * for, and it is rare enough not to compete with the buttons.
+   */
+  attention: {
+    background: palette.cherry,
+    border: palette.cherry,
+    label: palette.white,
   },
 
   /**
@@ -174,7 +212,7 @@ export const color = {
    * campus that has not set one. We use a school's colour, never its logo,
    * which is trademarked.
    */
-  campus: { dotFallback: palette.ink900 },
+  campus: { dotFallback: palette.merlot },
 
   /**
    * Sitting on top of a photograph.

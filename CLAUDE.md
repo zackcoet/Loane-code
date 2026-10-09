@@ -106,26 +106,43 @@ Cloud Function. No exceptions.
 
 ## Design
 
-Clean and minimal: mostly black and white, lots of white space, thin
-hairline borders, small uppercase letter-spaced labels, square corners.
+Clean and minimal: lots of space, thin hairline borders, small uppercase
+letter-spaced labels, square corners.
 
-**Bright Chartreuse `#B5BF50` is the accent** (Pantone 14-0445 TCX, confirmed
-by Ella). Black and white are the base; chartreuse marks the primary action
-and anything small and active — primary buttons, the tab you are on, the +
-that creates something, selected chips and dates, price tags, unread badges,
-"Your turn" pills, the rating and closet count on a profile.
+**The canvas is Cream `#F6EFE4`, not white.** That single choice is most of
+what makes the app look like the brand deck. Cards and sheets stay white so
+they lift off it.
 
-**Chartreuse is always a background with black text on it. Never chartreuse
-ink on white** — it sits at about 1.9:1 contrast, which is unreadable. There
-is deliberately no `color.text.accent` token. `Button`'s `primary` variant is
-chartreuse; `dark` is the black one, for a primary action that should not feel
-celebratory (submitting a report).
+| | | |
+|---|---|---|
+| **Cream** `#F6EFE4` | canvas | every screen |
+| **Merlot** `#5E1A2E` | voice | headings, icons, the mark — 11.0:1 on cream |
+| **Cherry** `#C8213F` | wink | primary buttons, the +, unread badges, "Your turn" — 4.9:1 |
+| **Butter** `#F7DC7A` | highlight | price tags, selected chips and dates |
+| **Ballet** `#EFAFC2` / **Denim** `#7F95B0` | accents | available, unused so far |
+
+Body text is a warm near-black `#231619` with a merlot lean, never pure
+black — a true black beside cream looks like a hole punched in the page.
+The whole neutral ramp is warmed the same way; a true grey next to cream
+reads as dirty.
+
+**Butter, Ballet and Denim are BACKGROUNDS ONLY, always under near-black
+text.** On cream they measure 1.19:1, 1.59:1 and 2.69:1 — as ink or a glyph
+they are invisible. That is exactly the mistake chartreuse made, and it is
+why there is no `color.text.accent` token.
+
+**Cherry and Butter do different jobs and must not be swapped.** Cherry
+interrupts: it belongs on the thing we want tapped or answered. Butter
+marks: a price, a selected chip, a chosen date. Two loud reds on one screen
+and neither is the primary action any more.
+
+Midnight `#1A2D4D` is in the deck but marked campaign only, so it is
+deliberately absent from the app.
 
 - Logo: two overlapping circles with L O A N E spaced across them.
-- Brand tokens are in `shared/src/tokens.ts`. **Three colors are marked
-  `TODO-CONFIRM`** — the strategy deck printed hex codes that didn't match
-  its own swatches, so gold, terracotta and sage were sampled from the
-  swatch pixels. Cream `#FFFFF2` and maroon `#6F0C27` are confirmed.
+- Brand tokens are in `shared/src/tokens.ts`. **Nothing is provisional any
+  more** — the October deck superseded the September one and settled the
+  three colours that sat marked `TODO-CONFIRM` for a month.
 - Fonts: Tenorite Bold (headings) and Telegraf (body) are the real brand
   faces but aren't licensed for embedding yet. We use free stand-ins behind
   the token names `LoaneHeading` / `LoaneBody`. Swapping them later touches

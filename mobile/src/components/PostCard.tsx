@@ -13,13 +13,7 @@
  */
 
 import { useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   LIMITS,
   color,
@@ -85,7 +79,9 @@ export function PostCard({
   const caption = post.caption ?? '';
   const longCaption = caption.length > CAPTION_PREVIEW_CHARS;
   const shownCaption =
-    longCaption && !captionOpen ? `${caption.slice(0, CAPTION_PREVIEW_CHARS).trimEnd()}… ` : caption;
+    longCaption && !captionOpen
+      ? `${caption.slice(0, CAPTION_PREVIEW_CHARS).trimEnd()}… `
+      : caption;
 
   const photoTags = (index: number) =>
     (photos[index]?.tags ?? []).map((tag) => ({
@@ -152,9 +148,7 @@ export function PostCard({
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={(e) =>
-              setPage(Math.round(e.nativeEvent.contentOffset.x / width))
-            }
+            onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
           >
             {photos.map((photo, index) => (
               <View key={`${photo.path}-${index}`} style={{ width }}>
@@ -225,11 +219,7 @@ export function PostCard({
               accessibilityLabel={`See everyone who liked this, ${post.stats.likeCount} people`}
               onPress={onPressLikes}
             >
-              <Avatar
-                url={post.lastLiker.photoUrl}
-                name={post.lastLiker.displayName}
-                size={18}
-              />
+              <Avatar url={post.lastLiker.photoUrl} name={post.lastLiker.displayName} size={18} />
               <Text variant="bodySmall" numberOfLines={1} style={styles.likedByText}>
                 Liked by <Text style={styles.strong}>{post.lastLiker.displayName}</Text>
                 {post.stats.likeCount > 1 ? (

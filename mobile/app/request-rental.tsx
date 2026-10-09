@@ -176,16 +176,19 @@ export default function RequestRental() {
               {formatRange({ startDate, endDate: addDays(startDate, days) })}
             </Text>
             <Text variant="caption" tone="muted">
-              Back on {formatRange({ startDate: addDays(startDate, days), endDate: addDays(startDate, days) }).split(' – ')[0]}
+              Back on{' '}
+              {
+                formatRange({
+                  startDate: addDays(startDate, days),
+                  endDate: addDays(startDate, days),
+                }).split(' – ')[0]
+              }
             </Text>
 
             {fees ? (
               <View style={styles.breakdown}>
                 <Line label={`Rental · ${days} days`} value={formatCents(fees.baseCents)} />
-                <Line
-                  label="Loane fee"
-                  value={formatCents(fees.platformFeeCents)}
-                />
+                <Line label="Loane fee" value={formatCents(fees.platformFeeCents)} />
                 <Line label="Total" value={formatCents(fees.renterTotalCents)} strong />
               </View>
             ) : null}
@@ -197,9 +200,9 @@ export default function RequestRental() {
         <Card style={styles.notice}>
           <Text variant="label">Paying for this</Text>
           <Text variant="bodySmall" tone="secondary" style={styles.noticeBody}>
-            Loane isn&apos;t taking payments yet. Arrange it with{' '}
-            @{listing.owner.username} directly — cash, Venmo, whatever suits you both. The
-            total above is what the rental is worth so you both have the same number.
+            Loane isn&apos;t taking payments yet. Arrange it with @{listing.owner.username} directly
+            — cash, Venmo, whatever suits you both. The total above is what the rental is worth so
+            you both have the same number.
           </Text>
         </Card>
 
@@ -227,8 +230,8 @@ export default function RequestRental() {
           style={styles.send}
         />
         <Text variant="caption" tone="muted" style={styles.footnote}>
-          Nothing is booked until @{listing.owner.username} says yes. She has{' '}
-          {REQUEST_EXPIRY_HOURS} hours.
+          Nothing is booked until @{listing.owner.username} says yes. She has {REQUEST_EXPIRY_HOURS}{' '}
+          hours.
         </Text>
       </ScrollView>
     </Screen>

@@ -151,7 +151,11 @@ function ClosetTile({
           ? `${listing.name}, ${price}${rent != null ? ' for three days' : ' to buy'}`
           : listing.name
       }
-      style={({ pressed }) => [styles.tile, { width: size, height: size }, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.tile,
+        { width: size, height: size },
+        pressed && styles.pressed,
+      ]}
     >
       {listing.coverUrl ? (
         <Image source={{ uri: listing.coverUrl }} style={styles.image} resizeMode="cover" />
@@ -175,7 +179,11 @@ function PostTile({ post, size, onPress }: { post: Post; size: number; onPress: 
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={post.caption || `Look by @${post.author.username}`}
-      style={({ pressed }) => [styles.tile, { width: size, height: size }, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.tile,
+        { width: size, height: size },
+        pressed && styles.pressed,
+      ]}
     >
       {post.photos[0] ? (
         <Image source={{ uri: post.photos[0].url }} style={styles.image} resizeMode="cover" />

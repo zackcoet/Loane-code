@@ -7,12 +7,7 @@
 
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import {
-  color,
-  controls,
-  spacing,
-  type,
-} from '@loane/shared';
+import { color, controls, spacing, type } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { EmptyState } from '../../src/components/EmptyState';
 import { IconButton } from '../../src/components/IconButton';
@@ -91,9 +86,7 @@ export default function Profile() {
               params: { uid: profile.uid, side: 'following' },
             })
           }
-          onPressRating={() =>
-            router.push({ pathname: '/reviews', params: { uid: profile.uid } })
-          }
+          onPressRating={() => router.push({ pathname: '/reviews', params: { uid: profile.uid } })}
         >
           <Button
             label="Edit profile"

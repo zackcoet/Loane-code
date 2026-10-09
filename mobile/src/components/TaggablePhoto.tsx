@@ -10,11 +10,7 @@
 import { useCallback, useRef } from 'react';
 import { Animated, Image, Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Reanimated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import Reanimated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { color, controls, fontSize, formatCentsShort, radius, spacing } from '@loane/shared';
 import { Icon } from './Icon';
 import { Text } from './Text';
@@ -171,18 +167,10 @@ export function TaggablePhoto({
   // Exclusive: the single tap waits to see whether a second one lands,
   // so liking never also toggles the tags. Simultaneous: a two-finger
   // zoom is not a tap and the two never need to exclude each other.
-  const gestures = Gesture.Simultaneous(
-    Gesture.Exclusive(doubleTap, singleTap),
-    pinch,
-    drag,
-  );
+  const gestures = Gesture.Simultaneous(Gesture.Exclusive(doubleTap, singleTap), pinch, drag);
 
   const zoomStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: panX.value },
-      { translateY: panY.value },
-      { scale: scale.value },
-    ],
+    transform: [{ translateX: panX.value }, { translateY: panY.value }, { scale: scale.value }],
   }));
 
   const showDots = mode === 'compose' || tagsVisible;
@@ -208,10 +196,7 @@ export function TaggablePhoto({
             return (
               <View
                 key={tag.listingId}
-                style={[
-                  styles.anchor,
-                  { left: `${tag.x * 100}%`, top: `${tag.y * 100}%` },
-                ]}
+                style={[styles.anchor, { left: `${tag.x * 100}%`, top: `${tag.y * 100}%` }]}
                 pointerEvents="box-none"
               >
                 <Pressable
@@ -267,7 +252,9 @@ export function TaggablePhoto({
           styles.burst,
           {
             opacity: heart,
-            transform: [{ scale: heart.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) }],
+            transform: [
+              { scale: heart.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }) },
+            ],
           },
         ]}
       >

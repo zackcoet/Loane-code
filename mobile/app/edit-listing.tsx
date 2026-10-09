@@ -159,9 +159,7 @@ export default function EditListing() {
           <Button
             label="Blocked dates"
             variant="outline"
-            onPress={() =>
-              router.push({ pathname: '/blocked-dates', params: { id: listing.id } })
-            }
+            onPress={() => router.push({ pathname: '/blocked-dates', params: { id: listing.id } })}
             style={styles.blockedButton}
           />
           <Button

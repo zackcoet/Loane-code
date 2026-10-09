@@ -71,7 +71,9 @@ export function PhotoGrid({ photos, max, onAdd, onRemove, onMakeCover, onCrop, b
           key={`${photo.uri}-${index}`}
           onPress={() => openMenu(index)}
           accessibilityRole="button"
-          accessibilityLabel={index === 0 ? 'Cover photo. Tap for options.' : 'Photo. Tap for options.'}
+          accessibilityLabel={
+            index === 0 ? 'Cover photo. Tap for options.' : 'Photo. Tap for options.'
+          }
           style={styles.tile}
         >
           <Image source={{ uri: photo.uri }} style={styles.image} resizeMode="cover" />

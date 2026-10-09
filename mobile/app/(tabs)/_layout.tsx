@@ -181,8 +181,8 @@ const styles = StyleSheet.create({
   avatarRingActive: { borderColor: color.icon.default },
   avatarImage: { width: '100%', height: '100%', borderRadius: radius.pill },
   badge: {
-    backgroundColor: color.accent.background,
-    color: color.accent.label,
+    backgroundColor: color.attention.background,
+    color: color.attention.label,
     fontSize: type.caption.size,
   },
 });

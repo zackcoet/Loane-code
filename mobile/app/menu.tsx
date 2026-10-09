@@ -123,8 +123,7 @@ export default function Menu() {
           </View>
 
           {ITEMS.map((raw) => {
-            const item =
-              raw.href === '/rental-requests' ? { ...raw, badge: waitingOnMe } : raw;
+            const item = raw.href === '/rental-requests' ? { ...raw, badge: waitingOnMe } : raw;
             return (
               <Pressable
                 key={item.label}
@@ -136,7 +135,7 @@ export default function Menu() {
                 <Text style={styles.rowLabel}>{item.label}</Text>
                 {item.badge ? (
                   <View style={styles.badge}>
-                    <Text variant="caption" tone="primary">
+                    <Text variant="caption" tone="inverse">
                       {item.badge > 9 ? '9+' : item.badge}
                     </Text>
                   </View>
@@ -215,7 +214,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 10,
-    backgroundColor: color.accent.background,
+    backgroundColor: color.attention.background,
   },
   logOut: { marginTop: spacing.lg, marginBottom: spacing.xxl },
 });

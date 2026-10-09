@@ -9,21 +9,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-} from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import {
-  LIMITS,
-  spacing,
-  validatePassword,
-} from '@loane/shared';
+import { LIMITS, spacing, validatePassword } from '@loane/shared';
 import { Button } from '../src/components/Button';
 import { Input } from '../src/components/Input';
 import { Screen } from '../src/components/Screen';

@@ -101,7 +101,7 @@ export default function PostSheet() {
           }}
         >
           <View style={styles.optionIcon}>
-            <Icon name={option.icon} size={iconSize.md} tint={color.accent.label} />
+            <Icon name={option.icon} size={iconSize.md} tint={color.attention.label} />
           </View>
           <View style={styles.optionText}>
             <Text style={styles.optionTitle}>{option.title}</Text>
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.sm,
-    backgroundColor: color.accent.background,
+    backgroundColor: color.attention.background,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,

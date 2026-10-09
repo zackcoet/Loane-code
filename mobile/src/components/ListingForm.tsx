@@ -175,9 +175,7 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
                 label={value}
                 active={isShoes ? form.shoeSize === value : form.size === value}
                 onPress={() =>
-                  isShoes
-                    ? set('shoeSize', value as ShoeSize)
-                    : set('size', value as Size)
+                  isShoes ? set('shoeSize', value as ShoeSize) : set('size', value as Size)
                 }
               />
             ))}

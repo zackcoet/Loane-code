@@ -1,7 +1,5 @@
 import { Stack } from 'expo-router';
-import {
-  color,
-} from '@loane/shared';
+import { color } from '@loane/shared';
 
 export default function OnboardingLayout() {
   return (

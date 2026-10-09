@@ -9,12 +9,7 @@
 
 import { StyleSheet, Switch, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import {
-  color,
-  controls,
-  spacing,
-  type,
-} from '@loane/shared';
+import { color, controls, spacing, type } from '@loane/shared';
 import { Screen } from '../src/components/Screen';
 import { Header } from '../src/components/Header';
 import { useUserSettings } from '../src/hooks/useUserSettings';

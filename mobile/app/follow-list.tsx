@@ -80,9 +80,7 @@ export default function FollowListScreen() {
           }
           actionLabel={isMine && side === 'following' ? 'Find closets to follow' : undefined}
           onAction={
-            isMine && side === 'following'
-              ? () => router.push('/(tabs)/discover')
-              : undefined
+            isMine && side === 'following' ? () => router.push('/(tabs)/discover') : undefined
           }
         />
       ) : (
@@ -117,9 +115,7 @@ export default function FollowListScreen() {
                   accessibilityLabel={`Unfollow @${item.username}`}
                   style={({ pressed }) => [styles.unfollow, pressed && styles.pressed]}
                 >
-                  <Text variant="caption">
-                    {working === item.uid ? 'Working' : 'Unfollow'}
-                  </Text>
+                  <Text variant="caption">{working === item.uid ? 'Working' : 'Unfollow'}</Text>
                 </Pressable>
               ) : null}
             </View>

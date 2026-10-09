@@ -3,9 +3,7 @@
  */
 
 import { Image, StyleSheet, Text, View } from 'react-native';
-import {
-  color,
-} from '@loane/shared';
+import { color } from '@loane/shared';
 
 interface Props {
   url?: string | null;

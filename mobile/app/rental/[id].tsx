@@ -246,7 +246,11 @@ export default function RentalScreen() {
 
         <Card
           style={styles.person}
-          onPress={() => void chat.open(isLender ? booking.renterUid : booking.lenderUid, { bookingId: booking.id })}
+          onPress={() =>
+            void chat.open(isLender ? booking.renterUid : booking.lenderUid, {
+              bookingId: booking.id,
+            })
+          }
           accessibilityLabel={`Message @${them.username}`}
         >
           <Avatar url={them.photoUrl} name={them.displayName} size={44} />
@@ -272,10 +276,7 @@ export default function RentalScreen() {
           <Text variant="label">What it costs</Text>
           <View style={styles.breakdown}>
             <Line label="Rental" value={formatCents(booking.amounts.baseCents)} />
-            <Line
-              label="Loane fee"
-              value={formatCents(booking.amounts.platformFeeCents)}
-            />
+            <Line label="Loane fee" value={formatCents(booking.amounts.platformFeeCents)} />
             <Line label="Total" value={formatCents(booking.amounts.renterTotalCents)} strong />
           </View>
           <Text variant="caption" tone="muted" style={styles.blockBody}>

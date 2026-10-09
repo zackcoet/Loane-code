@@ -18,12 +18,17 @@ interface Props {
   /** Overrides the default glyph colour. */
   tint?: string;
   /**
-   * Fills the tap target with a chartreuse circle.
+   * Fills the tap target with a cherry circle.
    *
    * For the one icon on a screen that CREATES something — the + that
    * opens "Post a Look / Add to My Closet". A header full of outline
    * glyphs gives no clue which one makes a thing, and that is the tap
    * Loane most wants.
+   *
+   * Cherry rather than the softer butter, because butter sits at 1.19:1
+   * against the cream canvas: as a filled circle it would barely be a
+   * shape. The accent that marks a thing and the accent that invites a
+   * tap cannot be the same colour here.
    */
   accent?: boolean;
   style?: ViewStyle;
@@ -53,7 +58,7 @@ export function IconButton({
       <Icon
         name={name}
         size={size}
-        tint={tint ?? (accent ? color.accent.label : color.icon.default)}
+        tint={tint ?? (accent ? color.attention.label : color.icon.default)}
       />
     </Pressable>
   );
@@ -69,7 +74,7 @@ const styles = StyleSheet.create({
   // Inset so the circle is a comfortable 36pt inside the 44pt target,
   // rather than a disc that touches its neighbours.
   accent: {
-    backgroundColor: color.accent.background,
+    backgroundColor: color.attention.background,
     borderRadius: radius.pill,
     margin: 4,
     width: controls.minTapTarget - 8,

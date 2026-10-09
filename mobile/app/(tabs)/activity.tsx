@@ -38,7 +38,9 @@ import { useMyBookings } from '../../src/hooks/useBookings';
 import { useNotifications } from '../../src/hooks/useNotifications';
 
 /** Turns a stored deep link into a route this app can push. */
-function target(notification: Notification): { pathname: '/rental/[id]'; params: { id: string } } | null {
+function target(
+  notification: Notification,
+): { pathname: '/rental/[id]'; params: { id: string } } | null {
   const bookingId = notification.refs?.bookingId;
   return bookingId ? { pathname: '/rental/[id]', params: { id: bookingId } } : null;
 }
@@ -83,8 +85,12 @@ export default function Activity() {
     // first. This is the answer to "is anybody waiting on me?", which
     // is the question you open the app with.
     const waiting: Row[] = [
-      ...lendingLive.filter((b) => needsMe(b, true)).map((b) => ({ kind: 'booking' as const, booking: b, isLender: true })),
-      ...rentingLive.filter((b) => needsMe(b, false)).map((b) => ({ kind: 'booking' as const, booking: b, isLender: false })),
+      ...lendingLive
+        .filter((b) => needsMe(b, true))
+        .map((b) => ({ kind: 'booking' as const, booking: b, isLender: true })),
+      ...rentingLive
+        .filter((b) => needsMe(b, false))
+        .map((b) => ({ kind: 'booking' as const, booking: b, isLender: false })),
     ];
 
     const lendingRest = lendingLive.filter((b) => !needsMe(b, true));
@@ -108,9 +114,7 @@ export default function Activity() {
           ? 'Pieces you have lent out show up here.'
           : `${lendingRest.length} out or upcoming`,
     });
-    out.push(
-      ...lendingRest.map((b) => ({ kind: 'booking' as const, booking: b, isLender: true })),
-    );
+    out.push(...lendingRest.map((b) => ({ kind: 'booking' as const, booking: b, isLender: true })));
 
     out.push({
       kind: 'header',
@@ -128,7 +132,10 @@ export default function Activity() {
   }, [lending.bookings, renting.bookings]);
 
   const nothingAtAll =
-    lending.bookings.length === 0 && renting.bookings.length === 0 && !lending.loading && !renting.loading;
+    lending.bookings.length === 0 &&
+    renting.bookings.length === 0 &&
+    !lending.loading &&
+    !renting.loading;
 
   return (
     <Screen flush>
@@ -206,10 +213,7 @@ export default function Activity() {
       ) : loadingNotifications ? (
         <Loading />
       ) : notifications.length === 0 ? (
-        <EmptyState
-          title="Nothing yet"
-          body="Answers, handoffs and reminders will show up here."
-        />
+        <EmptyState title="Nothing yet" body="Answers, handoffs and reminders will show up here." />
       ) : (
         <FlatList
           data={notifications}
@@ -287,5 +291,5 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.6 },
   rowText: { flex: 1 },
   meta: { alignItems: 'flex-end', gap: 4 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.accent.background },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.attention.background },
 });

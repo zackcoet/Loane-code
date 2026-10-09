@@ -107,7 +107,9 @@ export default function FindFriends() {
               </Text>
             )
           }
-          renderItem={({ item }) => <PersonRow person={item} onPress={() => router.push(`/u/${item.username}`)} />}
+          renderItem={({ item }) => (
+            <PersonRow person={item} onPress={() => router.push(`/u/${item.username}`)} />
+          )}
         />
       )}
     </Screen>

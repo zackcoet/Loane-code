@@ -9,13 +9,7 @@
  */
 
 import { Pressable, StyleSheet, Text } from 'react-native';
-import {
-  color,
-  controls,
-  radius,
-  spacing,
-  type,
-} from '@loane/shared';
+import { color, controls, radius, spacing, type } from '@loane/shared';
 
 interface Props {
   label: string;

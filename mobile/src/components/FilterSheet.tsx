@@ -39,14 +39,7 @@ interface Props {
   onClose: () => void;
 }
 
-export function FilterSheet({
-  visible,
-  filters,
-  resultCount,
-  onPreview,
-  onApply,
-  onClose,
-}: Props) {
+export function FilterSheet({ visible, filters, resultCount, onPreview, onApply, onClose }: Props) {
   const [draft, setDraft] = useState<Filters>(filters);
 
   const update = (next: Filters) => {
@@ -162,9 +155,7 @@ export function FilterSheet({
 
         <View style={styles.footer}>
           <Button
-            label={
-              resultCount === 1 ? 'Show 1 piece' : `Show ${resultCount} pieces`
-            }
+            label={resultCount === 1 ? 'Show 1 piece' : `Show ${resultCount} pieces`}
             onPress={() => onApply(draft)}
           />
         </View>

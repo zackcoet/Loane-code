@@ -68,7 +68,7 @@ export default function EditPost() {
     return onSnapshot(
       doc(db, COLLECTIONS.posts, id),
       (snap) => {
-        setPost(snap.exists() ? ({ ...(snap.data() as Post), id: snap.id }) : null);
+        setPost(snap.exists() ? { ...(snap.data() as Post), id: snap.id } : null);
         setLoading(false);
       },
       () => setLoading(false),

@@ -51,8 +51,10 @@ export default function RentalRequests() {
 
   const loading = lending.loading || renting.loading;
 
-  const rows: Array<{ kind: 'header'; title: string; note: string } | { kind: 'booking'; booking: Booking; incoming: boolean }> =
-    [];
+  const rows: Array<
+    | { kind: 'header'; title: string; note: string }
+    | { kind: 'booking'; booking: Booking; incoming: boolean }
+  > = [];
   rows.push({
     kind: 'header',
     title: 'Waiting on you',
@@ -90,9 +92,7 @@ export default function RentalRequests() {
       ) : (
         <FlatList
           data={rows}
-          keyExtractor={(row, index) =>
-            row.kind === 'header' ? `h-${index}` : row.booking.id
-          }
+          keyExtractor={(row, index) => (row.kind === 'header' ? `h-${index}` : row.booking.id)}
           contentContainerStyle={styles.list}
           renderItem={({ item }) =>
             item.kind === 'header' ? (
@@ -174,7 +174,7 @@ function RequestRow({
       </View>
 
       <View style={[styles.pill, incoming && styles.pillUrgent]}>
-        <Text variant="caption" tone={incoming ? 'primary' : 'muted'} uppercase={false}>
+        <Text variant="caption" tone={incoming ? 'inverse' : 'muted'} uppercase={false}>
           {incoming ? 'Answer' : BOOKING_STATUS_LABELS[booking.status]}
         </Text>
       </View>
@@ -211,5 +211,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: color.border.default,
   },
-  pillUrgent: { backgroundColor: color.accent.background, borderColor: color.accent.border },
+  pillUrgent: { backgroundColor: color.attention.background, borderColor: color.attention.border },
 });

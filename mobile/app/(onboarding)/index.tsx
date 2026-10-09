@@ -6,12 +6,7 @@
 
 import { Link, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import {
-  brand,
-  color,
-  spacing,
-  type,
-} from '@loane/shared';
+import { brand, color, spacing, type } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { Logo } from '../../src/components/Logo';
 import { Screen } from '../../src/components/Screen';
@@ -23,11 +18,16 @@ export default function Splash() {
     <Screen>
       <View style={styles.center}>
         <Logo size={104} lockup="across" />
-        <Text style={styles.tagline}>{brand.taglines.primary.toUpperCase().replace('.', ' .')}</Text>
+        <Text style={styles.tagline}>
+          {brand.taglines.primary.toUpperCase().replace('.', ' .')}
+        </Text>
       </View>
 
       <View style={styles.footer}>
-        <Button label="Find your campus closet" onPress={() => router.push('/(onboarding)/create-account')} />
+        <Button
+          label="Find your campus closet"
+          onPress={() => router.push('/(onboarding)/create-account')}
+        />
         <Link href="/(auth)/sign-in" style={styles.signIn}>
           Sign in
         </Link>

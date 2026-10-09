@@ -138,7 +138,10 @@ function Piece({
             {buy != null ? (
               <Text variant="bodySmall" style={styles.price}>
                 {formatCentsShort(buy)}
-                <Text variant="caption" tone="muted"> to buy</Text>
+                <Text variant="caption" tone="muted">
+                  {' '}
+                  to buy
+                </Text>
               </Text>
             ) : null}
           </View>

@@ -20,9 +20,7 @@
  */
 
 import { StyleSheet, Text, View } from 'react-native';
-import {
-  color,
-} from '@loane/shared';
+import { color } from '@loane/shared';
 
 /** Below this circle diameter the wordmark always drops beneath the mark. */
 const WORDMARK_INSIDE_MIN = 64;
@@ -102,12 +100,7 @@ export function Logo({ size = 96, lockup = 'auto', tint = color.icon.default }: 
   return (
     <View style={styles.stack}>
       {mark}
-      <Text
-        style={[
-          styles.wordmarkBelow,
-          { fontSize: Math.max(11, diameter * 0.4), color: tint },
-        ]}
-      >
+      <Text style={[styles.wordmarkBelow, { fontSize: Math.max(11, diameter * 0.4), color: tint }]}>
         LOANE
       </Text>
     </View>

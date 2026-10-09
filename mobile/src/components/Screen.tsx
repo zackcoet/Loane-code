@@ -5,10 +5,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  color,
-  spacing,
-} from '@loane/shared';
+import { color, spacing } from '@loane/shared';
 
 interface Props {
   children: React.ReactNode;

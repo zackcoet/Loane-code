@@ -13,13 +13,7 @@
  */
 
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import {
-  color,
-  controls,
-  radius,
-  spacing,
-  type,
-} from '@loane/shared';
+import { color, controls, radius, spacing, type } from '@loane/shared';
 import { useCampus } from '../hooks/useCampus';
 
 export function CampusChip({ onPress }: { onPress?: () => void }) {

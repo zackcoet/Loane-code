@@ -50,7 +50,9 @@ All in [`shared/src/tokens.ts`](../shared/src/tokens.ts).
 | `color.icon` | `default` `muted` `inverse` | Glyphs |
 | `color.button` | `primary.background` `outline.border` `disabled.label` | Buttons |
 | `color.status` | `success` `warning` `error` | State |
-| `color.brand` | `cream` `maroon` `gold` `terracotta` `sage` | Brand accents |
+| `color.brand` | `cream` `merlot` `cherry` `butter` `ballet` `denim` | Brand palette |
+| `color.accent` | `background` `border` `label` | Butter highlight: price tags, selected chips |
+| `color.attention` | `background` `border` `label` | Cherry: unread badges, "Your turn" |
 | `type` | `h1` `h2` `h3` `body` `bodySmall` `label` `caption` `button` | Text roles |
 | `spacing` | `xs` … `xxxl`, `screenPadding` | Gaps and padding |
 | `radius` | `none` `sm` `md` `lg` `pill` | Corners |
@@ -153,9 +155,31 @@ is a Microsoft font not licensed for app embedding; Telegraf is a paid
 licence. We ship free stand-ins behind the token names `LoaneHeading` and
 `LoaneBody`, so swapping in the licensed files later touches one file.
 
-## Colour caveat
+## Colour
 
-Three brand colours — gold, terracotta and sage — are marked
-`TODO-CONFIRM`. The strategy deck printed hex codes that did not match its
-own swatches for those three, so the values were sampled from the swatch
-pixels. Cream and maroon matched and are confirmed.
+The canvas is **Cream `#F6EFE4`**, not white. Cards and sheets are white so
+they lift off it.
+
+**Merlot `#5E1A2E`** is the voice — headings, icons, the mark, 11.0:1 on
+cream. **Cherry `#C8213F`** is the wink — primary buttons, the + that
+creates something, unread badges, "Your turn" pills, 4.9:1 on cream and
+5.6:1 under white text.
+
+**Butter, Ballet and Denim are backgrounds only.** On cream they measure
+1.19:1, 1.59:1 and 2.69:1 — invisible as text or a glyph, fine behind
+near-black. There is deliberately no `color.text.accent` token, and adding
+one would be a bug.
+
+Cherry and Butter are not interchangeable. Cherry interrupts; Butter marks.
+If a price tag shouts as loudly as "Request to rent", neither is the primary
+action any more.
+
+Body text is `#231619`, a warm near-black leaning toward merlot. The whole
+neutral ramp is warmed to match, because a true grey beside cream reads as
+dirty.
+
+Midnight `#1A2D4D` appears in the deck marked campaign only and is
+deliberately not in the app.
+
+Nothing here is provisional. The October 2026 deck superseded the September
+one and settled the three colours that had been marked `TODO-CONFIRM`.

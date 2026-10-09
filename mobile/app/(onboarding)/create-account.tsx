@@ -25,14 +25,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Link, useRouter } from 'expo-router';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   LIMITS,
   color,
@@ -53,8 +46,13 @@ import { text } from '../../src/theme';
 
 export default function CreateAccount() {
   const router = useRouter();
-  const { firstName, setFirstName, campusEmail, setCampusEmail, setPassword: storePassword } =
-    useSignupDraft();
+  const {
+    firstName,
+    setFirstName,
+    campusEmail,
+    setCampusEmail,
+    setPassword: storePassword,
+  } = useSignupDraft();
 
   const [password, setPasswordInput] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -189,9 +187,7 @@ export default function CreateAccount() {
             onPress={onContinue}
             loading={busy}
             disabled={
-              firstName.trim().length === 0 ||
-              campusEmail.length === 0 ||
-              password.length === 0
+              firstName.trim().length === 0 || campusEmail.length === 0 || password.length === 0
             }
           />
 
@@ -218,7 +214,12 @@ const styles = StyleSheet.create({
   // the viewport height, which is the thing we are trying to escape.
   // space-between keeps the sign-in line at the bottom when there is
   // room and lets it scroll away when the keyboard takes the room.
-  body: { flexGrow: 1, justifyContent: 'space-between', paddingTop: spacing.lg, paddingBottom: spacing.lg },
+  body: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.lg,
+  },
   caption: { marginTop: spacing.sm, marginBottom: spacing.md },
   explainer: { marginBottom: spacing.xl },
   footer: { paddingTop: spacing.xl },

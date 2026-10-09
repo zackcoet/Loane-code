@@ -156,10 +156,7 @@ export default function ListingDetail() {
           {listing.photos.length > 1 ? (
             <View style={styles.dots}>
               {listing.photos.map((photo, index) => (
-                <View
-                  key={photo.path}
-                  style={[styles.dot, index === page && styles.dotActive]}
-                />
+                <View key={photo.path} style={[styles.dot, index === page && styles.dotActive]} />
               ))}
             </View>
           ) : null}
@@ -238,10 +235,10 @@ export default function ListingDetail() {
               </Text>
               <Text numberOfLines={1}>@{listing.owner.username}</Text>
               <StarRating
-              average={owner?.stats.ratingAverage ?? null}
-              count={owner?.stats.ratingCount ?? 0}
-              emptyLabel="No reviews yet"
-            />
+                average={owner?.stats.ratingAverage ?? null}
+                count={owner?.stats.ratingCount ?? 0}
+                emptyLabel="No reviews yet"
+              />
             </View>
             <Icon name="chevron-forward" size={20} tint={color.text.muted} />
           </Pressable>

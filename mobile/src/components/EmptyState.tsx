@@ -7,11 +7,7 @@
  */
 
 import { StyleSheet, Text, View } from 'react-native';
-import {
-  color,
-  spacing,
-  type,
-} from '@loane/shared';
+import { color, spacing, type } from '@loane/shared';
 import { Button } from './Button';
 
 interface Props {

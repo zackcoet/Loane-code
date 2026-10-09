@@ -40,9 +40,7 @@ export default function Messages() {
             <Row
               conversation={item}
               myUid={profile?.uid}
-              onPress={() =>
-                router.push({ pathname: '/chat/[id]', params: { id: item.id } })
-              }
+              onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id } })}
             />
           )}
         />
@@ -69,7 +67,11 @@ function Row({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Chat with @${them?.username ?? 'student'}`}
-      style={({ pressed }) => [styles.row, unread > 0 && styles.unreadRow, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.row,
+        unread > 0 && styles.unreadRow,
+        pressed && styles.pressed,
+      ]}
     >
       <Avatar url={them?.photoUrl} name={them?.displayName} size={48} />
       <View style={styles.rowText}>
@@ -80,7 +82,7 @@ function Row({
       </View>
       {unread > 0 ? (
         <View style={styles.badge}>
-          <Text variant="caption" tone="primary">
+          <Text variant="caption" tone="inverse">
             {unread > 9 ? '9+' : unread}
           </Text>
         </View>
@@ -111,6 +113,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: color.accent.background,
+    backgroundColor: color.attention.background,
   },
 });

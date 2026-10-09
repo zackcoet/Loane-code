@@ -11,13 +11,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
-import {
-  TERMINAL_BOOKING_STATUSES,
-  color,
-  controls,
-  radius,
-  spacing,
-} from '@loane/shared';
+import { TERMINAL_BOOKING_STATUSES, color, controls, radius, spacing } from '@loane/shared';
 import { BookingRow, needsMe } from '../src/components/BookingRow';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
@@ -90,7 +84,9 @@ export default function MyRentals() {
       ) : (
         <FlatList
           data={rows}
-          keyExtractor={(row, index) => ('header' in row ? `h-${row.header}` : row.booking.id) + index}
+          keyExtractor={(row, index) =>
+            ('header' in row ? `h-${row.header}` : row.booking.id) + index
+          }
           contentContainerStyle={styles.list}
           renderItem={({ item }) =>
             'header' in item ? (
