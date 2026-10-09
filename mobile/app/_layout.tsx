@@ -13,7 +13,8 @@
  */
 
 import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -24,6 +25,8 @@ import { SignupDraftProvider } from '../src/auth/signupDraft';
 import { PostDraftProvider } from '../src/post/postDraft';
 import { SuccessBannerProvider } from '../src/components/SuccessBanner';
 import { logEvent } from '../src/analytics/events';
+import { FONTS_TO_LOAD } from '../src/theme/fonts';
+import { LoaneLoader } from '../src/components/LoaneLoader';
 
 function RootNavigator() {
   const { loading, firebaseUser, profile, needsOnboarding } = useAuth();
@@ -71,7 +74,7 @@ function RootNavigator() {
   if (loading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator color={color.icon.default} />
+        <LoaneLoader size={44} />
       </View>
     );
   }
@@ -138,6 +141,26 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  /**
+   * Nothing renders until the brand faces are in memory.
+   *
+   * React Native silently falls back to the system font for a family it
+   * does not have yet, so rendering early means a flash of San Francisco
+   * and then a reflow as Figtree swaps in — every line of text jumping a
+   * pixel or two at once. The fonts are bundled in the binary, so this
+   * resolves almost immediately; it is a guard against the flash, not a
+   * real wait.
+   */
+  const [fontsReady] = useFonts(FONTS_TO_LOAD);
+
+  if (!fontsReady) {
+    return (
+      <View style={styles.loading}>
+        <LoaneLoader size={44} />
+      </View>
+    );
+  }
+
   return (
     // Gesture handler needs a root of its own, outside everything, or
     // no gesture below it fires at all. Pinch-to-zoom on a post photo

@@ -5,7 +5,7 @@
  */
 
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
-import { color, controls, spacing, type } from '@loane/shared';
+import { color, controls, spacing, type, fonts } from '@loane/shared';
 
 interface Props extends TextInputProps {
   error?: string | null;
@@ -42,6 +42,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   input: {
+    fontFamily: fonts.body,
     height: controls.inputHeight,
     fontSize: type.body.size,
     color: color.text.primary,

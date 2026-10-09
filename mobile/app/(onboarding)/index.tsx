@@ -6,7 +6,7 @@
 
 import { Link, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import { brand, color, spacing, type } from '@loane/shared';
+import { brand, color, spacing, type, fontFamilyFor } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { Logo } from '../../src/components/Logo';
 import { Screen } from '../../src/components/Screen';
@@ -39,6 +39,7 @@ export default function Splash() {
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   tagline: {
+    fontFamily: fontFamilyFor(type.label.weight),
     marginTop: spacing.lg,
     fontSize: type.label.size,
     letterSpacing: 3,

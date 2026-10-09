@@ -20,7 +20,7 @@
  */
 
 import { StyleSheet, Text, View } from 'react-native';
-import { color } from '@loane/shared';
+import { color, fonts } from '@loane/shared';
 
 /** Below this circle diameter the wordmark always drops beneath the mark. */
 const WORDMARK_INSIDE_MIN = 64;
@@ -122,6 +122,11 @@ const styles = StyleSheet.create({
     // Slight inset so L and E sit inside the circle edges.
     paddingHorizontal: '6%',
   },
-  letter: { fontWeight: LETTER_WEIGHT, letterSpacing: 1 },
-  wordmarkBelow: { marginTop: 5, letterSpacing: 3, fontWeight: LETTER_WEIGHT },
+  letter: { fontFamily: fonts.heading, fontWeight: LETTER_WEIGHT, letterSpacing: 1 },
+  wordmarkBelow: {
+    fontFamily: fonts.heading,
+    marginTop: 5,
+    letterSpacing: 3,
+    fontWeight: LETTER_WEIGHT,
+  },
 });

@@ -23,7 +23,7 @@ import {
   type StyleProp,
   type ViewStyle,
 } from 'react-native';
-import { color, controls, radius, spacing, type } from '@loane/shared';
+import { color, controls, fontFamilyFor, radius, spacing, type } from '@loane/shared';
 
 type Variant = 'primary' | 'dark' | 'outline' | 'text';
 
@@ -103,6 +103,7 @@ const styles = StyleSheet.create({
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.8 },
   label: {
+    fontFamily: fontFamilyFor(type.button.weight),
     fontSize: type.button.size,
     fontWeight: '600',
     letterSpacing: type.button.letterSpacing,

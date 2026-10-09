@@ -10,7 +10,7 @@
  */
 
 import { Text as RNText, StyleSheet, type TextProps } from 'react-native';
-import { color, type } from '@loane/shared';
+import { color, fontFamilyFor, fonts, type } from '@loane/shared';
 
 export type TextVariant = keyof typeof type;
 export type TextTone = 'primary' | 'secondary' | 'muted' | 'inverse' | 'error' | 'disabled';
@@ -45,11 +45,16 @@ export function Text({
   const isLabelish = variant === 'label' || variant === 'caption';
   const upper = uppercase ?? isLabelish;
 
+  // The family carries the weight; see fonts.ts for why fontWeight alone
+  // does not work once a font is embedded.
+  const fontFamily = variant === 'display' ? fonts.display : fontFamilyFor(spec.weight);
+
   return (
     <RNText
       {...rest}
       style={[
         {
+          fontFamily,
           fontSize: spec.size,
           lineHeight: spec.lineHeight,
           fontWeight: spec.weight,

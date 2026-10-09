@@ -6,7 +6,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { IconButton } from './IconButton';
-import { color, controls, iconSize, spacing, type } from '@loane/shared';
+import { color, controls, fontFamilyFor, iconSize, spacing, type } from '@loane/shared';
 
 interface Props {
   title: string;
@@ -55,6 +55,7 @@ const styles = StyleSheet.create({
   title: {
     flex: 1,
     textAlign: 'center',
+    fontFamily: fontFamilyFor(type.label.weight),
     fontSize: type.label.size,
     letterSpacing: type.label.letterSpacing,
     textTransform: 'uppercase',

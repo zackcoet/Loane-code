@@ -264,6 +264,14 @@ export const fontWeight = {
 
 /** Named text roles. `size` is a number so React Native can use it directly. */
 export const type = {
+  /**
+   * The serif. A hero headline, an onboarding line, an empty state —
+   * the places the brand gets to speak rather than label.
+   *
+   * DM Serif Display has one weight, so `weight` here is regular and the
+   * size does the work. Never use it for body copy.
+   */
+  display: { size: 34, lineHeight: 40, weight: fontWeight.regular },
   h1: { size: fontSize['4xl'], lineHeight: 38, weight: fontWeight.bold },
   h2: { size: fontSize['3xl'], lineHeight: 32, weight: fontWeight.bold },
   h3: { size: fontSize.xl, lineHeight: 26, weight: fontWeight.semibold },
@@ -349,22 +357,37 @@ export const controls = {
 // ---------------------------------------------------------------------------
 
 /**
- * The real brand faces are Tenorite Bold (headings) and Telegraf (body).
- * Tenorite is a Microsoft font not licensed for app embedding and Telegraf
- * is a paid licence, so we ship free stand-ins behind these token names.
- * Swapping in the licensed files later touches one file.
+ * Font family names, as registered in mobile/src/theme/fonts.ts.
+ *
+ * ONE NAME PER WEIGHT, deliberately. `fontWeight` is ignored for an
+ * embedded font on Android and only approximated on iOS — each weight is
+ * its own file and must be asked for by name. Use `fontFamilyFor()`
+ * rather than setting a family and a weight and hoping.
  */
 export const fonts = {
-  heading: 'LoaneHeading',
+  /** Figtree 400. Body copy. */
   body: 'LoaneBody',
-  label: 'LoaneBody',
+  /** Figtree 500. Small uppercase labels. */
+  medium: 'LoaneBodyMedium',
+  /** Figtree 600. Buttons. */
+  semibold: 'LoaneBodySemibold',
+  /** Figtree 700. Headings. */
+  heading: 'LoaneHeading',
+  /**
+   * DM Serif Display 400. The big moments only — a hero headline, an
+   * onboarding line, an empty state. It has one weight and no italic,
+   * so it is not a body face and must never be asked to be one.
+   */
+  display: 'LoaneDisplay',
 } as const;
 
-/** TODO-FONTS: replace with licensed Tenorite Bold / Telegraf files. */
-export const fontPlaceholders = {
-  heading: 'Archivo Bold (stand-in for Tenorite Bold)',
-  body: 'Inter (stand-in for Telegraf)',
-} as const;
+/** The Figtree family carrying a given numeric weight. */
+export function fontFamilyFor(weight: string): string {
+  if (weight === '700') return fonts.heading;
+  if (weight === '600') return fonts.semibold;
+  if (weight === '500') return fonts.medium;
+  return fonts.body;
+}
 
 export const taglines = {
   primary: 'Style. Shared.',
