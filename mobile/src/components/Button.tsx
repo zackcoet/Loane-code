@@ -29,6 +29,15 @@ type Variant = 'primary' | 'dark' | 'outline' | 'text';
 
 interface Props {
   label: string;
+  /**
+   * A second line under the label, for a price.
+   *
+   * "LOANE IT" over "$18 / 3 days", from Ella's mockup. The price
+   * belongs ON the button because the decision she is making is
+   * borrow-or-buy and the two numbers are the whole comparison —
+   * sending her to another screen to find them loses the moment.
+   */
+  sublabel?: string;
   onPress: () => void;
   variant?: Variant;
   disabled?: boolean;
@@ -38,6 +47,7 @@ interface Props {
 
 export function Button({
   label,
+  sublabel,
   onPress,
   variant = 'primary',
   disabled = false,
@@ -69,6 +79,7 @@ export function Button({
         variant === 'dark' && styles.dark,
         variant === 'outline' && styles.outline,
         variant === 'text' && styles.textOnly,
+        sublabel ? styles.stacked : null,
         inactive && (filled ? styles.filledDisabled : styles.disabled),
         pressed && !inactive && styles.pressed,
         style,
@@ -77,7 +88,12 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={labelColor} />
       ) : (
-        <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
+        <>
+          <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
+          {sublabel ? (
+            <Text style={[styles.sublabel, { color: labelColor }]}>{sublabel}</Text>
+          ) : null}
+        </>
       )}
     </Pressable>
   );
@@ -102,6 +118,16 @@ const styles = StyleSheet.create({
   filledDisabled: { backgroundColor: color.surface.disabled },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.8 },
+  // Taller, because two lines of text need room to breathe inside a
+  // button rather than filling it to the edges.
+  stacked: { height: 'auto', paddingVertical: spacing.md, gap: 3 },
+  sublabel: {
+    fontFamily: fontFamilyFor(type.caption.weight),
+    fontSize: type.caption.size,
+    letterSpacing: type.caption.letterSpacing,
+    textTransform: 'none',
+    opacity: 0.85,
+  },
   label: {
     fontFamily: fontFamilyFor(type.button.weight),
     fontSize: type.button.size,

@@ -20,18 +20,17 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import {
-  WORDS,
   CATEGORY_LABELS,
   OCCASION_LABELS,
   color,
   controls,
   formatCentsShort,
-  radius,
   spacing,
   type Condition,
 } from '@loane/shared';
 import { Avatar } from '../../src/components/Avatar';
 import { Button } from '../../src/components/Button';
+import { ListingActions } from '../../src/components/ListingActions';
 import { Chip } from '../../src/components/Chip';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
@@ -302,38 +301,33 @@ export default function ListingDetail() {
         onClose={() => setReporting(false)}
       />
 
-      {/* Actions */}
-      {!isMine ? (
-        <View style={styles.actionBar}>
+      {/*
+        The action bar is the same on her own listing as on anyone
+        else's, with the buttons disabled. "What does my listing look
+        like" is the first thing anyone asks after posting one, and a
+        page that changes shape depending on who is looking cannot
+        answer it.
+      */}
+      <View style={styles.actionBar}>
+        <ListingActions
+          listing={listing}
+          isMine={isMine}
+          onLoaneIt={() => router.push({ pathname: '/request-rental', params: { id: listing.id } })}
+          // TODO-STEP5: the Own It purchase flow. Until it exists, say
+          // so rather than opening a request that goes nowhere.
+          onOwnIt={() => Alert.alert('Coming soon', SOON)}
+        />
+        {/* Underneath, and quieter. Messaging is how a handoff gets
+            arranged, not how a rental starts. */}
+        {!isMine ? (
           <Button
-            label="Message"
-            variant="outline"
+            label={`Message @${listing.owner.username}`}
+            variant="text"
             loading={chat.opening}
             onPress={() => void chat.open(listing.ownerUid, { listingId: listing.id })}
-            style={styles.saveButton}
           />
-          {rentable ? (
-            <Button
-              // Step 4 turns this into the two side-by-side buttons from
-              // Ella's mockup, with prices on them. For now it just
-              // speaks the right language.
-              label={WORDS.rent}
-              onPress={() =>
-                router.push({ pathname: '/request-rental', params: { id: listing.id } })
-              }
-              style={styles.primaryAction}
-            />
-          ) : null}
-          {sellable && !rentable ? (
-            <Button
-              label={WORDS.buyCta}
-              // TODO-PHASE5: payments.
-              onPress={() => Alert.alert('Coming soon', SOON)}
-              style={styles.primaryAction}
-            />
-          ) : null}
-        </View>
-      ) : null}
+        ) : null}
+      </View>
     </Screen>
   );
 }
@@ -413,14 +407,16 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface.muted,
   },
   seenInWho: { marginTop: 4 },
+  // A column now: the pitch and the two buttons stack, with Message
+  // underneath. It was a row of three, which left no room for a price
+  // on anything.
   actionBar: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    padding: spacing.md,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: color.border.default,
     backgroundColor: color.surface.page,
   },
-  saveButton: { flex: 1, height: controls.buttonHeightSmall, borderRadius: radius.sm },
-  primaryAction: { flex: 2, height: controls.buttonHeightSmall },
 });
