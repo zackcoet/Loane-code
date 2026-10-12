@@ -42,6 +42,15 @@ import { Icon, type IconName } from '../../src/components/Icon';
  * larger than Apple's.)
  */
 const TAB_BAR_ROW_HEIGHT = 56;
+
+/**
+ * The least space under the icons, whatever the device says.
+ *
+ * iPhones with a home indicator report ~34 here and that wins. Phones
+ * without one report 0, and 0 put the glyphs hard against the bottom
+ * edge of the screen.
+ */
+const MIN_BOTTOM_SPACE = 12;
 const POST_BUTTON_SIZE = 60;
 
 /**
@@ -116,6 +125,8 @@ export default function TabsLayout() {
     instead of sharing it.
   */
   const insets = useSafeAreaInsets();
+  /** Never less than a little breathing room, even with no indicator. */
+  const bottomSpace = Math.max(insets.bottom, MIN_BOTTOM_SPACE);
 
   return (
     <>
@@ -128,14 +139,22 @@ export default function TabsLayout() {
           tabBarStyle: [
             styles.bar,
             {
-              // The row, PLUS the indicator — not the row squeezed into
-              // the space the indicator left.
-              height: TAB_BAR_ROW_HEIGHT + insets.bottom,
-              paddingBottom: insets.bottom,
+              /*
+                The row, PLUS whatever sits under it — not the row
+                squeezed into the space left over.
+
+                A FLOOR OF 12, not the raw inset. On a phone that
+                reports no bottom inset the bar sat flush against the
+                screen edge and the icons had nothing underneath them,
+                which is what "too close to the bottom" was. Where
+                there IS a home indicator the real inset is larger and
+                wins, so this changes nothing on those phones.
+              */
+              height: TAB_BAR_ROW_HEIGHT + bottomSpace,
+              paddingBottom: bottomSpace,
               paddingTop: 0,
             },
           ],
-          tabBarItemStyle: styles.item,
           tabBarShowLabel: false,
         }}
       >
@@ -229,12 +248,11 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   /*
-    No translateY any more. The old -4 lift was compensating for the
-    squeeze above; once the row has its own height the icons centre
-    themselves, and lifting them again just moves the clipping to the
-    top edge.
+    NO tabBarItemStyle. Forcing the item to the row height pinned the
+    icons instead of letting React Navigation centre them in the space
+    above the home indicator, which is the one part of this it has
+    always got right on its own.
   */
-  item: { height: TAB_BAR_ROW_HEIGHT, paddingVertical: 0 },
   postButton: {
     width: POST_BUTTON_SIZE,
     height: POST_BUTTON_SIZE,
