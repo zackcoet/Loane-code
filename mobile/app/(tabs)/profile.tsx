@@ -74,22 +74,6 @@ export default function Profile() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        {/* FIRST, above her own header. Below it, on a profile that
-            already has a bio and four size chips, the card sits under
-            the fold — which on the screen meant to prompt her is the
-            same as not being there. */}
-        {checklist.visible ? (
-          <ProfileChecklist
-            items={checklist.items}
-            completed={checklist.completed}
-            total={checklist.total}
-            onDismiss={() => void checklist.dismiss()}
-            onPressItem={(item) =>
-              item.href ? router.push(item.href as never) : void photo.change()
-            }
-          />
-        ) : null}
-
         <ProfileHeader
           user={profile}
           onPressPhoto={photo.change}
@@ -114,6 +98,21 @@ export default function Profile() {
             style={styles.action}
           />
         </ProfileHeader>
+
+        {/* Between who she is and what she has, which is the join a
+            half-finished profile actually sits on. Collapsed to one
+            line: her own profile opens with her, not with chores. */}
+        {checklist.visible ? (
+          <ProfileChecklist
+            items={checklist.items}
+            completed={checklist.completed}
+            total={checklist.total}
+            onDismiss={() => void checklist.dismiss()}
+            onPressItem={(item) =>
+              item.href ? router.push(item.href as never) : void photo.change()
+            }
+          />
+        ) : null}
 
         <ProfileTabs uid={profile.uid} isMe />
       </ScrollView>

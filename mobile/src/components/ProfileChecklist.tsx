@@ -1,24 +1,31 @@
 /**
- * "Complete your profile" — a card at the top of her own profile.
+ * "Your closet is 50% ready" — a slim strip between her profile and
+ * her closet.
  *
- * A progress bar and a short list of things she has not done yet.
- * Everything on it is optional and nothing is gated on it; it exists
- * because at launch a half-finished profile is the normal state, and a
- * blank circle with no bio is harder to lend to.
+ * COLLAPSED BY DEFAULT, and that is the whole design. Her own profile
+ * should open with her — photo, name, bio, what she has — not with a
+ * list of chores. A full card above the header was impossible to miss
+ * and impossible to escape; one line is a reminder she can take or
+ * leave, and tapping it gives her the detail she asked for.
  *
- * COLOUR. The fill is merlot on a cream track. Completing a profile is
+ * It sits exactly at the join between who she is and what she has,
+ * which is what finishing a profile actually spans.
+ *
+ * IT GATES NOTHING. Anything genuinely required is asked for at the
+ * moment it is needed — see useProfileGate. By the time she reads
+ * this strip, photo and phone have usually been handled already and
+ * what is left is the softer half: a bio, her sizes, some people to
+ * follow. So this is encouragement, and it is allowed to be quiet.
+ *
+ * COLOUR. Merlot fill on a cream track. Finishing a profile is
  * neither a lender nor a renter action, so the roles say shared — and
  * cherry here would compete with the + button, which is the one thing
  * on this screen we actually want tapped.
- *
- * Done rows stay on the list rather than disappearing. Watching the
- * list get shorter is the point; a row that vanishes the moment you
- * finish it takes the evidence of progress with it.
  */
 
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { color, controls, radius, spacing } from '@loane/shared';
-import { Card } from './Card';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import type { ChecklistItem } from '../hooks/useProfileChecklist';
@@ -32,93 +39,115 @@ interface Props {
 }
 
 export function ProfileChecklist({ items, completed, total, onPressItem, onDismiss }: Props) {
-  const remaining = total - completed;
+  const [open, setOpen] = useState(false);
+  const percent = Math.round((completed / total) * 100);
 
   return (
-    <Card style={styles.card}>
-      <View style={styles.head}>
-        <View style={styles.headText}>
-          <Text variant="h3" tone="heading">
-            Complete your closet
-          </Text>
-          <Text variant="caption" tone="muted" uppercase={false}>
-            {remaining === 1 ? '1 thing left' : `${remaining} things left`} · all optional
-          </Text>
-        </View>
-        <Pressable
-          onPress={onDismiss}
-          hitSlop={12}
-          accessibilityRole="button"
-          accessibilityLabel="Hide this"
-          style={styles.dismiss}
-        >
-          <Icon name="close" size={16} tint={color.text.muted} />
-        </Pressable>
-      </View>
-
-      <View
-        style={styles.track}
-        accessibilityRole="progressbar"
-        accessibilityLabel={`${completed} of ${total} done`}
+    <View style={styles.band}>
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={`Your closet is ${percent} percent ready. ${
+          open ? 'Collapse' : 'Expand'
+        } the checklist.`}
+        style={({ pressed }) => [styles.summary, pressed && styles.pressed]}
       >
-        {/* Width as a percentage string: the track is full-bleed inside
-            the card and its pixel width is not known here. */}
-        <View style={[styles.fill, { width: `${Math.round((completed / total) * 100)}%` }]} />
-      </View>
+        <View style={styles.summaryText}>
+          <Text variant="bodySmall" tone="heading" uppercase={false} style={styles.strong}>
+            Your closet is {percent}% ready
+          </Text>
+          <View style={styles.track}>
+            {/* A percentage string: the track is full width inside the
+                strip and its pixel width is not known here. */}
+            <View style={[styles.fill, { width: `${percent}%` }]} />
+          </View>
+        </View>
+        <Icon
+          name={open ? 'chevron-down' : 'chevron-forward'}
+          size={18}
+          tint={color.icon.muted}
+        />
+      </Pressable>
 
-      <View style={styles.rows}>
-        {items.map((item) => (
-          <Pressable
-            key={item.key}
-            onPress={() => onPressItem(item)}
-            accessibilityRole="button"
-            accessibilityState={{ checked: item.done }}
-            accessibilityLabel={`${item.label}${item.done ? ', done' : ''}`}
-            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-          >
-            <View style={[styles.check, item.done && styles.checkOn]}>
-              {item.done ? <Icon name="checkmark" size={13} tint={color.text.inverse} /> : null}
-            </View>
-            <View style={styles.rowText}>
-              <Text
-                variant="bodySmall"
-                tone={item.done ? 'muted' : 'primary'}
-                uppercase={false}
-                style={item.done ? styles.doneLabel : undefined}
-              >
-                {item.label}
-              </Text>
-              {/* The reason is only useful before she does it. */}
-              {item.done ? null : (
-                <Text variant="caption" tone="muted" uppercase={false}>
-                  {item.hint}
+      {open ? (
+        <View style={styles.rows}>
+          {items.map((item) => (
+            <Pressable
+              key={item.key}
+              onPress={() => onPressItem(item)}
+              accessibilityRole="button"
+              accessibilityState={{ checked: item.done }}
+              accessibilityLabel={`${item.label}${item.done ? ', done' : ''}`}
+              style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+            >
+              <View style={[styles.check, item.done && styles.checkOn]}>
+                {item.done ? <Icon name="checkmark" size={13} tint={color.text.inverse} /> : null}
+              </View>
+              <View style={styles.rowText}>
+                <Text
+                  variant="bodySmall"
+                  tone={item.done ? 'muted' : 'primary'}
+                  uppercase={false}
+                  style={item.done ? styles.doneLabel : undefined}
+                >
+                  {item.label}
                 </Text>
+                {/* The reason is only useful before she does it. */}
+                {item.done ? null : (
+                  <Text variant="caption" tone="muted" uppercase={false}>
+                    {item.hint}
+                  </Text>
+                )}
+              </View>
+              {item.done ? null : (
+                <Icon name="chevron-forward" size={16} tint={color.icon.muted} />
               )}
-            </View>
-            {item.done ? null : (
-              <Icon name="chevron-forward" size={16} tint={color.icon.muted} />
-            )}
+            </Pressable>
+          ))}
+
+          {/* Only reachable once she has opened the strip, which is the
+              right order: nothing is dismissed before it is read. */}
+          <Pressable
+            onPress={onDismiss}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.hide, pressed && styles.pressed]}
+          >
+            <Text variant="caption" tone="muted" uppercase={false} style={styles.hideLabel}>
+              Hide this
+            </Text>
           </Pressable>
-        ))}
-      </View>
-    </Card>
+        </View>
+      ) : null}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { marginHorizontal: spacing.md, marginTop: spacing.sm, marginBottom: spacing.lg },
-  head: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
-  headText: { flex: 1, gap: 2 },
-  dismiss: { padding: 2 },
+  band: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: color.border.default,
+    paddingHorizontal: spacing.md,
+  },
+  summary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    minHeight: controls.minTapTarget,
+    paddingVertical: spacing.sm,
+  },
+  summaryText: { flex: 1, gap: spacing.xs },
+  strong: { fontWeight: '600' },
+  pressed: { opacity: 0.6 },
   track: {
     height: 6,
-    marginTop: spacing.md,
     borderRadius: radius.pill,
     backgroundColor: color.surface.section,
     overflow: 'hidden',
   },
   fill: { height: '100%', backgroundColor: color.role.shared.background },
-  rows: { marginTop: spacing.sm },
+  rows: { paddingBottom: spacing.sm },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -126,7 +155,6 @@ const styles = StyleSheet.create({
     minHeight: controls.minTapTarget,
     paddingVertical: spacing.xs,
   },
-  rowPressed: { opacity: 0.6 },
   rowText: { flex: 1, gap: 1 },
   doneLabel: { textDecorationLine: 'line-through' },
   check: {
@@ -142,4 +170,6 @@ const styles = StyleSheet.create({
     backgroundColor: color.role.shared.background,
     borderColor: color.role.shared.border,
   },
+  hide: { alignSelf: 'center', padding: spacing.sm },
+  hideLabel: { textDecorationLine: 'underline' },
 });
