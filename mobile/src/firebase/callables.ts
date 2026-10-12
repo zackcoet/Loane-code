@@ -40,6 +40,29 @@ export const followUser = httpsCallable<{ uid: string }, { following: boolean }>
   'follow',
 );
 
+/**
+ * Who to follow, ranked by mutual follows.
+ *
+ * A function rather than a query because ranking needs to read other
+ * students' following lists, and only the COUNT comes back. See
+ * backend/functions/src/social/suggestedClosets.ts.
+ */
+export const suggestedClosets = httpsCallable<
+  { limit?: number },
+  {
+    closets: {
+      uid: string;
+      username: string;
+      displayName: string;
+      photoUrl: string | null;
+      campusId: string;
+      isVerified: boolean;
+      mutualCount: number;
+      followerCount: number;
+    }[];
+  }
+>(functions, 'suggestedClosets');
+
 export const unfollowUser = httpsCallable<{ uid: string }, { following: boolean }>(
   functions,
   'unfollow',

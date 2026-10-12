@@ -30,14 +30,38 @@ import { useAuth } from '../../src/auth/AuthProvider';
 import { usePagedPosts } from '../../src/hooks/usePagedPosts';
 import { useFollowingUids } from '../../src/hooks/useFollowing';
 import { useUnreadMessageCount } from '../../src/hooks/useMessaging';
+import { useSuggestedClosets } from '../../src/hooks/useSuggestedClosets';
+import { SuggestedClosets } from '../../src/components/SuggestedClosets';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
 import { logEvent } from '../../src/analytics/events';
+
+/**
+ * How far down the feed the suggestions row goes.
+ *
+ * Eight posts in: far enough that she has seen what the app is for
+ * before being asked to follow anyone, close enough that she reaches
+ * it in a normal session.
+ */
+const SUGGESTIONS_AFTER = 8;
+
+/**
+ * Where it actually lands.
+ *
+ * On a short feed, eight posts in is never — and a short feed is
+ * exactly when she most needs closets to follow. A campus with four
+ * posts is a campus where following people is the whole job. So it
+ * falls back to the last position the feed has.
+ */
+function suggestionsIndex(postCount: number): number {
+  return Math.min(SUGGESTIONS_AFTER, Math.max(postCount - 1, 0));
+}
 
 export default function Feed() {
   const router = useRouter();
   const draft = usePostDraft();
   const unreadMessages = useUnreadMessageCount();
+  const suggested = useSuggestedClosets();
   const { profile } = useAuth();
   const { posts, loading, loadingMore, error, exhausted, refresh, loadMore } = usePagedPosts();
   const { uids: followingUids } = useFollowingUids();
@@ -175,6 +199,14 @@ export default function Feed() {
         <FlatList
           data={visible}
           keyExtractor={(post) => post.id}
+          /*
+            The suggestions row lives inside renderItem, which closes
+            over `closets`. FlatList only re-renders a row when `data`
+            changes, so without this the row at index 8 keeps whatever
+            it rendered before the fetch came back — which is nothing,
+            every time.
+          */
+          extraData={suggested.closets}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}
@@ -192,31 +224,50 @@ export default function Feed() {
               </Text>
             ) : null
           }
-          renderItem={({ item }) => (
-            <PostCard
-              post={item}
-              onPressTag={(listingId) => onPressTag(listingId, item.id)}
-              onPressAuthor={(username) => router.push(`/u/${username}`)}
-              onPressComments={() =>
-                router.push({
-                  pathname: '/comments',
-                  params: { postId: item.id, postAuthorUid: item.authorUid },
-                })
-              }
-              onPressSend={() =>
-                router.push({ pathname: '/send-post', params: { postId: item.id } })
-              }
-              onPressLikes={() =>
-                router.push({ pathname: '/post-likes', params: { postId: item.id } })
-              }
-              onMessageSeller={(ownerUid, listingId) => void chat.open(ownerUid, { listingId })}
-              isMine={item.authorUid === profile?.uid}
-              onEdit={
-                item.authorUid === profile?.uid
-                  ? () => router.push({ pathname: '/edit-post', params: { id: item.id } })
-                  : undefined
-              }
-            />
+          renderItem={({ item, index }) => (
+            <>
+              {/*
+                After the eighth post, and once only.
+                
+                Rendered BEFORE the post rather than after, so the row
+                lands at a card boundary she has just scrolled to
+                rather than interrupting one she is reading. Once only
+                because a second row of the same faces further down
+                reads as a bug, not a suggestion.
+              */}
+              {index === suggestionsIndex(visible.length) && suggested.closets.length > 0 ? (
+                <SuggestedClosets
+                  closets={suggested.closets}
+                  onFollow={(uid) => void suggested.follow(uid)}
+                  onDismiss={(uid) => void suggested.dismiss(uid)}
+                  onOpen={(username) => router.push(`/u/${username}`)}
+                />
+              ) : null}
+              <PostCard
+                post={item}
+                onPressTag={(listingId) => onPressTag(listingId, item.id)}
+                onPressAuthor={(username) => router.push(`/u/${username}`)}
+                onPressComments={() =>
+                  router.push({
+                    pathname: '/comments',
+                    params: { postId: item.id, postAuthorUid: item.authorUid },
+                  })
+                }
+                onPressSend={() =>
+                  router.push({ pathname: '/send-post', params: { postId: item.id } })
+                }
+                onPressLikes={() =>
+                  router.push({ pathname: '/post-likes', params: { postId: item.id } })
+                }
+                onMessageSeller={(ownerUid, listingId) => void chat.open(ownerUid, { listingId })}
+                isMine={item.authorUid === profile?.uid}
+                onEdit={
+                  item.authorUid === profile?.uid
+                    ? () => router.push({ pathname: '/edit-post', params: { id: item.id } })
+                    : undefined
+                }
+              />
+            </>
           )}
         />
       )}
@@ -277,8 +328,10 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
     // Clears the raised + button, which floats over the last card.
     paddingBottom: controls.buttonHeight + controls.minTapTarget + spacing.xxl,
-    // The feed body is the cream band; the cards are white on top of it.
-    backgroundColor: color.surface.section,
+    // White, not cream. The posts are edge to edge, so there are no
+    // sides for a band to show through — cream here would only ever be
+    // a strip above the first post and below the last.
+    backgroundColor: color.surface.page,
   },
   footer: { paddingVertical: spacing.lg },
   end: { textAlign: 'center', paddingVertical: spacing.lg },
