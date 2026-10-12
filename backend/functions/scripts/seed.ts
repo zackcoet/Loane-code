@@ -191,6 +191,13 @@ interface SeedItem {
   description: string;
 }
 
+/**
+ * How many try-on-eligible pieces every seeded student is given in her
+ * saves, on top of the random ones. Enough to fill the fitting room
+ * row and show both tabs with something in them.
+ */
+const TRYABLE_SAVES_PER_USER = 8;
+
 const CATALOGUE: SeedItem[] = [
   // --- Formals and weddings ------------------------------------------
   {
@@ -1250,17 +1257,6 @@ async function main(): Promise<void> {
       likeCount += 1;
     }
 
-    for (const listing of listings) {
-      if (listing.ownerUid === follower.uid || random() > 0.15) continue;
-      const id = ids.save(follower.uid, listing.id);
-      await db.collection(COLLECTIONS.saves).doc(id).set({
-        id,
-        uid: follower.uid,
-        listingId: listing.id,
-        campusId: CAMPUS_ID,
-        createdAt: FieldValue.serverTimestamp(),
-      });
-    }
 
     /*
       Saved LOOKS, not just saved pieces.
@@ -1274,6 +1270,7 @@ async function main(): Promise<void> {
       Only posts that actually tag something: a saved post with no
       tagged pieces contributes nothing and proves nothing.
     */
+    const taggedFromSavedLooks = new Set<string>();
     for (const doc of allPosts.docs) {
       const post = doc.data() as Post;
       if (post.authorUid === follower.uid) continue;
@@ -1290,7 +1287,59 @@ async function main(): Promise<void> {
         createdAt: FieldValue.serverTimestamp(),
       });
       postSaveCount += 1;
+      for (const id of post.taggedListingIds ?? []) taggedFromSavedLooks.add(id);
     }
+
+    /*
+      Saves, with a deliberate thumb on the scale.
+
+      A purely random 15% left Ella with six saved pieces of which five
+      were sets, shoes and trousers — categories try-on cannot do at
+      all — so the fitting room had two things in it and the feature
+      looked thinner than it is. The catalogue is simply heavier on
+      accessories than on dresses.
+
+      So: the random saves as before, plus a guaranteed handful of
+      try-on-eligible pieces. This is seed data existing to be tested
+      with, not a model of what a real student saves.
+    */
+    const savedHere = new Set<string>();
+    const saveListing = async (listing: Listing) => {
+      if (savedHere.has(listing.id)) return;
+      savedHere.add(listing.id);
+      const id = ids.save(follower.uid, listing.id);
+      await db.collection(COLLECTIONS.saves).doc(id).set({
+        id,
+        uid: follower.uid,
+        listingId: listing.id,
+        campusId: CAMPUS_ID,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+    };
+
+    for (const listing of listings) {
+      if (listing.ownerUid === follower.uid || random() > 0.15) continue;
+      await saveListing(listing);
+    }
+
+    /*
+      Skipping anything already reachable through a saved look, so at
+      least one piece in the fitting room arrives ONLY from a look.
+      Otherwise the guaranteed saves swallow that second source and it
+      becomes untestable again — which is the exact failure this seed
+      change was meant to fix.
+    */
+    const tryable = listings.filter(
+      (l) =>
+        l.ownerUid !== follower.uid &&
+        l.flatPhoto != null &&
+        !taggedFromSavedLooks.has(l.id) &&
+        (TRYON_CATEGORY_MAP as Record<string, string | undefined>)[l.category],
+    );
+    for (const listing of tryable.slice(0, TRYABLE_SAVES_PER_USER)) {
+      await saveListing(listing);
+    }
+
   }
   console.warn(
     `Created ${followCount} follows, ${likeCount} likes and ${postSaveCount} saved looks`,
