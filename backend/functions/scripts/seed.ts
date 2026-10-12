@@ -1367,14 +1367,26 @@ async function main(): Promise<void> {
         ...theirListings.filter((l) => !isTryOnReady(l)),
       ];
 
+      /*
+        A TAG MUST MATCH THE PHOTO IT IS ON.
+
+        It never did. The post photo was a stock shot of somebody in an
+        outfit and the tag was whatever the author happened to own, so
+        a graphic t-shirt came up labelled "White Eyelet Two-Piece ·
+        $28" — which is the exact failure the flat-photo gate exists to
+        prevent, printed on the feed instead.
+
+        So a tagged post now USES THE PIECE'S OWN PHOTO. If we cannot
+        show the garment, we do not claim it is in the picture.
+
+        ONE TAG, for the same reason: the photo can only honestly be
+        one garment. That costs the seed its multi-tag coverage, and a
+        label that lies costs more.
+      */
       const tagged: Listing[] = [];
-      if (theirs.length > 0 && random() > 0.2) {
-        tagged.push(theirs[i % theirs.length]!);
-        // Sometimes a second piece, so multi-tag rendering is covered.
-        if (theirs.length > 1 && random() > 0.6) {
-          const second = theirs[(i + 1) % theirs.length]!;
-          if (second.id !== tagged[0]!.id) tagged.push(second);
-        }
+      const taggable = theirs.filter((l) => l.flatPhoto);
+      if (taggable.length > 0 && random() > 0.2) {
+        tagged.push(taggable[i % taggable.length]!);
       }
 
       const tags = tagged.map((listing) => {
@@ -1404,7 +1416,20 @@ async function main(): Promise<void> {
         campusId: CAMPUS_ID,
         authorUid: author.uid,
         author: summaryOf(author),
-        photos: [{ ...outfitImage(`users/${author.uid}/posts/${ref.id}/1.jpg`), tags }],
+        /*
+          The tagged piece's own image when there is a tag, so the
+          label describes what is actually in the frame. An untagged
+          look is just an outfit photo and keeps a stock shot.
+        */
+        photos: [
+          tagged[0]
+            ? {
+                ...tagged[0].flatPhoto!,
+                path: `users/${author.uid}/posts/${ref.id}/1.jpg`,
+                tags,
+              }
+            : { ...outfitImage(`users/${author.uid}/posts/${ref.id}/1.jpg`), tags },
+        ],
         caption: pick(CAPTIONS),
         // A look inherits the occasion of what it features, which is how
         // someone would actually tag it.

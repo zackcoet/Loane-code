@@ -1,4 +1,38 @@
 /**
+ * THE RULE FOR THIS BAR, AND THE ONLY ONE:
+ *
+ *   WE DO NOT SET ITS HEIGHT OR ITS BOTTOM PADDING. EVER.
+ *
+ * React Navigation sizes the bar for the device and centres the icons
+ * in the space above the home indicator. It is the only thing in this
+ * file that knows the real inset on the real phone, and every time
+ * somebody has "fixed" this bar by supplying a number instead, it has
+ * broken on a device they were not holding.
+ *
+ * The history, so nobody repeats it:
+ *
+ *   height: 92 flat          crowded the home indicator
+ *   computed height          pushed the icons off screen entirely
+ *   paddingTop               shoved them into the indicator band
+ *   height: 64, padding 0    made 64 the WHOLE bar including the
+ *                            indicator, so the glyphs were drawn
+ *                            behind the padding and sliced
+ *   height: 72 + item height the bar towered, icons pinned not centred
+ *   height: 56 + raw inset   nothing under the icons on a phone
+ *                            reporting no inset
+ *   max(inset, 12)           icons too high, empty band underneath
+ *
+ * Six attempts, all the same mistake in different clothes: supplying a
+ * number for something the framework already knows. This file now sets
+ * the background and the hairline and NOTHING ELSE about size.
+ *
+ * If the bar ever looks wrong again, the fix is not a number here.
+ * Check whether a SCREEN is adding bottom inset — Screen.tsx and
+ * FilterSheet.tsx both pass edges={['top','left','right']} precisely so
+ * they do not, and that is the invariant to protect.
+ *
+ * ---
+ *
  * The bar: Feed, Discover, +, Activity, Profile.
  *
  * The + is NOT a tab. It is a raised cherry button in the middle that
@@ -14,43 +48,13 @@
 
 import { Tabs } from 'expo-router';
 import { Image, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, fontFamilyFor, iconSize, radius, type } from '@loane/shared';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useUnreadCount } from '../../src/hooks/useNotifications';
 import { SuspendedBanner } from '../../src/components/SuspendedBanner';
 import { Icon, type IconName } from '../../src/components/Icon';
 
-/**
- * The icon row, ABOVE the home indicator — not including it.
- *
- * The bar's real height is this plus the device's bottom inset. The
- * previous version set `height: 64` flat with `paddingBottom: 0`,
- * which made 64 the WHOLE bar on a phone with a home indicator: the
- * indicator area ate into the same 64, the row got what was left, and
- * the glyphs were clipped by the padding they were sitting behind.
- *
- * 56, which is the icon plus a comfortable margin and nothing more.
- *
- * It went to 72 to fix clipping, but the clipping was never about the
- * number — it was that the old 64 INCLUDED the home indicator, so the
- * icons were sharing their space with it. Once the inset is separate,
- * 56 holds a 33pt icon with eleven points above and below, and the bar
- * stops towering over the content it is meant to sit under.
- *
- * (iOS's own is 49. 56 is a little more generous because our icons are
- * larger than Apple's.)
- */
-const TAB_BAR_ROW_HEIGHT = 56;
 
-/**
- * The least space under the icons, whatever the device says.
- *
- * iPhones with a home indicator report ~34 here and that wins. Phones
- * without one report 0, and 0 put the glyphs hard against the bottom
- * edge of the screen.
- */
-const MIN_BOTTOM_SPACE = 12;
 const POST_BUTTON_SIZE = 60;
 
 /**
@@ -115,18 +119,6 @@ export default function TabsLayout() {
   // Nobody gets a push notification until Phase 6, so the badge is the
   // only nudge that something needs an answer.
   const unread = useUnreadCount();
-  /*
-    The home indicator's height, from the device rather than guessed.
-
-    Every hard-coded version of this bar was wrong on some phone: 92
-    crowded the indicator, a computed height clipped the icons off
-    screen, a paddingTop pushed them into the indicator band. The inset
-    is the number iOS actually reserves, so the row sits ON TOP of it
-    instead of sharing it.
-  */
-  const insets = useSafeAreaInsets();
-  /** Never less than a little breathing room, even with no indicator. */
-  const bottomSpace = Math.max(insets.bottom, MIN_BOTTOM_SPACE);
 
   return (
     <>
@@ -136,25 +128,8 @@ export default function TabsLayout() {
           headerShown: false,
           tabBarActiveTintColor: color.icon.default,
           tabBarInactiveTintColor: color.text.muted,
-          tabBarStyle: [
-            styles.bar,
-            {
-              /*
-                The row, PLUS whatever sits under it — not the row
-                squeezed into the space left over.
-
-                A FLOOR OF 12, not the raw inset. On a phone that
-                reports no bottom inset the bar sat flush against the
-                screen edge and the icons had nothing underneath them,
-                which is what "too close to the bottom" was. Where
-                there IS a home indicator the real inset is larger and
-                wins, so this changes nothing on those phones.
-              */
-              height: TAB_BAR_ROW_HEIGHT + bottomSpace,
-              paddingBottom: bottomSpace,
-              paddingTop: 0,
-            },
-          ],
+          // No height, no padding. See the rule at the top of this file.
+          tabBarStyle: styles.bar,
           tabBarShowLabel: false,
         }}
       >
@@ -223,23 +198,11 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   /**
-   * Colour and the hairline only. The HEIGHT is set per-device in
-   * screenOptions, from the safe-area inset.
+   * Colour, the hairline, and overflow. NOT size — see the rule at the
+   * top of this file.
    *
-   * Every version of this bar that guessed at numbers was wrong on some
-   * phone. A hard-coded 92 crowded the home indicator. A computed
-   * height clipped the icons off the screen entirely. A paddingTop
-   * pushed them down into the indicator band so they looked cut short.
-   * The last one set height: 64 with paddingBottom: 0, which made 64
-   * the whole bar INCLUDING the indicator area — so the icons were
-   * drawn behind the padding and sliced.
-   *
-   * The rule that actually works: the row gets a fixed height of its
-   * own, the indicator gets its real inset as padding underneath, and
-   * the bar is the two added together.
-   *
-   * `overflow: visible` so the raised + can sit proud of the bar
-   * instead of being cut off at the top edge.
+   * overflow: visible so the raised + sits proud of the bar instead of
+   * being clipped at its top edge.
    */
   bar: {
     backgroundColor: color.surface.page,
