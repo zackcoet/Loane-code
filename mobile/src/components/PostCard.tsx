@@ -368,22 +368,23 @@ function Action({
 export const MAX_COMMENT_LENGTH = LIMITS.commentBody.max;
 
 const styles = StyleSheet.create({
-  // A white card floating on the cream feed. It used to be a
-  // full-bleed block divided by hairlines, which is Instagram's shape
-  // but not Ella's — hers is a magazine page, and the lift is what
-  // separates one look from the next.
+  /**
+   * EDGE TO EDGE. Zack's call, and the right one: a photo is the whole
+   * point of a look, and side margins steal width from the only thing
+   * on the screen worth looking at. Instagram's shape, for the reason
+   * Instagram uses it.
+   *
+   * It was briefly a rounded white card floating on cream — I read the
+   * Lovable mockup as the instruction and it was not. No radius, no
+   * margins, no shadow; a hairline is all that separates one look from
+   * the next.
+   */
   card: {
     backgroundColor: color.surface.raised,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.lg,
     paddingBottom: spacing.md,
-    shadowColor: color.shadow.card,
-    shadowOpacity: 1,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    marginBottom: spacing.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: color.border.default,
   },
   occasion: {
     marginLeft: spacing.sm,
