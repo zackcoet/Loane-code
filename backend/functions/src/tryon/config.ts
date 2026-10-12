@@ -31,5 +31,17 @@ export async function assertTryOnEnabled(request: CallableRequest): Promise<void
   const config = await readTryOnConfig();
   if (config.enabled) return;
   if (config.enabledForAdmins && request.auth?.token?.admin === true) return;
-  throw failed('Try-on is not available yet.');
+
+  /*
+    Say WHICH off it is.
+
+    "Try-on is not available yet" was true and useless: it reads the
+    same whether the feature is deliberately dark for a campus, or
+    whether somebody reseeded the emulator and silently lost the
+    switch. The second cost an evening.
+  */
+  if (config.enabledForAdmins) {
+    throw failed('Try-on is switched off for students right now. An admin can turn it on.');
+  }
+  throw failed('Try-on is switched off. An admin can turn it on from the dashboard.');
 }

@@ -579,3 +579,59 @@ The feature adds all of the following, and none of it is covered today:
   through Apple**, so refunds are requested from Apple and not from Loane —
   say that explicitly, because every refund request will otherwise come to
   us.
+
+---
+
+## 14. Background removal — checked 2026-10-12, NOT built
+
+**Question:** would removing the background from flat photos or body
+photos improve results?
+
+**What FASHN offers.** A `background-remove` model on the same
+`/v1/run` endpoint (`model_name: "background-remove"`). Takes one
+`image`, returns a transparent PNG, **1 credit — $0.075 — and 1–3
+seconds**. Same price as a try-on generation, which is the whole
+problem: it would **double the cost of every uncached try-on** and add
+a third of the wait.
+
+**Recommendation: no, not for either photo. Two reasons.**
+
+1. **It does not address what actually fails.** Phase 0's failures were
+   never "the background was distracting" — they were *more than one
+   garment in frame*. A rail of clothes with the wall removed is still
+   a rail of clothes, and the model still picks one garment and renders
+   it beautifully. The flat-photo gate already solves that, for free.
+2. **Our good results were already on plain backgrounds.** The poncho,
+   the bomber and the romper were clean single-garment photos and came
+   back genuinely good. There is no headroom there to buy.
+
+**Where it might earn its keep later, and only then:** if we ever drop
+the flat-photo gate and accept photos taken against a messy dorm room,
+background removal becomes the thing that makes that possible. That is
+a different product decision, and it should be measured with the
+quality harness before any money is spent.
+
+### The thing actually worth trying instead — `segmentation_free`
+
+The try-on model takes a `segmentation_free` parameter, **default
+true**, which fits the garment without segmenting the existing
+clothing. FASHN's own guidance: *set it to false if original garments
+are not removed properly.*
+
+That is, word for word, the Phase 0 failure we wrote off as unfixable —
+**the floral wrap dress that rendered with yellow joggers poking out
+below the hem.** We have been sending the default without ever trying
+the alternative.
+
+It costs nothing to test: same endpoint, same credit, one parameter.
+Before Bottoms are reconsidered, re-run `scripts/tryOnQualityTest.ts`
+with `segmentation_free: false` on the two cases that failed — the
+dress-over-trousers case and the layered chambray-then-trousers case.
+
+If it works, it is worth more than background removal ever could be: it
+would soften the "wear fitted clothes" requirement, which is currently
+the single biggest thing we ask of a student before she can use the
+feature at all.
+
+**Sources:** FASHN API docs — Background Remove, and the try-on v1.6
+parameter reference.

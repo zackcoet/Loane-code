@@ -30,10 +30,12 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { color, formatCentsShort, spacing, type Listing, type Post } from '@loane/shared';
+import { color, formatCentsShort, radius, spacing, type Listing, type Post } from '@loane/shared';
 import { EmptyState } from './EmptyState';
+import { Icon } from './Icon';
 import { Text } from './Text';
 import { useUserListings, useUserPosts } from '../hooks/useProfile';
+import { useIsSaved } from '../hooks/useSaved';
 
 const TABS = ['closet', 'posts'] as const;
 type ProfileTab = (typeof TABS)[number];
@@ -150,6 +152,15 @@ function ClosetTile({
   size: number;
   onPress: () => void;
 }) {
+  /*
+    A heart on every closet tile.
+
+    Saving used to be reachable only from a listing's own page, so a
+    student browsing somebody's closet had to open each piece to keep
+    it — and anything she did not save never reached the fitting room,
+    which is fed from Saved.
+  */
+  const { saved, toggle } = useIsSaved(listing.id);
   const rent = listing.pricing?.threeDayCents;
   const buy = listing.salePriceCents;
   const price = rent != null ? formatCentsShort(rent) : buy != null ? formatCentsShort(buy) : null;
@@ -180,6 +191,20 @@ function ClosetTile({
           </Text>
         </View>
       ) : null}
+
+      <Pressable
+        onPress={() => void toggle('closet')}
+        hitSlop={10}
+        accessibilityRole="button"
+        accessibilityLabel={saved ? `Remove ${listing.name} from saved` : `Save ${listing.name}`}
+        style={styles.tileHeart}
+      >
+        <Icon
+          name={saved ? 'heart' : 'heart-outline'}
+          size={16}
+          tint={color.text.inverse}
+        />
+      </Pressable>
     </Pressable>
   );
 }
@@ -231,6 +256,14 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: GUTTER },
   tile: { backgroundColor: color.surface.muted },
   pressed: { opacity: 0.7 },
+  tileHeart: {
+    position: 'absolute',
+    top: spacing.xs,
+    right: spacing.xs,
+    padding: 4,
+    borderRadius: radius.pill,
+    backgroundColor: color.scrim.onPhoto,
+  },
   image: { width: '100%', height: '100%' },
   price: {
     position: 'absolute',

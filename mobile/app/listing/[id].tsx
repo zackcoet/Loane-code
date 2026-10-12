@@ -128,19 +128,28 @@ export default function ListingDetail() {
         title={CATEGORY_LABELS[listing.category]}
         onBack={() => router.back()}
         right={
-          isMine ? (
-            <IconButton
-              name="create-outline"
-              accessibilityLabel="Edit this listing"
-              onPress={() => router.push({ pathname: '/edit-listing', params: { id: listing.id } })}
-            />
-          ) : (
+          /*
+            The heart shows on her OWN listing too, beside Edit. Saved
+            is what feeds the fitting room, so a lender who could not
+            save her own piece could not try it on — which is the first
+            thing anyone does after listing something.
+          */
+          <View style={styles.headerActions}>
             <IconButton
               name={saved ? 'heart' : 'heart-outline'}
-              accessibilityLabel={saved ? 'Remove from wishlist' : 'Save to wishlist'}
+              accessibilityLabel={saved ? 'Remove from saved' : 'Save this piece'}
               onPress={() => void toggle('listing')}
             />
-          )
+            {isMine ? (
+              <IconButton
+                name="create-outline"
+                accessibilityLabel="Edit this listing"
+                onPress={() =>
+                  router.push({ pathname: '/edit-listing', params: { id: listing.id } })
+                }
+              />
+            ) : null}
+          </View>
         }
       />
 
@@ -372,6 +381,7 @@ function Fact({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingBottom: spacing.xxl },
   photo: { aspectRatio: 0.85, backgroundColor: color.surface.muted },

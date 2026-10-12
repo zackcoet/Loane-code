@@ -56,23 +56,30 @@ export function peoplePhoto(index: number): string {
 
 /**
  * The four garment photos Phase 0 proved are CLEAN — one garment, plain
- * background, nothing else in frame. These are the only seed photos
- * honest enough to use as lay-it-flat photos, because the whole point
- * of the flat-photo gate is that a busy photo renders the wrong garment
- * beautifully and nobody can tell.
+ * background, nothing else in frame. They are the only seed photos
+ * honest enough to use as lay-it-flat photos.
  *
- * garment-04 cream fringed poncho · garment-12 rust bomber
- * garment-14 chambray shirt      · garment-15 olive romper
+ * A FLAT PHOTO IS THE GARMENT THE TRY-ON RENDERS. Handing them out by a
+ * rotating cursor, as this first did, put a blue chambray shirt on a
+ * listing called "Black Satin Slip Dress" — which is precisely the
+ * failure the flat-photo gate exists to prevent, reproduced in our own
+ * seed. So each file is now named, and the catalogue entry that uses it
+ * describes that exact garment.
  *
  * Do not add to this list without re-running scripts/tryOnQualityTest.ts
  * against the file you are adding.
  */
-const CLEAN_FLAT_FILES = ['garment-04.jpg', 'garment-12.jpg', 'garment-14.jpg', 'garment-15.jpg'];
+export const FLAT_PHOTO_FILES = {
+  poncho: 'garment-04.jpg',
+  bomber: 'garment-12.jpg',
+  chambray: 'garment-14.jpg',
+  romper: 'garment-15.jpg',
+} as const;
 
-export const FLAT_PHOTOS = CLEAN_FLAT_FILES.map(
-  (f) => `data:image/jpeg;base64,${readFileSync(join(DIR, f)).toString('base64')}`,
-);
+export type FlatPhotoKey = keyof typeof FLAT_PHOTO_FILES;
 
-export function flatPhoto(index: number): string {
-  return FLAT_PHOTOS[index % FLAT_PHOTOS.length]!;
+/** The named photo, inlined. See the note at the top of this file. */
+export function flatPhoto(key: FlatPhotoKey): string {
+  const file = FLAT_PHOTO_FILES[key];
+  return `data:image/jpeg;base64,${readFileSync(join(DIR, file)).toString('base64')}`;
 }

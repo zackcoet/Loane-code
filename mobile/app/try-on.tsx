@@ -127,7 +127,6 @@ export default function TryOn() {
 
   const eligible = available;
 
-  const activeTab = TABS.find((t) => t.id === tab)!;
 
   /**
    * Arriving from a "Try on" button on a card: put that piece on
@@ -255,28 +254,49 @@ export default function TryOn() {
 
       {/* --- The pieces ------------------------------------------------ */}
       <View style={styles.tabs}>
-        {TABS.map((t) => (
-          <Pressable
-            key={t.id}
-            onPress={() => setTab(t.id)}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: tab === t.id }}
-            style={[styles.tab, tab === t.id && styles.tabOn]}
-          >
-            <Text variant="caption" tone={tab === t.id ? 'inverse' : 'heading'}>
-              {t.label}
-            </Text>
-          </Pressable>
-        ))}
+        {TABS.map((t) => {
+          /*
+            Bottoms and Shoes are visibly inert, not tappable tabs that
+            then explain themselves. Phase 0 found bottoms desaturate
+            and bleed colour at the hem; that is a quality problem we
+            have not solved, so the tab says so and does nothing.
+          */
+          if (!t.live) {
+            return (
+              <View key={t.id} style={[styles.tab, styles.tabDead]}>
+                <Text variant="caption" tone="muted">
+                  {t.label}
+                </Text>
+                <Text variant="caption" tone="muted" uppercase={false} style={styles.soonTag}>
+                  soon
+                </Text>
+              </View>
+            );
+          }
+          // The count, so an empty tab is obviously empty rather than
+          // looking like something failed to load.
+          const n = available.filter((l) =>
+            t.id === 'tops'
+              ? l.category === 'tops' || l.category === 'outerwear'
+              : l.category === 'dresses',
+          ).length;
+          return (
+            <Pressable
+              key={t.id}
+              onPress={() => setTab(t.id)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: tab === t.id }}
+              style={[styles.tab, tab === t.id && styles.tabOn]}
+            >
+              <Text variant="caption" tone={tab === t.id ? 'inverse' : 'heading'}>
+                {n > 0 ? `${t.label} ${n}` : t.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
 
-      {!activeTab.live ? (
-        <View style={styles.soon}>
-          <Text variant="bodySmall" tone="muted" uppercase={false} style={styles.soonText}>
-            {activeTab.label} are coming soon. We are not happy with how they look yet.
-          </Text>
-        </View>
-      ) : shown.length === 0 ? (
+      {shown.length === 0 ? (
         <View style={styles.soon}>
           <Text variant="bodySmall" tone="muted" uppercase={false} style={styles.soonText}>
             Nothing here yet. Save a piece with a lay-it-flat photo and it shows up.
@@ -421,6 +441,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tabOn: { backgroundColor: color.role.shared.background },
+  tabDead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: 'transparent',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: color.border.default,
+    opacity: 0.6,
+  },
+  soonTag: { fontStyle: 'italic' },
   soon: { padding: spacing.md, paddingBottom: spacing.xxl },
   soonText: { textAlign: 'center' },
   rail: { paddingHorizontal: spacing.md, paddingVertical: spacing.md, gap: spacing.sm },

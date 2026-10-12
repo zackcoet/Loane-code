@@ -24,7 +24,7 @@
 import { initializeApp, deleteApp } from 'firebase-admin/app';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore';
-import { flatPhoto, garmentPhoto, peoplePhoto } from './seedPhotos';
+import { flatPhoto, garmentPhoto, peoplePhoto, type FlatPhotoKey } from './seedPhotos';
 import { LEGAL_V1_EFFECTIVE_DATE, PRIVACY_V1, TERMS_V1 } from '../src/legal/v1';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -189,6 +189,13 @@ interface SeedItem {
   /** What the piece is worth, in whole dollars. */
   value: number;
   description: string;
+  /**
+   * Which lay-it-flat photo this piece IS. Only the few entries that
+   * genuinely describe one of the four clean photos may set it — the
+   * flat photo is the garment the try-on renders, so a mismatch here
+   * renders the wrong garment convincingly.
+   */
+  flatFile?: FlatPhotoKey;
 }
 
 /**
@@ -197,6 +204,73 @@ interface SeedItem {
  * row and show both tabs with something in them.
  */
 const TRYABLE_SAVES_PER_USER = 8;
+
+/**
+ * The try-on pieces, and the ONLY listings that get a lay-it-flat
+ * photo. Each one describes the photograph it carries: a student
+ * looking at the card and the try-on sees the same garment.
+ *
+ * Given to every seeded student so there is always something in the
+ * fitting room, whoever you sign in as.
+ */
+const TRYON_PIECES: SeedItem[] = [
+  {
+    name: 'Cream Fringed Poncho',
+    brand: 'Free People',
+    category: 'outerwear',
+    size: 'M',
+    shoeSize: null,
+    occasions: ['gameday', 'going_out'],
+    condition: 'like_new',
+    rent: 18,
+    sale: null,
+    value: 90,
+    description: 'Cream knit poncho with a fringed hem. Throws over anything on a cold gameday.',
+    flatFile: 'poncho',
+  },
+  {
+    name: 'Rust Bomber Jacket',
+    brand: 'Urban Outfitters',
+    category: 'outerwear',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['going_out', 'date_function'],
+    condition: 'good',
+    rent: 20,
+    sale: 55,
+    value: 110,
+    description: 'Rust satin bomber, ribbed collar and cuffs, full zip. Runs true to size.',
+    flatFile: 'bomber',
+  },
+  {
+    name: 'Chambray Button Down',
+    brand: 'Madewell',
+    category: 'tops',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['gameday', 'vacation'],
+    condition: 'like_new',
+    rent: 12,
+    sale: 30,
+    value: 70,
+    description: 'Light blue chambray shirt. Wear it open over a tank or tucked into jeans.',
+    flatFile: 'chambray',
+  },
+  {
+    name: 'Olive Linen Romper',
+    brand: 'Reformation',
+    category: 'dresses',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['vacation', 'going_out'],
+    condition: 'like_new',
+    rent: 22,
+    sale: null,
+    value: 120,
+    description: 'Olive linen romper with ring hardware on the straps. One piece, no fuss.',
+    flatFile: 'romper',
+  },
+];
 
 const CATALOGUE: SeedItem[] = [
   // --- Formals and weddings ------------------------------------------
@@ -622,10 +696,8 @@ function image(path: string) {
  * feature look broken while demonstrating exactly the failure the gate
  * exists to prevent.
  */
-let flatCursor = 0;
-function flatImage(path: string) {
-  const uri = flatPhoto(flatCursor);
-  flatCursor += 1;
+function flatImage(path: string, key: FlatPhotoKey) {
+  const uri = flatPhoto(key);
   return { path, url: uri, width: 600, height: 800, bytes: uri.length };
 }
 
@@ -866,6 +938,26 @@ async function main(): Promise<void> {
   }
   console.warn(`Created ${users.length} students (password: ${PASSWORD})`);
 
+  /*
+    The try-on switch.
+
+    IT LIVES IN FIRESTORE, so it died with every emulator restart and
+    every reseed — and try-on correctly defaults to OFF, which looked
+    exactly like a broken feature. It was set once by hand and never
+    written down anywhere a reseed would restore it.
+
+    On the demo project it is simply on. This collection is never
+    seeded against a real project, and the live switch is an admin
+    action with an audit row behind it.
+  */
+  await db.collection(COLLECTIONS.config).doc('tryOn').set({
+    enabled: true,
+    enabledForAdmins: true,
+    updatedAt: FieldValue.serverTimestamp(),
+    updatedBy: null,
+  });
+  console.warn('Try-on switched ON for the emulator');
+
   // --- Listings -----------------------------------------------------------
   const listings: Listing[] = [];
 
@@ -873,11 +965,20 @@ async function main(): Promise<void> {
   // fuller and every campus filter has something behind it.
   let cursor = 0;
   for (const owner of users) {
-    const count = owner.isFoundingCloset ? 5 : 2;
+    const catalogueCount = owner.isFoundingCloset ? 5 : 2;
+    /*
+      Every student also gets the four try-on pieces, so the fitting
+      room has something in it whoever you sign in as — and so there
+      are enough tryable pieces to save from other closets.
+    */
+    const items = [
+      ...Array.from({ length: catalogueCount }, () => CATALOGUE[cursor++ % CATALOGUE.length]!),
+      ...TRYON_PIECES,
+    ];
+    const count = items.length;
 
     for (let i = 0; i < count; i += 1) {
-      const item = CATALOGUE[cursor % CATALOGUE.length]!;
-      cursor += 1;
+      const item = items[i]!;
 
       const ref = db.collection(COLLECTIONS.listings).doc();
       const photos = [image(`users/${owner.uid}/listings/${ref.id}/1.jpg`)];
@@ -892,10 +993,11 @@ async function main(): Promise<void> {
         owner: summaryOf(owner),
         name: item.name,
         description: item.description,
-        // Try-on needs one. Given to the eligible categories only, so
-        // there is something to try on out of the box.
-        flatPhoto: (TRYON_CATEGORY_MAP as Record<string, string | undefined>)[item.category]
-          ? flatImage(`users/${owner.uid}/listings/${ref.id}/flat.jpg`)
+        // ONLY when this catalogue entry describes that exact photo.
+        // A flat photo is the garment the try-on renders, so borrowing
+        // one from another piece renders the wrong garment convincingly.
+        flatPhoto: item.flatFile
+          ? flatImage(`users/${owner.uid}/listings/${ref.id}/flat.jpg`, item.flatFile)
           : null,
         brand: item.brand,
         category: item.category,

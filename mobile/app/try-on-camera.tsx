@@ -62,6 +62,12 @@ export default function TryOnCamera() {
   const [permission, requestPermission] = useCameraPermissions();
 
   const [shot, setShot] = useState<PickedPhoto | null>(null);
+  /**
+   * Back by default: a full-body photo almost always means somebody
+   * else holding the phone, and at arm's length a front camera cannot
+   * get her feet in. She can flip if she is using a mirror or a stand.
+   */
+  const [facing, setFacing] = useState<'back' | 'front'>('back');
   const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -126,14 +132,33 @@ export default function TryOnCamera() {
         {shot ? (
           <Image source={{ uri: shot.uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
         ) : (
-          <CameraView ref={camera} style={StyleSheet.absoluteFill} facing="back">
-            {/* The outline. A plain rounded rectangle rather than a body
-                silhouette: a silhouette of one shape tells somebody who
-                is not that shape that she is standing wrong. */}
+          <>
+            <CameraView ref={camera} style={StyleSheet.absoluteFill} facing={facing} />
+            {/*
+              A SIBLING, not a child of CameraView.
+
+              Children of the native camera view are not reliably laid
+              out over the preview — on a real phone the outline simply
+              did not appear, which is how this shipped without one.
+              An absolutely positioned sibling is plain React Native
+              layout and cannot be swallowed by the native view.
+
+              A plain rounded rectangle rather than a body silhouette:
+              a silhouette of one shape tells somebody who is not that
+              shape that she is standing wrong.
+            */}
             <View style={styles.outlineLayer} pointerEvents="none">
               <View style={styles.outline} />
+              <Text
+                variant="caption"
+                tone="inverse"
+                uppercase={false}
+                style={styles.outlineHint}
+              >
+                Wear fitted clothes — loose clothing shows through
+              </Text>
             </View>
-          </CameraView>
+          </>
         )}
       </View>
 
@@ -191,6 +216,11 @@ export default function TryOnCamera() {
               </View>
             ))}
             <Button label="Take photo" onPress={() => void onShutter()} />
+            <Button
+              label={facing === 'back' ? 'Use the front camera' : 'Use the back camera'}
+              variant="text"
+              onPress={() => setFacing((f) => (f === 'back' ? 'front' : 'back'))}
+            />
           </>
         )}
       </View>
@@ -201,7 +231,25 @@ export default function TryOnCamera() {
 const styles = StyleSheet.create({
   stage: { flex: 1, backgroundColor: color.text.primary, overflow: 'hidden' },
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  outlineLayer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  outlineLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  outlineHint: {
+    position: 'absolute',
+    bottom: spacing.lg,
+    left: spacing.md,
+    right: spacing.md,
+    textAlign: 'center',
+    // Legible over whatever the camera is pointed at.
+    textShadowColor: color.scrim.onPhoto,
+    textShadowRadius: 6,
+  },
   outline: {
     width: '58%',
     height: '86%',
