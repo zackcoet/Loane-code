@@ -42,7 +42,7 @@ import { requireVerifiedStudent } from '../lib/guards';
 import { assertTryOnEnabled } from './config';
 import { tryOnCacheKey, isSharedKey, type CacheBody } from './cacheKey';
 import { FASHN_API_KEY, runTryOn, type FashnCategory } from './fashn';
-import { presetImageDataUri, bodyPhotoDataUri, storeResult } from './images';
+import { presetImageDataUri, bodyPhotoDataUri, garmentDataUri, storeResult } from './images';
 
 /** Two layers is the Phase 1 ceiling; layering beyond that was not tested. */
 const MAX_PIECES = 2;
@@ -231,7 +231,7 @@ export const generateTryOn = onCall<Input, Promise<GenerateResult>>(
 
     for (let i = 0; i < pieces.length; i += 1) {
       const listing = listingSnaps[i]!.data() as Listing;
-      const garment = await bodyPhotoDataUri(listing.flatPhoto!.path);
+      const garment = await garmentDataUri(listing.flatPhoto!);
       const result = await runTryOn({
         modelImage: image,
         garmentImage: garment,

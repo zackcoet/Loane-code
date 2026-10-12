@@ -24,7 +24,7 @@
 import { initializeApp, deleteApp } from 'firebase-admin/app';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore';
-import { garmentPhoto, peoplePhoto } from './seedPhotos';
+import { flatPhoto, garmentPhoto, peoplePhoto } from './seedPhotos';
 import { LEGAL_V1_EFFECTIVE_DATE, PRIVACY_V1, TERMS_V1 } from '../src/legal/v1';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -51,6 +51,7 @@ import {
   type User,
   newUserStripe,
   newUserTryOn,
+  TRYON_CATEGORY_MAP,
 } from '@loane/shared';
 
 // ---------------------------------------------------------------------------
@@ -605,6 +606,22 @@ function image(path: string) {
 }
 
 /** Someone wearing an outfit — what a look shows. */
+/**
+ * A lay-it-flat photo, which is what switches "Try it on" on.
+ *
+ * Given only to pieces in a try-on-eligible category, and only using
+ * the four seed photos Phase 0 proved are clean — see seedPhotos. A
+ * seeded flat photo that is actually a rail of clothes would make the
+ * feature look broken while demonstrating exactly the failure the gate
+ * exists to prevent.
+ */
+let flatCursor = 0;
+function flatImage(path: string) {
+  const uri = flatPhoto(flatCursor);
+  flatCursor += 1;
+  return { path, url: uri, width: 600, height: 800, bytes: uri.length };
+}
+
 function outfitImage(path: string) {
   const uri = peoplePhoto(peopleCursor);
   peopleCursor += 1;
@@ -868,9 +885,11 @@ async function main(): Promise<void> {
         owner: summaryOf(owner),
         name: item.name,
         description: item.description,
-        // Set for a few pieces further down, so "Try it on" can be
-        // tested without photographing anything.
-        flatPhoto: null,
+        // Try-on needs one. Given to the eligible categories only, so
+        // there is something to try on out of the box.
+        flatPhoto: (TRYON_CATEGORY_MAP as Record<string, string | undefined>)[item.category]
+          ? flatImage(`users/${owner.uid}/listings/${ref.id}/flat.jpg`)
+          : null,
         brand: item.brand,
         category: item.category,
         size: item.size,

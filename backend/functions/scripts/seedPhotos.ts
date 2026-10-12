@@ -53,3 +53,26 @@ export function garmentPhoto(index: number): string {
 export function peoplePhoto(index: number): string {
   return PEOPLE_PHOTOS[index % PEOPLE_PHOTOS.length]!;
 }
+
+/**
+ * The four garment photos Phase 0 proved are CLEAN — one garment, plain
+ * background, nothing else in frame. These are the only seed photos
+ * honest enough to use as lay-it-flat photos, because the whole point
+ * of the flat-photo gate is that a busy photo renders the wrong garment
+ * beautifully and nobody can tell.
+ *
+ * garment-04 cream fringed poncho · garment-12 rust bomber
+ * garment-14 chambray shirt      · garment-15 olive romper
+ *
+ * Do not add to this list without re-running scripts/tryOnQualityTest.ts
+ * against the file you are adding.
+ */
+const CLEAN_FLAT_FILES = ['garment-04.jpg', 'garment-12.jpg', 'garment-14.jpg', 'garment-15.jpg'];
+
+export const FLAT_PHOTOS = CLEAN_FLAT_FILES.map(
+  (f) => `data:image/jpeg;base64,${readFileSync(join(DIR, f)).toString('base64')}`,
+);
+
+export function flatPhoto(index: number): string {
+  return FLAT_PHOTOS[index % FLAT_PHOTOS.length]!;
+}

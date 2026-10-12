@@ -51,6 +51,12 @@ export interface ListingFormState {
   /** Optional. Blank means she does not charge for cleaning. */
   cleaningFee: string;
   photos: FormPhoto[];
+  /**
+   * The lay-it-flat photo. Optional, and its presence is what switches
+   * "Try it on" on for this piece — see docs/decisions.md for why the
+   * gate exists rather than a disclaimer.
+   */
+  flatPhoto: FormPhoto | null;
   availableNow: boolean;
   blackoutDates: IsoDate[];
 }
@@ -72,9 +78,16 @@ export const EMPTY_FORM: ListingFormState = {
   garmentValue: '',
   cleaningFee: '',
   photos: [],
+  flatPhoto: null,
   availableNow: true,
   blackoutDates: [],
 };
+
+/**
+ * The flat photo's slot in the upload path. Far above the gallery
+ * maximum so the two can never overwrite one another.
+ */
+const FLAT_PHOTO_INDEX = 99;
 
 /** "" -> null, "25" -> 2500. Anything unparseable becomes null. */
 function toCents(input: string): number | null {
@@ -225,6 +238,18 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
           );
         }
 
+        /**
+         * Uploaded under a reserved index so it can never collide with
+         * a gallery photo, and so swapping it changes the stored path —
+         * which is what the try-on cache key watches to know the photo
+         * was replaced.
+         */
+        const flatPhoto: ImageRef | null = form.flatPhoto
+          ? form.flatPhoto.kind === 'uploaded'
+            ? form.flatPhoto.ref
+            : await uploadListingPhoto(owner.uid, ref.id, form.flatPhoto.picked, FLAT_PHOTO_INDEX)
+          : null;
+
         const rentable = form.intent === 'rent' || form.intent === 'both';
         const sellable = form.intent === 'sell' || form.intent === 'both';
 
@@ -251,6 +276,7 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
           colorNames: [],
           photos,
           coverUrl: photos[0]?.url ?? null,
+          flatPhoto: flatPhoto,
           intent: form.intent!,
           // "Available now" off means it is listed but not bookable yet.
           status: form.availableNow ? ('active' as const) : ('paused' as const),

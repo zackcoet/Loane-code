@@ -10,7 +10,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { getStorage } from 'firebase-admin/storage';
-import type { PresetId } from '@loane/shared';
+import type { ImageRef, PresetId } from '@loane/shared';
 import { internal } from '../lib/errors';
 
 function bucket() {
@@ -32,6 +32,24 @@ export async function bodyPhotoDataUri(path: string): Promise<string> {
     // Deliberately vague to her, specific in the log via the caller.
     throw internal('Could not read that photo.');
   }
+}
+
+/**
+ * A garment's flat photo.
+ *
+ * Normally a Storage path. The SEED stores its photos inline as data
+ * URIs instead — an emulator download URL embeds 127.0.0.1, which a
+ * phone cannot reach — so a seeded listing has no Storage object to
+ * download. Handling both here is what lets try-on be tested locally at
+ * all.
+ *
+ * This is only ever a GARMENT photo. Body photos take the Storage path
+ * above and nothing else, because a body photo must never arrive from
+ * something the app wrote.
+ */
+export async function garmentDataUri(ref: ImageRef): Promise<string> {
+  if (ref.url?.startsWith('data:')) return ref.url;
+  return bodyPhotoDataUri(ref.path);
 }
 
 /**

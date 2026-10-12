@@ -24,9 +24,11 @@ import {
   type ListingIntent,
   type ShoeSize,
   type Size,
+  TRYON_CATEGORY_MAP,
 } from '@loane/shared';
 import { Button } from './Button';
 import { Chip } from './Chip';
+import { Icon } from './Icon';
 import { Input } from './Input';
 import { PhotoGrid } from './PhotoGrid';
 import { Text } from './Text';
@@ -66,6 +68,36 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
   const sellable = form.intent === 'sell' || form.intent === 'both';
   const isShoes = form.category === 'shoes';
   const needsSize = form.category != null && !UNSIZED.includes(form.category);
+  const tryOnEligible =
+    form.category != null && form.category in TRYON_CATEGORY_MAP;
+
+  /**
+   * The flat photo is the try-on gate. Phase 0 found that a photo with
+   * more than one garment in frame does not fail loudly — it renders
+   * the WRONG garment beautifully — so "Try it on" simply does not
+   * appear without one of these. See docs/decisions.md.
+   */
+  const onAddFlatPhoto = () => {
+    const run = async (source: 'camera' | 'library') => {
+      const picked = await pickPhoto(source, 'free');
+      if (picked) set('flatPhoto', { kind: 'local', picked });
+    };
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: ['Cancel', 'Take a photo', 'Choose from library'], cancelButtonIndex: 0 },
+        (index) => {
+          if (index === 1) void run('camera');
+          if (index === 2) void run('library');
+        },
+      );
+    } else {
+      Alert.alert('Lay it flat', undefined, [
+        { text: 'Take a photo', onPress: () => void run('camera') },
+        { text: 'Choose from library', onPress: () => void run('library') },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
+  };
 
   const onAddPhoto = () => {
     const run = async (source: 'camera' | 'library') => {
@@ -133,6 +165,39 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
         onMakeCover={makeCover}
         onCrop={(index) => void cropPhoto(index)}
       />
+
+      {/* The try-on slot. Only for categories that can actually be
+          tried on — offering it on a handbag would be asking for work
+          that buys her nothing. */}
+      {tryOnEligible ? (
+        <>
+          <Text variant="label" style={styles.section}>
+            Lay it flat — just this piece
+          </Text>
+          <Text variant="bodySmall" tone="muted" style={styles.hint}>
+            One photo of just this piece, laid flat on a plain surface. This is what lets people
+            try it on, and pieces people can try on get seen more.
+          </Text>
+          <PhotoGrid
+            photos={form.flatPhoto ? [{ uri: photoUri(form.flatPhoto) }] : []}
+            max={1}
+            onAdd={onAddFlatPhoto}
+            onRemove={() => set('flatPhoto', null)}
+            // One photo, so there is no cover to choose.
+            onMakeCover={() => {}}
+          />
+          {/* The switch flipping, visibly. A lender who can SEE what the
+              photo bought her will take it. */}
+          {form.flatPhoto ? (
+            <View style={styles.tryOnOn}>
+              <Icon name="sparkles" size={14} tint={color.role.shared.background} />
+              <Text variant="caption" tone="heading" uppercase={false}>
+                Try it on is on for this piece
+              </Text>
+            </View>
+          ) : null}
+        </>
+      ) : null}
 
       <View style={styles.section}>
         <Input
@@ -316,6 +381,12 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
 const styles = StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
   section: { marginTop: spacing.lg },
+  tryOnOn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
   hint: { marginTop: spacing.xs, marginBottom: spacing.sm },
   intentRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },
