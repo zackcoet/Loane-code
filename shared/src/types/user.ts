@@ -194,6 +194,28 @@ export interface UserPrivate {
   phone: string | null;
   /** Free text she gives a renter about where to meet, e.g. a dorm lobby. */
   handoffNotes: string | null;
+  /**
+   * The "Complete your profile" card on her own profile.
+   *
+   * A preference about what SHE is shown, which is why the app may
+   * write it — it moves no counter and grants nothing. The progress
+   * itself is not stored: it is computed from her photo, bio, sizes,
+   * phone and following count every time the card renders, so there is
+   * no second copy of the truth to drift.
+   */
+  profileChecklist: {
+    /** She tapped the X. The card never comes back. */
+    dismissed: boolean;
+    /**
+     * When she first opened Find Friends.
+     *
+     * "Find your friends" is the one item with nothing to measure —
+     * there is no field that means "she looked". Opening the screen is
+     * the whole ask, so opening it is what ticks it.
+     */
+    foundFriendsAt: Timestampish | null;
+  };
+
   notificationPreferences: {
     pushEnabled: boolean;
     rentals: boolean;

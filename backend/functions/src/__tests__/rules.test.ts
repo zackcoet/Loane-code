@@ -1447,6 +1447,36 @@ describe('private settings', () => {
     );
   });
 
+  it('lets her dismiss her own profile checklist', async () => {
+    // A preference about what she is shown, same category as
+    // dismissedSuggestions below: no counter, no grant.
+    await assertSucceeds(
+      updateDoc(doc(asElla(), ...PRIVATE), {
+        profileChecklist: { dismissed: true, foundFriendsAt: new Date() },
+        updatedAt: new Date(),
+      }),
+    );
+  });
+
+  it("stops her touching someone else's checklist", async () => {
+    await assertFails(
+      updateDoc(doc(asMaddie(), 'users', ELLA, 'private', 'settings'), {
+        profileChecklist: { dismissed: true, foundFriendsAt: null },
+      }),
+    );
+  });
+
+  it('stops her smuggling another field in alongside the checklist', async () => {
+    // onlyChanges is the fence. A new allowed field must not become a
+    // way to carry a forbidden one past it.
+    await assertFails(
+      updateDoc(doc(asElla(), ...PRIVATE), {
+        profileChecklist: { dismissed: true, foundFriendsAt: null },
+        campusEmail: 'ella@harvard.edu',
+      }),
+    );
+  });
+
   it('stops her rewriting her own campus email', async () => {
     // Her claim to be a student at this school rests on that address.
     await assertFails(updateDoc(doc(asElla(), ...PRIVATE), { campusEmail: 'ella@harvard.edu' }));

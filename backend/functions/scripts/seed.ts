@@ -825,6 +825,7 @@ async function main(): Promise<void> {
         campusEmail: email,
         phone: null,
         handoffNotes: 'Usually around Russell House between classes.',
+        profileChecklist: { dismissed: false, foundFriendsAt: null },
         notificationPreferences: {
           pushEnabled: true,
           rentals: true,

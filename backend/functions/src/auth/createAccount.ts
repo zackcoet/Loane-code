@@ -199,6 +199,7 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
           campusEmail: email,
           phone: null,
           handoffNotes: null,
+          profileChecklist: { dismissed: false, foundFriendsAt: null },
           notificationPreferences: {
             pushEnabled: true,
             rentals: true,

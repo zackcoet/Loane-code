@@ -148,7 +148,16 @@ service cloud.firestore {
         allow create: if false;
         allow update: if isSelf(userId)
           && isActive()
-          && onlyChanges(['phone', 'handoffNotes', 'notificationPreferences', 'updatedAt']);
+          && onlyChanges([
+               'phone',
+               'handoffNotes',
+               'notificationPreferences',
+               // What her own "Complete your profile" card shows. Like
+               // dismissedSuggestions below, it moves no counter and
+               // grants nothing — it changes only what she is shown.
+               'profileChecklist',
+               'updatedAt'
+             ]);
         allow delete: if false;
       }
 

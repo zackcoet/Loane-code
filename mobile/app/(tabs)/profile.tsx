@@ -11,10 +11,12 @@ import { fontFamilyFor, color, controls, spacing, type } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { EmptyState } from '../../src/components/EmptyState';
 import { IconButton } from '../../src/components/IconButton';
+import { ProfileChecklist } from '../../src/components/ProfileChecklist';
 import { ProfileHeader } from '../../src/components/ProfileHeader';
 import { ProfileTabs } from '../../src/components/ProfileTabs';
 import { Screen } from '../../src/components/Screen';
 import { useAuth } from '../../src/auth/AuthProvider';
+import { useProfileChecklist } from '../../src/hooks/useProfileChecklist';
 import { useProfilePhoto } from '../../src/hooks/useProfilePhoto';
 
 export default function Profile() {
@@ -23,6 +25,7 @@ export default function Profile() {
   // Tapping your own avatar changes it there and then — no detour
   // through the edit form for the one thing people change most.
   const photo = useProfilePhoto();
+  const checklist = useProfileChecklist();
 
   if (!profile) {
     return (
@@ -71,6 +74,22 @@ export default function Profile() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+        {/* FIRST, above her own header. Below it, on a profile that
+            already has a bio and four size chips, the card sits under
+            the fold — which on the screen meant to prompt her is the
+            same as not being there. */}
+        {checklist.visible ? (
+          <ProfileChecklist
+            items={checklist.items}
+            completed={checklist.completed}
+            total={checklist.total}
+            onDismiss={() => void checklist.dismiss()}
+            onPressItem={(item) =>
+              item.href ? router.push(item.href as never) : void photo.change()
+            }
+          />
+        ) : null}
+
         <ProfileHeader
           user={profile}
           onPressPhoto={photo.change}

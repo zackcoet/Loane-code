@@ -12,7 +12,7 @@
  * See docs/roadmap.md for what it would actually take.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { fonts, color, controls, radius, spacing, type, type UserSummary } from '@loane/shared';
@@ -25,6 +25,7 @@ import { Text } from '../src/components/Text';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useStudentSearch, useSuggestedRecipients } from '../src/hooks/useFollowing';
 import { useHiddenUids } from '../src/hooks/useBlocks';
+import { useProfileChecklist } from '../src/hooks/useProfileChecklist';
 
 export default function FindFriends() {
   const router = useRouter();
@@ -33,6 +34,15 @@ export default function FindFriends() {
   const { results, searching } = useStudentSearch(term);
   const { people: known, loading: loadingKnown } = useSuggestedRecipients();
   const hidden = useHiddenUids();
+
+  // "Find your friends" on her profile checklist is the one item with
+  // nothing to measure — there is no field that means "she looked".
+  // Opening this screen is the whole ask, so opening it is what ticks
+  // it. Written once; the hook ignores every visit after the first.
+  const { markFoundFriends } = useProfileChecklist();
+  useEffect(() => {
+    void markFoundFriends();
+  }, [markFoundFriends]);
 
   const typing = term.trim().length >= 2;
 
