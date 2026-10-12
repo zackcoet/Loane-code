@@ -30,10 +30,18 @@ import { Icon, type IconName } from '../../src/components/Icon';
  * indicator area ate into the same 64, the row got what was left, and
  * the glyphs were clipped by the padding they were sitting behind.
  *
- * 72 rather than 64 because Zack asked for more room and the icons are
- * 33pt — 64 left eleven points above and below before any inset.
+ * 56, which is the icon plus a comfortable margin and nothing more.
+ *
+ * It went to 72 to fix clipping, but the clipping was never about the
+ * number — it was that the old 64 INCLUDED the home indicator, so the
+ * icons were sharing their space with it. Once the inset is separate,
+ * 56 holds a 33pt icon with eleven points above and below, and the bar
+ * stops towering over the content it is meant to sit under.
+ *
+ * (iOS's own is 49. 56 is a little more generous because our icons are
+ * larger than Apple's.)
  */
-const TAB_BAR_ROW_HEIGHT = 72;
+const TAB_BAR_ROW_HEIGHT = 56;
 const POST_BUTTON_SIZE = 60;
 
 /**
