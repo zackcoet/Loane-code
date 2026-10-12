@@ -53,7 +53,10 @@ import { useAuth } from '../../src/auth/AuthProvider';
 import { useUnreadCount } from '../../src/hooks/useNotifications';
 import { SuspendedBanner } from '../../src/components/SuspendedBanner';
 import { Icon, type IconName } from '../../src/components/Icon';
-
+import {
+  WalkthroughTarget,
+  type WalkthroughTargetKey,
+} from '../../src/components/WalkthroughTargets';
 
 const POST_BUTTON_SIZE = 60;
 
@@ -65,9 +68,23 @@ const POST_BUTTON_SIZE = 60;
  * every glyph out of the visible area, and a filled selected state is
  * louder than this bar should be. Selection is weight, not colour.
  */
-function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
+function TabIcon({
+  name,
+  focused,
+  target,
+}: {
+  name: IconName;
+  focused: boolean;
+  target: WalkthroughTargetKey;
+}) {
   return (
-    <Icon name={name} size={iconSize.tab} tint={focused ? color.icon.default : color.text.muted} />
+    <WalkthroughTarget target={target}>
+      <Icon
+        name={name}
+        size={iconSize.tab}
+        tint={focused ? color.icon.default : color.text.muted}
+      />
+    </WalkthroughTarget>
   );
 }
 
@@ -81,9 +98,11 @@ function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
  */
 function PostButton() {
   return (
-    <View style={styles.postButton}>
-      <Icon name="add" size={30} tint={color.role.renter.label} />
-    </View>
+    <WalkthroughTarget target="post">
+      <View style={styles.postButton}>
+        <Icon name="add" size={30} tint={color.role.renter.label} />
+      </View>
+    </WalkthroughTarget>
   );
 }
 
@@ -103,15 +122,23 @@ function TabAvatar({ focused }: { focused: boolean }) {
   const { profile } = useAuth();
 
   if (!profile?.photoUrl) {
-    return <TabIcon name={focused ? 'person-circle' : 'person-circle-outline'} focused={focused} />;
+    return (
+      <TabIcon
+        name={focused ? 'person-circle' : 'person-circle-outline'}
+        focused={focused}
+        target="profile"
+      />
+    );
   }
 
   return (
     // The ring is always drawn and only changes colour, so the icon
     // does not shift by two points every time she changes tab.
-    <View style={[styles.avatarRing, focused && styles.avatarRingActive]}>
-      <Image source={{ uri: profile.photoUrl }} style={styles.avatarImage} resizeMode="cover" />
-    </View>
+    <WalkthroughTarget target="profile">
+      <View style={[styles.avatarRing, focused && styles.avatarRingActive]}>
+        <Image source={{ uri: profile.photoUrl }} style={styles.avatarImage} resizeMode="cover" />
+      </View>
+    </WalkthroughTarget>
   );
 }
 
@@ -138,7 +165,7 @@ export default function TabsLayout() {
           options={{
             title: 'Feed',
             tabBarIcon: ({ focused }) => (
-              <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} />
+              <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} target="feed" />
             ),
           }}
         />
@@ -147,7 +174,11 @@ export default function TabsLayout() {
           options={{
             title: 'Discover',
             tabBarIcon: ({ focused }) => (
-              <TabIcon name={focused ? 'search' : 'search-outline'} focused={focused} />
+              <TabIcon
+                name={focused ? 'search' : 'search-outline'}
+                focused={focused}
+                target="discover"
+              />
             ),
           }}
         />
@@ -178,7 +209,11 @@ export default function TabsLayout() {
           options={{
             title: 'Activity',
             tabBarIcon: ({ focused }) => (
-              <TabIcon name={focused ? 'heart' : 'heart-outline'} focused={focused} />
+              <TabIcon
+                name={focused ? 'heart' : 'heart-outline'}
+                focused={focused}
+                target="activity"
+              />
             ),
             tabBarBadge: unread > 0 ? (unread > 9 ? '9+' : unread) : undefined,
             tabBarBadgeStyle: styles.badge,

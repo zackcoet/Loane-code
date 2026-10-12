@@ -34,6 +34,7 @@ import { useUnreadMessageCount } from '../../src/hooks/useMessaging';
 import { useSuggestedClosets } from '../../src/hooks/useSuggestedClosets';
 import { useWalkthrough } from '../../src/hooks/useWalkthrough';
 import { Walkthrough } from '../../src/components/Walkthrough';
+import { useWalkthroughTargets } from '../../src/components/WalkthroughTargets';
 import { useProfileGate } from '../../src/hooks/useProfileGate';
 import { SuggestedClosets } from '../../src/components/SuggestedClosets';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
@@ -73,6 +74,7 @@ export default function Feed() {
     feed is where she lands after signing up.
   */
   const tour = useWalkthrough();
+  const tourTargets = useWalkthroughTargets();
   const { profile } = useAuth();
   const { posts, loading, loadingMore, error, exhausted, refresh, loadMore } = usePagedPosts();
   const { uids: followingUids } = useFollowingUids();
@@ -213,6 +215,7 @@ export default function Feed() {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}
+          onScroll={tour.visible ? tourTargets.measureTargets : undefined}
           onEndReached={loadMore}
           onEndReachedThreshold={0.6}
           initialNumToRender={3}

@@ -24,6 +24,7 @@ import { AuthProvider, useAuth } from '../src/auth/AuthProvider';
 import { SignupDraftProvider } from '../src/auth/signupDraft';
 import { PostDraftProvider } from '../src/post/postDraft';
 import { SuccessBannerProvider } from '../src/components/SuccessBanner';
+import { WalkthroughTargetsProvider } from '../src/components/WalkthroughTargets';
 import { logEvent } from '../src/analytics/events';
 import { FONTS_TO_LOAD } from '../src/theme/fonts';
 import { LoaneLoader } from '../src/components/LoaneLoader';
@@ -180,8 +181,10 @@ export default function RootLayout() {
           <SignupDraftProvider>
             <PostDraftProvider>
               <SuccessBannerProvider>
-                <StatusBar style="dark" />
-                <RootNavigator />
+                <WalkthroughTargetsProvider>
+                  <StatusBar style="dark" />
+                  <RootNavigator />
+                </WalkthroughTargetsProvider>
               </SuccessBannerProvider>
             </PostDraftProvider>
           </SignupDraftProvider>
