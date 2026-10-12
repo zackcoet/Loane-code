@@ -6,6 +6,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { color, spacing } from '@loane/shared';
+import { useKeyboardPadding } from '../hooks/useKeyboardPadding';
 
 interface Props {
   children: React.ReactNode;
@@ -17,13 +18,19 @@ interface Props {
 }
 
 export function Screen({ children, scroll = false, flush = false, style }: Props) {
+  const keyboardPadding = useKeyboardPadding();
   const inner = [styles.inner, flush ? null : styles.padded, style];
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       {scroll ? (
         <ScrollView
-          contentContainerStyle={[inner, styles.scrollContent]}
+          contentContainerStyle={[
+            inner,
+            styles.scrollContent,
+            keyboardPadding > 0 && { paddingBottom: keyboardPadding },
+          ]}
+          keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
         >
           {children}

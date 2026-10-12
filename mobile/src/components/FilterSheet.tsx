@@ -28,6 +28,7 @@ import { Input } from './Input';
 import { Text } from './Text';
 import { Toggle } from './Toggle';
 import { EMPTY_FILTERS, countActiveFilters, type Filters } from '../hooks/useDiscover';
+import { useKeyboardPadding } from '../hooks/useKeyboardPadding';
 
 interface Props {
   visible: boolean;
@@ -41,6 +42,7 @@ interface Props {
 
 export function FilterSheet({ visible, filters, resultCount, onPreview, onApply, onClose }: Props) {
   const [draft, setDraft] = useState<Filters>(filters);
+  const keyboardPadding = useKeyboardPadding();
 
   const update = (next: Filters) => {
     setDraft(next);
@@ -75,7 +77,14 @@ export function FilterSheet({ visible, filters, resultCount, onPreview, onApply,
           }
         />
 
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            keyboardPadding > 0 && { paddingBottom: keyboardPadding },
+          ]}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+        >
           <Text variant="label">Size</Text>
           <View style={styles.row}>
             {SIZES.map((value) => (
@@ -153,7 +162,7 @@ export function FilterSheet({ visible, filters, resultCount, onPreview, onApply,
           />
         </ScrollView>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, keyboardPadding > 0 && { paddingBottom: keyboardPadding }]}>
           <Button
             label={resultCount === 1 ? 'Show 1 piece' : `Show ${resultCount} pieces`}
             onPress={() => onApply(draft)}

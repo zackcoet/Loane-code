@@ -17,6 +17,7 @@ import { Text } from './Text';
 import { writeReview } from '../firebase/callables';
 import { callableErrorMessage } from '../firebase/errors';
 import { logEvent } from '../analytics/events';
+import { useKeyboardPadding } from '../hooks/useKeyboardPadding';
 
 interface Props {
   visible: boolean;
@@ -31,6 +32,7 @@ export function ReviewSheet({ visible, bookingId, aboutUsername, onClose }: Prop
   const [rating, setRating] = useState(0);
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
+  const keyboardPadding = useKeyboardPadding();
 
   const submit = async () => {
     if (rating === 0) return;
@@ -56,7 +58,14 @@ export function ReviewSheet({ visible, bookingId, aboutUsername, onClose }: Prop
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.sheet}>
         <Header title="Leave a review" onBack={onClose} />
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            keyboardPadding > 0 && { paddingBottom: keyboardPadding },
+          ]}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+        >
           <Text variant="h3">How was renting with @{aboutUsername}?</Text>
 
           <View style={styles.stars}>

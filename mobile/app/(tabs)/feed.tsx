@@ -109,7 +109,7 @@ export default function Feed() {
           style={styles.title}
           numberOfLines={1}
           adjustsFontSizeToFit
-          minimumFontScale={0.65}
+          minimumFontScale={0.6}
         >
           {closetTitle}
         </Text>
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   campusRow: {
     alignItems: 'center',
     paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
+    paddingBottom: spacing.sm,
   },
   titleRow: {
     flexDirection: 'row',
@@ -245,9 +245,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.md,
     paddingHorizontal: spacing.md,
-    paddingBottom: spacing.lg,
+    paddingBottom: spacing.md,
   },
-  title: { flex: 1 },
+  title: { flex: 1, minWidth: 0 },
   // A cream track with a merlot pill sliding in it.
   toggle: {
     flexShrink: 0,
@@ -264,10 +264,11 @@ const styles = StyleSheet.create({
   toggleOptionOn: { backgroundColor: color.role.shared.background },
   toggleLabel: { fontWeight: '600' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  // The feed body is the cream band; the cards are white on top of it.
   list: {
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xxl,
+    paddingTop: spacing.sm,
+    // Clears the raised + button, which floats over the last card.
+    paddingBottom: controls.buttonHeight + controls.minTapTarget + spacing.xxl,
+    // The feed body is the cream band; the cards are white on top of it.
     backgroundColor: color.surface.section,
   },
   footer: { paddingVertical: spacing.lg },

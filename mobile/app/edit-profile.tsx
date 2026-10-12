@@ -52,6 +52,7 @@ import { db } from '../src/firebase/config';
 import { changeUsername, checkUsername } from '../src/firebase/callables';
 import { callableErrorMessage } from '../src/firebase/errors';
 import { logEvent } from '../src/analytics/events';
+import { useKeyboardPadding } from '../src/hooks/useKeyboardPadding';
 import { useProfilePhoto } from '../src/hooks/useProfilePhoto';
 import { text } from '../src/theme';
 
@@ -75,6 +76,7 @@ export default function EditProfile() {
   const [usernameOk, setUsernameOk] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const keyboardPadding = useKeyboardPadding();
 
   // Shared with tapping your avatar on your profile, so there is one
   // place that knows how a profile photo gets changed.
@@ -162,7 +164,14 @@ export default function EditProfile() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            keyboardPadding > 0 && { paddingBottom: keyboardPadding },
+          ]}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+        >
           <Pressable
             style={styles.photoBlock}
             onPress={choosePhoto}

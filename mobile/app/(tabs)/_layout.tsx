@@ -20,7 +20,7 @@ import { useUnreadCount } from '../../src/hooks/useNotifications';
 import { SuspendedBanner } from '../../src/components/SuspendedBanner';
 import { Icon, type IconName } from '../../src/components/Icon';
 
-const TAB_BAR_ROW_HEIGHT = 56;
+const TAB_BAR_ROW_HEIGHT = 64;
 const POST_BUTTON_SIZE = 60;
 
 /**
@@ -95,6 +95,7 @@ export default function TabsLayout() {
           tabBarActiveTintColor: color.icon.default,
           tabBarInactiveTintColor: color.text.muted,
           tabBarStyle: [styles.bar, { height: TAB_BAR_ROW_HEIGHT, paddingBottom: 0 }],
+          tabBarIconStyle: styles.iconLift,
           tabBarShowLabel: false,
         }}
       >
@@ -180,6 +181,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: color.border.default,
   },
+  iconLift: { transform: [{ translateY: -4 }] },
   postButton: {
     width: POST_BUTTON_SIZE,
     height: POST_BUTTON_SIZE,
@@ -188,7 +190,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     // Lifts it proud of the tab row.
-    marginTop: -20,
+    marginTop: -26,
     shadowColor: color.role.renter.background,
     shadowOpacity: 0.35,
     shadowRadius: 12,

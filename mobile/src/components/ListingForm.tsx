@@ -32,6 +32,7 @@ import { PhotoGrid } from './PhotoGrid';
 import { Text } from './Text';
 import { Toggle } from './Toggle';
 import { photoUri, type useListingForm } from '../hooks/useListingForm';
+import { useKeyboardPadding } from '../hooks/useKeyboardPadding';
 import { pickPhoto } from '../lib/photo';
 
 const CONDITION_LABELS: Record<Condition, string> = {
@@ -59,6 +60,7 @@ interface Props {
 export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
   const { form, set, toggleOccasion, addPhoto, removePhoto, cropPhoto, makeCover, error, saving } =
     controller;
+  const keyboardPadding = useKeyboardPadding();
 
   const rentable = form.intent === 'rent' || form.intent === 'both';
   const sellable = form.intent === 'sell' || form.intent === 'both';
@@ -88,7 +90,14 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      contentContainerStyle={[
+        styles.content,
+        keyboardPadding > 0 && { paddingBottom: keyboardPadding },
+      ]}
+      keyboardDismissMode="interactive"
+      keyboardShouldPersistTaps="handled"
+    >
       <Text variant="label">This garment is…</Text>
       <View style={styles.intentRow}>
         {INTENTS.map((option) => (

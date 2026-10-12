@@ -9,9 +9,18 @@
  * implying Loane is holding money it is not.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import {
   RENTAL_DURATIONS,
   WORDS,
@@ -20,6 +29,7 @@ import {
   calculateFees,
   priceForDuration,
   color,
+  controls,
   radius,
   formatCents,
   formatRange,
@@ -55,9 +65,26 @@ export default function RequestRental() {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   /** She must tick this before requesting, when there is a fee to tick. */
   const [cleaningAgreed, setCleaningAgreed] = useState(false);
+
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (event) => setKeyboardHeight(event.endCoordinates.height),
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => setKeyboardHeight(0),
+    );
+
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const baseCents = useMemo(
     () => (listing ? priceForDuration(listing.pricing, days) : null),
@@ -141,7 +168,16 @@ export default function RequestRental() {
   return (
     <Screen flush>
       <Header title="Request to rent" onBack={() => router.back()} />
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          keyboardHeight > 0 && {
+            paddingBottom: keyboardHeight + controls.buttonHeight + spacing.lg,
+          },
+        ]}
+        keyboardDismissMode="interactive"
+        keyboardShouldPersistTaps="handled"
+      >
         <Text variant="h3">{listing.name}</Text>
         <Text variant="bodySmall" tone="secondary" style={styles.owner}>
           From @{listing.owner.username}

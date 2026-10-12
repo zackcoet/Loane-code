@@ -45,6 +45,7 @@ import { db } from '../src/firebase/config';
 import { deletePost } from '../src/firebase/callables';
 import { callableErrorMessage } from '../src/firebase/errors';
 import { logEvent } from '../src/analytics/events';
+import { useKeyboardPadding } from '../src/hooks/useKeyboardPadding';
 
 export default function EditPost() {
   const router = useRouter();
@@ -59,6 +60,7 @@ export default function EditPost() {
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const keyboardPadding = useKeyboardPadding();
 
   useEffect(() => {
     if (!id) {
@@ -160,7 +162,14 @@ export default function EditPost() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            keyboardPadding > 0 && { paddingBottom: keyboardPadding },
+          ]}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+        >
           <Input
             label="Caption"
             value={caption}

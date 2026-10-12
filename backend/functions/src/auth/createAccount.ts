@@ -3,6 +3,7 @@ import { logger } from 'firebase-functions';
 import type { Campus, User, UsernameLock, UserPrivate } from '@loane/shared';
 import {
   COLLECTIONS,
+  color,
   emailDomain,
   matchesCampusDomain,
   newUserStripe,
@@ -286,7 +287,7 @@ async function campusForEmail(email: string): Promise<Campus> {
     emailDomains: [domain],
     city: '',
     state: '',
-    brandColor: 'bright-chartreuse',
+    brandColor: color.campus.dotFallback,
     isLive: true,
     stats: {
       userCount: 0,

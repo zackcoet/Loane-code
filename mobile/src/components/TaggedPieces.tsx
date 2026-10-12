@@ -179,7 +179,7 @@ function Piece({
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
+  wrap: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.xs },
   // A merlot outlined pill, from Ella's mockup. It used to be a grey
   // filled block, which read as disabled chrome rather than the one
   // control on the card that leads to a rental.

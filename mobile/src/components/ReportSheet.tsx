@@ -24,6 +24,7 @@ import { Toggle } from './Toggle';
 import { blockUser, submitReport } from '../firebase/callables';
 import { callableErrorMessage } from '../firebase/errors';
 import { logEvent } from '../analytics/events';
+import { useKeyboardPadding } from '../hooks/useKeyboardPadding';
 
 const REASON_LABELS: Record<ReportReason, string> = {
   item_damaged: 'Item damaged',
@@ -62,6 +63,7 @@ export function ReportSheet({
   const [details, setDetails] = useState('');
   const [alsoBlock, setAlsoBlock] = useState(false);
   const [sending, setSending] = useState(false);
+  const keyboardPadding = useKeyboardPadding();
 
   const submit = async () => {
     if (!reason) return;
@@ -92,8 +94,17 @@ export function ReportSheet({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.sheet}>
-        <Header title="Report" onBack={onClose} />
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <View style={styles.headerWrap}>
+          <Header title="Report" onBack={onClose} />
+        </View>
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            keyboardPadding > 0 && { paddingBottom: keyboardPadding },
+          ]}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+        >
           <Text variant="bodySmall" tone="secondary">
             Reporting {targetLabel}. Only Loane sees this — they are never told who reported them.
           </Text>
@@ -147,6 +158,7 @@ export function ReportSheet({
 
 const styles = StyleSheet.create({
   sheet: { flex: 1, backgroundColor: color.surface.page },
+  headerWrap: { paddingTop: spacing.md },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
   section: { marginTop: spacing.lg, marginBottom: spacing.sm },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
