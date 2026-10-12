@@ -81,6 +81,31 @@ export async function runTryOn(input: TryOnRequest): Promise<string> {
         // photo never reaches here.
         garment_photo_type: 'flat-lay',
         mode: MODE,
+        /*
+          NOT the default, which is true.
+
+          Segmentation-free fits the garment without first segmenting
+          away what she is already wearing — and that is why Phase 0
+          saw a floral wrap dress render beautifully with yellow
+          joggers still poking out below the hem. We recorded that as
+          unfixable. It was not: we had simply never tried the other
+          setting.
+
+          A/B'd 2026-10-12 over four cases, both failures and two
+          controls (scripts/tryOnSegFreeTest.ts):
+
+            dress over trousers  the trousers are GONE. Bare legs, the
+                                 dress renders correctly.
+            layered top+bottoms  the orange bleed at the hem is gone
+                                 and the trouser colour is right.
+            poncho   (control)   unchanged, still good.
+            romper   (control)   unchanged, still good.
+
+          It does not make the "wear fitted clothes" guidance wrong —
+          fitted clothing is still the best input — but it stops a
+          perfectly ordinary photo producing an obviously broken one.
+        */
+        segmentation_free: false,
         // Blocks underwear and swimwear at the service. The category map
         // is the real control; this is the backstop for a mis-tagged
         // listing. Both, deliberately.

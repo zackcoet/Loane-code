@@ -635,3 +635,25 @@ feature at all.
 
 **Sources:** FASHN API docs — Background Remove, and the try-on v1.6
 parameter reference.
+
+### RESULT, 2026-10-12: `segmentation_free: false` is now what we send
+
+A/B over four cases, 8 generations, $0.75.
+`scripts/tryOnSegFreeTest.ts` reruns it.
+
+| Case | `true` (the default) | `false` (now ours) |
+|---|---|---|
+| Dress over trousers | Yellow joggers still on under the dress | **Trousers gone. Bare legs, dress correct.** |
+| Layered top + bottoms | Orange bleed at the trouser hem, yellow waistband showing | **Clean pink trousers, no bleed** |
+| Poncho (control) | Good | Good — unchanged |
+| Romper (control) | Good | Good — unchanged |
+
+**Both known failures fixed, neither control harmed.** Switched on in
+`src/tryon/fashn.ts`.
+
+**This does not retire the fitted-clothes guidance.** Fitted clothing
+is still the best input and the camera still says so. What changed is
+that an ordinary photo no longer produces an obviously broken one, and
+the quality harness should be re-run with this setting before Bottoms
+are reconsidered — the bottoms result improved but is still not good
+enough to launch.
