@@ -117,6 +117,53 @@ export function validateBio(raw: string): ValidationResult {
   return OK;
 }
 
+/**
+ * A US mobile number, stored as E.164: `+15551234567`.
+ *
+ * ONE normalizer, because three different things depend on these
+ * strings matching each other exactly: the number she types here, the
+ * number a lender is shown when a handoff is arranged, and — once
+ * contact matching exists — the hash we compare against. Two
+ * normalizers would mean two people with the same phone never match.
+ *
+ * US only, which is the launch campus. A number that is already in
+ * E.164 with a different country code is kept as typed rather than
+ * mangled into a +1, so the field is not actively wrong for an
+ * international student; we simply cannot check it.
+ */
+export function normalizePhone(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('+') && !trimmed.startsWith('+1')) {
+    return '+' + trimmed.slice(1).replace(/\D/g, '');
+  }
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  if (digits.length === 10) return `+1${digits}`;
+  return digits.length > 0 ? `+${digits}` : '';
+}
+
+export function validatePhone(raw: string): ValidationResult {
+  const trimmed = raw.trim();
+  // Empty is fine. A phone number is optional everywhere it is asked
+  // for, and clearing it is how she takes it back.
+  if (trimmed.length === 0) return OK;
+
+  if (trimmed.startsWith('+') && !trimmed.startsWith('+1')) {
+    const digits = trimmed.slice(1).replace(/\D/g, '');
+    return digits.length >= 8 && digits.length <= 15 ? OK : fail('Enter a valid phone number.');
+  }
+
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.length === 10 || (digits.length === 11 && digits.startsWith('1'))) return OK;
+  return fail('Enter a 10-digit US phone number.');
+}
+
+/** `+15551234567` back to `(555) 123-4567` for display. */
+export function formatPhone(e164: string): string {
+  const m = /^\+1(\d{3})(\d{3})(\d{4})$/.exec(e164);
+  return m ? `(${m[1]}) ${m[2]}-${m[3]}` : e164;
+}
+
 // ---------------------------------------------------------------------------
 // Listings
 // ---------------------------------------------------------------------------

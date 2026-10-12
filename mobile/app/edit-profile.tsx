@@ -9,9 +9,12 @@
  *   - The username goes through the `changeUsername` Cloud Function, which
  *     releases the old handle and claims the new one in one transaction.
  *     The app cannot write a username at all.
+ *   - The phone number goes to `users/{uid}/private/settings`, NOT to the
+ *     public profile. It is the one field on this screen that nobody else
+ *     at her school can read, which is why it says so under the input.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import {
   KeyboardAvoidingView,
@@ -36,8 +39,11 @@ import {
   normalizeUsername,
   spacing,
   type,
+  formatPhone,
+  normalizePhone,
   validateBio,
   validateDisplayName,
+  validatePhone,
   validateUsername,
 } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
@@ -54,6 +60,7 @@ import { callableErrorMessage } from '../src/firebase/errors';
 import { logEvent } from '../src/analytics/events';
 import { useKeyboardPadding } from '../src/hooks/useKeyboardPadding';
 import { useProfilePhoto } from '../src/hooks/useProfilePhoto';
+import { useUserSettings } from '../src/hooks/useUserSettings';
 import { text } from '../src/theme';
 
 export default function EditProfile() {
@@ -72,8 +79,24 @@ export default function EditProfile() {
     shoe: profile?.sizes.shoe ?? null,
   });
 
+  /**
+   * Her phone number lives in a different document to everything else
+   * on this screen, so it loads separately and starts blank. `touched`
+   * stops the snapshot arriving a moment later from overwriting
+   * something she has already started typing.
+   */
+  const settings = useUserSettings();
+  const [phone, setPhone] = useState('');
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  useEffect(() => {
+    if (!phoneTouched && settings.settings?.phone) {
+      setPhone(formatPhone(settings.settings.phone));
+    }
+  }, [settings.settings?.phone, phoneTouched]);
+
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [usernameOk, setUsernameOk] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const keyboardPadding = useKeyboardPadding();
@@ -124,6 +147,9 @@ export default function EditProfile() {
     const bioCheck = validateBio(bio);
     if (!bioCheck.ok) return setError(bioCheck.error ?? null);
 
+    const phoneCheck = validatePhone(phone);
+    if (!phoneCheck.ok) return setPhoneError(phoneCheck.error ?? null);
+
     if (usernameChanged) {
       const check = validateUsername(username);
       if (!check.ok) return setUsernameError(check.error ?? null);
@@ -145,6 +171,11 @@ export default function EditProfile() {
         showSizes,
         updatedAt: serverTimestamp(),
       });
+
+      // Separate document, separate write. Normalized on the way in so
+      // every number in Firestore is the same shape regardless of how
+      // it was typed — see normalizePhone for why that matters.
+      await settings.save({ phone: normalizePhone(phone) || null });
 
       logEvent('profile_edit', { surface: 'profile', targetType: 'user', targetId: profile.uid });
       router.back();
@@ -215,6 +246,22 @@ export default function EditProfile() {
             maxLength={LIMITS.bio.max}
             style={styles.bioInput}
             hint={`${bio.length}/${LIMITS.bio.max}`}
+          />
+
+          <Input
+            label="Phone number"
+            value={phone}
+            onChangeText={(value) => {
+              setPhoneTouched(true);
+              setPhone(value);
+              if (phoneError) setPhoneError(null);
+            }}
+            placeholder="(555) 123-4567"
+            keyboardType="phone-pad"
+            autoComplete="tel"
+            textContentType="telephoneNumber"
+            error={phoneError}
+            hint="Private. Shared with the other student only once a rental is agreed."
           />
 
           <Text style={[text.label, styles.sizeHeading]}>My sizes</Text>
