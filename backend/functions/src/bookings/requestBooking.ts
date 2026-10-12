@@ -2,6 +2,7 @@ import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
 import type { Booking, DateRange, Listing, User } from '@loane/shared';
 import {
+  SAME_DAY_RESPONSE_HOURS,
   BLOCKING_BOOKING_STATUSES,
   COLLECTIONS,
   REQUEST_EXPIRY_HOURS,
@@ -65,8 +66,16 @@ interface RequestBookingResult {
  * now, or the day before the rental starts, whichever comes first. A
  * request for this Saturday should not sit unanswered until Saturday.
  */
-function requestExpiry(startDate: string): Date {
-  const deadline = new Date(Date.now() + REQUEST_EXPIRY_HOURS * 3600_000);
+function requestExpiry(startDate: string, sameDay: boolean): Date {
+  /*
+    TWO HOURS FOR SAME DAY, not twenty-four.
+
+    A request for this afternoon that sits unanswered until tomorrow is
+    worse than a decline: she has spent the evening assuming she has a
+    dress. The short window is the whole promise of same-day.
+  */
+  const hours = sameDay ? SAME_DAY_RESPONSE_HOURS : REQUEST_EXPIRY_HOURS;
+  const deadline = new Date(Date.now() + hours * 3600_000);
   const dayBeforeStart = new Date(`${startDate}T00:00:00Z`);
   dayBeforeStart.setUTCDate(dayBeforeStart.getUTCDate() - 1);
   return deadline < dayBeforeStart ? deadline : dayBeforeStart;
@@ -149,10 +158,22 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
       // The renter is charged the listed price plus the lender's own
       // cleaning charge. Loane's cut comes out of the lender's side, so
       // it never appears in what she pays.
+      /*
+        Same day is the renter asking for it TODAY, and only possible
+        on a listing whose owner said yes to that.
+      */
+      const isSameDay = startDate === toIsoDate(new Date());
+      if (isSameDay && !listing.sameDay?.enabled) {
+        throw failed('This piece is not available same day. Pick a later date.');
+      }
+
       const amounts = calculateFees({
         baseCents,
         garmentValueCents: listing.garmentValueCents,
         cleaningFeeCents: listing.cleaningFeeCents ?? 0,
+        sameDay: isSameDay,
+        // Her premium when she set one; the platform default otherwise.
+        sameDayPremiumBps: listing.sameDay?.premiumBps ?? null,
       });
 
       const lenderSnap = await tx.get(db().collection(COLLECTIONS.users).doc(listing.ownerUid));
@@ -215,7 +236,7 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
         declineReason: null,
         // The lender has REQUEST_EXPIRY_HOURS, or until the day before
         // starts, whichever comes first.
-        expiresAt: Timestamp.fromDate(requestExpiry(startDate)),
+        expiresAt: Timestamp.fromDate(requestExpiry(startDate, isSameDay)),
         disputeWindowEndsAt: null,
         returnProblem: null,
         disputeResolution: null,

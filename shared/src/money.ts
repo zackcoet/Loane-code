@@ -69,6 +69,11 @@ export interface FeeInput {
   cleaningFeeCents?: Cents;
   /** True when she is asking for the piece today. */
   sameDay?: boolean;
+  /**
+   * The lender's own same-day premium, when she has set one. Null or
+   * absent uses SAME_DAY_PREMIUM_BPS.
+   */
+  sameDayPremiumBps?: number | null;
   /** Overridable so a booking made under an old rule still adds up. */
   feePaidBy?: FeePaidBy;
 }
@@ -99,10 +104,13 @@ export function calculateFees(input: FeeInput): FeeBreakdown {
     garmentValueCents,
     cleaningFeeCents = 0,
     sameDay = false,
+    sameDayPremiumBps = null,
     feePaidBy = PLATFORM_FEE_PAID_BY,
   } = input;
 
-  const sameDayPremiumCents = sameDay ? applyBps(baseCents, SAME_DAY_PREMIUM_BPS) : 0;
+  const sameDayPremiumCents = sameDay
+    ? applyBps(baseCents, sameDayPremiumBps ?? SAME_DAY_PREMIUM_BPS)
+    : 0;
 
   // Everything Loane takes a cut of. Cleaning is excluded on purpose.
   const commissionable = baseCents + sameDayPremiumCents;

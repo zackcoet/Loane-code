@@ -1271,6 +1271,12 @@ async function main(): Promise<void> {
         // ONLY when this catalogue entry describes that exact photo.
         // A flat photo is the garment the try-on renders, so borrowing
         // one from another piece renders the wrong garment convincingly.
+        /*
+          A third of closets offer same day, so the filter and the
+          badge both have something behind them without every piece
+          claiming a promise its owner may not keep.
+        */
+        sameDay: { enabled: random() > 0.66, premiumBps: null },
         flatPhoto: item.flatFile
           ? flatImage(`users/${owner.uid}/listings/${ref.id}/flat.jpg`, item.flatFile)
           : null,

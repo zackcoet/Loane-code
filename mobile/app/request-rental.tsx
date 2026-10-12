@@ -22,6 +22,8 @@ import {
   View,
 } from 'react-native';
 import {
+  SAME_DAY_RESPONSE_HOURS,
+  toIsoDate,
   RENTAL_DURATIONS,
   WORDS,
   REQUEST_EXPIRY_HOURS,
@@ -91,6 +93,14 @@ export default function RequestRental() {
     [listing, days],
   );
 
+  /*
+    Same day is simply picking today, on a listing whose owner offers
+    it. There is no separate mode to turn on — she already said when
+    she wants it.
+  */
+  const isSameDay = startDate === toIsoDate(new Date());
+  const sameDayOffered = listing?.sameDay?.enabled ?? false;
+
   const fees = useMemo(
     () =>
       baseCents != null && listing
@@ -98,9 +108,11 @@ export default function RequestRental() {
             baseCents,
             garmentValueCents: listing.garmentValueCents,
             cleaningFeeCents: listing.cleaningFeeCents ?? 0,
+            sameDay: isSameDay && sameDayOffered,
+            sameDayPremiumBps: listing.sameDay?.premiumBps ?? null,
           })
         : null,
-    [baseCents, listing],
+    [baseCents, listing, isSameDay, sameDayOffered],
   );
 
   const cleaningFeeCents = listing?.cleaningFeeCents ?? 0;
@@ -240,12 +252,24 @@ export default function RequestRental() {
             {/* No Loane line here, on purpose. She pays the listed
                 price; our cut comes out of the lender's side. Showing a
                 fee she is not paying would be a lie. */}
+            {/* Said before she commits, not after. Two hours is a
+                promise she is relying on. */}
+            {isSameDay && sameDayOffered ? (
+              <Text variant="caption" tone="heading" uppercase={false} style={styles.sameDayNote}>
+                Same-day pickup. She has {SAME_DAY_RESPONSE_HOURS} hours to answer, or it is
+                declined automatically.
+              </Text>
+            ) : null}
+
             {fees ? (
               <View style={styles.breakdown}>
                 <Line
                   label={`${WORDS.rent} · ${days} ${days === 1 ? 'day' : 'days'}`}
                   value={formatCents(fees.baseCents)}
                 />
+                {fees.sameDayPremiumCents > 0 ? (
+                  <Line label="Same-day" value={formatCents(fees.sameDayPremiumCents)} />
+                ) : null}
                 {fees.cleaningFeeCents > 0 ? (
                   <Line label="Cleaning" value={formatCents(fees.cleaningFeeCents)} />
                 ) : null}
@@ -331,6 +355,7 @@ function Line({ label, value, strong }: { label: string; value: string; strong?:
 }
 
 const styles = StyleSheet.create({
+  sameDayNote: { marginBottom: spacing.sm },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
   owner: { marginTop: 2 },

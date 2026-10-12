@@ -36,6 +36,8 @@ import {
   type Size,
   TRYON_CATEGORY_MAP,
   radius,
+  SAME_DAY_PREMIUM_BPS,
+  SAME_DAY_RESPONSE_HOURS,
 } from '@loane/shared';
 import { Button } from './Button';
 import { Chip } from './Chip';
@@ -205,6 +207,25 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
               onPress={() => setMakingTryOnReady(true)}
             />
           )}
+        </View>
+      ) : null}
+
+      {/*
+        Per listing, not per account. A gown at her parents' house and
+        a jacket in her wardrobe are not the same promise.
+      */}
+      {rentable ? (
+        <View style={styles.section}>
+          <Toggle
+            label="Available same day"
+            help={
+              form.sameDay
+                ? `Renters can ask for it today. You have ${SAME_DAY_RESPONSE_HOURS} hours to answer, and they pay ${SAME_DAY_PREMIUM_BPS / 100}% more.`
+                : 'Turn this on if you can hand a piece over the same day it is asked for.'
+            }
+            value={form.sameDay}
+            onValueChange={(v) => set('sameDay', v)}
+          />
         </View>
       ) : null}
 

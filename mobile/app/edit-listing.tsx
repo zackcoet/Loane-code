@@ -70,6 +70,7 @@ export default function EditListing() {
       garmentValue: centsToInput(listing.garmentValueCents),
       photos: listing.photos.map((ref) => ({ kind: 'uploaded' as const, ref })),
       flatPhoto: listing.flatPhoto ? { kind: 'uploaded' as const, ref: listing.flatPhoto } : null,
+      sameDay: listing.sameDay?.enabled ?? false,
       availableNow: listing.status === 'active',
       blackoutDates: listing.blackoutDates ?? [],
     });

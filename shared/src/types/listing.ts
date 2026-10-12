@@ -60,6 +60,28 @@ export interface Listing extends BaseDoc, CampusScoped {
    */
   flatPhoto: ImageRef | null;
 
+  /**
+   * Same-day rental: she will hand it over today if asked.
+   *
+   * OFF BY DEFAULT and per listing, because it is a promise about her
+   * afternoon rather than a setting on her account. A gown she keeps
+   * at her parents' house and a jacket in her wardrobe are not the
+   * same offer.
+   *
+   * The premium is a percentage rather than an amount so it scales
+   * with the piece — 25% of a $38 dress is worth dropping everything
+   * for, and a flat $5 on a $9 top is not.
+   */
+  sameDay: {
+    enabled: boolean;
+    /**
+     * Her premium in basis points. Null means the platform default,
+     * SAME_DAY_PREMIUM_BPS — most lenders will never change it, and a
+     * number she did not choose should not be stored as if she did.
+     */
+    premiumBps: number | null;
+  };
+
   intent: ListingIntent;
   status: ListingStatus;
 

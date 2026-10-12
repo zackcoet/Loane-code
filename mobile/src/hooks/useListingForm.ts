@@ -57,6 +57,8 @@ export interface ListingFormState {
    * gate exists rather than a disclaimer.
    */
   flatPhoto: FormPhoto | null;
+  /** She will hand it over today if asked. */
+  sameDay: boolean;
   availableNow: boolean;
   blackoutDates: IsoDate[];
 }
@@ -79,6 +81,7 @@ export const EMPTY_FORM: ListingFormState = {
   cleaningFee: '',
   photos: [],
   flatPhoto: null,
+  sameDay: false,
   availableNow: true,
   blackoutDates: [],
 };
@@ -288,6 +291,10 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
           photos,
           coverUrl: photos[0]?.url ?? null,
           flatPhoto: flatPhoto,
+          // Her premium stays null: most lenders never change it, and
+          // a number she did not choose should not be stored as if she
+          // did. See Listing.sameDay.
+          sameDay: { enabled: form.sameDay, premiumBps: null },
           intent: form.intent!,
           // "Available now" off means it is listed but not bookable yet.
           status: form.availableNow ? ('active' as const) : ('paused' as const),
