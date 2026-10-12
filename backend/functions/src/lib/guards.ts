@@ -1,8 +1,8 @@
 import type { CallableRequest } from 'firebase-functions/v2/https';
 import type { User } from '@loane/shared';
-import { COLLECTIONS } from '@loane/shared';
+import { COLLECTIONS, SUBCOLLECTIONS, type UserPrivate } from '@loane/shared';
 import { db } from './admin';
-import { notFound, permissionDenied, unauthenticated } from './errors';
+import { failed, notFound, permissionDenied, unauthenticated } from './errors';
 
 /**
  * Checks every callable function runs before doing anything.
@@ -54,4 +54,39 @@ export async function requireVerifiedStudent(request: CallableRequest): Promise<
     throw permissionDenied('Verify your campus email first.');
   }
   return user;
+}
+
+/**
+ * A handoff is two students meeting in person. Both of them need a
+ * face and a way to be reached.
+ *
+ * THE APP ASKS FOR THIS FIRST — see mobile useProfileGate, which puts
+ * a sheet in front of Loane It and Put it on Loane. This is the same
+ * rule enforced where it cannot be skipped. The app's version is for
+ * her; this one is the actual rule.
+ *
+ * It is deliberately checked per ACTOR rather than per booking, so the
+ * person who has to fix something is the person who is told. A renter
+ * blocked by her lender's missing phone number gets an error she can
+ * do nothing about.
+ *
+ * The phone lives on the private settings document, which is why this
+ * costs a read the other guards do not.
+ */
+export async function requireHandoffReady(user: User, doing: string): Promise<void> {
+  if (!user.photoUrl) {
+    throw failed(`Add a profile photo before ${doing} — you'll be meeting in person.`);
+  }
+
+  const settings = await db()
+    .collection(COLLECTIONS.users)
+    .doc(user.uid)
+    .collection(SUBCOLLECTIONS.userPrivate)
+    .doc('settings')
+    .get();
+
+  const phone = (settings.data() as UserPrivate | undefined)?.phone;
+  if (!phone) {
+    throw failed(`Add your phone number before ${doing} — it's how the handoff gets arranged.`);
+  }
 }

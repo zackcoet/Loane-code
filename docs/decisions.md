@@ -665,8 +665,22 @@ filled out the whole thing by then, and stopping her at the door would
 have been cheaper for us and worse for her. Gating at submit also
 covers reaching those forms by deep link.
 
-**THIS IS A PROMPT, NOT A SECURITY CONTROL.** No Cloud Function refuses
-a booking because the renter has no phone number on file. If we ever
-need that to be true — and for handoffs we probably will — it has to be
-enforced in `requestBooking`, not here. Written down so nobody later
-reads this gate as a guarantee.
+**The app's sheet is a prompt. The rule lives on the server.** Added
+2026-10-12: `requireHandoffReady` in `backend/functions/src/lib/guards.ts`
+refuses `requestBooking` and an accepting `respondToBooking` when the
+caller has no profile photo or no phone number. The sheet is for her;
+the guard is the actual rule, and an old build or a replayed call
+cannot get round it.
+
+Checked per ACTOR, not per booking, so the person told is the person
+who can fix it — a renter blocked by her lender's missing phone number
+gets an error she can do nothing about. Declining a request needs
+nothing: somebody with an unfinished profile must still be able to say
+no.
+
+**Still only a prompt for listings.** Listings are written by the app
+directly under the security rules, so there is no function to put this
+in. Enforcing it there means a rules `get()` on the private settings
+document on every listing write, which is a real cost for a weaker
+reason — nobody is meeting anybody at the moment a garment is listed.
+Revisit if listings ever move behind a function.

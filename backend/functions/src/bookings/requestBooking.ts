@@ -17,7 +17,7 @@ import {
 } from '@loane/shared';
 import { db, now, Timestamp } from '../lib/admin';
 import { alreadyTaken, failed, invalidArgument, notFound } from '../lib/errors';
-import { requireVerifiedStudent } from '../lib/guards';
+import { requireHandoffReady, requireVerifiedStudent } from '../lib/guards';
 import { assertNotBlocked } from '../moderation/block';
 import { notify } from './transitions';
 
@@ -76,6 +76,10 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
   { region: 'us-central1' },
   async (request: CallableRequest<RequestBookingInput>): Promise<RequestBookingResult> => {
     const renter = await requireVerifiedStudent(request);
+    // Before anything else: she is about to arrange to meet a stranger
+    // from her campus and take a garment from her. The app asks for
+    // these first; this is the same rule where it cannot be skipped.
+    await requireHandoffReady(renter, 'you rent');
     const { listingId, startDate, endDate, message } = request.data ?? {};
 
     if (!listingId) throw invalidArgument('Pick an item to rent.');

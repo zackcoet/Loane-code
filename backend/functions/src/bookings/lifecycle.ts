@@ -12,7 +12,7 @@ import {
 } from '@loane/shared';
 import { db, now, Timestamp, FieldValue } from '../lib/admin';
 import { alreadyTaken, failed, invalidArgument } from '../lib/errors';
-import { requireActiveUser } from '../lib/guards';
+import { requireActiveUser, requireHandoffReady } from '../lib/guards';
 import {
   assertCanTransition,
   completeBooking,
@@ -45,6 +45,10 @@ export const respondToBooking = onCall<
   const user = await requireActiveUser(request);
   const { bookingId, accept, reason } = request.data ?? {};
   if (!bookingId) throw invalidArgument('Which rental?');
+
+  // Only when accepting. Declining needs nothing — somebody with an
+  // unfinished profile must still be able to say no.
+  if (accept) await requireHandoffReady(user, 'you accept a rental');
 
   const status = await db().runTransaction(async (tx) => {
     const { booking, actor, ref } = await loadBookingFor(bookingId, user.uid, tx);
