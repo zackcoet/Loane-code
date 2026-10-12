@@ -39,6 +39,15 @@ function RootNavigator() {
     const group = segments[0];
     const inOnboarding = group === '(onboarding)';
     const inAuth = group === '(auth)';
+    /**
+     * The root path itself, `/`, which is where the Expo QR code and
+     * any cold deep link land. There is no group there, so every
+     * `group === …` test below is false — which is how a signed-in
+     * student used to fall through this whole effect and sit on an
+     * unmatched route. app/index.tsx is the real fix; this is so the
+     * guard stops lying about having covered every case.
+     */
+    const atRoot = group === undefined;
 
     if (profile) {
       // ONLY rescue her from a screen she should not still be on.
@@ -49,7 +58,7 @@ function RootNavigator() {
       // instant it opened. Anything that is not onboarding or sign-in
       // is somewhere she deliberately navigated to, and this guard has
       // no business having an opinion about it.
-      if (inOnboarding || inAuth) router.replace('/(tabs)/feed');
+      if (inOnboarding || inAuth || atRoot) router.replace('/(tabs)/feed');
       return;
     }
 
