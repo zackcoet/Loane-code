@@ -9,7 +9,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActivityIndicator,
-  Alert,
   Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -58,7 +57,6 @@ const CONDITION_LABELS: Record<Condition, string> = {
   well_loved: 'Well loved',
 };
 
-const SOON = 'Booking arrives in the next release. For now, message her closet.';
 
 export default function ListingDetail() {
   // Renting or buying means meeting another student in person, so
@@ -335,9 +333,11 @@ export default function ListingDetail() {
               router.push({ pathname: '/request-rental', params: { id: listing.id } }),
             )
           }
-          // TODO-STEP5: the Own It purchase flow. Until it exists, say
-          // so rather than opening a request that goes nowhere.
-          onOwnIt={() => gate.run('buy', () => Alert.alert('Coming soon', SOON))}
+          onOwnIt={() =>
+            gate.run('buy', () =>
+              router.push({ pathname: '/own-it', params: { id: listing.id } }),
+            )
+          }
         />
         {/* Try it on sits between the two buying actions and messaging:
             it is how she decides, not how she commits. Absent entirely

@@ -153,6 +153,17 @@ export function completeBooking(
   });
   writer.update(db().collection(COLLECTIONS.listings).doc(booking.listingId), {
     'stats.completedRentals': FieldValue.increment(1),
+    /*
+      A PURCHASE TAKES THE PIECE OFF THE MARKET.
+
+      Ownership has changed hands, so it is no longer hers to rent or
+      sell. 'sold' rather than 'removed': it is not a mistake or a
+      takedown, and her closet should still show what she has sold.
+
+      Done HERE rather than at handoff, because handoff is one person
+      saying so and completion is both of them.
+    */
+    ...(booking.kind === 'purchase' ? { status: 'sold' as const } : {}),
   });
 
   // Asked for now, while it is fresh. Reviews are what makes a
@@ -160,7 +171,10 @@ export function completeBooking(
   notify(writer, {
     uid: booking.renterUid,
     type: 'review_requested',
-    title: `How was renting from @${booking.lender.username}?`,
+    title:
+      booking.kind === 'purchase'
+        ? `How was buying from @${booking.lender.username}?`
+        : `How was renting from @${booking.lender.username}?`,
     body: 'Leave a review — it helps the next person decide.',
     bookingId: booking.id,
   });

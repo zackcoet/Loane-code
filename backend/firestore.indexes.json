@@ -539,6 +539,24 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "listingId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "renterUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [

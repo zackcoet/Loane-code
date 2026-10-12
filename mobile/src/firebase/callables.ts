@@ -325,3 +325,15 @@ export const prepareFlatPhoto = httpsCallable<
   { imageBase64: string },
   { ok: boolean; fix: string | null; imageBase64: string | null; usedOriginal: boolean }
 >(functions, 'prepareFlatPhoto');
+
+/**
+ * Own It. A purchase is a booking with no dates, so it joins the same
+ * lifecycle rentals use — accept, handoff, both confirm.
+ *
+ * Refused with "On Loane until 4 Oct" when somebody has already been
+ * promised the piece. The server is the only thing that knows that.
+ */
+export const requestPurchase = httpsCallable<
+  { listingId: string; message?: string },
+  { bookingId: string }
+>(functions, 'requestPurchase');

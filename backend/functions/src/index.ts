@@ -82,6 +82,7 @@ export { onMessageCreated } from './triggers/onMessageCreated';
 export { propagateProfileChanges } from './triggers/propagateProfileChanges';
 export { syncPhoneHash } from './triggers/syncPhoneHash';
 export { requestBooking } from './bookings/requestBooking';
+export { requestPurchase } from './bookings/requestPurchase';
 export {
   cancelBooking,
   confirmReceipt,
