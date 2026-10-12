@@ -30,7 +30,8 @@ import { LoaneLoader } from '../src/components/LoaneLoader';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useAuth } from '../src/auth/AuthProvider';
-import { uploadTryOnBodyPhoto, type PickedPhoto } from '../src/lib/photo';
+import { pickPhoto, uploadTryOnBodyPhoto, type PickedPhoto } from '../src/lib/photo';
+import { usePhotoCheck, type PhotoVerdict } from '../src/hooks/usePhotoCheck';
 import { setTryOnBodyPhoto } from '../src/firebase/callables';
 import { callableErrorMessage } from '../src/firebase/errors';
 import { logEvent } from '../src/analytics/events';
@@ -71,6 +72,13 @@ export default function TryOnCamera() {
   const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * The verdict on the shot she is looking at. Checked the moment she
+   * takes or picks one, so she is not asked to confirm a photo we are
+   * about to reject.
+   */
+  const [verdict, setVerdict] = useState<PhotoVerdict | null>(null);
+  const photoCheck = usePhotoCheck();
 
   if (!permission) {
     return (
@@ -97,9 +105,25 @@ export default function TryOnCamera() {
     );
   }
 
+  const useShot = async (picked: PickedPhoto) => {
+    setShot(picked);
+    setConfirmed(false);
+    setError(null);
+    setVerdict(null);
+    setVerdict(await photoCheck.check(picked, 'body'));
+  };
+
   const onShutter = async () => {
     const photo = await camera.current?.takePictureAsync({ quality: 0.9 });
-    if (photo?.uri) setShot({ uri: photo.uri, width: photo.width, height: photo.height });
+    if (photo?.uri) {
+      await useShot({ uri: photo.uri, width: photo.width, height: photo.height });
+    }
+  };
+
+  /** Her camera roll, for a full-body photo somebody already took. */
+  const onPickFromLibrary = async () => {
+    const picked = await pickPhoto('library', 'free');
+    if (picked) await useShot(picked);
   };
 
   const onUse = async () => {
@@ -164,7 +188,47 @@ export default function TryOnCamera() {
 
       <View style={styles.panel}>
         {shot ? (
+          photoCheck.checking ? (
+            <View style={styles.checking}>
+              <LoaneLoader size={30} />
+              <Text variant="bodySmall" tone="secondary" uppercase={false}>
+                Checking your photo…
+              </Text>
+            </View>
+          ) : verdict && !verdict.ok ? (
+            /*
+              A specific fix, not "invalid photo". She is told exactly
+              what to change and given both ways to change it — the
+              second one matters, because "retake" is no help when the
+              good photo is already in her camera roll.
+            */
+            <>
+              <View style={styles.verdictRow}>
+                <Icon name="alert-circle-outline" size={20} tint={color.status.error} />
+                <Text variant="bodySmall" uppercase={false} style={styles.verdictText}>
+                  {verdict.fix}
+                </Text>
+              </View>
+              <Button label="Retake" onPress={() => setShot(null)} />
+              <Button
+                label="Choose another"
+                variant="outline"
+                onPress={() => void onPickFromLibrary()}
+              />
+            </>
+          ) : (
           <>
+            {/* Said once, quietly, so "it worked" is not a dialog she
+                has to dismiss. */}
+            {verdict?.ok && !verdict.skipped ? (
+              <View style={styles.verdictRow}>
+                <Icon name="checkmark-circle" size={20} tint={color.role.shared.background} />
+                <Text variant="bodySmall" tone="heading" uppercase={false}>
+                  Looks great
+                </Text>
+              </View>
+            ) : null}
+
             <Pressable
               onPress={() => setConfirmed((v) => !v)}
               accessibilityRole="checkbox"
@@ -196,6 +260,7 @@ export default function TryOnCamera() {
             />
             <Button label="Retake" variant="text" onPress={() => setShot(null)} />
           </>
+          )
         ) : (
           <>
             {TIPS.map((tip) => (
@@ -216,6 +281,13 @@ export default function TryOnCamera() {
               </View>
             ))}
             <Button label="Take photo" onPress={() => void onShutter()} />
+            {/* Next to the camera, not hidden behind it. A good
+                full-body photo of her usually already exists. */}
+            <Button
+              label="Choose from library"
+              variant="outline"
+              onPress={() => void onPickFromLibrary()}
+            />
             <Button
               label={facing === 'back' ? 'Use the front camera' : 'Use the back camera'}
               variant="text"
@@ -265,6 +337,9 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface.raised,
   },
   tip: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  checking: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.md },
+  verdictRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  verdictText: { flex: 1 },
   strong: { fontWeight: '600' },
   confirmRow: {
     flexDirection: 'row',

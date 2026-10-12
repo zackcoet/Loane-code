@@ -300,3 +300,15 @@ export const setTryOnConfig = httpsCallable<
   { enabled?: boolean; enabledForAdmins?: boolean; reason: string },
   { ok: true }
 >(functions, 'setTryOnConfig');
+
+/**
+ * A quick look at a photo before we keep it.
+ *
+ * The image travels as base64 and is never stored to be checked, so a
+ * body photo that fails never reaches Storage at all. It fails open:
+ * `skipped` means we could not check and let it through.
+ */
+export const checkPhoto = httpsCallable<
+  { kind: 'body' | 'flat'; imageBase64: string; mediaType: string },
+  { ok: boolean; fix: string | null; skipped: boolean }
+>(functions, 'checkPhoto');

@@ -557,6 +557,11 @@ The feature adds all of the following, and none of it is covered today:
 - That try-on usage is logged as events, and what those events contain —
   which is a listing id and a timestamp, never the image.
 - That **no admin can see her body photo or her looks**.
+- That a photo is **checked by an AI service (Anthropic) before it is
+  saved** — what is checked for, that the image is sent for that check
+  and not stored by us to perform it, and that a photo which fails is
+  never kept at all. This applies to her body photo AND to a lender's
+  lay-it-flat photo.
 
 **Terms of Service**
 
