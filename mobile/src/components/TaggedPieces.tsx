@@ -48,14 +48,15 @@ export function TaggedPieces({
         accessibilityLabel={open ? 'Hide tagged pieces' : 'See tagged pieces'}
         style={({ pressed }) => [styles.button, pressed && styles.pressed]}
       >
-        <Text variant="bodySmall" style={styles.buttonLabel}>
+        <Icon name="pricetag-outline" size={16} tint={color.text.heading} />
+        <Text variant="bodySmall" tone="heading" style={styles.buttonLabel}>
           {open
             ? 'Hide tagged pieces'
             : listingIds.length === 1
               ? 'See tagged piece'
               : `See tagged pieces (${listingIds.length})`}
         </Text>
-        <Icon name={open ? 'chevron-up' : 'chevron-down'} size={18} tint={color.icon.muted} />
+        <Icon name={open ? 'chevron-up' : 'chevron-down'} size={18} tint={color.text.heading} />
       </Pressable>
 
       {open ? (
@@ -179,14 +180,23 @@ function Piece({
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
+  // A merlot outlined pill, from Ella's mockup. It used to be a grey
+  // filled block, which read as disabled chrome rather than the one
+  // control on the card that leads to a rental.
+  //
+  // alignSelf flex-start so it hugs its own text instead of stretching
+  // across the card, which is what makes it look like a button rather
+  // than a section header.
   button: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
     paddingVertical: 10,
-    borderRadius: radius.md,
-    backgroundColor: color.surface.muted,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: color.border.inverse,
   },
   buttonLabel: { fontWeight: '600' },
   pressed: { opacity: 0.6 },

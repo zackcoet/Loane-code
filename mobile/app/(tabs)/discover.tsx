@@ -139,7 +139,9 @@ export default function Discover() {
   return (
     <Screen flush>
       <View style={styles.header}>
-        <Logo size={30} lockup="mark" />
+        <View style={styles.logoLift}>
+          <Logo size={30} lockup="mark" />
+        </View>
         <Text variant="label">Discover</Text>
         <View style={styles.headerSpacer} />
       </View>
@@ -320,12 +322,13 @@ export default function Discover() {
 
 const styles = StyleSheet.create({
   header: {
-    height: controls.headerHeight,
+    height: controls.headerHeight - 4,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
   },
+  logoLift: { transform: [{ translateY: -4 }] },
   headerSpacer: { width: 46 },
   searchWrap: {
     flexDirection: 'row',

@@ -391,7 +391,7 @@ export const iconSize = {
    * a thumb rather than read, and was undersized against the 92pt bar
    * it sits in.
    */
-  tab: 31,
+  tab: 33,
 } as const;
 
 /**

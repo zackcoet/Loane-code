@@ -79,7 +79,9 @@ export default function Feed() {
           onPress={() => router.push('/menu')}
           accessibilityLabel="Open menu"
         />
-        <Logo size={30} lockup="below" tint={color.text.heading} />
+        <View style={styles.logoLift}>
+          <Logo size={30} lockup="below" tint={color.text.heading} />
+        </View>
         <View>
           <IconButton
             name="chatbubble-outline"
@@ -219,12 +221,13 @@ export default function Feed() {
 
 const styles = StyleSheet.create({
   header: {
-    height: controls.headerHeight + 10,
+    height: controls.headerHeight + 6,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.sm,
   },
+  logoLift: { transform: [{ translateY: -4 }] },
   unreadDot: {
     position: 'absolute',
     top: 8,

@@ -21,6 +21,9 @@ import { useUnreadCount } from '../../src/hooks/useNotifications';
 import { SuspendedBanner } from '../../src/components/SuspendedBanner';
 import { Icon, type IconName } from '../../src/components/Icon';
 
+const TAB_BAR_ROW_HEIGHT = 56;
+const POST_BUTTON_SIZE = 60;
+
 /**
  * A tab icon. Black when you are on it, grey when you are not.
  *
@@ -110,8 +113,7 @@ export default function TabsLayout() {
           tabBarInactiveTintColor: color.text.muted,
           tabBarStyle: [
             styles.bar,
-            // 49 is React Navigation's own icon-row height.
-            { height: 49 + bottomPad, paddingBottom: bottomPad },
+            { height: TAB_BAR_ROW_HEIGHT + bottomPad, paddingBottom: bottomPad },
           ],
           tabBarShowLabel: false,
         }}
@@ -199,14 +201,14 @@ const styles = StyleSheet.create({
     borderTopColor: color.border.default,
   },
   postButton: {
-    width: 56,
-    height: 56,
+    width: POST_BUTTON_SIZE,
+    height: POST_BUTTON_SIZE,
     borderRadius: radius.pill,
     backgroundColor: color.role.renter.background,
     alignItems: 'center',
     justifyContent: 'center',
-    // Lifts it proud of a 49pt bar.
-    marginTop: -18,
+    // Lifts it proud of the tab row.
+    marginTop: -20,
     shadowColor: color.role.renter.background,
     shadowOpacity: 0.35,
     shadowRadius: 12,

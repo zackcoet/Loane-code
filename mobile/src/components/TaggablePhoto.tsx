@@ -107,6 +107,19 @@ export function TaggablePhoto({
 
   const viewing = mode === 'view';
 
+  // The chip on the photo advertises ONE piece: the first tagged.
+  // Rental price when it is rentable, sale price when it is only for
+  // sale, nothing at all when neither is set rather than a bare name
+  // with a dangling separator.
+  const firstTag = tags[0];
+  const firstPrice = firstTag
+    ? firstTag.priceCents3Day != null
+      ? formatCentsShort(firstTag.priceCents3Day)
+      : firstTag.salePriceCents != null
+        ? formatCentsShort(firstTag.salePriceCents)
+        : null
+    : null;
+
   // runOnJS, because everything these do — setting React state, calling
   // a Cloud Function — belongs on the JS thread.
   const doubleTap = Gesture.Tap()
@@ -261,12 +274,33 @@ export function TaggablePhoto({
         <Icon name="heart" size={fontSize['6xl']} tint={color.text.inverse} />
       </Animated.View>
 
-      {mode === 'view' && tags.length > 0 && !tagsVisible ? (
-        <View style={styles.hint} pointerEvents="none">
-          <Text variant="caption" tone="inverse">
-            {tags.length === 1 ? '1 piece tagged' : `${tags.length} pieces tagged`}
+      {/*
+        The piece, not a count.
+        
+        It used to read "2 pieces tagged", which told her there was
+        something to tap without giving her a reason to. "Silk midi ·
+        $18" IS the reason — a name and a price are what turn a photo
+        into a rental, and tagged_item_tap is the metric that matters
+        most in the whole app.
+
+        Still one chip even when several pieces are tagged: the rest
+        are a tap away, and a stack of chips would cover the outfit
+        they are advertising.
+      */}
+      {mode === 'view' && firstTag && !tagsVisible ? (
+        <Pressable
+          onPress={() => (onOpenTag ? onOpenTag(firstTag.listingId) : onToggleTags?.())}
+          accessibilityRole="button"
+          accessibilityLabel={`${firstTag.name}${firstPrice ? `, ${firstPrice}` : ''}`}
+          style={styles.hint}
+        >
+          <Icon name="pricetag" size={14} tint={color.text.inverse} />
+          <Text variant="bodySmall" tone="inverse" numberOfLines={1} style={styles.hintText}>
+            {firstTag.name}
+            {firstPrice ? ` · ${firstPrice}` : ''}
           </Text>
-        </View>
+          <Icon name="arrow-forward" size={14} tint={color.text.inverse} />
+        </Pressable>
       ) : null}
     </View>
   );
@@ -327,12 +361,16 @@ const styles = StyleSheet.create({
   },
   hint: {
     position: 'absolute',
-    left: spacing.sm,
-    bottom: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radius.sm,
-    backgroundColor: color.surface.inverse,
-    opacity: 0.85,
+    left: spacing.md,
+    bottom: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    maxWidth: '80%',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 9,
+    borderRadius: radius.pill,
+    backgroundColor: color.scrim.onPhoto,
   },
+  hintText: { flexShrink: 1, fontWeight: '600' },
 });
