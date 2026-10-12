@@ -8,7 +8,8 @@
 
 import { useState } from 'react';
 import { Alert, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { REVIEW_MAX_RATING, color, fontSize, spacing } from '@loane/shared';
+import {
+  REVIEW_EDIT_WINDOW_HOURS, REVIEW_MAX_RATING, color, fontSize, spacing } from '@loane/shared';
 import { Button } from './Button';
 import { Header } from './Header';
 import { Input } from './Input';
@@ -103,7 +104,7 @@ export function ReviewSheet({ visible, bookingId, aboutUsername, onClose }: Prop
           />
 
           <Text variant="caption" tone="muted">
-            You can change this for 48 hours. After that it is fixed.
+            You can change this for {REVIEW_EDIT_WINDOW_HOURS} hours. After that it is fixed.
           </Text>
 
           <Button
