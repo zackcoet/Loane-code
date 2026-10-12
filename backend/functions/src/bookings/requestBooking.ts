@@ -61,15 +61,15 @@ interface RequestBookingResult {
 }
 
 /**
- * When an unanswered request goes stale: 48 hours from now, or the day
- * before the rental starts, whichever comes first. A request for this
- * Saturday should not sit unanswered until Saturday.
+ * When an unanswered request goes stale: REQUEST_EXPIRY_HOURS from
+ * now, or the day before the rental starts, whichever comes first. A
+ * request for this Saturday should not sit unanswered until Saturday.
  */
 function requestExpiry(startDate: string): Date {
-  const in48h = new Date(Date.now() + REQUEST_EXPIRY_HOURS * 3600_000);
+  const deadline = new Date(Date.now() + REQUEST_EXPIRY_HOURS * 3600_000);
   const dayBeforeStart = new Date(`${startDate}T00:00:00Z`);
   dayBeforeStart.setUTCDate(dayBeforeStart.getUTCDate() - 1);
-  return in48h < dayBeforeStart ? in48h : dayBeforeStart;
+  return deadline < dayBeforeStart ? deadline : dayBeforeStart;
 }
 
 export const requestBooking = onCall<RequestBookingInput, Promise<RequestBookingResult>>(
@@ -213,7 +213,7 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
         cancelledByUid: null,
         cancellationReason: null,
         declineReason: null,
-        // The lender has 48 hours, or until the day before the rental
+        // The lender has REQUEST_EXPIRY_HOURS, or until the day before
         // starts, whichever comes first.
         expiresAt: Timestamp.fromDate(requestExpiry(startDate)),
         disputeWindowEndsAt: null,
@@ -229,7 +229,7 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
       //
       // This was a TODO, and it meant a request arrived in total
       // silence: the renter waited, the lender never knew, and the
-      // request expired after 48 hours having been seen by nobody.
+      // request expired unanswered, having been seen by nobody.
       // A marketplace where asking to rent notifies no one is not a
       // marketplace.
       notify(tx, {
@@ -238,8 +238,8 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
         title: `@${renter.username} wants to rent your ${listing.name}`,
         body:
           startDate && endDate
-            ? `${formatRange({ startDate, endDate })} — accept or decline within 48 hours.`
-            : 'Accept or decline within 48 hours.',
+            ? `${formatRange({ startDate, endDate })} — accept or decline within ${REQUEST_EXPIRY_HOURS} hours.`
+            : `Accept or decline within ${REQUEST_EXPIRY_HOURS} hours.`,
         bookingId: bookingRef.id,
         actor: { uid: renter.uid, username: renter.username, photoUrl: renter.photoUrl },
       });

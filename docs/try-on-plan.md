@@ -565,6 +565,15 @@ The feature adds all of the following, and none of it is covered today:
 
 **Terms of Service**
 
+- ⚠️ **The fee model in the published Terms v1 is wrong.** Section 5
+  says "Renters pay a Loane service fee of 15% on top of the rental
+  price, with a $1.50 minimum. Lenders receive the full listed rental
+  price." Since 2026-10-11 it is the opposite: the lender pays 20% out
+  of the rental price and the renter pays the listed price only. The
+  48-hour request-expiry references in Sections 4 and 6 are also stale
+  — it is 24 hours. These are NOT edited in place, because v1 is a
+  published legal document people have already accepted; they are
+  corrected in v2.
 - That try-on output is **an AI approximation and not a representation of
   fit, size, colour or condition**, and must not be relied on when deciding
   to rent or buy. This matters: a renter who takes delivery and says "it

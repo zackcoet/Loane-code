@@ -171,9 +171,16 @@ Rush, Vacation, Wedding, Graduation.
 - No Firebase App Check, no rate limiting. Phase 8.
 - Blocking users is designed (`users/{uid}/blocked/{uid}`) but not built.
   Phase 6.
-- **The Loane fee is 15%, paid by the renter on top of the rental price**,
-  with a $1.50 minimum. Decided 2026-10-05. Still recorded per booking in
-  `booking.amounts.feePaidBy` so changing it later never rewrites history.
+- **The Loane fee is 20%, paid by the LENDER out of the rental price.**
+  The renter pays the listed price and nothing else, and no fee line is
+  ever shown to her. Cleaning fees pass through to the lender whole —
+  they reimburse a dry-clean she really pays for. Ella's 80/20, decided
+  2026-10-11, superseding the 15%-renter-paid model of 2026-10-05.
+  There is no minimum. Recorded per booking in
+  `booking.amounts.feePaidBy` so changing it later never rewrites
+  history.
+  **The published Terms v1 still describe the old model** — they are a
+  legal document and are corrected in Terms v2, not edited in place.
 - **Nothing is ever held against garment value.** A renter agrees to a
   liability cap and is charged only if an admin approves a claim. Card
   holds expire after ~7 days, so a hold would silently stop protecting us.

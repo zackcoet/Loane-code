@@ -2,7 +2,7 @@
  * Request to rent.
  *
  * Pick 3 or 7 days, pick a start date, see what it costs, send the
- * request. The lender then has 48 hours to answer.
+ * request. The lender then has REQUEST_EXPIRY_HOURS to answer.
  *
  * ON PAYMENT: nothing is charged. During beta the two of them settle up
  * between themselves, and the screen says so plainly rather than

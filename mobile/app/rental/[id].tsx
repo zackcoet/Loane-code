@@ -21,6 +21,8 @@ import {
 } from 'react-native';
 import {
   BOOKING_STATUS_LABELS,
+  PLATFORM_FEE_BPS,
+  REQUEST_EXPIRY_HOURS,
   RETURN_DISPUTE_WINDOW_HOURS,
   RETURN_PROBLEMS,
   RETURN_PROBLEM_LABELS,
@@ -272,12 +274,42 @@ export default function RentalScreen() {
           </Card>
         ) : null}
 
+        {/*
+          TWO DIFFERENT SUMS, because the two people are not paying and
+          receiving the same thing.
+
+          The renter pays the listed price (plus cleaning, if the lender
+          charges it) and NOTHING ELSE. Loane's cut comes out of the
+          lender's side, so showing a renter a "Loane fee" shows her a
+          charge she is not paying.
+
+          The lender sees what actually lands in her account: the rental
+          less Loane's 20%, plus any cleaning fee in full — cleaning
+          reimburses a dry-clean she really pays for, so we take nothing
+          from it.
+        */}
         <Card style={styles.block}>
-          <Text variant="label">What it costs</Text>
+          <Text variant="label">{isLender ? 'What you earn' : 'What it costs'}</Text>
           <View style={styles.breakdown}>
             <Line label="Rental" value={formatCents(booking.amounts.baseCents)} />
-            <Line label="Loane fee" value={formatCents(booking.amounts.platformFeeCents)} />
-            <Line label="Total" value={formatCents(booking.amounts.renterTotalCents)} strong />
+            {booking.amounts.cleaningFeeCents > 0 ? (
+              <Line label="Cleaning" value={formatCents(booking.amounts.cleaningFeeCents)} />
+            ) : null}
+            {isLender ? (
+              <>
+                <Line
+                  label={`Loane fee (${PLATFORM_FEE_BPS / 100}%)`}
+                  value={`-${formatCents(booking.amounts.platformFeeCents)}`}
+                />
+                <Line
+                  label="Your payout"
+                  value={formatCents(booking.amounts.lenderPayoutCents)}
+                  strong
+                />
+              </>
+            ) : (
+              <Line label="Total" value={formatCents(booking.amounts.renterTotalCents)} strong />
+            )}
           </View>
           <Text variant="caption" tone="muted" style={styles.blockBody}>
             Loane isn&apos;t taking payments yet — settle this between yourselves.
@@ -429,7 +461,11 @@ export default function RentalScreen() {
                   })
                 }
               />
-              <Button label="Report a problem" variant="outline" onPress={onFlagProblem} />
+              {/* The RETURN problem — damage, missing, not back. Named
+                  for what it is, because the moderation report below
+                  is also "report a problem", and two identical buttons
+                  on one screen is worse than two long ones. */}
+              <Button label="Report a return problem" variant="outline" onPress={onFlagProblem} />
             </>
           ) : null}
 
@@ -441,7 +477,7 @@ export default function RentalScreen() {
           ) : null}
 
           <Button
-            label="Report a problem with this rental"
+            label="Report a problem"
             variant="text"
             onPress={() => setReporting(true)}
           />
@@ -475,8 +511,8 @@ export default function RentalScreen() {
 function StatusBanner({ booking, isLender }: { booking: Booking; isLender: boolean }) {
   const copy: Record<string, string> = {
     requested: isLender
-      ? 'She’s asked to rent this. Accept or decline within 48 hours.'
-      : 'Waiting on an answer. She has 48 hours.',
+      ? `She’s asked to rent this. Accept or decline within ${REQUEST_EXPIRY_HOURS} hours.`
+      : `Waiting on an answer. She has ${REQUEST_EXPIRY_HOURS} hours.`,
     confirmed: booking.handoff.dropoffAt
       ? isLender
         ? 'Dropped off. Waiting for her to confirm she has it.'
@@ -487,7 +523,7 @@ function StatusBanner({ booking, isLender }: { booking: Booking; isLender: boole
     with_renter: isLender ? 'She has it right now.' : 'You have it. Return it by the end date.',
     returned: isLender
       ? `She's returned it. Confirm you have it back, or report a problem within ${RETURN_DISPUTE_WINDOW_HOURS} hours.`
-      : 'Returned. She confirms, or it closes on its own in 48 hours.',
+      : `Returned. She confirms, or it closes on its own in ${RETURN_DISPUTE_WINDOW_HOURS} hours.`,
     completed: 'All done.',
     declined: booking.declineReason ?? 'Declined.',
     cancelled: booking.cancellationReason ?? 'Cancelled.',
