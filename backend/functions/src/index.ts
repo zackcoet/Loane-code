@@ -52,6 +52,10 @@
  *   - onMessageCreated          updates a thread's preview and unread badge
  *   - propagateProfileChanges   refreshes the copies of her profile stored
  *                               on her listings and posts
+ *   - syncPhoneHash             keeps phoneHashes in step with the phone
+ *                               numbers students have saved, so contact
+ *                               matching works and stops working the
+ *                               moment she removes hers
  *
  * Skeletons with TODOs, filled in during later phases:
  *   - social counters  (Phase 3)
@@ -76,6 +80,7 @@ export { refreshTagLabels } from './triggers/refreshTagLabels';
 export { syncListingAvailability } from './triggers/syncListingAvailability';
 export { onMessageCreated } from './triggers/onMessageCreated';
 export { propagateProfileChanges } from './triggers/propagateProfileChanges';
+export { syncPhoneHash } from './triggers/syncPhoneHash';
 export { requestBooking } from './bookings/requestBooking';
 export {
   cancelBooking,
@@ -109,6 +114,7 @@ export { resolveReport } from './admin/resolveReport';
 export { resolveDispute } from './admin/resolveDispute';
 export { resolveSupportRequest } from './admin/resolveSupportRequest';
 export { suggestedClosets } from './social/suggestedClosets';
+export { matchContacts } from './social/matchContacts';
 export { acceptLegalDocs, publishLegalDoc, saveLegalDraft } from './legal/legal';
 
 // --- Later phases -----------------------------------------------------------

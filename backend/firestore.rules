@@ -226,6 +226,27 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    /**
+     * phoneHashes/{hash} — "is this contact on Loane?"
+     *
+     * SEALED. Not readable, not writable, by anybody with a phone.
+     *
+     * Read access would hand a student a way to test whether a number
+     * she has belongs to a Loane account, one guess at a time — which
+     * is precisely the thing the peppered hash exists to prevent. The
+     * only legitimate reader is matchContacts, which runs with admin
+     * credentials and holds the pepper. The only legitimate writer is
+     * the syncPhoneHash trigger.
+     *
+     * A document here is a claim that a number belongs to a uid. If
+     * the app could write one, a student could point somebody else's
+     * number at her own account and be matched by all of their friends.
+     */
+    match /phoneHashes/{hash} {
+      allow read: if false;
+      allow write: if false;
+    }
+
     // -----------------------------------------------------------------
     // listings — garments in closets
     //

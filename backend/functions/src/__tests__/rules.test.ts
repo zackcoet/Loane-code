@@ -1491,6 +1491,51 @@ describe('private settings', () => {
   });
 });
 
+describe('phone hashes', () => {
+  /**
+   * The fence around contact matching. A student holding a phone
+   * number must not be able to ask Firestore whether it belongs to a
+   * Loane account — that is one guess at a time, and enough guesses is
+   * the whole address book. Only matchContacts, which runs with admin
+   * credentials and holds the pepper, may look.
+   */
+  const HASH = 'a'.repeat(64);
+
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'phoneHashes', HASH), {
+        uid: MADDIE,
+        createdAt: new Date(),
+      });
+    });
+  });
+
+  it('cannot be read by a student', async () => {
+    await assertFails(getDoc(doc(asElla(), 'phoneHashes', HASH)));
+  });
+
+  it('cannot be read by an admin either — there is nothing there for a person', async () => {
+    await assertFails(getDoc(doc(asAdmin(), 'phoneHashes', HASH)));
+  });
+
+  it('cannot be written by a student claiming a number is hers', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'phoneHashes', 'b'.repeat(64)), {
+        uid: ELLA,
+        createdAt: new Date(),
+      }),
+    );
+  });
+
+  it("cannot be repointed at her own account", async () => {
+    await assertFails(updateDoc(doc(asElla(), 'phoneHashes', HASH), { uid: ELLA }));
+  });
+
+  it('cannot be deleted by a student', async () => {
+    await assertFails(deleteDoc(doc(asElla(), 'phoneHashes', HASH)));
+  });
+});
+
 describe('dismissed suggestions', () => {
   // The one thing under users/ the app may write. It moves no counter
   // and changes only what she herself sees, so making her wait on a

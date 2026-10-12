@@ -24,6 +24,7 @@ import { Screen } from '../src/components/Screen';
 import { Header } from '../src/components/Header';
 import { LegalDocumentModal } from '../src/components/LegalDocumentModal';
 import { useUserSettings } from '../src/hooks/useUserSettings';
+import { formatPhone } from '@loane/shared';
 import { auth } from '../src/firebase/config';
 
 interface Row {
@@ -41,7 +42,29 @@ export default function Settings() {
   const [legalOpen, setLegalOpen] = useState<LegalDocKind | null>(null);
   // Her campus email is no longer on the public profile — it is hers
   // and an admin's to read, and nobody else's.
-  const { settings } = useUserSettings();
+  const { settings, save } = useUserSettings();
+
+  /**
+   * Removing her number is a real privacy control, not a cosmetic one:
+   * the syncPhoneHash trigger deletes her entry from `phoneHashes` the
+   * moment this saves, and from then on nobody's contacts match her.
+   * The confirmation says exactly that, because "Remove" on its own
+   * does not tell her what stops happening.
+   */
+  const onRemovePhone = () => {
+    Alert.alert(
+      'Remove your phone number?',
+      "You'll stop showing up when other students check their contacts. Anyone you have a rental with will no longer have a way to reach you about the handoff.",
+      [
+        { text: 'Keep it', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => void save({ phone: null }),
+        },
+      ],
+    );
+  };
 
   const rows: Row[] = [
     { label: 'Edit Profile', href: '/edit-profile' },
@@ -54,6 +77,13 @@ export default function Settings() {
       // TODO-PHASE5: Stripe Connect onboarding.
       onPress: () =>
         Alert.alert('Coming soon', 'Payouts and bank details arrive with payments in Phase 5.'),
+    },
+    {
+      label: 'Phone Number',
+      value: settings?.phone ? formatPhone(settings.phone) : 'Not added',
+      // Adding one is an edit; removing one is a privacy decision, and
+      // it should not be buried inside a form behind a Save button.
+      onPress: settings?.phone ? onRemovePhone : () => router.push('/edit-profile'),
     },
     {
       label: 'Campus Email',

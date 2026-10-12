@@ -63,6 +63,28 @@ export const suggestedClosets = httpsCallable<
   }
 >(functions, 'suggestedClosets');
 
+/**
+ * Which of her contacts are already on Loane.
+ *
+ * SHA-256 of each number goes up; nothing comes back that says which
+ * contact matched which account, and the request is never stored.
+ * See backend/functions/src/social/matchContacts.ts.
+ */
+export interface ContactMatch {
+  uid: string;
+  username: string;
+  displayName: string;
+  photoUrl: string | null;
+  campusId: string;
+  isVerified: boolean;
+  isFollowing: boolean;
+}
+
+export const matchContacts = httpsCallable<{ hashes: string[] }, { matches: ContactMatch[] }>(
+  functions,
+  'matchContacts',
+);
+
 export const unfollowUser = httpsCallable<{ uid: string }, { following: boolean }>(
   functions,
   'unfollow',

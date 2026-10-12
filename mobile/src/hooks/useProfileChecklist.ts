@@ -81,7 +81,7 @@ export function useProfileChecklist() {
         label: 'Find your friends',
         hint: 'See who from your campus is already on Loane.',
         done: Boolean(settings?.profileChecklist?.foundFriendsAt),
-        href: '/find-friends',
+        href: '/contacts',
       },
       {
         key: 'follow',

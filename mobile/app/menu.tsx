@@ -50,7 +50,8 @@ const ITEMS: Item[] = [
   // Messages is not here. It has its own tab in the bottom bar, and a
   // second door to the same room is just something else to scan past.
   { label: 'Activity', icon: 'notifications-outline', href: '/(tabs)/activity' },
-  { label: 'Find Friends', icon: 'person-add-outline', href: '/find-friends' },
+  { label: 'Find Friends', icon: 'person-add-outline', href: '/contacts' },
+  { label: 'Search Students', icon: 'search-outline', href: '/find-friends' },
   { label: 'Invite Friends', icon: 'share-outline', href: '/invite-friends' },
   { label: 'Payouts & Payment Info', icon: 'card-outline', href: '/payouts' },
   { label: 'Safety', icon: 'shield-checkmark-outline', href: '/safety' },

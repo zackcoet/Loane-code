@@ -44,6 +44,12 @@
           "photosPermission": "Loane needs your photos so you can set a profile picture and list your pieces.",
           "cameraPermission": "Loane needs your camera so you can take a profile picture and photograph your pieces."
         }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Loane checks which of your contacts are already on your campus. Only scrambled phone numbers are sent, and your contacts are never saved."
+        }
       ]
     ],
     "experiments": {

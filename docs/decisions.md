@@ -561,3 +561,74 @@ half-finished app rather than a brand.
 jacket" is not English. Buttons, labels and CTAs use the words exactly;
 sentences stay natural and simply avoid "rent" as a verb. Ella's language
 is meant to make the app sound better, not stranger.
+
+---
+
+## 2026-10-12 — Matching contacts without keeping anybody's contacts
+
+**Decision:** Students can check which of their phone contacts are already
+on Loane. Phone numbers are hashed on the device, compared on the server
+against a peppered hash, and the request is thrown away. No address book
+is ever stored.
+
+**The chain, exactly:**
+
+```
+app     SHA-256(E.164 number)                     ← leaves the phone
+server  HMAC-SHA256(key = CONTACT_MATCH_PEPPER,
+                    message = that SHA-256)        ← what Firestore holds
+```
+
+**Why not a plain hash.** A US phone number is ten digits. Ten billion
+possibilities is minutes of work on a laptop, so a plain SHA-256 of a
+phone number is not anonymous — anyone who took the collection could
+rebuild every number in it. The pepper is a server secret the app never
+sees, so the stored values cannot be reversed even by somebody holding
+the whole database.
+
+**What this does NOT protect against, written down so nobody later
+believes otherwise.** Whoever holds the pepper *and* the collection can
+still test a specific guess: "is 803-555-0100 in here?" That is us. It is
+the price of the feature existing at all, and it is why the pepper is a
+secret rather than a constant in the source.
+
+**What the app sends:** hashes only. Never raw numbers, never names,
+never emails, never a contact's photo. The function reads
+`fields: [PhoneNumbers]` and nothing else.
+
+**What is stored from a request:** nothing. `matchContacts` compares and
+returns. There is no collection for an address book to go into, and the
+numbers are not written to the function log either.
+
+**What comes back:** a public profile card, and deliberately NOT which
+contact matched which account. She learns Anna is on Loane; she does not
+learn that the number she has for Anna is the one Anna signed up with.
+That difference matters to anybody with a second number they have not
+given out.
+
+**Same campus only.** Partly consistency with the rest of Loane, partly
+that a cross-campus match tells her something about a person she could
+not otherwise learn.
+
+**`phoneHashes` is sealed in the security rules** — no read, no write, not
+even for an admin. Read access would hand a student a one-guess-at-a-time
+oracle, which is the exact thing the pepper exists to prevent. Write
+access would let somebody point another person's number at her own
+account and be matched by all of their friends. Five rules tests fence it.
+
+**She can take it back.** Removing her number in Settings deletes her
+`phoneHashes` entry through the `syncPhoneHash` trigger, and from that
+moment nobody's contacts match her. The confirmation says what stops
+happening rather than just "Remove".
+
+**Rotating the pepper** invalidates every stored hash. They rebuild from
+each user's own number, so a rotation means a backfill, not data loss.
+
+**Set the secret before this works in production:**
+
+```bash
+firebase functions:secrets:set CONTACT_MATCH_PEPPER --project loane-code
+```
+
+Under the emulator it falls back to a fixed development value that is not
+a secret and must never be the production one.
