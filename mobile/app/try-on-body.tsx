@@ -26,7 +26,7 @@
  */
 
 import { useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image, Pressable, StyleSheet, View, type ImageSourcePropType } from 'react-native';
 import {
   TRYON_PRESETS,
@@ -72,11 +72,23 @@ export default function TryOnBody() {
   const router = useRouter();
   const body = useTryOnBody();
   const [chosen, setChosen] = useState<PresetId | null>(null);
+  /*
+    Whatever she was trying to do before she was asked to pick a body.
+
+    She taps "Try this look on", has no photo yet, is sent here — and
+    has to end up back at that look rather than in an empty dressing
+    room. The detour carries its own context.
+  */
+  const params = useLocalSearchParams<{ listings?: string; source?: string }>();
+  const carried = {
+    ...(params.listings ? { listings: params.listings } : {}),
+    ...(params.source ? { source: params.source } : {}),
+  };
 
   const choosePreset = (id: PresetId) => {
     setChosen(id);
     setTimeout(() => {
-      router.replace({ pathname: '/try-on', params: { body: 'preset', preset: id } });
+      router.replace({ pathname: '/try-on', params: { ...carried, body: 'preset', preset: id } });
     }, SELECTION_BEAT_MS);
   };
 
@@ -116,14 +128,16 @@ export default function TryOnBody() {
             {body.hasPhoto ? (
               <Button
                 label="Use my photo"
-                onPress={() => router.replace({ pathname: '/try-on', params: { body: 'own' } })}
+                onPress={() =>
+                  router.replace({ pathname: '/try-on', params: { ...carried, body: 'own' } })
+                }
                 style={styles.grow}
               />
             ) : null}
             <Button
               label={body.hasPhoto ? 'Retake' : 'Take my photo'}
               variant={body.hasPhoto ? 'outline' : undefined}
-              onPress={() => router.push('/try-on-camera')}
+              onPress={() => router.push({ pathname: '/try-on-camera', params: carried })}
               style={styles.grow}
             />
             {/* The same screen, opening the picker on arrival — so the
@@ -133,7 +147,7 @@ export default function TryOnBody() {
               label="Choose from library"
               variant="outline"
               onPress={() =>
-                router.push({ pathname: '/try-on-camera', params: { pick: 'library' } })
+                router.push({ pathname: '/try-on-camera', params: { ...carried, pick: 'library' } })
               }
               style={styles.grow}
             />

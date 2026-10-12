@@ -9,6 +9,7 @@ import {
   type PhotoTag,
   type Post,
   type PostPhoto,
+  isTryOnReady,
 } from '@loane/shared';
 import { db, now, FieldValue, Timestamp } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
@@ -150,6 +151,9 @@ export const createPost = onCall<CreatePostInput, Promise<CreatePostResult>>(
             priceCents3Day: listing.pricing.threeDayCents,
             salePriceCents: listing.salePriceCents,
             ownerUsername: listing.owner.username,
+            // So the feed can offer "Try this look on" without reading
+            // every tagged listing of every post it renders.
+            tryOnReady: isTryOnReady(listing),
           },
         };
       }),

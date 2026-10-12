@@ -5,13 +5,15 @@ import {
   RENTAL_DURATIONS,
   RESERVED_USERNAMES,
   SIZES,
+  TRYON_CATEGORY_MAP,
   type Category,
   type Occasion,
   type RentalDuration,
   type Size,
 } from './constants';
 import { daysBetween, isIsoDate } from './dates';
-import type { Cents, DateRange } from './types/common';
+import type { Cents, DateRange, ImageRef } from './types/common';
+import type { Listing } from './types/listing';
 
 /**
  * Validation shared by the app, the admin dashboard and Cloud Functions.
@@ -367,4 +369,25 @@ export function validateDateRange(range: DateRange, today: string): ValidationRe
     return fail(`You can book up to ${LIMITS.bookingHorizonDays} days ahead.`);
   }
   return OK;
+}
+
+/**
+ * Can this piece be tried on?
+ *
+ * TWO CONDITIONS, AND BOTH MATTER. It needs a lay-it-flat photo —
+ * without one a try-on renders the wrong garment convincingly — and
+ * its category has to be one FASHN can do. Anything outside
+ * TRYON_CATEGORY_MAP is excluded structurally, which is how underwear
+ * and swimwear can never be tried on.
+ *
+ * Lives in shared because three places ask: the Cloud Function that
+ * refuses a generation, the app that decides whether to offer one, and
+ * the trigger that stamps the answer onto a post's tags. Three copies
+ * of this rule would be three chances to disagree about what a student
+ * is allowed to see.
+ */
+export function isTryOnReady(
+  listing: Pick<Listing, 'category'> & { flatPhoto?: ImageRef | null },
+): boolean {
+  return Boolean(listing.flatPhoto) && listing.category in TRYON_CATEGORY_MAP;
 }

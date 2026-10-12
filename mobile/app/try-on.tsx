@@ -41,6 +41,7 @@ import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useUserListings } from '../src/hooks/useProfile';
+import { useListingsByIds } from '../src/hooks/useListingsByIds';
 import { useUserSettings } from '../src/hooks/useUserSettings';
 import {
   isTryOnEligible,
@@ -69,6 +70,8 @@ export default function TryOn() {
     preset?: string;
     source?: string;
     listing?: string;
+    /** Comma-separated, from a post's tagged pieces. */
+    listings?: string;
   }>();
 
   const { settings } = useUserSettings();
@@ -94,11 +97,28 @@ export default function TryOn() {
   const fitting = useFittingRoom();
   const mine = useUserListings(profile?.uid);
 
+  /**
+   * Arriving from "Try this look on": the rail is THAT look's pieces.
+   *
+   * She tapped a specific outfit, so the row should be that outfit —
+   * not her whole wardrobe with the look buried in it.
+   */
+  const postIds = useMemo(
+    () => (params.listings ? params.listings.split(',').filter(Boolean) : []),
+    [params.listings],
+  );
+  const fromPost = postIds.length > 0;
+  const postPieces = useListingsByIds(postIds, fromPost);
+
   const available = useMemo(() => {
-    const all = fromSaved ? fitting.pieces : [...fitting.pieces, ...mine.items];
+    const all = fromPost
+      ? postPieces.listings
+      : fromSaved
+        ? fitting.pieces
+        : [...fitting.pieces, ...mine.items];
     const seen = new Set<string>();
     return all.filter((l) => (seen.has(l.id) ? false : seen.add(l.id)));
-  }, [fromSaved, fitting.pieces, mine.items]);
+  }, [fromPost, postPieces.listings, fromSaved, fitting.pieces, mine.items]);
 
   const shown = useMemo(
     () =>
@@ -123,13 +143,25 @@ export default function TryOn() {
   */
   useEffect(() => {
     if (bodyKind !== 'own') return;
-    if (settings && !bodyPhotoPath) router.replace('/try-on-body');
-  }, [settings, bodyPhotoPath, bodyKind, router]);
+    if (settings && !bodyPhotoPath) {
+      // Carrying the look through the detour. Without this she picks a
+      // body and lands in an empty dressing room, having lost the
+      // outfit she tapped — which is the moment she was interested in.
+      router.replace({
+        pathname: '/try-on-body',
+        params: {
+          ...(params.listings ? { listings: params.listings } : {}),
+          ...(params.source ? { source: params.source } : {}),
+        },
+      });
+    }
+  }, [settings, bodyPhotoPath, bodyKind, router, params.listings, params.source]);
 
-  // Arriving from a Try on button on a card.
+  // Arriving from a Try on button on a card, or from a whole look.
   useEffect(() => {
-    if (preselected || !params.listing) return;
-    const piece = available.find((l) => l.id === params.listing);
+    const wanted = params.listing ?? postIds[0];
+    if (preselected || !wanted) return;
+    const piece = available.find((l) => l.id === wanted);
     if (!piece) return;
     setPreselected(true);
     if (!isTryOnEligible(piece)) return;
@@ -142,7 +174,7 @@ export default function TryOn() {
       ownerUid: piece.ownerUid,
       category: piece.category,
     });
-  }, [preselected, params.listing, available, room]);
+  }, [preselected, params.listing, postIds, available, room]);
 
   const onSave = async () => {
     if (!room.currentTryOnId) return;

@@ -58,7 +58,12 @@ export default function TryOnCamera() {
    * would have to find her way to her pieces again. Taking a photo is
    * a step on the way to something, never the thing itself.
    */
-  const { next, pick } = useLocalSearchParams<{ next?: string; pick?: string }>();
+  const { next, pick, listings, source } = useLocalSearchParams<{
+    next?: string;
+    pick?: string;
+    listings?: string;
+    source?: string;
+  }>();
   const camera = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
 
@@ -153,8 +158,22 @@ export default function TryOnCamera() {
       // record one without it.
       await setTryOnBodyPhoto({ path, confirmed: true });
       logEvent('tryon_body_photo_set', { surface: 'tryon' });
-      if (next === 'saved') {
-        router.replace({ pathname: '/try-on', params: { body: 'own', source: 'saved' } });
+      /*
+        Back to whatever she was doing, not just "back".
+
+        She tapped a look, had no photo, picked "take my photo" — and
+        has to land on that look. router.back() would drop her on the
+        body chooser she has just answered.
+      */
+      if (listings || source || next === 'saved') {
+        router.replace({
+          pathname: '/try-on',
+          params: {
+            body: 'own',
+            ...(listings ? { listings } : {}),
+            ...(source ? { source } : next === 'saved' ? { source: 'saved' } : {}),
+          },
+        });
       } else {
         router.back();
       }

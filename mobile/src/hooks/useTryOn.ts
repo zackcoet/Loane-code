@@ -21,7 +21,6 @@ import {
 import { getDownloadURL, ref } from 'firebase/storage';
 import {
   COLLECTIONS,
-  TRYON_CATEGORY_MAP,
   type Listing,
   type PresetId,
   type TryOn,
@@ -40,10 +39,14 @@ import { useListingsByIds } from './useListingsByIds';
 import { useUserSettings } from './useUserSettings';
 import { logEvent } from '../analytics/events';
 
-/** Whether this listing can be tried on at all. The server checks again. */
-export function isTryOnEligible(listing: Pick<Listing, 'category' | 'flatPhoto'>): boolean {
-  return Boolean(listing.flatPhoto) && listing.category in TRYON_CATEGORY_MAP;
-}
+/**
+ * Whether this listing can be tried on at all. The server checks again.
+ *
+ * Re-exported from shared rather than redefined: the Cloud Function
+ * that refuses a generation and the app that decides whether to offer
+ * one have to mean the same thing by "ready".
+ */
+export { isTryOnReady as isTryOnEligible } from '@loane/shared';
 
 /**
  * Her body photo: whether she has one, and removing it.

@@ -52,6 +52,22 @@ export interface PhotoTag {
     priceCents3Day: Cents | null;
     salePriceCents: Cents | null;
     ownerUsername: string;
+    /**
+     * Whether this piece can be tried on, stamped at tag time and kept
+     * fresh by refreshTagLabels.
+     *
+     * HERE RATHER THAN READ LIVE because the feed asks it of every post
+     * it renders, and reading each tagged listing to answer would be a
+     * query per post per scroll. The copy can go briefly stale when a
+     * lender adds a flat photo; the trigger catches it, and the worst
+     * case is a line appearing a moment late rather than a wrong
+     * garment being rendered — the Cloud Function checks for real
+     * before it spends anything.
+     *
+     * Optional because posts created before this field exists have no
+     * answer, and `undefined` must read as "no" rather than crash.
+     */
+    tryOnReady?: boolean;
   };
 }
 

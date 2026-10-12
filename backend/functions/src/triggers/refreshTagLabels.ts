@@ -1,6 +1,6 @@
 import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions';
-import { COLLECTIONS, type Listing, type Post, type PostPhoto } from '@loane/shared';
+import { COLLECTIONS, isTryOnReady, type Listing, type Post, type PostPhoto } from '@loane/shared';
 import { db, now } from '../lib/admin';
 
 /**
@@ -31,7 +31,14 @@ export const refreshTagLabels = onDocumentUpdated(
       before.coverUrl !== after.coverUrl ||
       before.pricing.threeDayCents !== after.pricing.threeDayCents ||
       before.salePriceCents !== after.salePriceCents ||
-      before.owner.username !== after.owner.username;
+      before.owner.username !== after.owner.username ||
+      /*
+        Try-on readiness. A lender attaching a lay-it-flat photo months
+        after posting a look should make "Try this look on" appear on
+        that post — and removing the photo, or the listing changing to
+        a category we cannot do, should take it away again.
+      */
+      isTryOnReady(before) !== isTryOnReady(after);
 
     if (!changed) return;
 
@@ -42,6 +49,7 @@ export const refreshTagLabels = onDocumentUpdated(
       priceCents3Day: after.pricing.threeDayCents,
       salePriceCents: after.salePriceCents,
       ownerUsername: after.owner.username,
+      tryOnReady: isTryOnReady(after),
     };
 
     const snap = await db()

@@ -264,6 +264,18 @@ export default function Feed() {
                 }
                 onMessageSeller={(ownerUid, listingId) => void chat.open(ownerUid, { listingId })}
                 isMine={item.authorUid === profile?.uid}
+                /*
+                  Straight into the dressing room with this look's
+                  pieces. Try-On sends her to Choose a body first if
+                  she has no photo yet, and brings her back itself —
+                  one place decides that rather than every caller.
+                */
+                onTryOnLook={(listingIds) =>
+                  router.push({
+                    pathname: '/try-on',
+                    params: { listings: listingIds.join(',') },
+                  })
+                }
                 onEdit={
                   item.authorUid === profile?.uid
                     ? () => router.push({ pathname: '/edit-post', params: { id: item.id } })

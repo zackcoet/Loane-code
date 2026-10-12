@@ -12,7 +12,7 @@
  * measures.
  */
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   LIMITS,
@@ -46,6 +46,8 @@ interface Props {
   onEdit?: () => void;
   /** True when this is the signed-in student's own look. */
   isMine?: boolean;
+  /** Opens Try-On with this look's pieces. Absent on screens without it. */
+  onTryOnLook?: (listingIds: string[]) => void;
 }
 
 export function PostCard({
@@ -58,12 +60,33 @@ export function PostCard({
   onMessageSeller,
   onEdit,
   isMine = false,
+  onTryOnLook,
 }: Props) {
   const { width } = useWindowDimensions();
   const [tagsVisible, setTagsVisible] = useState(false);
   const [expandedTag, setExpandedTag] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [piecesOpen, setPiecesOpen] = useState(false);
+
+  /**
+   * The tagged pieces she can actually try on, in the order they were
+   * tagged.
+   *
+   * Read from the tag's own snapshot, NOT by loading each listing — the
+   * feed asks this of every post it renders, and a query per post per
+   * scroll is a real cost for a line of text. refreshTagLabels keeps
+   * the snapshot honest; the Cloud Function checks for real before it
+   * spends anything.
+   */
+  const tryOnReadyIds = useMemo(() => {
+    const ids: string[] = [];
+    for (const photo of post.photos) {
+      for (const tag of photo.tags ?? []) {
+        if (tag.label?.tryOnReady && !ids.includes(tag.listingId)) ids.push(tag.listingId);
+      }
+    }
+    return ids;
+  }, [post.photos]);
   const [captionOpen, setCaptionOpen] = useState(false);
 
   const liked = useIsLiked(post.id);
@@ -297,17 +320,31 @@ export function PostCard({
               ? 'View 1 comment'
               : `View all ${post.stats.commentCount} comments`}
           </Text>
-        ) : (
-          <Text
-            variant="bodySmall"
-            tone="muted"
+        ) : null}
+
+        {/*
+          "Add a comment" used to live here. It was a prompt nobody
+          asked for taking a line under every post, and the comment
+          icon above already opens the same screen.
+
+          What goes here instead is only shown when it is TRUE: a look
+          whose tagged pieces she can actually try on. When there is
+          nothing to offer, nothing is rendered — not a disabled line,
+          not a spacer. See tryOnReadyIds.
+        */}
+        {tryOnReadyIds.length > 0 ? (
+          <Pressable
+            onPress={() => onTryOnLook?.(tryOnReadyIds)}
             accessibilityRole="button"
-            onPress={onPressComments}
-            style={styles.viewComments}
+            accessibilityLabel="Try this look on"
+            style={styles.tryOnLook}
           >
-            Add a comment
-          </Text>
-        )}
+            <Icon name="sparkles" size={14} tint={color.role.shared.background} />
+            <Text variant="bodySmall" tone="heading" uppercase={false} style={styles.tryOnLookText}>
+              Try this look on
+            </Text>
+          </Pressable>
+        ) : null}
 
         {/* When. */}
         <Text variant="caption" tone="muted" style={styles.when}>
@@ -423,6 +460,14 @@ const styles = StyleSheet.create({
   likedByText: { flexShrink: 1 },
   strong: { fontWeight: '600' },
   caption: { marginTop: 2 },
+  tryOnLook: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingTop: spacing.xs,
+    minHeight: controls.minTapTarget,
+  },
+  tryOnLookText: { fontWeight: '600' },
   viewComments: { marginTop: 2 },
   when: { marginTop: 2 },
 });

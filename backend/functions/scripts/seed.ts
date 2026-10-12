@@ -53,6 +53,7 @@ import {
   newUserStripe,
   newUserTryOn,
   TRYON_CATEGORY_MAP,
+  isTryOnReady,
 } from '@loane/shared';
 
 // ---------------------------------------------------------------------------
@@ -1352,12 +1353,26 @@ async function main(): Promise<void> {
 
       // Most looks tag something; a few are just outfit photos, which is
       // how a real feed looks.
+      /*
+        Try-on-ready pieces are tagged FIRST when she owns one.
+
+        A student posting a look tags the piece she is lending, and the
+        pieces worth lending are the ones with a proper photo. Without
+        this bias the seed tagged whatever the catalogue happened to
+        deal her, and not one post in nineteen could offer "Try this
+        look on" — the feature existed and was invisible.
+      */
+      const theirs = [
+        ...theirListings.filter((l) => isTryOnReady(l)),
+        ...theirListings.filter((l) => !isTryOnReady(l)),
+      ];
+
       const tagged: Listing[] = [];
-      if (theirListings.length > 0 && random() > 0.2) {
-        tagged.push(theirListings[i % theirListings.length]!);
+      if (theirs.length > 0 && random() > 0.2) {
+        tagged.push(theirs[i % theirs.length]!);
         // Sometimes a second piece, so multi-tag rendering is covered.
-        if (theirListings.length > 1 && random() > 0.6) {
-          const second = theirListings[(i + 1) % theirListings.length]!;
+        if (theirs.length > 1 && random() > 0.6) {
+          const second = theirs[(i + 1) % theirs.length]!;
           if (second.id !== tagged[0]!.id) tagged.push(second);
         }
       }
@@ -1379,6 +1394,7 @@ async function main(): Promise<void> {
             priceCents3Day: listing.pricing.threeDayCents,
             salePriceCents: listing.salePriceCents,
             ownerUsername: listing.owner.username,
+            tryOnReady: isTryOnReady(listing),
           },
         };
       });
