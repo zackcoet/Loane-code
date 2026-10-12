@@ -17,7 +17,7 @@
  * consent for that is a deliberate act or it is nothing.
  */
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
@@ -58,7 +58,7 @@ export default function TryOnCamera() {
    * would have to find her way to her pieces again. Taking a photo is
    * a step on the way to something, never the thing itself.
    */
-  const { next } = useLocalSearchParams<{ next?: string }>();
+  const { next, pick } = useLocalSearchParams<{ next?: string; pick?: string }>();
   const camera = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
 
@@ -69,6 +69,8 @@ export default function TryOnCamera() {
    * get her feet in. She can flip if she is using a mirror or a stand.
    */
   const [facing, setFacing] = useState<'back' | 'front'>('back');
+  /** So the picker opens once, not on every render. */
+  const askedLibrary = useRef(false);
   const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +127,21 @@ export default function TryOnCamera() {
     const picked = await pickPhoto('library', 'free');
     if (picked) await useShot(picked);
   };
+
+  /*
+    Arrived from "Choose from library": open the picker straight away.
+
+    She comes through this screen rather than round it so the photo
+    check and the "this is a photo of me" confirmation happen whichever
+    way she chose a photo — a second path that skipped either would be
+    a second path that quietly has no consent record.
+  */
+  useEffect(() => {
+    if (pick !== 'library' || askedLibrary.current) return;
+    askedLibrary.current = true;
+    void onPickFromLibrary();
+    // Once, on arrival.
+  }, [pick]);
 
   const onUse = async () => {
     if (!profile || !shot) return;
