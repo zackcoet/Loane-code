@@ -76,10 +76,8 @@ export default function PostSheet() {
     if (option.action === 'look') {
       gate.run('postLook', () => void onPostLook());
     } else {
-      gate.run('listPiece', () => {
-        router.back();
-        router.push(option.action as '/add-to-closet');
-      });
+      router.back();
+      router.push(option.action as '/add-to-closet');
     }
   }
 

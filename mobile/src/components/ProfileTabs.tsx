@@ -95,7 +95,7 @@ export function ProfileTabs({ uid, isMe }: Props) {
             actionLabel={isMe ? 'Add a piece' : undefined}
             onAction={
               isMe
-                ? () => gate.run('listPiece', () => router.push('/add-to-closet'))
+                ? () => router.push('/add-to-closet')
                 : undefined
             }
           />

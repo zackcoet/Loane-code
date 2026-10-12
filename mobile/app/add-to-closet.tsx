@@ -6,11 +6,9 @@ import { useRouter } from 'expo-router';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { Header } from '../src/components/Header';
 import { ListingForm } from '../src/components/ListingForm';
-import { ProfileGateSheet } from '../src/components/ProfileGateSheet';
 import { Screen } from '../src/components/Screen';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useListingForm } from '../src/hooks/useListingForm';
-import { useProfileGate } from '../src/hooks/useProfileGate';
 import { logEvent } from '../src/analytics/events';
 
 export default function AddToCloset() {
@@ -24,7 +22,6 @@ export default function AddToCloset() {
    * would have been cheaper for us and worse for her; stopping her
    * here costs one sheet and loses nothing she typed.
    */
-  const gate = useProfileGate();
 
   const doSubmit = async () => {
     if (!profile) return;
@@ -52,11 +49,10 @@ export default function AddToCloset() {
         <ListingForm
           controller={controller}
           submitLabel="Add to closet"
-          onSubmit={() => gate.run('listPiece', () => void doSubmit())}
+          onSubmit={() => void doSubmit()}
         />
       </KeyboardAvoidingView>
 
-      <ProfileGateSheet gate={gate} />
     </Screen>
   );
 }

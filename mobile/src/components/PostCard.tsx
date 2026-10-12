@@ -87,6 +87,15 @@ export function PostCard({
     }
     return ids;
   }, [post.photos]);
+  const taggedListingIds = useMemo(() => {
+    const ids = [...(post.taggedListingIds ?? [])];
+    for (const photo of post.photos) {
+      for (const tag of photo.tags ?? []) {
+        if (!ids.includes(tag.listingId)) ids.push(tag.listingId);
+      }
+    }
+    return ids;
+  }, [post.photos, post.taggedListingIds]);
   const [captionOpen, setCaptionOpen] = useState(false);
 
   const liked = useIsLiked(post.id);
@@ -353,7 +362,7 @@ export function PostCard({
       </View>
 
       <TaggedPieces
-        listingIds={post.taggedListingIds ?? []}
+        listingIds={taggedListingIds}
         open={piecesOpen}
         onToggle={() => setPiecesOpen((v) => !v)}
         onOpenListing={onPressTag}

@@ -678,12 +678,17 @@ gets an error she can do nothing about. Declining a request needs
 nothing: somebody with an unfinished profile must still be able to say
 no.
 
-**Still only a prompt for listings.** Listings are written by the app
-directly under the security rules, so there is no function to put this
-in. Enforcing it there means a rules `get()` on the private settings
-document on every listing write, which is a real cost for a weaker
-reason — nobody is meeting anybody at the moment a garment is listed.
-Revisit if listings ever move behind a function.
+**LISTING IS NO LONGER GATED AT ALL.** Amended 2026-10-12, Zack's
+call, and it follows the reasoning already written here: nobody is
+meeting anybody at the moment a garment is listed. Asking for a photo
+and a phone number at the door of the thing the marketplace needs more
+of — before anyone has agreed to anything — was the gate forgetting
+what it was for.
+
+She is asked when somebody actually rents or buys the piece, which is
+the moment a handoff exists, and that one IS enforced on the server.
+The weaker, earlier version of this note said listings were "still
+only a prompt"; they are now not even that.
 
 ---
 

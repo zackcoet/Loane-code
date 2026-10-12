@@ -9,11 +9,18 @@
  * Three things genuinely need something first, and each one has a
  * reason you can say out loud:
  *
- *   Post a look      photo          her face is on the post; a blank
- *                                   circle in the feed reads as a bot
- *   Put it on Loane  photo + phone  somebody is going to meet her in
- *                                   person to collect a garment
- *   Loane It / Own It  photo + phone  same, from the other side
+ *   Post a look        photo          her face is on the post; a blank
+ *                                     circle in the feed reads as a bot
+ *   Loane It / Own It  photo + phone  somebody is about to meet her in
+ *                                     person to hand over a garment
+ *
+ * LISTING A PIECE IS NOT GATED. It was, and it was wrong: nobody is
+ * meeting anybody at the moment a garment goes up, and the reasoning
+ * already written in docs/decisions.md said so. Stopping a lender at
+ * the door of the thing the whole marketplace needs more of, for a
+ * handoff that may never happen, was the gate forgetting what it was
+ * for. She is asked when somebody actually rents it — by the SERVER,
+ * which is the check that counts.
  *
  * THE RULE IS ONE PLACE. If a fourth action needs something later it
  * goes in REQUIREMENTS, not into a new `if (!profile.photoUrl)` buried
@@ -30,7 +37,7 @@ import { useCallback, useState } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { useUserSettings } from './useUserSettings';
 
-export type GatedAction = 'postLook' | 'listPiece' | 'rent' | 'buy';
+export type GatedAction = 'postLook' | 'rent' | 'buy';
 export type Requirement = 'photo' | 'phone';
 
 interface Spec {
@@ -46,11 +53,6 @@ const REQUIREMENTS: Record<GatedAction, Spec> = {
     needs: ['photo'],
     title: 'Add a photo first',
     reason: 'Your look shows up in the campus feed with your face on it.',
-  },
-  listPiece: {
-    needs: ['photo', 'phone'],
-    title: 'Two things before you list',
-    reason: 'Whoever rents this is going to meet you in person to collect it.',
   },
   rent: {
     needs: ['photo', 'phone'],

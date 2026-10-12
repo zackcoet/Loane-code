@@ -28,8 +28,6 @@ import {
 } from '@loane/shared';
 import { Button } from '../src/components/Button';
 import { EmptyState } from '../src/components/EmptyState';
-import { ProfileGateSheet } from '../src/components/ProfileGateSheet';
-import { useProfileGate } from '../src/hooks/useProfileGate';
 import { Header } from '../src/components/Header';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
@@ -47,9 +45,6 @@ const STATUS_LABEL: Record<ListingStatus, string | null> = {
 };
 
 export default function MyListings() {
-  // Listing a piece means meeting a renter in person — photo and
-  // phone number first. See useProfileGate.
-  const gate = useProfileGate();
   const router = useRouter();
   const { profile } = useAuth();
   const { width } = useWindowDimensions();
@@ -70,7 +65,7 @@ export default function MyListings() {
           title="Nothing listed yet"
           body="Add a piece and it shows up here, and on your campus."
           actionLabel="Add to closet"
-          onAction={() => gate.run('listPiece', () => router.push('/add-to-closet'))}
+          onAction={() => router.push('/add-to-closet')}
         />
       ) : (
         <FlatList
@@ -81,7 +76,7 @@ export default function MyListings() {
             <Button
               label="Add another piece"
               variant="outline"
-              onPress={() => gate.run('listPiece', () => router.push('/add-to-closet'))}
+              onPress={() => router.push('/add-to-closet')}
               style={styles.addButton}
             />
           }
@@ -89,7 +84,6 @@ export default function MyListings() {
         />
       )}
 
-      <ProfileGateSheet gate={gate} />
     </Screen>
   );
 }

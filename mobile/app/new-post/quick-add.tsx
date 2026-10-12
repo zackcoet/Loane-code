@@ -23,11 +23,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Alert, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { Header } from '../../src/components/Header';
 import { ListingForm } from '../../src/components/ListingForm';
-import { ProfileGateSheet } from '../../src/components/ProfileGateSheet';
 import { Screen } from '../../src/components/Screen';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useListingForm } from '../../src/hooks/useListingForm';
-import { useProfileGate } from '../../src/hooks/useProfileGate';
 import { usePostDraft } from '../../src/post/postDraft';
 import { logEvent } from '../../src/analytics/events';
 
@@ -44,7 +42,6 @@ export default function QuickAddPiece() {
    * would have been cheaper for us and worse for her; stopping her
    * here costs one sheet and loses nothing she typed.
    */
-  const gate = useProfileGate();
 
   // Carry over what she has already told us about the look. Occasions are
   // the slowest part of this form and she has just answered it.
@@ -98,11 +95,10 @@ export default function QuickAddPiece() {
         <ListingForm
           controller={controller}
           submitLabel="Add and tag"
-          onSubmit={() => gate.run('listPiece', () => void doSubmit())}
+          onSubmit={() => void doSubmit()}
         />
       </KeyboardAvoidingView>
 
-      <ProfileGateSheet gate={gate} />
     </Screen>
   );
 }
