@@ -19,6 +19,9 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import {
+  addDays,
+  toIsoDate,
+  type Listing,
   CATEGORY_LABELS,
   OCCASION_LABELS,
   color,
@@ -43,6 +46,7 @@ import { Icon } from '../../src/components/Icon';
 import { Text } from '../../src/components/Text';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useListing } from '../../src/hooks/useListing';
+import { useUnavailableDates } from '../../src/hooks/useBookings';
 import { useUserById } from '../../src/hooks/useProfile';
 import { useIsSaved } from '../../src/hooks/useSaved';
 import { usePostsTagging } from '../../src/hooks/usePostsTagging';
@@ -324,6 +328,18 @@ export default function ListingDetail() {
         page that changes shape depending on who is looking cannot
         answer it.
       */}
+      {/* When it is free, before she has to pick dates to find out.
+          Read-only: choosing dates still happens on the request
+          screen, where the price changes with the length. */}
+      {!isMine && listing.intent !== 'sell' ? (
+        <View style={styles.availability}>
+          <Text variant="label" style={styles.availabilityLabel}>
+            When it&apos;s free
+          </Text>
+          <AvailabilityStrip listing={listing} />
+        </View>
+      ) : null}
+
       <View style={styles.actionBar}>
         <ListingActions
           listing={listing}
@@ -384,7 +400,35 @@ function Fact({ label, value }: { label: string; value: string }) {
   );
 }
 
+function AvailabilityStrip({ listing }: { listing: Listing }) {
+  const unavailable = useUnavailableDates(listing);
+  const today = toIsoDate(new Date());
+  // Two weeks is the window a student actually plans in. Beyond that
+  // the request screen's full calendar takes over.
+  const days = Array.from({ length: 14 }, (_, i) => addDays(today, i));
+
+  return (
+    <View style={styles.strip}>
+      {days.map((d) => (
+        <View key={d} style={styles.stripDay}>
+          <Text variant="caption" tone="muted" uppercase={false}>
+            {Number(d.slice(-2))}
+          </Text>
+          <View style={[styles.stripBar, unavailable.has(d) ? styles.stripOut : styles.stripFree]} />
+        </View>
+      ))}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  availability: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.xs },
+  availabilityLabel: {},
+  strip: { flexDirection: 'row', gap: 2 },
+  stripDay: { flex: 1, alignItems: 'center', gap: 2 },
+  stripBar: { width: '100%', height: 6, borderRadius: 2 },
+  stripOut: { backgroundColor: color.role.shared.background },
+  stripFree: { backgroundColor: color.surface.muted },
   headerActions: { flexDirection: 'row', alignItems: 'center' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingBottom: spacing.xxl },

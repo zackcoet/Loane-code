@@ -97,6 +97,14 @@ export default function Profile() {
             onPress={() => router.push('/edit-profile')}
             style={styles.action}
           />
+          {/* Her closet's calendar. Beside Edit profile because it is
+              the other thing she opens her own profile to do. */}
+          <Button
+            label="Calendar"
+            variant="outline"
+            onPress={() => router.push('/closet-calendar')}
+            style={styles.action}
+          />
         </ProfileHeader>
 
         {/* Between who she is and what she has, which is the join a
