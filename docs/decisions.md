@@ -632,3 +632,41 @@ firebase functions:secrets:set CONTACT_MATCH_PEPPER --project loane-code
 
 Under the emulator it falls back to a fixed development value that is not
 a secret and must never be the production one.
+
+---
+
+## 2026-10-12 — Only ask when it matters
+
+**Decision:** Browsing, liking, following, commenting and saving require
+nothing. Posting a look requires a profile photo. Putting a piece on
+Loane, Loane It and Own It require a photo and a phone number. Nothing
+else is gated.
+
+**Why those three and not a "complete your profile before you start"
+wall:** each has a reason you can say out loud to the person being
+asked. Her face is on the post. Somebody is about to meet her in person
+to hand over a garment. "Complete your profile" is not a reason, it is
+an instruction.
+
+**One place owns the rule.** `REQUIREMENTS` in
+`mobile/src/hooks/useProfileGate.ts`. A fourth gated action goes there,
+not into a new `if (!profile.photoUrl)` in a screen — that is how three
+screens end up disagreeing about what is required.
+
+**The sheet does not navigate.** It opens over whatever she was looking
+at, asks for exactly what is missing, and then performs the original
+tap. Sending her to Edit Profile and leaving her there, having forgotten
+what she was doing, is the thing this exists to avoid. "Not now" always
+closes it; she loses only the action she just started.
+
+**Where the gate sits differs on purpose.** Entry points for buttons
+that only open a screen. SUBMIT for the two listing forms — she has
+filled out the whole thing by then, and stopping her at the door would
+have been cheaper for us and worse for her. Gating at submit also
+covers reaching those forms by deep link.
+
+**THIS IS A PROMPT, NOT A SECURITY CONTROL.** No Cloud Function refuses
+a booking because the renter has no phone number on file. If we ever
+need that to be true — and for handoffs we probably will — it has to be
+enforced in `requestBooking`, not here. Written down so nobody later
+reads this gate as a guarantee.

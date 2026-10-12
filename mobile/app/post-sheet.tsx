@@ -10,6 +10,8 @@ import { Icon, type IconName } from '../src/components/Icon';
 import { Logo } from '../src/components/Logo';
 import { usePostDraft } from '../src/post/postDraft';
 import { startLook } from '../src/post/startLook';
+import { ProfileGateSheet } from '../src/components/ProfileGateSheet';
+import { useProfileGate } from '../src/hooks/useProfileGate';
 
 interface Option {
   title: string;
@@ -44,6 +46,10 @@ export default function PostSheet() {
   const router = useRouter();
   const draft = usePostDraft();
   const [picking, setPicking] = useState(false);
+  // Posting needs a photo; listing needs a photo and a number, because
+  // somebody is going to meet her to collect the garment. See
+  // useProfileGate for the whole rule.
+  const gate = useProfileGate();
 
   /**
    * Posting a look opens the photo library straight away, the way
@@ -63,6 +69,17 @@ export default function PostSheet() {
       });
     } finally {
       setPicking(false);
+    }
+  }
+
+  function onChoose(option: Option) {
+    if (option.action === 'look') {
+      gate.run('postLook', () => void onPostLook());
+    } else {
+      gate.run('listPiece', () => {
+        router.back();
+        router.push(option.action as '/add-to-closet');
+      });
     }
   }
 
@@ -91,14 +108,7 @@ export default function PostSheet() {
           style={styles.option}
           accessibilityRole="button"
           disabled={picking}
-          onPress={() => {
-            if (option.action === 'look') {
-              void onPostLook();
-              return;
-            }
-            router.back();
-            router.push(option.action);
-          }}
+          onPress={() => onChoose(option)}
         >
           <View style={styles.optionIcon}>
             <Icon name={option.icon} size={iconSize.md} tint={color.role.lender.label} />
@@ -110,6 +120,8 @@ export default function PostSheet() {
           <Icon name="chevron-forward" size={20} tint={color.text.muted} />
         </Pressable>
       ))}
+
+      <ProfileGateSheet gate={gate} />
     </View>
   );
 }

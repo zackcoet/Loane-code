@@ -31,6 +31,8 @@ import {
 import { Avatar } from '../../src/components/Avatar';
 import { Button } from '../../src/components/Button';
 import { ListingActions } from '../../src/components/ListingActions';
+import { ProfileGateSheet } from '../../src/components/ProfileGateSheet';
+import { useProfileGate } from '../../src/hooks/useProfileGate';
 import { Chip } from '../../src/components/Chip';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
@@ -58,6 +60,9 @@ const CONDITION_LABELS: Record<Condition, string> = {
 const SOON = 'Booking arrives in the next release. For now, message her closet.';
 
 export default function ListingDetail() {
+  // Renting or buying means meeting another student in person, so
+  // both need a photo and a phone number. useProfileGate owns the rule.
+  const gate = useProfileGate();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
@@ -312,10 +317,14 @@ export default function ListingDetail() {
         <ListingActions
           listing={listing}
           isMine={isMine}
-          onLoaneIt={() => router.push({ pathname: '/request-rental', params: { id: listing.id } })}
+          onLoaneIt={() =>
+            gate.run('rent', () =>
+              router.push({ pathname: '/request-rental', params: { id: listing.id } }),
+            )
+          }
           // TODO-STEP5: the Own It purchase flow. Until it exists, say
           // so rather than opening a request that goes nowhere.
-          onOwnIt={() => Alert.alert('Coming soon', SOON)}
+          onOwnIt={() => gate.run('buy', () => Alert.alert('Coming soon', SOON))}
         />
         {/* Underneath, and quieter. Messaging is how a handoff gets
             arranged, not how a rental starts. */}
@@ -328,6 +337,8 @@ export default function ListingDetail() {
           />
         ) : null}
       </View>
+
+      <ProfileGateSheet gate={gate} />
     </Screen>
   );
 }

@@ -24,6 +24,7 @@ import { IconButton } from '../../src/components/IconButton';
 import { Logo } from '../../src/components/Logo';
 import { LoaneLoader } from '../../src/components/LoaneLoader';
 import { PostCard } from '../../src/components/PostCard';
+import { ProfileGateSheet } from '../../src/components/ProfileGateSheet';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
 import { useAuth } from '../../src/auth/AuthProvider';
@@ -31,6 +32,7 @@ import { usePagedPosts } from '../../src/hooks/usePagedPosts';
 import { useFollowingUids } from '../../src/hooks/useFollowing';
 import { useUnreadMessageCount } from '../../src/hooks/useMessaging';
 import { useSuggestedClosets } from '../../src/hooks/useSuggestedClosets';
+import { useProfileGate } from '../../src/hooks/useProfileGate';
 import { SuggestedClosets } from '../../src/components/SuggestedClosets';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
@@ -62,6 +64,7 @@ export default function Feed() {
   const draft = usePostDraft();
   const unreadMessages = useUnreadMessageCount();
   const suggested = useSuggestedClosets();
+  const gate = useProfileGate();
   const { profile } = useAuth();
   const { posts, loading, loadingMore, error, exhausted, refresh, loadMore } = usePagedPosts();
   const { uids: followingUids } = useFollowingUids();
@@ -191,7 +194,7 @@ export default function Feed() {
           actionLabel={tab === 'campus' ? 'Post a look' : 'Find closets to follow'}
           onAction={
             tab === 'campus'
-              ? () => void startLook(draft, router.push)
+              ? () => gate.run('postLook', () => void startLook(draft, router.push))
               : () => router.push('/(tabs)/discover')
           }
         />
@@ -271,6 +274,8 @@ export default function Feed() {
           )}
         />
       )}
+
+      <ProfileGateSheet gate={gate} />
     </Screen>
   );
 }

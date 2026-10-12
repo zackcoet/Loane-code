@@ -20,6 +20,8 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { usePostDraft } from '../post/postDraft';
 import { startLook } from '../post/startLook';
+import { ProfileGateSheet } from './ProfileGateSheet';
+import { useProfileGate } from '../hooks/useProfileGate';
 import {
   ActivityIndicator,
   Image,
@@ -50,6 +52,8 @@ export function ProfileTabs({ uid, isMe }: Props) {
   const router = useRouter();
   const draft = usePostDraft();
   const [tab, setTab] = useState<ProfileTab>('closet');
+  // Posting a look needs a profile photo — see useProfileGate.
+  const gate = useProfileGate();
   const { width } = useWindowDimensions();
 
   const posts = useUserPosts(uid);
@@ -87,7 +91,11 @@ export function ProfileTabs({ uid, isMe }: Props) {
                 : 'She has not listed anything yet.'
             }
             actionLabel={isMe ? 'Add a piece' : undefined}
-            onAction={isMe ? () => router.push('/add-to-closet') : undefined}
+            onAction={
+              isMe
+                ? () => gate.run('listPiece', () => router.push('/add-to-closet'))
+                : undefined
+            }
           />
         ) : (
           <View style={styles.grid}>
@@ -110,7 +118,9 @@ export function ProfileTabs({ uid, isMe }: Props) {
           title="No posts yet"
           body={isMe ? 'Looks you post will show up here.' : 'She has not posted a look yet.'}
           actionLabel={isMe ? 'Post a look' : undefined}
-          onAction={isMe ? () => void startLook(draft, router.push) : undefined}
+          onAction={
+            isMe ? () => gate.run('postLook', () => void startLook(draft, router.push)) : undefined
+          }
         />
       ) : (
         <View style={styles.grid}>
@@ -124,6 +134,8 @@ export function ProfileTabs({ uid, isMe }: Props) {
           ))}
         </View>
       )}
+
+      <ProfileGateSheet gate={gate} />
     </View>
   );
 }
