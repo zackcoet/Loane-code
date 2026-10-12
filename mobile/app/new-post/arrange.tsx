@@ -168,7 +168,7 @@ export default function ArrangePhotos() {
           accessibilityRole="button"
           accessibilityLabel="Remove this photo"
         >
-          <Icon name="close" size={20} tint={color.accent.label} />
+          <Icon name="close" size={20} tint={color.role.shared.label} />
         </Pressable>
         <Pressable
           onPress={onPressPhotoActions}
@@ -177,7 +177,7 @@ export default function ArrangePhotos() {
           accessibilityRole="button"
           accessibilityLabel="Crop this photo"
         >
-          <Icon name="crop" size={20} tint={color.accent.label} />
+          <Icon name="crop" size={20} tint={color.role.shared.label} />
         </Pressable>
       </View>
 
@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
     width: controls.minTapTarget,
     height: controls.minTapTarget,
     borderRadius: radius.pill,
-    backgroundColor: color.accent.background,
+    backgroundColor: color.role.shared.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: color.border.strong },
-  dotActive: { backgroundColor: color.accent.background },
+  dotActive: { backgroundColor: color.role.shared.background },
   filmstrip: { paddingVertical: spacing.sm },
   filmstripContent: { paddingHorizontal: spacing.md, gap: THUMB_GAP, alignItems: 'center' },
   thumb: {
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  thumbActive: { borderColor: color.accent.border },
+  thumbActive: { borderColor: color.role.shared.border },
   thumbImage: { width: '100%', height: '100%' },
   thumbBadge: {
     position: 'absolute',
@@ -354,10 +354,10 @@ const styles = StyleSheet.create({
     minWidth: 16,
     paddingHorizontal: 4,
     borderRadius: radius.sm,
-    backgroundColor: color.accent.background,
+    backgroundColor: color.role.shared.background,
     alignItems: 'center',
   },
-  thumbBadgeText: { color: color.accent.label, fontWeight: '600' },
+  thumbBadgeText: { color: color.role.shared.label, fontWeight: '600' },
   addTile: {
     width: THUMB,
     height: THUMB,

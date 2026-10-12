@@ -90,6 +90,8 @@ export const palette = {
   scrim65: 'rgba(0, 0, 0, 0.65)',
   scrim35: 'rgba(0, 0, 0, 0.35)',
   shadow35: 'rgba(0, 0, 0, 0.35)',
+  /** The soft lift under a white card on a white page. */
+  shadow08: 'rgba(35, 22, 25, 0.08)',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -112,10 +114,22 @@ export const color = {
   },
 
   surface: {
-    /** The canvas. Cream, never white — this is the single biggest thing
-        that makes the app look like the deck. */
-    page: palette.cream,
-    /** A card or sheet. WHITE on purpose, so it lifts off the cream. */
+    /**
+     * The page. WHITE.
+     *
+     * Cream was the canvas for two days and Ella's note was that it felt
+     * dirty — a whole screen of it has no air in it. Cream is now a
+     * BAND rather than a backdrop: white page, cream sections, white
+     * cards floating on both.
+     */
+    page: palette.white,
+    /**
+     * A cream section — a banded row, a summary block, the strip behind
+     * a header. Use it to break a long white screen into parts, not to
+     * fill one.
+     */
+    section: palette.cream,
+    /** A card or sheet. White, with `shadow.card` to lift it. */
     raised: palette.white,
     /** A quietly shaded block — image placeholders, pressed rows. */
     muted: palette.grey50,
@@ -130,8 +144,8 @@ export const color = {
     strong: palette.grey300,
     /** A focused input. */
     focus: palette.merlot,
-    /** Selected tabs and small active indicators. */
-    accent: palette.butter,
+    /** Selected tabs and small active indicators. Shared, so merlot. */
+    accent: palette.merlot,
     inverse: palette.merlot,
     error: palette.cherry,
   },
@@ -178,32 +192,40 @@ export const color = {
   },
 
   /**
-   * The quiet highlight: a price tag, a selected chip, a chosen date.
+   * WHO AN ELEMENT IS FOR. Ella's rule, and the spine of the palette.
    *
-   * BUTTER, not cherry. Two loud reds on one screen cancel each other
-   * out — if a price tag shouts as loudly as "Request to rent", neither
-   * one is the primary action any more. Butter is warm, calm, and
-   * unmistakably not a button.
+   *   lender  butter, merlot text   — her closet, her earnings, her
+   *                                   requests to answer, listing a piece
+   *   renter  cherry, white text    — borrowing and buying: Loane It,
+   *                                   Own It, her side of a booking
+   *   shared  merlot, white text    — anything that belongs to neither:
+   *                                   likes, follow, edit profile,
+   *                                   selected filters, unread badges
    *
-   * `label` is near-black and there is deliberately NO "accent text"
-   * token. Butter on cream is 1.19:1: invisible as ink, excellent as a
-   * background. That is the same trap chartreuse fell into.
+   * The point is that a student can tell at a glance whether a screen is
+   * talking to her as the person who owns the dress or the person who
+   * wants it. Two sides of the same booking are the same colour today,
+   * and that is the confusion this removes.
+   *
+   * Every `label` is the only readable foreground for its background —
+   * butter and cherry are never ink, in either direction.
    */
-  accent: {
-    background: palette.butter,
-    border: palette.butter,
-    label: palette.ink900,
-  },
-
-  /**
-   * Something that needs answering now: an unread badge, a "Your turn"
-   * pill. Cherry, because this is the other thing worth interrupting
-   * for, and it is rare enough not to compete with the buttons.
-   */
-  attention: {
-    background: palette.cherry,
-    border: palette.cherry,
-    label: palette.white,
+  role: {
+    lender: {
+      background: palette.butter,
+      border: palette.butter,
+      label: palette.merlot,
+    },
+    renter: {
+      background: palette.cherry,
+      border: palette.cherry,
+      label: palette.white,
+    },
+    shared: {
+      background: palette.merlot,
+      border: palette.merlot,
+      label: palette.white,
+    },
   },
 
   /**
@@ -229,6 +251,14 @@ export const color = {
   },
   shadow: {
     textOnPhoto: palette.shadow35,
+    /**
+     * The lift under a white card.
+     *
+     * Deliberately barely there. A white card on a white page needs
+     * depth, not drama — anything heavier and the app looks like a
+     * dashboard instead of a magazine.
+     */
+    card: palette.shadow08,
   },
 } as const;
 

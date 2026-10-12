@@ -45,7 +45,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     paddingHorizontal: spacing.md,
   },
-  chipActive: { backgroundColor: color.accent.background, borderColor: color.accent.border },
+  chipActive: {
+    backgroundColor: color.role.shared.background,
+    borderColor: color.role.shared.border,
+  },
   text: { fontSize: type.bodySmall.size, color: color.text.primary },
-  textActive: { color: color.accent.label },
+  textActive: { color: color.role.shared.label },
 });

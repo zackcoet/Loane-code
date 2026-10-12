@@ -365,8 +365,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   toolButtonActive: {
-    backgroundColor: color.accent.background,
-    borderColor: color.accent.border,
+    backgroundColor: color.role.shared.background,
+    borderColor: color.role.shared.border,
   },
   tabRow: {
     flexDirection: 'row',

@@ -113,6 +113,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: color.attention.background,
+    backgroundColor: color.role.shared.background,
   },
 });

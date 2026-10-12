@@ -175,7 +175,7 @@ function RequestRow({
       </View>
 
       <View style={[styles.pill, incoming && styles.pillUrgent]}>
-        <Text variant="caption" tone={incoming ? 'inverse' : 'muted'} uppercase={false}>
+        <Text variant="caption" tone={incoming ? 'heading' : 'muted'} uppercase={false}>
           {incoming ? 'Answer' : BOOKING_STATUS_LABELS[booking.status]}
         </Text>
       </View>
@@ -212,5 +212,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: color.border.default,
   },
-  pillUrgent: { backgroundColor: color.attention.background, borderColor: color.attention.border },
+  // Incoming means SHE is the lender being asked, so butter.
+  pillUrgent: {
+    backgroundColor: color.role.lender.background,
+    borderColor: color.role.lender.border,
+  },
 });

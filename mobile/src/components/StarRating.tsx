@@ -67,12 +67,12 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 4 },
   scoreTag: {
     borderRadius: radius.sm,
-    backgroundColor: color.accent.background,
+    backgroundColor: color.role.shared.background,
     paddingHorizontal: spacing.xs,
     paddingVertical: 1,
     marginRight: spacing.xs,
   },
-  scoreTagText: { color: color.accent.label, fontWeight: '600' },
+  scoreTagText: { color: color.role.shared.label, fontWeight: '600' },
   count: { marginLeft: 4 },
   empty: { marginTop: 4 },
 });

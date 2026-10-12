@@ -227,11 +227,13 @@ export default function RequestRental() {
             style={styles.consent}
           >
             <View style={[styles.checkbox, cleaningAgreed && styles.checkboxOn]}>
-              {cleaningAgreed ? <Icon name="checkmark" size={16} tint={color.text.inverse} /> : null}
+              {cleaningAgreed ? (
+                <Icon name="checkmark" size={16} tint={color.text.inverse} />
+              ) : null}
             </View>
             <Text variant="bodySmall" style={styles.consentText}>
-              I agree to the {formatCents(cleaningFeeCents)} cleaning fee. @
-              {listing.owner.username} has it dry-cleaned after every rental and keeps all of it.
+              I agree to the {formatCents(cleaningFeeCents)} cleaning fee. @{listing.owner.username}{' '}
+              has it dry-cleaned after every rental and keeps all of it.
             </Text>
           </Pressable>
         ) : null}

@@ -241,13 +241,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     marginTop: spacing.md,
   },
+  // Her closet size is a LENDER fact, on her own shop window.
   countTag: {
     borderRadius: radius.sm,
-    backgroundColor: color.accent.background,
+    backgroundColor: color.role.lender.background,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
   },
-  countTagText: { color: color.accent.label, fontWeight: '600' },
+  countTagText: { color: color.role.lender.label, fontWeight: '600' },
   actions: {
     flexDirection: 'row',
     gap: spacing.sm,

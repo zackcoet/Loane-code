@@ -166,10 +166,10 @@ const styles = StyleSheet.create({
     minWidth: 18,
     paddingHorizontal: 5,
     borderRadius: radius.sm,
-    backgroundColor: color.accent.background,
+    backgroundColor: color.role.shared.background,
     alignItems: 'center',
   },
-  countBadgeText: { color: color.accent.label, fontWeight: '600' },
+  countBadgeText: { color: color.role.shared.label, fontWeight: '600' },
   captionField: { flex: 1 },
   // The caption grows with what she writes rather than scrolling inside
   // a one-line box.

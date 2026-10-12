@@ -58,7 +58,7 @@ export function IconButton({
       <Icon
         name={name}
         size={size}
-        tint={tint ?? (accent ? color.attention.label : color.icon.default)}
+        tint={tint ?? (accent ? color.role.lender.label : color.icon.default)}
       />
     </Pressable>
   );
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   // Inset so the circle is a comfortable 36pt inside the 44pt target,
   // rather than a disc that touches its neighbours.
   accent: {
-    backgroundColor: color.attention.background,
+    backgroundColor: color.role.lender.background,
     borderRadius: radius.pill,
     margin: 4,
     width: controls.minTapTarget - 8,

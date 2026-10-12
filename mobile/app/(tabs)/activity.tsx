@@ -292,5 +292,5 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.6 },
   rowText: { flex: 1 },
   meta: { alignItems: 'flex-end', gap: 4 },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.attention.background },
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.role.shared.background },
 });

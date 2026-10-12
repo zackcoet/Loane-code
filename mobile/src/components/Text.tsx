@@ -13,7 +13,15 @@ import { Text as RNText, StyleSheet, type TextProps } from 'react-native';
 import { color, fontFamilyFor, fonts, type } from '@loane/shared';
 
 export type TextVariant = keyof typeof type;
-export type TextTone = 'primary' | 'secondary' | 'muted' | 'inverse' | 'error' | 'disabled';
+export type TextTone =
+  | 'primary'
+  | 'secondary'
+  | 'muted'
+  | 'inverse'
+  | 'error'
+  | 'disabled'
+  /** Merlot. Headings, and any label sitting on butter. */
+  | 'heading';
 
 interface Props extends TextProps {
   /** Named text role from the type scale. */
@@ -31,6 +39,7 @@ const TONE: Record<TextTone, string> = {
   inverse: color.text.inverse,
   error: color.text.error,
   disabled: color.text.disabled,
+  heading: color.text.heading,
 };
 
 export function Text({

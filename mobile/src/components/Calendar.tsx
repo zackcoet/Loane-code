@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   cell: { flex: 1, aspectRatio: 1, alignItems: 'center', justifyContent: 'center' },
   day: { borderRadius: radius.pill, minHeight: controls.minTapTarget / 1.2 },
   // The date she picked is a brand moment, not just a selection.
-  daySelected: { backgroundColor: color.accent.background },
+  daySelected: { backgroundColor: color.role.shared.background },
   struck: { textDecorationLine: 'line-through' },
   legend: { marginTop: spacing.sm },
 });

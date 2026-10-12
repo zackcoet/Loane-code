@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 10,
-    backgroundColor: color.attention.background,
+    backgroundColor: color.role.shared.background,
   },
   logOut: { marginTop: spacing.lg, marginBottom: spacing.xxl },
 });

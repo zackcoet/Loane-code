@@ -98,14 +98,15 @@ const styles = StyleSheet.create({
     color: color.text.primary,
   },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
-  priceTag: {
-    alignSelf: 'flex-start',
-    borderRadius: radius.sm,
-    backgroundColor: color.accent.background,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+  // Merlot type, not a filled tag. A price is information rather than
+  // an action, and a tag as loud as the Loane It button makes neither
+  // one the thing to tap.
+  priceTag: { alignSelf: 'flex-start' },
+  price: {
+    fontSize: type.bodySmall.size,
+    fontWeight: '600',
+    color: color.text.heading,
   },
-  price: { fontSize: type.caption.size, fontWeight: '600', color: color.accent.label },
   size: {
     marginLeft: spacing.sm,
     fontSize: type.caption.size,

@@ -109,9 +109,15 @@ Cloud Function. No exceptions.
 Clean and minimal: lots of space, thin hairline borders, small uppercase
 letter-spaced labels, square corners.
 
-**The canvas is Cream `#F6EFE4`, not white.** That single choice is most of
-what makes the app look like the brand deck. Cards and sheets stay white so
-they lift off it.
+**The page is white. Cream `#F6EFE4` is a BAND, not the canvas** — a strip
+behind a summary or a group of rows. Cards are white with a very soft
+shadow. Cream was the canvas for two days and Ella's note was that it felt
+dirty.
+
+**Colour says WHO an element is for**, which is the spine of the palette:
+`color.role.lender` is butter with merlot text, `color.role.renter` is
+cherry with white text, `color.role.shared` is merlot with white text. A
+price is neither, so it is merlot type rather than a filled tag.
 
 | | | |
 |---|---|---|

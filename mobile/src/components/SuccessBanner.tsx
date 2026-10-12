@@ -55,7 +55,7 @@ export function SuccessBannerProvider({ children }: { children: React.ReactNode 
           pointerEvents="none"
           accessibilityRole="alert"
         >
-          <Icon name="checkmark" size={18} tint={color.accent.label} />
+          <Icon name="checkmark" size={18} tint={color.role.shared.label} />
           <Text variant="bodySmall" style={styles.text} uppercase={false}>
             {message}
           </Text>
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.sm,
-    backgroundColor: color.accent.background,
+    backgroundColor: color.role.shared.background,
   },
-  text: { color: color.accent.label, fontWeight: '600', flex: 1 },
+  text: { color: color.role.shared.label, fontWeight: '600', flex: 1 },
 });

@@ -87,8 +87,8 @@ export function BookingRow({ booking, isLender, onPress }: Props) {
         ) : null}
       </View>
 
-      <View style={[styles.badge, wants && styles.badgeAttention]}>
-        <Text variant="caption" tone={wants ? 'inverse' : 'secondary'}>
+      <View style={[styles.badge, wants && (isLender ? styles.badgeLender : styles.badgeRenter)]}>
+        <Text variant="caption" tone={wants ? (isLender ? 'heading' : 'inverse') : 'secondary'}>
           {wants ? 'Your turn' : BOOKING_STATUS_LABELS[booking.status]}
         </Text>
       </View>
@@ -124,8 +124,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: color.border.default,
   },
-  badgeAttention: {
-    backgroundColor: color.attention.background,
-    borderColor: color.attention.border,
+  // Her turn, on HER side of the booking: butter when she is lending,
+  // cherry when she is renting. Two sides of the same booking used to
+  // look identical, which is exactly the confusion the roles remove.
+  badgeLender: {
+    backgroundColor: color.role.lender.background,
+    borderColor: color.role.lender.border,
+  },
+  badgeRenter: {
+    backgroundColor: color.role.renter.background,
+    borderColor: color.role.renter.border,
   },
 });

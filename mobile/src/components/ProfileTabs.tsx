@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
-    backgroundColor: color.accent.background,
+    backgroundColor: color.scrim.onPhoto,
   },
   tagged: {
     position: 'absolute',

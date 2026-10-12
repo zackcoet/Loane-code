@@ -1,9 +1,14 @@
 /**
- * A hairline-bordered block — the container used all over the mockups for
- * settings rows, safety tips, stat panels and sheet options.
+ * A white block that lifts off the page.
  *
- * Square corners by default, because that is the look: thin borders, lots
- * of white space, no rounding.
+ * Used all over the mockups for settings rows, safety tips, stat panels
+ * and sheet options. Square corners, because that is the look.
+ *
+ * It carries a very soft shadow as well as the hairline. A white card on
+ * a cream page did not need one; on a white page it does, or the card
+ * and the page are the same surface and the border is doing all the
+ * work. Deliberately barely there — anything heavier and the app looks
+ * like a dashboard rather than a magazine.
  */
 
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
@@ -41,6 +46,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: color.border.default,
     backgroundColor: color.surface.raised,
+    shadowColor: color.shadow.card,
+    shadowOpacity: 1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    // Android ignores shadow* entirely and needs this instead.
+    elevation: 1,
   },
   padded: { padding: spacing.md },
   tappable: { minHeight: controls.minTapTarget },

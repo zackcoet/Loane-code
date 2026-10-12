@@ -51,8 +51,7 @@ All in [`shared/src/tokens.ts`](../shared/src/tokens.ts).
 | `color.button` | `primary.background` `outline.border` `disabled.label` | Buttons |
 | `color.status` | `success` `warning` `error` | State |
 | `color.brand` | `cream` `merlot` `cherry` `butter` `ballet` `denim` | Brand palette |
-| `color.accent` | `background` `border` `label` | Butter highlight: price tags, selected chips |
-| `color.attention` | `background` `border` `label` | Cherry: unread badges, "Your turn" |
+| `color.role` | `lender` `renter` `shared`, each `background` `border` `label` | Who an element is FOR |
 | `type` | `h1` `h2` `h3` `body` `bodySmall` `label` `caption` `button` | Text roles |
 | `spacing` | `xs` … `xxxl`, `screenPadding` | Gaps and padding |
 | `radius` | `none` `sm` `md` `lg` `pill` | Corners |
@@ -157,8 +156,28 @@ licence. We ship free stand-ins behind the token names `LoaneHeading` and
 
 ## Colour
 
-The canvas is **Cream `#F6EFE4`**, not white. Cards and sheets are white so
-they lift off it.
+The page is **white**. **Cream `#F6EFE4`** is a BAND, not the canvas — a
+strip behind a summary or a group of rows, used to break a long white
+screen into parts. Cream was the canvas for two days and Ella's note was
+that it felt dirty; a whole screen of it has no air in it. Cards are white
+with `shadow.card`, a very soft lift, because a white card on a white page
+needs depth that a white card on cream did not.
+
+### Colour by who it is for
+
+The spine of the palette. A student should be able to tell at a glance
+whether a screen is talking to her as the person who owns the dress or the
+person who wants it.
+
+| | | |
+|---|---|---|
+| `color.role.lender` | butter, merlot text | her closet, her earnings, requests to answer, listing a piece |
+| `color.role.renter` | cherry, white text | Loane It, Own It, her side of a booking |
+| `color.role.shared` | merlot, white text | likes, follow, edit profile, selected filters, unread badges |
+
+A price is **neither** — it is information, not an action — so it is merlot
+type rather than a filled tag. A tag as loud as the Loane It button makes
+neither one the thing to tap.
 
 **Merlot `#5E1A2E`** is the voice — headings, icons, the mark, 11.0:1 on
 cream. **Cherry `#C8213F`** is the wink — primary buttons, the + that
