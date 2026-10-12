@@ -114,7 +114,13 @@ export function formatRange(range: DateRange): string {
 }
 
 /**
- * "just now", "2h", "3 days ago" — how long since something happened.
+ * "just now", "25 minutes ago", "3 days ago" — how long since
+ * something happened.
+ *
+ * SPELLED OUT, not "25m". Minutes and hours were the only two rungs
+ * that abbreviated, so the same list could read "25m" above "3 days
+ * ago" — which looks like two different features wrote it. Loane is
+ * not a trading screen; there is no reason to save four characters.
  *
  * Deliberately coarse. Nobody reading a feed cares whether a post is 47
  * or 52 minutes old, and a precise number invites her to keep checking.
@@ -134,10 +140,10 @@ export function timeAgo(value: unknown, nowMs: number = Date.now()): string {
   if (seconds < 60) return 'just now';
 
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 60) return minutes === 1 ? '1 minute ago' : `${minutes} minutes ago`;
 
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
+  if (hours < 24) return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
 
   const days = Math.floor(hours / 24);
   if (days < 7) return days === 1 ? '1 day ago' : `${days} days ago`;
