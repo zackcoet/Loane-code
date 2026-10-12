@@ -44,7 +44,15 @@ export default function Feed() {
   const hidden = useHiddenUids();
   const chat = useOpenChat();
   const [tab, setTab] = useState<'campus' | 'following'>('campus');
-  const closetTitle = profile?.firstName ? `${profile.firstName}s Closet` : 'Your Closet';
+  /**
+   * "Ella's Closet". A typographic apostrophe, not a straight one —
+   * it is the difference between a designed app and a form.
+   *
+   * Always 's, including after a name that ends in s: "Chris's" is
+   * current style and, more to the point, "Chris' Closet" looks like a
+   * typo to everyone who is not a copy editor.
+   */
+  const closetTitle = profile?.firstName ? `${profile.firstName}\u2019s Closet` : 'Your Closet';
 
   const visible = useMemo(() => {
     // Blocked either way: her looks simply are not in the feed. This is
@@ -103,14 +111,14 @@ export default function Feed() {
       </View>
 
       <View style={styles.titleRow}>
-        <Text
-          variant="display"
-          tone="heading"
-          style={styles.title}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.6}
-        >
+        {/*
+          NO adjustsFontSizeToFit. Combined with a flex child that is
+          allowed to shrink, it collapsed the headline to about 8pt —
+          legible only in the sense that the pixels were there. A long
+          name now truncates with an ellipsis instead, which keeps the
+          headline a headline.
+        */}
+        <Text variant="display" tone="heading" style={styles.title} numberOfLines={1}>
           {closetTitle}
         </Text>
         <View style={styles.toggle}>
@@ -247,7 +255,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
   },
-  title: { flex: 1, minWidth: 0 },
+  title: { flex: 1 },
   // A cream track with a merlot pill sliding in it.
   toggle: {
     flexShrink: 0,
@@ -256,9 +264,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     padding: 4,
   },
+  // Compact, so the headline beside it does not have to shrink to fit.
   toggleOption: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 6,
     borderRadius: radius.pill,
   },
   toggleOptionOn: { backgroundColor: color.role.shared.background },
