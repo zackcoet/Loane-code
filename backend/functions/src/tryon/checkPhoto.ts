@@ -111,17 +111,18 @@ function letThrough(reason: string, detail?: unknown): PhotoCheckResult {
   return { ok: true, fix: null, skipped: true };
 }
 
-export const checkPhoto = onCall<Input, Promise<PhotoCheckResult>>(
-  { region: 'us-central1', secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 60, memory: '512MiB' },
-  async (request: CallableRequest<Input>) => {
-    await requireVerifiedStudent(request);
-
-    const kind = request.data?.kind;
-    const imageBase64 = request.data?.imageBase64;
-    const mediaType = request.data?.mediaType ?? 'image/jpeg';
-
-    if (kind !== 'body' && kind !== 'flat') throw invalidArgument('What kind of photo?');
-    if (!imageBase64) throw invalidArgument('No photo to check.');
+/**
+ * The check itself, callable from another function.
+ *
+ * Exported so `prepareFlatPhoto` can run the same check before paying
+ * FASHN to cut a background out — two copies of these prompts would
+ * drift, and the one that drifted would be the one nobody tested.
+ */
+export async function runPhotoCheck(
+  kind: PhotoKind,
+  imageBase64: string,
+  mediaType = 'image/jpeg',
+): Promise<PhotoCheckResult> {
     if (imageBase64.length > MAX_BASE64_BYTES) {
       // Not her problem to solve: let it through rather than asking her
       // to understand a size limit.
@@ -186,5 +187,18 @@ export const checkPhoto = onCall<Input, Promise<PhotoCheckResult>>(
     } catch (error) {
       return letThrough('could not parse the reply', (error as Error)?.message);
     }
+}
+
+export const checkPhoto = onCall<Input, Promise<PhotoCheckResult>>(
+  { region: 'us-central1', secrets: [ANTHROPIC_API_KEY], timeoutSeconds: 60, memory: '512MiB' },
+  async (request: CallableRequest<Input>) => {
+    await requireVerifiedStudent(request);
+
+    const kind = request.data?.kind;
+    const imageBase64 = request.data?.imageBase64;
+    if (kind !== 'body' && kind !== 'flat') throw invalidArgument('What kind of photo?');
+    if (!imageBase64) throw invalidArgument('No photo to check.');
+
+    return runPhotoCheck(kind, imageBase64, request.data?.mediaType ?? 'image/jpeg');
   },
 );

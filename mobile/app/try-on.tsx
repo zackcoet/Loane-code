@@ -111,10 +111,19 @@ export default function TryOn() {
   const postPieces = useListingsByIds(postIds, fromPost);
 
   const available = useMemo(() => {
+    /*
+      Her own try-on-ready pieces are always in the rail.
+
+      "Saved" means saved, but a lender's first question after making a
+      piece try-on ready is what it looks like on her — and her own
+      closet is the one place she cannot save from. Only the READY
+      ones, so her rail is not padded with pieces she cannot tap.
+    */
+    const ownReady = mine.items.filter((l) => isTryOnEligible(l));
     const all = fromPost
       ? postPieces.listings
       : fromSaved
-        ? fitting.pieces
+        ? [...fitting.pieces, ...ownReady]
         : [...fitting.pieces, ...mine.items];
     const seen = new Set<string>();
     return all.filter((l) => (seen.has(l.id) ? false : seen.add(l.id)));

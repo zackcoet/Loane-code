@@ -6,7 +6,16 @@
  */
 
 import { useState } from 'react';
-import { ActionSheetIOS, Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ActionSheetIOS,
+  Alert,
+  Image,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import {
   WORDS,
   CATEGORIES,
@@ -26,6 +35,7 @@ import {
   type ShoeSize,
   type Size,
   TRYON_CATEGORY_MAP,
+  radius,
 } from '@loane/shared';
 import { Button } from './Button';
 import { Chip } from './Chip';
@@ -36,7 +46,7 @@ import { Text } from './Text';
 import { Toggle } from './Toggle';
 import { photoUri, type useListingForm } from '../hooks/useListingForm';
 import { useKeyboardPadding } from '../hooks/useKeyboardPadding';
-import { usePhotoCheck } from '../hooks/usePhotoCheck';
+import { MakeTryOnReady } from './MakeTryOnReady';
 import { pickPhoto } from '../lib/photo';
 
 const CONDITION_LABELS: Record<Condition, string> = {
@@ -65,9 +75,7 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
   const { form, set, toggleOccasion, addPhoto, removePhoto, cropPhoto, makeCover, error, saving } =
     controller;
   const keyboardPadding = useKeyboardPadding();
-  const photoCheck = usePhotoCheck();
-  /** What to change about the flat photo she just tried to attach. */
-  const [flatVerdict, setFlatVerdict] = useState<string | null>(null);
+  const [makingTryOnReady, setMakingTryOnReady] = useState(false);
 
   const rentable = form.intent === 'rent' || form.intent === 'both';
   const sellable = form.intent === 'sell' || form.intent === 'both';
@@ -75,52 +83,6 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
   const needsSize = form.category != null && !UNSIZED.includes(form.category);
   const tryOnEligible =
     form.category != null && form.category in TRYON_CATEGORY_MAP;
-
-  /**
-   * The flat photo is the try-on gate. Phase 0 found that a photo with
-   * more than one garment in frame does not fail loudly — it renders
-   * the WRONG garment beautifully — so "Try it on" simply does not
-   * appear without one of these. See docs/decisions.md.
-   */
-  const onAddFlatPhoto = () => {
-    const run = async (source: 'camera' | 'library') => {
-      const picked = await pickPhoto(source, 'free');
-      if (!picked) return;
-
-      /*
-        Checked before it is attached. A flat photo with a second
-        garment in frame is the exact failure the gate exists to
-        prevent, and the lender is the only person who can fix it —
-        the renter just sees the wrong dress rendered beautifully.
-
-        It fails open, so a check we cannot run attaches the photo
-        anyway.
-      */
-      setFlatVerdict(null);
-      const verdict = await photoCheck.check(picked, 'flat');
-      if (!verdict.ok) {
-        setFlatVerdict(verdict.fix);
-        return;
-      }
-      setFlatVerdict(null);
-      set('flatPhoto', { kind: 'local', picked });
-    };
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options: ['Cancel', 'Take a photo', 'Choose from library'], cancelButtonIndex: 0 },
-        (index) => {
-          if (index === 1) void run('camera');
-          if (index === 2) void run('library');
-        },
-      );
-    } else {
-      Alert.alert('Lay it flat', undefined, [
-        { text: 'Take a photo', onPress: () => void run('camera') },
-        { text: 'Choose from library', onPress: () => void run('library') },
-        { text: 'Cancel', style: 'cancel' },
-      ]);
-    }
-  };
 
   const onAddPhoto = () => {
     const run = async (source: 'camera' | 'library') => {
@@ -189,55 +151,68 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
         onCrop={(index) => void cropPhoto(index)}
       />
 
-      {/* The try-on slot. Only for categories that can actually be
-          tried on — offering it on a handbag would be asking for work
-          that buys her nothing. */}
+      {/*
+        Optional, and only for categories a try-on can actually do.
+        Asking somebody to photograph a handbag for a feature that
+        cannot put a handbag on anybody is asking for work that buys
+        her nothing.
+      */}
       {tryOnEligible ? (
-        <>
-          <Text variant="label" style={styles.section}>
-            Lay it flat — just this piece
-          </Text>
-          <Text variant="bodySmall" tone="muted" style={styles.hint}>
-            One photo of just this piece, laid flat on a plain surface. This is what lets people
-            try it on, and pieces people can try on get seen more.
-          </Text>
-          <PhotoGrid
-            photos={form.flatPhoto ? [{ uri: photoUri(form.flatPhoto) }] : []}
-            max={1}
-            onAdd={onAddFlatPhoto}
-            onRemove={() => set('flatPhoto', null)}
-            // One photo, so there is no cover to choose.
-            onMakeCover={() => {}}
-          />
-          {photoCheck.checking ? (
-            <Text variant="bodySmall" tone="muted" uppercase={false} style={styles.hint}>
-              Checking that photo…
-            </Text>
-          ) : null}
-
-          {/* Specific, and only about the photo — the listing itself is
-              fine and nothing she typed is lost. */}
-          {flatVerdict ? (
-            <View style={styles.flatProblem}>
-              <Icon name="alert-circle-outline" size={16} tint={color.status.error} />
-              <Text variant="caption" uppercase={false} style={styles.flatProblemText}>
-                {flatVerdict}
+        <View style={styles.tryOnCard}>
+          <View style={styles.tryOnHead}>
+            <Icon name="sparkles" size={18} tint={color.role.shared.background} />
+            <View style={styles.tryOnHeadText}>
+              <Text variant="bodySmall" tone="heading" uppercase={false} style={styles.strong}>
+                Make it try-on ready
+              </Text>
+              <Text variant="caption" tone="muted" uppercase={false}>
+                Renters can see it on themselves.
               </Text>
             </View>
-          ) : null}
+          </View>
 
-          {/* The switch flipping, visibly. A lender who can SEE what the
-              photo bought her will take it. */}
           {form.flatPhoto ? (
-            <View style={styles.tryOnOn}>
-              <Icon name="sparkles" size={14} tint={color.role.shared.background} />
-              <Text variant="caption" tone="heading" uppercase={false}>
-                Try it on is on for this piece
-              </Text>
+            <View style={styles.tryOnDone}>
+              <Image
+                source={{ uri: photoUri(form.flatPhoto) }}
+                style={styles.tryOnThumb}
+                resizeMode="contain"
+              />
+              <View style={styles.tryOnDoneText}>
+                <View style={styles.tryOnBadge}>
+                  <Icon name="checkmark" size={12} tint={color.role.shared.label} />
+                  <Text variant="caption" tone="inverse" uppercase={false}>
+                    Try-on ready
+                  </Text>
+                </View>
+                <Text variant="caption" tone="muted" uppercase={false}>
+                  This is what renters will try on.
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => set('flatPhoto', null)}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Remove the try-on photo"
+              >
+                <Icon name="close" size={16} tint={color.icon.muted} />
+              </Pressable>
             </View>
-          ) : null}
-        </>
+          ) : (
+            <Button
+              label="Add a try-on photo"
+              variant="outline"
+              onPress={() => setMakingTryOnReady(true)}
+            />
+          )}
+        </View>
       ) : null}
+
+      <MakeTryOnReady
+        visible={makingTryOnReady}
+        onClose={() => setMakingTryOnReady(false)}
+        onReady={(picked) => set('flatPhoto', { kind: 'local', picked })}
+      />
 
       <View style={styles.section}>
         <Input
@@ -421,19 +396,35 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
 const styles = StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
   section: { marginTop: spacing.lg },
-  flatProblem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
+  tryOnCard: {
+    marginTop: spacing.xl,
+    padding: spacing.md,
+    gap: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: color.border.default,
+    backgroundColor: color.surface.section,
   },
-  flatProblemText: { flex: 1 },
-  tryOnOn: {
+  tryOnHead: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  tryOnHeadText: { flex: 1, gap: 2 },
+  tryOnDone: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  tryOnThumb: {
+    width: 56,
+    height: 72,
+    borderRadius: radius.sm,
+    backgroundColor: color.surface.raised,
+  },
+  tryOnDoneText: { flex: 1, gap: spacing.xs, alignItems: 'flex-start' },
+  tryOnBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    backgroundColor: color.role.shared.background,
   },
+  strong: { fontWeight: '600' },
   hint: { marginTop: spacing.xs, marginBottom: spacing.sm },
   intentRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   wrapRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.sm },

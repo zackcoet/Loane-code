@@ -123,6 +123,7 @@ export { generateTryOn } from './tryon/generateTryOn';
 export { deleteTryOnData } from './tryon/deleteTryOnData';
 export { setTryOnBodyPhoto, clearTryOnBodyPhoto } from './tryon/setBodyPhoto';
 export { checkPhoto } from './tryon/checkPhoto';
+export { prepareFlatPhoto } from './tryon/prepareFlatPhoto';
 export { grantTryOns, setTryOnConfig } from './tryon/admin';
 export { sweepUnsavedTryOns, runTryOnSweep } from './tryon/sweepUnsavedTryOns';
 export { acceptLegalDocs, publishLegalDoc, saveLegalDraft } from './legal/legal';

@@ -339,3 +339,34 @@ export async function uploadTryOnBodyPhoto(uid: string, photo: PickedPhoto): Pro
   await uploadBytes(ref(storage, path), blob, { contentType: 'image/jpeg' });
   return path;
 }
+
+/**
+ * A try-on cutout, uploaded as-is.
+ *
+ * NO COMPRESSION AND NO FORMAT CHANGE. prepareFlatPhoto returns a
+ * transparent PNG, and putting that through the JPEG compressor every
+ * other photo uses flattens the transparency — to black on most
+ * devices. The result would be a clean cutout rendered on a black
+ * rectangle, and nobody would find out until they saw a try-on.
+ *
+ * It is already resized server-side, so there is nothing to shrink.
+ */
+export async function uploadFlatPhotoPng(
+  uid: string,
+  listingId: string,
+  photo: PickedPhoto,
+): Promise<ImageRef> {
+  const response = await fetch(photo.uri);
+  const blob = await response.blob();
+
+  const path = storagePaths.listingPhoto(uid, listingId, `flat-${Date.now()}.png`);
+  const target = ref(storage, path);
+  await uploadBytes(target, blob, { contentType: 'image/png' });
+
+  return {
+    path,
+    url: await getDownloadURL(target),
+    width: photo.width,
+    height: photo.height,
+  };
+}

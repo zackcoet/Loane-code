@@ -57,6 +57,16 @@ export function ListingCard({ listing, width, onPress, onPressOwner, hideSave, o
         ) : (
           <View style={[styles.photo, styles.photoPlaceholder]} />
         )}
+        {/* A lender can see at a glance which of her pieces are ready,
+            and a renter can see which ones she can try on before
+            tapping in. */}
+        {isTryOnEligible(listing) ? (
+          <View style={styles.readyBadge}>
+            <Icon name="sparkles" size={11} tint={color.role.shared.label} />
+            <Text style={styles.readyLabel}>Try-on</Text>
+          </View>
+        ) : null}
+
         {hideSave ? null : (
           <Pressable
             onPress={() => void toggle('discover')}
@@ -110,6 +120,23 @@ export function ListingCard({ listing, width, onPress, onPressOwner, hideSave, o
 
 const styles = StyleSheet.create({
   card: { marginBottom: spacing.lg },
+  readyBadge: {
+    position: 'absolute',
+    left: spacing.sm,
+    top: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: color.role.shared.background,
+  },
+  readyLabel: {
+    fontFamily: fontFamilyFor('600'),
+    fontSize: type.caption.size,
+    color: color.role.shared.label,
+  },
   tryOn: {
     flexDirection: 'row',
     alignItems: 'center',

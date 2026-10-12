@@ -26,7 +26,7 @@ import {
 } from '@loane/shared';
 import { db } from '../firebase/config';
 import { saveErrorMessage } from '../firebase/errors';
-import { cropToSquare, uploadListingPhoto, type PickedPhoto } from '../lib/photo';
+import { cropToSquare, uploadFlatPhotoPng, uploadListingPhoto, type PickedPhoto } from '../lib/photo';
 
 /** Photos in the form are either freshly picked or already uploaded. */
 export type FormPhoto =
@@ -244,10 +244,21 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
          * which is what the try-on cache key watches to know the photo
          * was replaced.
          */
+        /*
+          Uploaded WITHOUT recompressing when it is a cutout.
+
+          prepareFlatPhoto returns a transparent PNG. Running that
+          through the usual JPEG compressor flattens the transparency —
+          to black, on most devices — which would turn a clean cutout
+          into a garment on a black rectangle, and nobody would know
+          why until they saw a try-on.
+        */
         const flatPhoto: ImageRef | null = form.flatPhoto
           ? form.flatPhoto.kind === 'uploaded'
             ? form.flatPhoto.ref
-            : await uploadListingPhoto(owner.uid, ref.id, form.flatPhoto.picked, FLAT_PHOTO_INDEX)
+            : form.flatPhoto.picked.uri.endsWith('.png')
+              ? await uploadFlatPhotoPng(owner.uid, ref.id, form.flatPhoto.picked)
+              : await uploadListingPhoto(owner.uid, ref.id, form.flatPhoto.picked, FLAT_PHOTO_INDEX)
           : null;
 
         const rentable = form.intent === 'rent' || form.intent === 'both';

@@ -312,3 +312,16 @@ export const checkPhoto = httpsCallable<
   { kind: 'body' | 'flat'; imageBase64: string; mediaType: string },
   { ok: boolean; fix: string | null; skipped: boolean }
 >(functions, 'checkPhoto');
+
+/**
+ * A lender's garment photo, checked and cut out in one call.
+ *
+ * Returns a specific fix when the photo is not one clean garment, and
+ * a transparent PNG when it is. Every failure after the check keeps
+ * her original photo rather than discarding something that already
+ * passed.
+ */
+export const prepareFlatPhoto = httpsCallable<
+  { imageBase64: string },
+  { ok: boolean; fix: string | null; imageBase64: string | null; usedOriginal: boolean }
+>(functions, 'prepareFlatPhoto');
