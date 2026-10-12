@@ -1,24 +1,24 @@
 /**
- * The Try-On screen.
+ * The Try-On screen — a dressing room, not a generator.
  *
- * Body on top, pieces underneath. Tap a piece and it goes on her.
+ * Her photo is already there. She took it once; it stays. "Change
+ * photo" is a quiet option in the header, not a step she repeats.
  *
- * TABS ARE TOPS AND DRESSES, with Bottoms and Shoes present but inert.
- * "Coming soon" rather than hidden, so she can see where this is going
- * — and because Phase 0 showed bottoms desaturate and bleed colour at
- * the hem, which is a quality problem we have not solved rather than a
- * feature we have not written.
+ * TAP TO PUT ON, TAP AGAIN TO TAKE OFF. A piece she is wearing carries
+ * a merlot border and a check. Tapping it again takes it off and goes
+ * straight back to how she looked before, from the image we already
+ * have — no call, no cost, no wait. See useDressingRoom.
  *
- * OUTERWEAR APPEARS UNDER TOPS, because that is what it maps to at
- * FASHN and because four live tabs for three categories is more
- * navigation than the content deserves.
+ * ONE PIECE PER SLOT. Another top swaps the top. A dress replaces the
+ * top; a top replaces the dress. She is never accidentally wearing two
+ * of the same thing.
  *
- * The pieces come from her Saved items and her own closet, and only
- * ones with a lay-it-flat photo appear at all. A piece she cannot try
- * on is not shown greyed out — it is simply not here.
+ * WHILE A NEW LOOK LOADS she keeps looking at herself with the rings
+ * over the top, because ten seconds of blank screen reads as a crash.
  *
- * The wait is about 8 seconds, which is long enough that a bare spinner
- * reads as a hang. LoaneLoader plus a line of copy.
+ * Bottoms and Shoes are visibly inert: Phase 0 showed bottoms
+ * desaturate and bleed at the hem, which is a quality problem we have
+ * not solved rather than a screen we have not written.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -43,12 +43,14 @@ import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useUserListings } from '../src/hooks/useProfile';
+import { useUserSettings } from '../src/hooks/useUserSettings';
 import {
   isTryOnEligible,
+  slotFor,
+  useDressingRoom,
   useFittingRoom,
   useSaveTryOn,
   useTryOnImage,
-  useTryOnStack,
 } from '../src/hooks/useTryOn';
 import { logEvent } from '../src/analytics/events';
 
@@ -67,32 +69,29 @@ export default function TryOn() {
   const params = useLocalSearchParams<{
     body?: string;
     preset?: string;
-    /** 'saved' opens as a fitting room: only what she has saved. */
     source?: string;
-    /** A piece to put on immediately, from a Try on button on a card. */
     listing?: string;
   }>();
 
-  const bodyKind = params.body === 'own' ? 'own' : 'preset';
-  const presetId = (params.preset as PresetId | undefined) ?? 'medium';
+  const { settings } = useUserSettings();
+  const bodyPhotoPath = settings?.tryOn?.bodyPhotoPath ?? null;
+  const bodyUrl = useTryOnImage(bodyPhotoPath);
+
+  /**
+   * Her own photo whenever she has one. She is not asked to choose a
+   * body every time she opens the screen — she already chose, by
+   * taking the photo.
+   */
+  const bodyKind: 'own' | 'preset' = params.body === 'preset' ? 'preset' : 'own';
+  const presetId = params.preset as PresetId | undefined;
 
   const [tab, setTab] = useState<Tab>('tops');
-  /** Guards the preselect so it fires once, not on every render. */
   const [preselected, setPreselected] = useState(false);
-  const { stack, state, add, undo, reset } = useTryOnStack(bodyKind, presetId);
+  const [savedId, setSavedId] = useState<string | null>(null);
+
+  const room = useDressingRoom(bodyKind, presetId, bodyUrl);
   const { save } = useSaveTryOn();
-  const [saved, setSaved] = useState(false);
 
-  const resultUrl = useTryOnImage(state.result?.imagePath ?? null);
-
-  // --- What she can try on ----------------------------------------------
-  /**
-   * The fitting room, or everything.
-   *
-   * From Saved she sees only what she has saved — that is the whole
-   * point of the entry point, and a row that quietly added her own
-   * closet would not be the thing the button promised.
-   */
   const fromSaved = params.source === 'saved';
   const fitting = useFittingRoom();
   const mine = useUserListings(profile?.uid);
@@ -100,146 +99,143 @@ export default function TryOn() {
   const available = useMemo(() => {
     const all = fromSaved ? fitting.pieces : [...fitting.pieces, ...mine.items];
     const seen = new Set<string>();
-    return all.filter((l) => {
-      if (seen.has(l.id)) return false;
-      seen.add(l.id);
-      return true;
-    });
+    return all.filter((l) => (seen.has(l.id) ? false : seen.add(l.id)));
   }, [fromSaved, fitting.pieces, mine.items]);
 
-  /**
-   * Ineligible pieces are SHOWN, greyed, saying why — not hidden. In a
-   * browse they would be absent, but these are her own saved things
-   * and a row that drops half of them reads as broken. See
-   * useFittingRoom.
-   */
   const shown = useMemo(
     () =>
-      available.filter((l) => {
-        // Outerwear rides with Tops: it maps to FASHN's 'tops', and a
-        // fourth tab for one category is not worth the navigation.
-        if (tab === 'tops') return l.category === 'tops' || l.category === 'outerwear';
-        if (tab === 'dresses') return l.category === 'dresses';
-        return false;
-      }),
+      available.filter((l) =>
+        tab === 'tops'
+          ? l.category === 'tops' || l.category === 'outerwear'
+          : tab === 'dresses'
+            ? l.category === 'dresses'
+            : false,
+      ),
     [available, tab],
   );
 
-  const eligible = available;
+  // No photo yet: the camera, once. She comes straight back here.
+  useEffect(() => {
+    if (bodyKind !== 'own') return;
+    if (settings && !bodyPhotoPath) {
+      router.replace({ pathname: '/try-on-camera', params: { next: 'saved' } });
+    }
+  }, [settings, bodyPhotoPath, bodyKind, router]);
 
-
-  /**
-   * Arriving from a "Try on" button on a card: put that piece on
-   * straight away, and switch to the tab it lives under so the row
-   * underneath makes sense rather than showing an unrelated category.
-   */
+  // Arriving from a Try on button on a card.
   useEffect(() => {
     if (preselected || !params.listing) return;
     const piece = available.find((l) => l.id === params.listing);
     if (!piece) return;
     setPreselected(true);
     if (!isTryOnEligible(piece)) return;
-    setTab(piece.category === 'dresses' ? 'dresses' : 'tops');
-    add({
+    setTab(slotFor(piece.category) === 'dress' ? 'dresses' : 'tops');
+    room.tap({
       listingId: piece.id,
       name: piece.name,
       coverUrl: piece.coverUrl,
       ownerUid: piece.ownerUid,
       category: piece.category,
     });
-  }, [preselected, params.listing, available, add]);
+  }, [preselected, params.listing, available, room]);
 
   const onSave = async () => {
-    if (!state.result) return;
-    await save(state.result.tryOnId);
-    setSaved(true);
+    if (!room.currentTryOnId) return;
+    await save(room.currentTryOnId);
+    setSavedId(room.currentTryOnId);
   };
 
   return (
     <Screen flush>
-      <Header title="Try it on" onBack={() => router.back()} />
+      <Header
+        title="Try it on"
+        onBack={() => router.back()}
+        right={
+          <Pressable
+            onPress={() => router.push({ pathname: '/try-on-camera', params: { next: 'saved' } })}
+            accessibilityRole="button"
+            accessibilityLabel="Change your photo"
+            style={styles.changePhoto}
+          >
+            <Text variant="caption" tone="secondary" uppercase={false} style={styles.underline}>
+              Change photo
+            </Text>
+          </Pressable>
+        }
+      />
 
-      {/* --- The body ------------------------------------------------- */}
+      {/* --- Her ------------------------------------------------------- */}
       <View style={styles.stage}>
-        {state.busy ? (
-          <View style={styles.centre}>
-            <LoaneLoader size={44} />
-            <Text variant="bodySmall" tone="secondary" uppercase={false} style={styles.waitCopy}>
-              Putting it on you…
-            </Text>
-            <Text variant="caption" tone="muted" uppercase={false}>
-              About 8 seconds
-            </Text>
-          </View>
-        ) : resultUrl ? (
-          <Image source={{ uri: resultUrl }} style={StyleSheet.absoluteFill} resizeMode="contain" />
+        {room.shownUrl ? (
+          <Image
+            source={{ uri: room.shownUrl }}
+            style={StyleSheet.absoluteFill}
+            resizeMode="contain"
+          />
         ) : (
           <View style={styles.centre}>
             <Icon name="shirt-outline" size={34} tint={color.icon.muted} />
-            <Text variant="bodySmall" tone="muted" uppercase={false} style={styles.waitCopy}>
-              {bodyKind === 'own' ? 'Pick a piece to see it on you' : 'Pick a piece to try on'}
+            <Text variant="bodySmall" tone="muted" uppercase={false}>
+              Pick a piece to try on
             </Text>
-            <Button
-              label="Change body"
-              variant="text"
-              onPress={() => router.replace('/try-on-body')}
-            />
           </View>
         )}
+
+        {/* OVER her, not instead of her. Ten seconds of blank screen
+            reads as a crash; ten seconds of herself with the rings on
+            top reads as working. */}
+        {room.state.busy ? (
+          <View style={styles.loading} pointerEvents="none">
+            <LoaneLoader size={44} />
+            <Text variant="caption" tone="inverse" uppercase={false} style={styles.loadingCopy}>
+              Putting it on you…
+            </Text>
+          </View>
+        ) : null}
       </View>
 
-      {/* An AI approximation, said once, where it cannot be missed and
-          cannot be mistaken for a measurement. */}
-      {state.result ? (
+      {room.outfit.length > 0 && !room.state.busy ? (
         <Text variant="caption" tone="muted" uppercase={false} style={styles.disclaimer}>
           An AI approximation — not a guide to fit, size or colour.
         </Text>
       ) : null}
 
-      {state.error ? (
+      {room.state.error ? (
         <Text variant="caption" tone="error" uppercase={false} style={styles.disclaimer}>
-          {state.error}
+          {room.state.error}
         </Text>
       ) : null}
 
-      {/* --- What is on her, and what to do about it ------------------- */}
-      {stack.length > 0 ? (
+      {/* --- What she is wearing --------------------------------------- */}
+      {room.outfit.length > 0 ? (
         <View style={styles.actions}>
-          <Button label="Undo" variant="outline" onPress={undo} style={styles.grow} />
           <Button
-            label="Reset"
-            variant="text"
-            onPress={() => {
-              reset();
-              setSaved(false);
-            }}
+            label="Take it all off"
+            variant="outline"
+            onPress={room.reset}
             style={styles.grow}
           />
-          {state.result ? (
+          {room.currentTryOnId ? (
             <Button
-              label={saved ? 'Saved' : 'Save look'}
+              label={savedId === room.currentTryOnId ? 'Saved' : 'Save look'}
               onPress={() => void onSave()}
-              disabled={saved}
+              disabled={savedId === room.currentTryOnId}
               style={styles.grow}
             />
           ) : null}
         </View>
       ) : null}
 
-      {/* Each piece on her, with the same two buttons as the listing
-          screen. This is the whole point of the feature: a try-on that
-          cannot be acted on is a toy. */}
-      {state.result && stack.length > 0 ? (
+      {room.outfit.length > 0 && !room.state.busy ? (
         <View style={styles.onHer}>
-          {stack.map((piece) => (
+          {room.outfit.map((piece) => (
             <PieceRow
               key={piece.listingId}
-              listing={eligible.find((l) => l.id === piece.listingId)}
+              listing={available.find((l) => l.id === piece.listingId)}
               name={piece.name}
               onOpen={() => {
-                // The existing event, with surface 'tryon' — so try-on →
-                // rental is comparable with feed → rental. NOT a bespoke
-                // event, which would sit outside every funnel we have.
+                // The existing event with surface 'tryon', so try-on →
+                // rental is comparable with feed → rental.
                 logEvent('listing_view', {
                   surface: 'tryon',
                   targetType: 'listing',
@@ -252,15 +248,9 @@ export default function TryOn() {
         </View>
       ) : null}
 
-      {/* --- The pieces ------------------------------------------------ */}
+      {/* --- The rail --------------------------------------------------- */}
       <View style={styles.tabs}>
         {TABS.map((t) => {
-          /*
-            Bottoms and Shoes are visibly inert, not tappable tabs that
-            then explain themselves. Phase 0 found bottoms desaturate
-            and bleed colour at the hem; that is a quality problem we
-            have not solved, so the tab says so and does nothing.
-          */
           if (!t.live) {
             return (
               <View key={t.id} style={[styles.tab, styles.tabDead]}>
@@ -273,8 +263,6 @@ export default function TryOn() {
               </View>
             );
           }
-          // The count, so an empty tab is obviously empty rather than
-          // looking like something failed to load.
           const n = available.filter((l) =>
             t.id === 'tops'
               ? l.category === 'tops' || l.category === 'outerwear'
@@ -309,48 +297,66 @@ export default function TryOn() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.rail}
+          // The row closes over what she is wearing, which the list
+          // cannot see changing on its own.
+          extraData={room.outfit}
           renderItem={({ item }) => {
-            const on = stack.some((p) => p.listingId === item.id);
             const canTry = isTryOnEligible(item);
+            const on = room.isWearing(item.id);
+            const summary = {
+              listingId: item.id,
+              name: item.name,
+              coverUrl: item.coverUrl,
+              ownerUid: item.ownerUid,
+              category: item.category,
+            };
+            // Only where it is true: a look she has already seen comes
+            // back from this session's cache and costs nothing.
+            const costs = canTry && !on && room.costsAGeneration(summary);
+
             return (
               <Pressable
-                onPress={() =>
-                  add({
-                    listingId: item.id,
-                    name: item.name,
-                    coverUrl: item.coverUrl,
-                    ownerUid: item.ownerUid,
-                    category: item.category,
-                  })
-                }
-                disabled={!canTry || state.busy || on}
+                onPress={() => room.tap(summary)}
+                disabled={!canTry || room.state.busy}
                 accessibilityRole="button"
+                accessibilityState={{ selected: on }}
                 accessibilityLabel={
-                  canTry
-                    ? `Try on ${item.name}`
-                    : `${item.name}. No try-on photo yet.`
+                  !canTry
+                    ? `${item.name}. No try-on photo yet.`
+                    : on
+                      ? `Take off ${item.name}`
+                      : `Try on ${item.name}`
                 }
                 style={({ pressed }) => [
                   styles.piece,
-                  (pressed || on) && styles.piecePressed,
+                  pressed && styles.piecePressed,
                   !canTry && styles.pieceOff,
                 ]}
               >
-                <Image
-                  source={{ uri: item.flatPhoto?.url ?? item.coverUrl ?? undefined }}
-                  style={styles.pieceImage}
-                  resizeMode="cover"
-                />
+                <View style={[styles.pieceFrame, on && styles.pieceFrameOn]}>
+                  <Image
+                    source={{ uri: item.flatPhoto?.url ?? item.coverUrl ?? undefined }}
+                    style={styles.pieceImage}
+                    resizeMode="cover"
+                  />
+                  {on ? (
+                    <View style={styles.check}>
+                      <Icon name="checkmark" size={12} tint={color.text.inverse} />
+                    </View>
+                  ) : null}
+                </View>
                 <Text variant="caption" numberOfLines={1} uppercase={false}>
                   {item.name}
                 </Text>
-                {/* Why it cannot be tapped, rather than silently
-                    dropping it from a row of her own saved pieces. */}
-                {canTry ? null : (
+                {!canTry ? (
                   <Text variant="caption" tone="muted" numberOfLines={2} uppercase={false}>
                     No try-on photo yet.
                   </Text>
-                )}
+                ) : costs ? (
+                  <Text variant="caption" tone="muted" numberOfLines={1} uppercase={false}>
+                    Uses 1 try-on
+                  </Text>
+                ) : null}
               </Pressable>
             );
           }}
@@ -405,14 +411,22 @@ function PieceRow({
 }
 
 const styles = StyleSheet.create({
-  stage: {
-    flex: 1,
-    minHeight: 260,
-    backgroundColor: color.surface.section,
-    overflow: 'hidden',
-  },
+  changePhoto: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  underline: { textDecorationLine: 'underline' },
+  stage: { flex: 1, minHeight: 240, backgroundColor: color.surface.section, overflow: 'hidden' },
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
-  waitCopy: { textAlign: 'center' },
+  loading: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: color.scrim.behindPanel,
+  },
+  loadingCopy: { textAlign: 'center' },
   disclaimer: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, textAlign: 'center' },
   actions: {
     flexDirection: 'row',
@@ -456,12 +470,28 @@ const styles = StyleSheet.create({
   rail: { paddingHorizontal: spacing.md, paddingVertical: spacing.md, gap: spacing.sm },
   piece: { width: 92, gap: spacing.xs },
   piecePressed: { opacity: 0.5 },
-  // Visibly out of action, still legible. Not hidden — see the row.
   pieceOff: { opacity: 0.45 },
-  pieceImage: {
+  pieceFrame: {
     width: 92,
     height: 112,
     borderRadius: radius.md,
-    backgroundColor: color.surface.muted,
+    overflow: 'hidden',
+    borderWidth: 2,
+    // Transparent rather than absent, so putting a piece on does not
+    // shift the row by two pixels.
+    borderColor: 'transparent',
+  },
+  pieceFrameOn: { borderColor: color.role.shared.background },
+  pieceImage: { width: '100%', height: '100%', backgroundColor: color.surface.muted },
+  check: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 18,
+    height: 18,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: color.role.shared.background,
   },
 });

@@ -29,7 +29,7 @@ import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useWishlist } from '../src/hooks/useSaved';
 import { useSavedPosts } from '../src/hooks/usePostEngagement';
-import { useMyTryOns, useSaveTryOn, useTryOnBody, useTryOnEnabled, useTryOnImage } from '../src/hooks/useTryOn';
+import { useMyTryOns, useSaveTryOn, useTryOnEnabled, useTryOnImage } from '../src/hooks/useTryOn';
 
 const GRID_COLUMNS = 2;
 
@@ -42,23 +42,19 @@ export default function MyWishlist() {
   const looks = useSavedPosts();
   const tryOns = useMyTryOns();
   const tryOnOn = useTryOnEnabled();
-  const body = useTryOnBody();
 
   /**
    * The fitting room door.
    *
-   * No body photo yet means the camera first, then STRAIGHT to her
-   * saved pieces rather than back here — taking a photo is a step on
-   * the way to something, never the thing itself.
+   * Straight in. Her photo is saved, so there is nothing to choose —
+   * and if she has not taken one yet, Try-On sends her to the camera
+   * and brings her back here itself. One place decides that, rather
+   * than every entry point checking.
    */
   const openFittingRoom = (listingId?: string) => {
-    if (!body.hasPhoto) {
-      router.push({ pathname: '/try-on-camera', params: { next: 'saved' } });
-      return;
-    }
     router.push({
       pathname: '/try-on',
-      params: { body: 'own', source: 'saved', ...(listingId ? { listing: listingId } : {}) },
+      params: { source: 'saved', ...(listingId ? { listing: listingId } : {}) },
     });
   };
 

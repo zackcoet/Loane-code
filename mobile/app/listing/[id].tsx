@@ -348,7 +348,11 @@ export default function ListingDetail() {
           <Button
             label="Try it on"
             variant="outline"
-            onPress={() => router.push('/try-on-body')}
+            // Straight into the dressing room with this piece on,
+            // rather than a body-choice screen she has already answered.
+            onPress={() =>
+              router.push({ pathname: '/try-on', params: { listing: listing.id } })
+            }
           />
         ) : null}
 

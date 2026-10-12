@@ -104,96 +104,186 @@ export function useTryOnImage(path: string | null) {
   return url;
 }
 
-export interface GenerateState {
+/**
+ * The dressing room.
+ *
+ * SLOTS, NOT A STACK. A garment occupies a slot — a top or a dress —
+ * and tapping a different top swaps the top rather than layering onto
+ * it. A dress clears the top, and a top clears the dress, because a
+ * dress is a one-piece and wearing both is not a thing. This is what
+ * "tap to put on, tap again to take off" actually requires: a stack
+ * can only be unwound from the end, and she expects to take off the
+ * thing she tapped.
+ *
+ * EVERY LOOK SHE HAS SEEN THIS SESSION IS KEPT, by outfit. Taking a
+ * garment off goes back to the image we already have, instantly, with
+ * no network call and no cost — the server would also serve it from
+ * its cache, but a round trip to be told what we already know is still
+ * a second of staring at a spinner.
+ *
+ * The bare body is just her photo, so undressing completely costs
+ * nothing either.
+ *
+ * Bottoms have a slot here and no way to fill it: they are not
+ * launched. When they are, layering a top over bottoms works without
+ * touching this logic.
+ */
+export type Slot = 'top' | 'bottom' | 'dress';
+
+export function slotFor(category: string): Slot {
+  if (category === 'dresses') return 'dress';
+  if (category === 'bottoms') return 'bottom';
+  // Outerwear maps to FASHN's 'tops' and shares the Tops tab.
+  return 'top';
+}
+
+export type Worn = Partial<Record<Slot, TryOnPieceSummary>>;
+
+/** The outfit, in the order the server should apply it. */
+function outfitOf(worn: Worn): TryOnPieceSummary[] {
+  if (worn.dress) return [worn.dress];
+  // Bottoms first, then the top over them: Phase 0 showed whatever
+  // goes on second survives best, and the top is what she is looking at.
+  return [worn.bottom, worn.top].filter(Boolean) as TryOnPieceSummary[];
+}
+
+/** Identity of a look. '' is the bare body. */
+function outfitKey(outfit: TryOnPieceSummary[]): string {
+  return outfit.map((p) => p.listingId).join('|');
+}
+
+export interface DressingRoomState {
   busy: boolean;
   error: string | null;
-  /** Null until she has generated something this session. */
-  result: { tryOnId: string; imagePath: string } | null;
   remaining: number | null;
 }
 
-/**
- * Dressing the body.
- *
- * The stack is the list of pieces currently on her, in order. Undo pops
- * one and regenerates from scratch rather than trying to subtract a
- * garment from an image, which is not a thing that can be done.
- */
-export function useTryOnStack(bodyKind: 'own' | 'preset', presetId?: PresetId) {
-  const [stack, setStack] = useState<TryOnPieceSummary[]>([]);
-  const [state, setState] = useState<GenerateState>({
+export function useDressingRoom(
+  bodyKind: 'own' | 'preset',
+  presetId: PresetId | undefined,
+  /** Shown when nothing is on, and the fallback while a look loads. */
+  bodyUrl: string | null,
+) {
+  const [worn, setWorn] = useState<Worn>({});
+  const [state, setState] = useState<DressingRoomState>({
     busy: false,
     error: null,
-    result: null,
     remaining: null,
   });
 
-  const run = useCallback(
-    async (pieces: TryOnPieceSummary[]) => {
-      if (pieces.length === 0) {
-        setState((s) => ({ ...s, result: null, error: null }));
-        return;
-      }
-      setState((s) => ({ ...s, busy: true, error: null }));
-      try {
-        const result = await generateTryOn({
-          bodyKind,
-          presetId,
-          listingIds: pieces.map((p) => p.listingId),
-        });
+  /**
+   * Every look generated this session, by outfit key. This is what
+   * makes taking something off free — and what lets the row say
+   * "uses 1 try-on" only where it is true.
+   */
+  const [looks, setLooks] = useState<Record<string, { tryOnId: string; imagePath: string }>>({});
+
+  const outfit = useMemo(() => outfitOf(worn), [worn]);
+  const key = outfitKey(outfit);
+  const known = looks[key];
+
+  // What is on screen right now. The bare body is her own photo.
+  const shownPath = key === '' ? null : (known?.imagePath ?? null);
+  const shownUrl = useTryOnImage(shownPath) ?? (key === '' ? bodyUrl : null);
+
+  useEffect(() => {
+    // Nothing on, or we already have this exact look: no call at all.
+    if (key === '' || looks[key]) {
+      setState((s) => ({ ...s, busy: false, error: null }));
+      return;
+    }
+
+    let cancelled = false;
+    setState((s) => ({ ...s, busy: true, error: null }));
+
+    generateTryOn({ bodyKind, presetId, listingIds: outfit.map((p) => p.listingId) })
+      .then((result) => {
+        if (cancelled) return;
         logEvent('tryon_generate', {
           surface: 'tryon',
           targetType: 'listing',
-          targetId: pieces[pieces.length - 1]!.listingId,
+          targetId: outfit[outfit.length - 1]!.listingId,
           // The hit rate is what decides whether paid credits can work.
-          meta: { cached: result.data.cached, pieces: pieces.length },
+          meta: { cached: result.data.cached, pieces: outfit.length },
         });
-        setState({
-          busy: false,
-          error: null,
-          result: { tryOnId: result.data.tryOnId, imagePath: result.data.imagePath },
-          remaining: result.data.remaining,
-        });
-      } catch (err) {
-        // The limit message arrives from the server, so there is one
-        // place that knows what the allowance is.
+        setLooks((current) => ({
+          ...current,
+          [key]: { tryOnId: result.data.tryOnId, imagePath: result.data.imagePath },
+        }));
+        setState({ busy: false, error: null, remaining: result.data.remaining });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        // The allowance message comes from the server, so there is one
+        // place that knows what the limit is.
         setState((s) => ({
           ...s,
           busy: false,
           error: callableErrorMessage(err, 'Could not try that on. Try again.'),
         }));
-      }
-    },
-    [bodyKind, presetId],
-  );
-
-  const add = useCallback(
-    (piece: TryOnPieceSummary) => {
-      setStack((current) => {
-        // Same piece tapped twice is a no-op, not a second layer.
-        if (current.some((p) => p.listingId === piece.listingId)) return current;
-        const next = [...current, piece];
-        void run(next);
-        return next;
+        // Take it back off, so she is not left looking at the previous
+        // outfit while the row says she is wearing something else.
+        setWorn((w) => {
+          const next = { ...w };
+          for (const slot of Object.keys(next) as Slot[]) {
+            if (next[slot] && outfit.some((p) => p.listingId === next[slot]!.listingId)) {
+              delete next[slot];
+            }
+          }
+          return next;
+        });
       });
-    },
-    [run],
-  );
 
-  const undo = useCallback(() => {
-    setStack((current) => {
-      const next = current.slice(0, -1);
-      void run(next);
-      return next;
+    return () => {
+      cancelled = true;
+    };
+    // `key` is the whole identity of the request.
+  }, [key]);
+
+  /** Tap: on if it is off, off if it is on, swapping within its slot. */
+  const tap = useCallback((piece: TryOnPieceSummary) => {
+    const slot = slotFor(piece.category);
+    setWorn((current) => {
+      if (current[slot]?.listingId === piece.listingId) {
+        const next = { ...current };
+        delete next[slot];
+        return next;
+      }
+      if (slot === 'dress') return { dress: piece };
+      // A top or bottoms replace the dress, because a dress is both.
+      const { dress: _dress, ...rest } = current;
+      return { ...rest, [slot]: piece };
     });
-  }, [run]);
-
-  const reset = useCallback(() => {
-    setStack([]);
-    setState({ busy: false, error: null, result: null, remaining: null });
   }, []);
 
-  return { stack, state, add, undo, reset };
+  const reset = useCallback(() => setWorn({}), []);
+
+  /** Would tapping this spend a try-on? Only if we have not seen it. */
+  const costsAGeneration = useCallback(
+    (piece: TryOnPieceSummary) => {
+      const slot = slotFor(piece.category);
+      if (worn[slot]?.listingId === piece.listingId) return false; // taking off
+      const next: Worn =
+        slot === 'dress'
+          ? { dress: piece }
+          : { ...Object.fromEntries(Object.entries(worn).filter(([k]) => k !== 'dress')), [slot]: piece };
+      return !looks[outfitKey(outfitOf(next))];
+    },
+    [worn, looks],
+  );
+
+  return {
+    worn,
+    outfit,
+    isWearing: (listingId: string) => outfit.some((p) => p.listingId === listingId),
+    tap,
+    reset,
+    costsAGeneration,
+    state,
+    shownUrl,
+    /** The saved-look id for what is on screen, or null for the bare body. */
+    currentTryOnId: known?.tryOnId ?? null,
+  };
 }
 
 /**
