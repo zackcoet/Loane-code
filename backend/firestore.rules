@@ -156,6 +156,8 @@ service cloud.firestore {
                // dismissedSuggestions below, it moves no counter and
                // grants nothing — it changes only what she is shown.
                'profileChecklist',
+               // Whether she has seen the walkthrough. Hers to answer.
+               'walkthrough',
                'updatedAt'
              ]);
         allow delete: if false;

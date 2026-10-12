@@ -30,6 +30,7 @@ import { LEGAL_V1_EFFECTIVE_DATE, PRIVACY_V1, TERMS_V1 } from '../src/legal/v1';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
+  newUserWalkthrough,
   COLLECTIONS,
   OCCASIONS,
   SHOE_SIZES,
@@ -1165,6 +1166,7 @@ async function main(): Promise<void> {
         phone: null,
         handoffNotes: 'Usually around Russell House between classes.',
         profileChecklist: { dismissed: false, foundFriendsAt: null },
+        walkthrough: newUserWalkthrough(),
         tryOn: {
           ...newUserTryOn(),
           ...(student.demo ? { bonusGranted: student.demo.bonusTryOns } : {}),

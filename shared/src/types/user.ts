@@ -229,6 +229,18 @@ export interface UserPrivate {
    */
   tryOn: UserTryOn;
 
+  /**
+   * The walkthrough, once.
+   *
+   * A timestamp rather than a boolean: "when did she see it" answers
+   * questions a boolean cannot, like whether a student who signed up
+   * before the tour existed has ever been offered it.
+   *
+   * Set when she finishes OR skips — skipping is an answer, and asking
+   * again would be ignoring it.
+   */
+  walkthrough: { completedAt: Timestampish | null };
+
   notificationPreferences: {
     pushEnabled: boolean;
     rentals: boolean;

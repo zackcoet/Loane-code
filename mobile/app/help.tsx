@@ -21,6 +21,7 @@ import { Button } from '../src/components/Button';
 import { Chip } from '../src/components/Chip';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
+import { useWalkthrough } from '../src/hooks/useWalkthrough';
 import { Input } from '../src/components/Input';
 import { PhotoGrid } from '../src/components/PhotoGrid';
 import { Screen } from '../src/components/Screen';
@@ -65,6 +66,7 @@ const FAQ = [
 ];
 
 export default function Help() {
+  const tour = useWalkthrough();
   const router = useRouter();
   const { profile } = useAuth();
   const renting = useMyBookings('renting');
@@ -144,6 +146,16 @@ export default function Help() {
     <Screen flush scroll>
       <Header title="Help & Support" onBack={() => router.back()} />
       <View style={styles.content}>
+        {/* Replayable, because "how does this work again" is a real
+            question three weeks after signing up. */}
+        <Button
+          label="Show me around Loane again"
+          variant="outline"
+          onPress={() => {
+            void tour.replay().then(() => router.back());
+          }}
+        />
+
         <Text variant="label" tone="muted" style={styles.sectionLabelTop}>
           Report a problem with a rental
         </Text>

@@ -1,6 +1,7 @@
 import type { Booking } from './types/booking';
 import type { User } from './types/user';
 import type { UserTryOn } from './types/tryOn';
+import type { UserPrivate } from './types/user';
 
 /**
  * Default shapes for the documents Cloud Functions create.
@@ -52,6 +53,11 @@ export function newUserTryOn(): UserTryOn {
     generationsUsed: 0,
     bonusGranted: 0,
   };
+}
+
+/** Never seen, never skipped. */
+export function newUserWalkthrough(): UserPrivate['walkthrough'] {
+  return { completedAt: null };
 }
 
 export function newUserStripe(): User['stripe'] {

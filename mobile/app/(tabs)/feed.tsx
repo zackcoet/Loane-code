@@ -32,6 +32,8 @@ import { usePagedPosts } from '../../src/hooks/usePagedPosts';
 import { useFollowingUids } from '../../src/hooks/useFollowing';
 import { useUnreadMessageCount } from '../../src/hooks/useMessaging';
 import { useSuggestedClosets } from '../../src/hooks/useSuggestedClosets';
+import { useWalkthrough } from '../../src/hooks/useWalkthrough';
+import { Walkthrough } from '../../src/components/Walkthrough';
 import { useProfileGate } from '../../src/hooks/useProfileGate';
 import { SuggestedClosets } from '../../src/components/SuggestedClosets';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
@@ -65,6 +67,12 @@ export default function Feed() {
   const unreadMessages = useUnreadMessageCount();
   const suggested = useSuggestedClosets();
   const gate = useProfileGate();
+  /*
+    Here rather than on a screen of its own: the tour points at the tab
+    bar, and the tab bar only exists once she is inside the app. The
+    feed is where she lands after signing up.
+  */
+  const tour = useWalkthrough();
   const { profile } = useAuth();
   const { posts, loading, loadingMore, error, exhausted, refresh, loadMore } = usePagedPosts();
   const { uids: followingUids } = useFollowingUids();
@@ -288,6 +296,7 @@ export default function Feed() {
       )}
 
       <ProfileGateSheet gate={gate} />
+      <Walkthrough visible={tour.visible} onDone={() => void tour.done()} />
     </Screen>
   );
 }

@@ -2,6 +2,7 @@ import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
 import type { Campus, User, UsernameLock, UserPrivate } from '@loane/shared';
 import {
+  newUserWalkthrough,
   COLLECTIONS,
   color,
   emailDomain,
@@ -202,6 +203,7 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
           handoffNotes: null,
           profileChecklist: { dismissed: false, foundFriendsAt: null },
           tryOn: newUserTryOn(),
+          walkthrough: newUserWalkthrough(),
           notificationPreferences: {
             pushEnabled: true,
             rentals: true,
