@@ -1,10 +1,11 @@
 /**
  * Loane's button. Small uppercase letter-spaced label, square corners.
  *
- * The primary action is CHARTREUSE with a black label, because the
- * primary action is where the brand should be loudest — "Request to
- * rent", "Publish look", "Continue". Everything else stays black and
- * white so the accent keeps its meaning.
+ * The primary action is CHERRY with a white label, because the primary
+ * action is where the brand should be loudest — "Request to rent",
+ * "Publish look", "Continue". Everything else stays quiet so the
+ * accent keeps its meaning. (This said CHARTREUSE until the October
+ * palette replaced it; the colours come from tokens either way.)
  *
  * `dark` is the same weight in black, for a primary action that should
  * not feel celebratory. Reporting another student is the case that
@@ -118,12 +119,20 @@ const styles = StyleSheet.create({
   filledDisabled: { backgroundColor: color.surface.disabled },
   disabled: { opacity: 0.5 },
   pressed: { opacity: 0.8 },
-  // Taller, because two lines of text need room to breathe inside a
-  // button rather than filling it to the edges.
-  stacked: { height: 'auto', paddingVertical: spacing.md, gap: 3 },
+  /*
+    Two lines need room. minHeight rather than height:'auto' so a
+    stacked button is never SHORTER than an ordinary one, and so a
+    caller passing a height can only make it taller.
+  */
+  stacked: { height: undefined, minHeight: controls.buttonHeight, paddingVertical: spacing.md },
   sublabel: {
     fontFamily: fontFamilyFor(type.caption.weight),
     fontSize: type.caption.size,
+    // EXPLICIT, and the reason this bug existed: without a lineHeight
+    // React Native lays text out to the font's own metrics, and inside
+    // a height-constrained button that clips the tops of the letters.
+    // The tokens have carried these numbers all along.
+    lineHeight: type.caption.lineHeight,
     letterSpacing: type.caption.letterSpacing,
     textTransform: 'none',
     opacity: 0.85,
@@ -131,8 +140,11 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: fontFamilyFor(type.button.weight),
     fontSize: type.button.size,
+    lineHeight: type.button.lineHeight,
     fontWeight: '600',
     letterSpacing: type.button.letterSpacing,
     textTransform: 'uppercase',
+    // Uppercase with letter-spacing is the shape most likely to clip.
+    textAlign: 'center',
   },
 });

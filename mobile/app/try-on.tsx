@@ -26,7 +26,6 @@ import { FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 import {
   WORDS,
   color,
-  controls,
   formatCentsShort,
   priceForDuration,
   radius,
@@ -218,7 +217,7 @@ export default function TryOn() {
       {room.outfit.length > 0 ? (
         <View style={styles.actions}>
           <Button
-            label="Take it all off"
+            label="Clear"
             variant="outline"
             onPress={room.reset}
             style={styles.grow}
@@ -236,7 +235,16 @@ export default function TryOn() {
 
       {room.outfit.length > 0 && !room.state.busy ? (
         <View style={styles.onHer}>
-          {room.outfit.map((piece) => (
+          {/*
+            One row per piece she is wearing, top first.
+
+            The outfit is GENERATED bottoms-first, because whatever goes
+            on second survives best — but reading down a body starts at
+            the top, so the rows are reversed for display only. The
+            order that matters to FASHN and the order that matters to
+            her are not the same order.
+          */}
+          {[...room.outfit].reverse().map((piece) => (
             <PieceRow
               key={piece.listingId}
               listing={available.find((l) => l.id === piece.listingId)}
@@ -449,7 +457,12 @@ const styles = StyleSheet.create({
   pieceRow: { gap: spacing.xs },
   pieceRowName: { fontWeight: '600' },
   pieceRowActions: { flexDirection: 'row', gap: spacing.sm },
-  pieceButton: { flex: 1, height: controls.buttonHeightSmall },
+  /*
+    NO fixed height. These carry a label and a price, and
+    buttonHeightSmall is one line tall — which is what was slicing the
+    tops off the letters. The stacked style sizes itself.
+  */
+  pieceButton: { flex: 1 },
   tabs: {
     flexDirection: 'row',
     gap: spacing.xs,
