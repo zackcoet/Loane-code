@@ -17,7 +17,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { color, controls, spacing } from '@loane/shared';
+import { brand, color, controls, radius, spacing } from '@loane/shared';
 import { CampusChip } from '../../src/components/CampusChip';
 import { EmptyState } from '../../src/components/EmptyState';
 import { IconButton } from '../../src/components/IconButton';
@@ -28,6 +28,7 @@ import { Text } from '../../src/components/Text';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { usePagedPosts } from '../../src/hooks/usePagedPosts';
 import { useFollowingUids } from '../../src/hooks/useFollowing';
+import { useUnreadMessageCount } from '../../src/hooks/useMessaging';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
 import { logEvent } from '../../src/analytics/events';
@@ -35,6 +36,7 @@ import { logEvent } from '../../src/analytics/events';
 export default function Feed() {
   const router = useRouter();
   const draft = usePostDraft();
+  const unreadMessages = useUnreadMessageCount();
   const { profile } = useAuth();
   const { posts, loading, loadingMore, error, exhausted, refresh, loadMore } = usePagedPosts();
   const { uids: followingUids } = useFollowingUids();
@@ -67,44 +69,76 @@ export default function Feed() {
 
   return (
     <Screen flush>
+      {/* Menu left, mark centred, messages right — Instagram's shape,
+          and what Ella's mockup draws. The mark is our own Logo
+          component rather than the mockup's image, which clips the L
+          and the E. */}
       <View style={styles.header}>
         <IconButton
           name="menu"
           onPress={() => router.push('/menu')}
           accessibilityLabel="Open menu"
         />
-        <Logo size={30} lockup="below" />
-        <IconButton
-          name="add"
-          accent
-          onPress={() => router.push('/post-sheet')}
-          accessibilityLabel="Create a post or listing"
-        />
+        <Logo size={30} lockup="below" tint={color.text.heading} />
+        <View>
+          <IconButton
+            name="chatbubble-outline"
+            onPress={() => router.push('/messages')}
+            accessibilityLabel={
+              unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : 'Messages'
+            }
+          />
+          {/* A dot, not a count. The number is in the list; out here
+              all she needs to know is that there is something. */}
+          {unreadMessages > 0 ? <View style={styles.unreadDot} /> : null}
+        </View>
       </View>
 
-      <View style={styles.filterRow}>
+      <View style={styles.campusRow}>
         <CampusChip />
       </View>
 
-      <View style={styles.tabRow}>
-        {(
-          [
-            ['campus', 'All Campus'],
-            ['following', 'Following'],
-          ] as const
-        ).map(([value, label]) => (
-          <Pressable
-            key={value}
-            onPress={() => setTab(value)}
-            style={[styles.tab, tab === value && styles.tabActive]}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: tab === value }}
-          >
-            <Text variant="label" tone={tab === value ? 'primary' : 'muted'}>
-              {label}
-            </Text>
-          </Pressable>
-        ))}
+      {/* The serif gets the brand's own line, with the toggle beside
+          it — a headline and a control on one row, from the mockup. */}
+      <View style={styles.titleRow}>
+        {/* One line, always. The headline and the toggle share a row,
+            so on a small phone the type shrinks rather than wrapping
+            and shoving the toggle down. */}
+        <Text
+          variant="display"
+          tone="heading"
+          style={styles.title}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.65}
+        >
+          {brand.taglines.primary}
+        </Text>
+        <View style={styles.toggle}>
+          {(
+            [
+              ['campus', 'All'],
+              ['following', 'Following'],
+            ] as const
+          ).map(([value, label]) => (
+            <Pressable
+              key={value}
+              onPress={() => setTab(value)}
+              style={[styles.toggleOption, tab === value && styles.toggleOptionOn]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: tab === value }}
+            >
+              <Text
+                variant="bodySmall"
+                tone={tab === value ? 'inverse' : 'heading'}
+                uppercase={false}
+                style={styles.toggleLabel}
+              >
+                {label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
       {loading ? (
@@ -191,16 +225,51 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.sm,
   },
-  filterRow: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
-  tabRow: {
-    flexDirection: 'row',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: color.border.default,
+  unreadDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 9,
+    height: 9,
+    borderRadius: radius.pill,
+    backgroundColor: color.role.renter.background,
   },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.accent },
+  campusRow: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+  title: { flex: 1 },
+  // A cream track with a merlot pill sliding in it.
+  toggle: {
+    flexShrink: 0,
+    flexDirection: 'row',
+    backgroundColor: color.surface.section,
+    borderRadius: radius.pill,
+    padding: 4,
+  },
+  toggleOption: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+  },
+  toggleOptionOn: { backgroundColor: color.role.shared.background },
+  toggleLabel: { fontWeight: '600' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list: { paddingTop: spacing.md, paddingBottom: spacing.xxl },
+  // The feed body is the cream band; the cards are white on top of it.
+  list: {
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xxl,
+    backgroundColor: color.surface.section,
+  },
   footer: { paddingVertical: spacing.lg },
   end: { textAlign: 'center', paddingVertical: spacing.lg },
 });

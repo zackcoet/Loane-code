@@ -1,5 +1,10 @@
 /**
- * The five-tab bar: Feed, Discover, Messages, Activity, Profile.
+ * The bar: Feed, Discover, +, Activity, Profile.
+ *
+ * The + is NOT a tab. It is a raised cherry button in the middle that
+ * opens the post sheet, which is where Ella wanted it and where every
+ * app of this shape puts the thing it most wants tapped. Messages moved
+ * out to the Feed header, Instagram-style, to free the slot.
  *
  * Icons only. The labels were a word under every icon for five icons
  * everybody already recognises, and they cost a row of height on a
@@ -13,7 +18,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, iconSize, radius, type } from '@loane/shared';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useUnreadCount } from '../../src/hooks/useNotifications';
-import { useUnreadMessageCount } from '../../src/hooks/useMessaging';
 import { SuspendedBanner } from '../../src/components/SuspendedBanner';
 import { Icon, type IconName } from '../../src/components/Icon';
 
@@ -28,6 +32,22 @@ import { Icon, type IconName } from '../../src/components/Icon';
 function TabIcon({ name, focused }: { name: IconName; focused: boolean }) {
   return (
     <Icon name={name} size={iconSize.tab} tint={focused ? color.icon.default : color.text.muted} />
+  );
+}
+
+/**
+ * The raised + in the middle of the bar.
+ *
+ * Cherry and lifted off the bar, because putting something on Loane is
+ * the action the whole app exists to collect. It sits proud of the bar
+ * rather than inside it, which is why the negative margin is here: the
+ * bar is only 49pt tall and the button is 56.
+ */
+function PostButton() {
+  return (
+    <View style={styles.postButton}>
+      <Icon name="add" size={30} tint={color.role.renter.label} />
+    </View>
   );
 }
 
@@ -63,7 +83,6 @@ export default function TabsLayout() {
   // Nobody gets a push notification until Phase 6, so the badge is the
   // only nudge that something needs an answer.
   const unread = useUnreadCount();
-  const unreadMessages = useUnreadMessageCount();
 
   /**
    * How much of the home-indicator area the bar keeps as padding.
@@ -115,17 +134,27 @@ export default function TabsLayout() {
             ),
           }}
         />
+        {/*
+          The middle slot. Not a destination — tapping it opens the post
+          sheet and leaves you where you were, so `listeners` cancels the
+          navigation the tab would otherwise do.
+
+          It still has to BE a screen for the slot to exist in the bar at
+          all; `messages` is the route behind it, which is also where the
+          header chat button goes, so the two never disagree.
+        */}
         <Tabs.Screen
           name="messages"
           options={{
-            title: 'Messages',
-            tabBarIcon: ({ focused }) => (
-              <TabIcon name={focused ? 'chatbubble' : 'chatbubble-outline'} focused={focused} />
-            ),
-            tabBarBadge:
-              unreadMessages > 0 ? (unreadMessages > 9 ? '9+' : unreadMessages) : undefined,
-            tabBarBadgeStyle: styles.badge,
+            title: 'Post',
+            tabBarIcon: () => <PostButton />,
           }}
+          listeners={({ navigation }) => ({
+            tabPress: (e) => {
+              e.preventDefault();
+              navigation.navigate('post-sheet' as never);
+            },
+          })}
         />
         <Tabs.Screen
           name="activity"
@@ -168,6 +197,21 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface.page,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: color.border.default,
+  },
+  postButton: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.pill,
+    backgroundColor: color.role.renter.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    // Lifts it proud of a 49pt bar.
+    marginTop: -18,
+    shadowColor: color.role.renter.background,
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
   avatarRing: {
     width: iconSize.tab,

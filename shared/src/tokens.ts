@@ -48,6 +48,13 @@ export const palette = {
   ballet: '#EFAFC2',
   denim: '#7F95B0',
 
+  // Pale versions of the accents, for occasion pills and quiet fills.
+  // The accents at full strength belong to the roles; these are labels.
+  butterSoft: '#FBF0C4',
+  balletSoft: '#FBE4EC',
+  denimSoft: '#E4EAF1',
+  creamDeep: '#EFE5D5',
+
   // Midnight (#1A2D4D) is in the deck but marked campaign only, so it is
   // deliberately absent. Add it here if that ever changes.
 
@@ -229,6 +236,26 @@ export const color = {
   },
 
   /**
+   * An occasion pill on a post — "Formal", "Gameday".
+   *
+   * One colour per occasion, from Ella's mockup, so a feed reads as a
+   * run of different nights rather than a column of identical tags.
+   * Every one is a pale background under merlot text; none of them is
+   * cherry or butter at full strength, because an occasion is a label
+   * and must not compete with a role.
+   */
+  occasion: {
+    gameday: palette.butterSoft,
+    going_out: palette.balletSoft,
+    formal: palette.balletSoft,
+    date_function: palette.balletSoft,
+    rush: palette.butterSoft,
+    vacation: palette.denimSoft,
+    wedding: palette.creamDeep,
+    graduation: palette.denimSoft,
+  },
+
+  /**
    * The dot beside a campus name. Real campuses carry their own
    * `brandColor` in Firestore — USC's is garnet. This is the fallback for a
    * campus that has not set one. We use a school's colour, never its logo,
@@ -336,6 +363,8 @@ export const radius = {
   sm: 4,
   md: 8,
   lg: 16,
+  /** A feed card. Softer than the rest of the app, on purpose. */
+  card: 20,
   pill: 999,
 } as const;
 

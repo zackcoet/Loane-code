@@ -16,6 +16,7 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   LIMITS,
+  OCCASION_LABELS,
   color,
   controls,
   iconSize,
@@ -128,6 +129,18 @@ export function PostCard({
             {post.author.displayName}
           </Text>
         </Pressable>
+
+        {/* One occasion, as a pale pill. A feed then reads as a run of
+            different nights rather than a column of identical tags. */}
+        {post.occasions[0] ? (
+          <View style={[styles.occasion, { backgroundColor: color.occasion[post.occasions[0]] }]}>
+            <Text variant="caption" tone="heading" uppercase={false} style={styles.occasionText}>
+              {OCCASION_LABELS[post.occasions[0]]}
+            </Text>
+          </View>
+        ) : null}
+
+        <View style={styles.spacer} />
         {onEdit ? (
           <Pressable
             onPress={onEdit}
@@ -343,12 +356,30 @@ function Action({
 export const MAX_COMMENT_LENGTH = LIMITS.commentBody.max;
 
 const styles = StyleSheet.create({
+  // A white card floating on the cream feed. It used to be a
+  // full-bleed block divided by hairlines, which is Instagram's shape
+  // but not Ella's — hers is a magazine page, and the lift is what
+  // separates one look from the next.
   card: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: color.border.default,
-    paddingBottom: spacing.md,
+    backgroundColor: color.surface.raised,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+    marginHorizontal: spacing.md,
     marginBottom: spacing.lg,
+    paddingBottom: spacing.md,
+    shadowColor: color.shadow.card,
+    shadowOpacity: 1,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
+  occasion: {
+    marginLeft: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+  },
+  occasionText: { fontWeight: '600' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
