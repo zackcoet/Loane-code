@@ -16,7 +16,6 @@ import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import {
   LIMITS,
-  OCCASION_LABELS,
   color,
   controls,
   iconSize,
@@ -134,15 +133,11 @@ export function PostCard({
           </Text>
         </Pressable>
 
-        {/* One occasion, as a pale pill. A feed then reads as a run of
-            different nights rather than a column of identical tags. */}
-        {post.occasions[0] ? (
-          <View style={[styles.occasion, { backgroundColor: color.occasion[post.occasions[0]] }]}>
-            <Text variant="caption" tone="heading" uppercase={false} style={styles.occasionText}>
-              {OCCASION_LABELS[post.occasions[0]]}
-            </Text>
-          </View>
-        ) : null}
+        {/* No occasion pill. Zack's call: a coloured tag beside every
+            name was decoration competing with the photograph, which is
+            the thing the feed exists to show. The occasions are still
+            on the post and still drive Discover's filters — they are
+            just not printed over the top of her outfit. */}
 
         <View style={styles.spacer} />
         {onEdit ? (
@@ -386,13 +381,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: color.border.default,
   },
-  occasion: {
-    marginLeft: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
-  },
-  occasionText: { fontWeight: '600' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
