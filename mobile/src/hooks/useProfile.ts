@@ -121,7 +121,11 @@ export function useUserPosts(uid: string | undefined) {
         limit(PAGE_SIZE),
       ),
       (snap) => {
-        setItems(snap.docs.map((d) => ({ ...(d.data() as Post), id: d.id })));
+        setItems(
+          snap.docs
+            .map((d) => ({ ...(d.data() as Post), id: d.id }))
+            .filter((post) => post.settings?.hideFromProfile !== true),
+        );
         setLoading(false);
       },
       () => setLoading(false),

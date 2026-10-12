@@ -101,6 +101,7 @@ export async function pickPhotos(limit: number): Promise<PickedPhoto[]> {
     mediaTypes: ['images'],
     allowsMultipleSelection: true,
     selectionLimit: limit,
+    orderedSelection: true,
     quality: 1,
   });
 

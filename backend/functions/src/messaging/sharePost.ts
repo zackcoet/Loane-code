@@ -1,6 +1,13 @@
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
-import { COLLECTIONS, LIMITS, SUBCOLLECTIONS, type Message, type Post, type User } from '@loane/shared';
+import {
+  COLLECTIONS,
+  LIMITS,
+  SUBCOLLECTIONS,
+  type Message,
+  type Post,
+  type User,
+} from '@loane/shared';
 import { db, now, FieldValue } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
@@ -59,6 +66,8 @@ export const sharePost = onCall<ShareInput, Promise<ShareResult>>(
     if (!postSnap.exists) throw notFound('That look is gone.');
     const post = postSnap.data() as Post;
     if (post.status !== 'active') throw failed('That look is no longer up.');
+    if (post.settings?.sharingDisabled === true)
+      throw failed('Sharing is turned off for that look.');
 
     // The snapshot that goes in the bubble. Stored rather than looked up
     // so the chat renders instantly and does not turn into a blank card

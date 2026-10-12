@@ -17,7 +17,7 @@
  */
 
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import type { Occasion } from '@loane/shared';
+import type { Occasion, PostSettings } from '@loane/shared';
 import type { PickedPhoto } from '../lib/photo';
 
 /** A tag placed on a photo, before the post exists. */
@@ -42,6 +42,8 @@ interface PostDraftState {
   photos: DraftPhoto[];
   caption: string;
   occasions: Occasion[];
+  settings: PostSettings;
+  scheduledAt: Date | null;
 
   setPhotos: (photos: DraftPhoto[]) => void;
   addPhotos: (picked: PickedPhoto[]) => void;
@@ -55,6 +57,8 @@ interface PostDraftState {
 
   setCaption: (value: string) => void;
   setOccasions: (value: Occasion[]) => void;
+  setSetting: <K extends keyof PostSettings>(key: K, value: PostSettings[K]) => void;
+  setScheduledAt: (value: Date | null) => void;
 
   /** Total tags across every photo — what the Details row counts. */
   tagCount: number;
@@ -65,11 +69,19 @@ const PostDraftContext = createContext<PostDraftState | null>(null);
 
 let photoSeq = 0;
 const nextPhotoId = () => `p${(photoSeq += 1)}`;
+const DEFAULT_SETTINGS: PostSettings = {
+  hideLikeCount: false,
+  commentsDisabled: false,
+  sharingDisabled: false,
+  hideFromProfile: false,
+};
 
 export function PostDraftProvider({ children }: { children: React.ReactNode }) {
   const [photos, setPhotos] = useState<DraftPhoto[]>([]);
   const [caption, setCaption] = useState('');
   const [occasions, setOccasions] = useState<Occasion[]>([]);
+  const [settings, setSettings] = useState<PostSettings>(DEFAULT_SETTINGS);
+  const [scheduledAt, setScheduledAt] = useState<Date | null>(null);
 
   const addPhotos = useCallback((picked: PickedPhoto[]) => {
     setPhotos((current) => [
@@ -126,6 +138,12 @@ export function PostDraftProvider({ children }: { children: React.ReactNode }) {
     setPhotos([]);
     setCaption('');
     setOccasions([]);
+    setSettings(DEFAULT_SETTINGS);
+    setScheduledAt(null);
+  }, []);
+
+  const setSetting = useCallback(<K extends keyof PostSettings>(key: K, value: PostSettings[K]) => {
+    setSettings((current) => ({ ...current, [key]: value }));
   }, []);
 
   const value = useMemo<PostDraftState>(
@@ -133,6 +151,8 @@ export function PostDraftProvider({ children }: { children: React.ReactNode }) {
       photos,
       caption,
       occasions,
+      settings,
+      scheduledAt,
       setPhotos,
       addPhotos,
       removePhoto,
@@ -143,6 +163,8 @@ export function PostDraftProvider({ children }: { children: React.ReactNode }) {
       moveTag,
       setCaption,
       setOccasions,
+      setSetting,
+      setScheduledAt,
       tagCount: photos.reduce((sum, p) => sum + p.tags.length, 0),
       reset,
     }),
@@ -150,6 +172,8 @@ export function PostDraftProvider({ children }: { children: React.ReactNode }) {
       photos,
       caption,
       occasions,
+      settings,
+      scheduledAt,
       addPhotos,
       removePhoto,
       movePhoto,
@@ -158,6 +182,7 @@ export function PostDraftProvider({ children }: { children: React.ReactNode }) {
       removeTag,
       moveTag,
       reset,
+      setSetting,
     ],
   );
 

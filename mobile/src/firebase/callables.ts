@@ -6,7 +6,7 @@
  */
 
 import { httpsCallable } from 'firebase/functions';
-import type { ImageRef, Occasion, SupportTopic } from '@loane/shared';
+import type { ImageRef, Occasion, PostSettings, SupportTopic } from '@loane/shared';
 import { functions } from './config';
 
 /**
@@ -74,6 +74,8 @@ export const createPost = httpsCallable<
     photos: { path: string; url: string; width: number; height: number; tags: PostTagInput[] }[];
     caption: string;
     occasions: Occasion[];
+    settings: PostSettings;
+    scheduledAt?: string | null;
   },
   { postId: string }
 >(functions, 'createPost');

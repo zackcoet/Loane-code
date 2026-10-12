@@ -60,6 +60,17 @@ export interface PostPhoto extends ImageRef {
   tags: PhotoTag[];
 }
 
+export interface PostSettings {
+  /** Hide the public like count/liked-by row for this look. */
+  hideLikeCount: boolean;
+  /** Prevent new comments on this look. */
+  commentsDisabled: boolean;
+  /** Prevent this look from being sent into chats. */
+  sharingDisabled: boolean;
+  /** Keep this look out of the owner's profile grid. */
+  hideFromProfile: boolean;
+}
+
 /**
  * `posts/{postId}`
  *
@@ -77,6 +88,9 @@ export interface Post extends BaseDoc, CampusScoped {
   photos: PostPhoto[];
   caption: string;
   occasions: Occasion[];
+  settings?: PostSettings;
+  /** Future publish time for scheduled posts. Null for normal posts. */
+  scheduledAt?: Timestampish | null;
 
   /**
    * Every listing tagged anywhere in this post, flattened.

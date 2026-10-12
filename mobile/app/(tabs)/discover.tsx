@@ -11,7 +11,6 @@ import { useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActionSheetIOS,
-  ActivityIndicator,
   Alert,
   FlatList,
   Platform,
@@ -39,6 +38,7 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { FilterSheet } from '../../src/components/FilterSheet';
 import { ListingCard } from '../../src/components/ListingCard';
 import { Logo } from '../../src/components/Logo';
+import { LoaneLoader } from '../../src/components/LoaneLoader';
 import { Screen } from '../../src/components/Screen';
 import { Icon } from '../../src/components/Icon';
 import { Text } from '../../src/components/Text';
@@ -239,7 +239,7 @@ export default function Discover() {
 
       {loading ? (
         <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
+          <LoaneLoader size={34} />
         </View>
       ) : error ? (
         <EmptyState title="Couldn't load Discover" body={error} />

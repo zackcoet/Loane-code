@@ -69,6 +69,10 @@ export function PostCard({
 
   const liked = useIsLiked(post.id);
   const saved = useIsPostSaved(post.id);
+  const hideLikeCount = post.settings?.hideLikeCount === true;
+  const showLikeCount = !hideLikeCount || isMine;
+  const commentsDisabled = post.settings?.commentsDisabled === true;
+  const sharingDisabled = post.settings?.sharingDisabled === true;
 
   // Double tap likes; it never un-likes. Tapping twice more by accident
   // and silently undoing a like is worse than the accidental like.
@@ -199,21 +203,25 @@ export function PostCard({
           icon={liked.on ? 'heart' : 'heart-outline'}
           tint={liked.on ? color.status.error : color.icon.default}
           label={liked.on ? 'Unlike' : 'Like'}
-          count={post.stats.likeCount}
+          count={showLikeCount ? post.stats.likeCount : undefined}
           onPress={() => void liked.toggle()}
         />
-        <Action
-          icon="chatbubble-outline"
-          label="Comments"
-          count={post.stats.commentCount ?? 0}
-          onPress={onPressComments}
-        />
-        <Action
-          icon="paper-plane-outline"
-          label="Send this look to someone"
-          count={post.stats.shareCount ?? 0}
-          onPress={onPressSend}
-        />
+        {commentsDisabled ? null : (
+          <Action
+            icon="chatbubble-outline"
+            label="Comments"
+            count={post.stats.commentCount ?? 0}
+            onPress={onPressComments}
+          />
+        )}
+        {sharingDisabled ? null : (
+          <Action
+            icon="paper-plane-outline"
+            label="Send this look to someone"
+            count={post.stats.shareCount ?? 0}
+            onPress={onPressSend}
+          />
+        )}
         <View style={styles.spacer} />
         <Action
           icon={saved.on ? 'bookmark' : 'bookmark-outline'}
@@ -224,7 +232,7 @@ export function PostCard({
 
       <View style={styles.footer}>
         {/* Liked by. */}
-        {post.stats.likeCount > 0 ? (
+        {showLikeCount && post.stats.likeCount > 0 ? (
           post.lastLiker ? (
             <Pressable
               style={styles.likedBy}
@@ -278,7 +286,11 @@ export function PostCard({
         ) : null}
 
         {/* Comments. */}
-        {(post.stats.commentCount ?? 0) > 0 ? (
+        {commentsDisabled ? (
+          <Text variant="bodySmall" tone="muted" style={styles.viewComments}>
+            Comments are off
+          </Text>
+        ) : (post.stats.commentCount ?? 0) > 0 ? (
           <Text
             variant="bodySmall"
             tone="muted"

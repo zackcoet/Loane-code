@@ -89,6 +89,7 @@ export default function PostPreview() {
   }));
 
   const taggedIds = [...new Set(draft.photos.flatMap((p) => p.tags.map((t) => t.listingId)))];
+  const scheduled = draft.scheduledAt !== null && draft.scheduledAt.getTime() > Date.now();
 
   // Everything a Post has, with the server-written parts left at zero —
   // this document does not exist yet and nothing here is ever stored.
@@ -107,10 +108,12 @@ export default function PostPreview() {
     photos,
     caption: draft.caption.trim(),
     occasions: draft.occasions,
+    settings: draft.settings,
+    scheduledAt: draft.scheduledAt,
     taggedListings: taggedIds.map(summaryOf).filter((s): s is ListingSummary => s !== null),
     taggedListingIds: taggedIds,
     circleId: null,
-    status: 'active',
+    status: scheduled ? 'scheduled' : 'active',
     stats: {
       likeCount: 0,
       saveCount: 0,
@@ -153,6 +156,8 @@ export default function PostPreview() {
         photos: uploaded,
         caption: draft.caption.trim(),
         occasions: draft.occasions,
+        settings: draft.settings,
+        scheduledAt: draft.scheduledAt?.toISOString() ?? null,
       });
 
       logEvent('post_create', {
@@ -163,9 +168,13 @@ export default function PostPreview() {
       });
 
       draft.reset();
-      banner.show('Look shared');
+      banner.show(scheduled ? 'Look scheduled' : 'Look shared');
       router.dismissAll();
-      router.push({ pathname: '/post/[id]', params: { id: result.data.postId } });
+      if (scheduled) {
+        router.push('/(tabs)/feed');
+      } else {
+        router.push({ pathname: '/post/[id]', params: { id: result.data.postId } });
+      }
     } catch (err) {
       Alert.alert('Could not share', callableErrorMessage(err, 'Try again in a moment.'));
     } finally {
@@ -206,7 +215,11 @@ export default function PostPreview() {
           onPress={() => router.back()}
           style={styles.footerButton}
         />
-        <Button label="Share" onPress={() => void onShare()} style={styles.footerButton} />
+        <Button
+          label={scheduled ? 'Schedule' : 'Share'}
+          onPress={() => void onShare()}
+          style={styles.footerButton}
+        />
       </View>
     </Screen>
   );

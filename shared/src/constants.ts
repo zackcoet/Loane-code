@@ -287,7 +287,7 @@ export type ReturnProblem = (typeof RETURN_PROBLEMS)[number];
 
 export const RETURN_PROBLEM_LABELS: Record<ReturnProblem, string> = {
   damaged: 'It came back damaged',
-  not_returned: "I never got it back",
+  not_returned: 'I never got it back',
   excessive_cleaning: 'It needs more than a normal clean',
   wrong_item: 'She returned the wrong thing',
   other: 'Something else',
@@ -362,7 +362,12 @@ export type SupportTopic = (typeof SUPPORT_TOPICS)[number];
 export const SUPPORT_REQUEST_STATUSES = ['open', 'resolved'] as const;
 export type SupportRequestStatus = (typeof SUPPORT_REQUEST_STATUSES)[number];
 
-export const CLAIM_TYPES = ['excessive_cleaning', 'repairable_damage', 'irreparable', 'not_returned'] as const;
+export const CLAIM_TYPES = [
+  'excessive_cleaning',
+  'repairable_damage',
+  'irreparable',
+  'not_returned',
+] as const;
 export type ClaimType = (typeof CLAIM_TYPES)[number];
 
 export const CLAIM_STATUSES = [
@@ -395,7 +400,7 @@ export const DAMAGE_CLAIM_WINDOW_HOURS = 48;
 // Social
 // ---------------------------------------------------------------------------
 
-export const POST_STATUSES = ['active', 'removed', 'suspended'] as const;
+export const POST_STATUSES = ['active', 'scheduled', 'removed', 'suspended'] as const;
 export type PostStatus = (typeof POST_STATUSES)[number];
 
 export const FEED_TABS = ['explore', 'following'] as const;

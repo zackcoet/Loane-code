@@ -9,15 +9,30 @@
  */
 
 import { initializeApp, getApps, type FirebaseApp } from 'firebase/app';
-import {
-  initializeAuth,
-  getAuth,
-  connectAuthEmulator,
-  // @ts-expect-error — not in the published types, but it is the documented
-  // way to persist auth in React Native.
-  getReactNativePersistence,
-  type Auth,
-} from 'firebase/auth';
+import { initializeAuth, getAuth, connectAuthEmulator, type Auth } from 'firebase/auth';
+/**
+ * FROM '@firebase/auth', NOT 'firebase/auth'. This is the whole reason
+ * students were being signed out every time they reopened the app.
+ *
+ * The umbrella `firebase` package has no React Native export condition
+ * for `./auth` — it resolves to the browser build, which does not export
+ * `getReactNativePersistence` at all. The import therefore came back
+ * `undefined`, calling it threw, the catch below swallowed the throw,
+ * and auth fell back to IN-MEMORY persistence. Signed in until the app
+ * closed, every time.
+ *
+ * `@firebase/auth` carries a top-level "react-native" field, which is
+ * what Metro resolves on, so this import gets the RN build that does
+ * export it.
+ *
+ * It is deliberately NOT in mobile/package.json. Declaring it risks a
+ * second copy of the auth SDK at a different version — two auth
+ * instances is a far worse failure than this one. If hoisting ever
+ * stops working, Metro fails loudly at build time, which is fine.
+ */
+// @ts-expect-error — the RN build's types are not what TypeScript
+// resolves here, though the runtime export is real. See above.
+import { getReactNativePersistence } from '@firebase/auth';
 import { getFirestore, connectFirestoreEmulator, type Firestore } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator, type FirebaseStorage } from 'firebase/storage';
 import { getFunctions, connectFunctionsEmulator, type Functions } from 'firebase/functions';
@@ -76,10 +91,23 @@ export const app: FirebaseApp =
 
 function createAuth(): Auth {
   try {
-    // Persisting to AsyncStorage keeps her signed in between app launches.
+    // Persisting to AsyncStorage keeps her signed in between launches.
     return initializeAuth(app, { persistence: getReactNativePersistence(AsyncStorage) });
-  } catch {
-    // Already initialized (happens on Fast Refresh).
+  } catch (error) {
+    // Fast Refresh re-runs this module and auth is already set up. The
+    // only benign case, and the only one that gets swallowed.
+    if ((error as { code?: string })?.code === 'auth/already-initialized') {
+      return getAuth(app);
+    }
+
+    // Anything else means persistence is NOT configured and she will be
+    // signed out the moment the app closes. That used to happen in
+    // silence; a blanket catch here is what hid the bug for weeks.
+    console.error(
+      '[Loane] Auth persistence failed to initialise — users will be signed out ' +
+        'on every launch. Check the @firebase/auth import in config.ts.',
+      error,
+    );
     return getAuth(app);
   }
 }

@@ -67,6 +67,7 @@ export { follow, unfollow } from './social/follow';
 export { removeListing } from './listings/removeListing';
 export { saveListing, unsaveListing } from './social/save';
 export { createPost } from './posts/createPost';
+export { publishScheduledPosts } from './posts/schedule';
 export { deletePost } from './posts/deletePost';
 export { likePost, unlikePost, savePost, unsavePost } from './social/postEngagement';
 export { countListingView } from './triggers/countListingView';

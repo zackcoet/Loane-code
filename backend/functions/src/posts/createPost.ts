@@ -10,7 +10,7 @@ import {
   type Post,
   type PostPhoto,
 } from '@loane/shared';
-import { db, now, FieldValue } from '../lib/admin';
+import { db, now, FieldValue, Timestamp } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
 
@@ -54,6 +54,13 @@ interface CreatePostInput {
   photos: PhotoInput[];
   caption: string;
   occasions: Occasion[];
+  settings?: {
+    hideLikeCount?: boolean;
+    commentsDisabled?: boolean;
+    sharingDisabled?: boolean;
+    hideFromProfile?: boolean;
+  };
+  scheduledAt?: string | null;
 }
 
 interface CreatePostResult {
@@ -64,7 +71,15 @@ export const createPost = onCall<CreatePostInput, Promise<CreatePostResult>>(
   { region: 'us-central1' },
   async (request: CallableRequest<CreatePostInput>): Promise<CreatePostResult> => {
     const author = await requireVerifiedStudent(request);
-    const { photos = [], caption = '', occasions = [] } = request.data ?? {};
+    const {
+      photos = [],
+      caption = '',
+      occasions = [],
+      settings = {},
+      scheduledAt = null,
+    } = request.data ?? {};
+    const publishAt = parseScheduledAt(scheduledAt);
+    const isScheduled = publishAt !== null;
 
     // --- Shape checks -----------------------------------------------------
     if (photos.length < LIMITS.postPhotos.min) throw invalidArgument('Add at least one photo.');
@@ -150,6 +165,13 @@ export const createPost = onCall<CreatePostInput, Promise<CreatePostResult>>(
       photos: builtPhotos,
       caption: caption.trim(),
       occasions,
+      settings: {
+        hideLikeCount: settings.hideLikeCount === true,
+        commentsDisabled: settings.commentsDisabled === true,
+        sharingDisabled: settings.sharingDisabled === true,
+        hideFromProfile: settings.hideFromProfile === true,
+      },
+      scheduledAt: publishAt ? Timestamp.fromDate(publishAt) : null,
       // Derived here, never sent by the app, so they cannot disagree with
       // what is actually pinned to the photos.
       taggedListings: uniqueIds.map((listingId) => {
@@ -165,7 +187,7 @@ export const createPost = onCall<CreatePostInput, Promise<CreatePostResult>>(
       }),
       taggedListingIds: uniqueIds,
       circleId: null,
-      status: 'active',
+      status: isScheduled ? 'scheduled' : 'active',
       stats: {
         likeCount: 0,
         saveCount: 0,
@@ -192,8 +214,24 @@ export const createPost = onCall<CreatePostInput, Promise<CreatePostResult>>(
     }
     await batch.commit();
 
-    logger.info('Post created', { postId: ref.id, tags: uniqueIds.length });
+    logger.info('Post created', { postId: ref.id, tags: uniqueIds.length, scheduled: isScheduled });
 
     return { postId: ref.id };
   },
 );
+
+function parseScheduledAt(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) throw invalidArgument('Pick a valid schedule time.');
+
+  const nowMs = Date.now();
+  if (parsed.getTime() <= nowMs) return null;
+
+  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+  if (parsed.getTime() > nowMs + thirtyDaysMs) {
+    throw invalidArgument('Schedule posts within the next 30 days.');
+  }
+
+  return parsed;
+}

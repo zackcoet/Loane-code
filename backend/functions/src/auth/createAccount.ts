@@ -3,6 +3,7 @@ import { logger } from 'firebase-functions';
 import type { Campus, User, UsernameLock, UserPrivate } from '@loane/shared';
 import {
   COLLECTIONS,
+  emailDomain,
   matchesCampusDomain,
   newUserStripe,
   normalizeEmail,
@@ -59,8 +60,7 @@ interface CreateAccountResult {
   token: string;
 }
 
-/** Shown when the school is not on the approved list. */
-const NOT_YET_MESSAGE = "Loane isn't at your school yet.";
+const EDU_MESSAGE = 'Use your .edu school email.';
 
 export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountResult>>(
   { region: 'us-central1' },
@@ -89,18 +89,12 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
     const email = normalizeEmail(rawEmail);
     const username = normalizeUsername(rawUsername);
 
-    // --- Is this school on the approved list? ----------------------------
-    // Checked here, before any account exists, so a rejected signup leaves
-    // nothing behind at all.
-    const campusSnap = await db()
-      .collection(COLLECTIONS.campuses)
-      .where('isLive', '==', true)
-      .get();
-    const campus = campusSnap.docs
-      .map((d) => ({ ...(d.data() as Campus), id: d.id }))
-      .find((c) => matchesCampusDomain(email, c.emailDomains));
-
-    if (!campus) throw failed(NOT_YET_MESSAGE);
+    // --- Is this a school email? -----------------------------------------
+    // Launch used to gate this through seeded campuses. For now Loane is
+    // open to every .edu school, and we create a lightweight campus bucket
+    // for any domain we have not seeded yet.
+    if (!isEduEmail(email)) throw failed(EDU_MESSAGE);
+    const campus = await campusForEmail(email);
 
     // Cheap pre-check so we usually fail before creating a login. The
     // transaction below is what actually guarantees uniqueness.
@@ -131,9 +125,11 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
       const userRef = db().collection(COLLECTIONS.users).doc(uid);
       const usernameRef = db().collection(COLLECTIONS.usernames).doc(username);
       const privateRef = userRef.collection('private').doc('settings');
+      const campusRef = db().collection(COLLECTIONS.campuses).doc(campus.id);
 
       await db().runTransaction(async (tx) => {
         const existingUsername = await tx.get(usernameRef);
+        const existingCampus = await tx.get(campusRef);
         if (existingUsername.exists) {
           throw alreadyTaken('That username is taken. Try another.');
         }
@@ -212,11 +208,21 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
         };
         tx.set(privateRef, { ...settings, updatedAt: now() });
 
-        tx.update(db().collection(COLLECTIONS.campuses).doc(campus.id), {
-          'stats.userCount': FieldValue.increment(1),
-          'stats.verifiedUserCount': FieldValue.increment(1),
-          updatedAt: now(),
-        });
+        tx.set(
+          campusRef,
+          {
+            ...(!existingCampus.exists
+              ? {
+                  ...campus,
+                  createdAt: now(),
+                }
+              : {}),
+            'stats.userCount': FieldValue.increment(1),
+            'stats.verifiedUserCount': FieldValue.increment(1),
+            updatedAt: now(),
+          },
+          { merge: true },
+        );
       });
     } catch (error) {
       // The login exists but the profile does not. Undo it, so we never
@@ -240,9 +246,8 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
 /**
  * `checkCampusEmail`
  *
- * Lets the sign-up screen say "Loane isn't at your school yet" as she types,
- * before she fills in a password. Advisory only — `createAccount` checks
- * again for real.
+ * Lets the sign-up screen validate a school email before she fills in a
+ * password. Advisory only — `createAccount` checks again for real.
  */
 export const checkCampusEmail = onCall<
   { email: string },
@@ -253,12 +258,44 @@ export const checkCampusEmail = onCall<
   if (!check.ok) return { allowed: false, reason: check.error };
 
   const email = normalizeEmail(raw);
-  const campusSnap = await db().collection(COLLECTIONS.campuses).where('isLive', '==', true).get();
-  const campus = campusSnap.docs
-    .map((d) => d.data() as Campus)
-    .find((c) => matchesCampusDomain(email, c.emailDomains));
+  if (!isEduEmail(email)) return { allowed: false, reason: EDU_MESSAGE };
 
-  return campus
-    ? { allowed: true, campusName: campus.name }
-    : { allowed: false, reason: NOT_YET_MESSAGE };
+  const campus = await campusForEmail(email);
+  return { allowed: true, campusName: campus.name };
 });
+
+function isEduEmail(email: string): boolean {
+  return emailDomain(email)?.endsWith('.edu') ?? false;
+}
+
+async function campusForEmail(email: string): Promise<Campus> {
+  const domain = emailDomain(email);
+  if (!domain) throw invalidArgument('Enter a valid email address.');
+
+  const campusSnap = await db().collection(COLLECTIONS.campuses).where('isLive', '==', true).get();
+  const seeded = campusSnap.docs
+    .map((d) => ({ ...(d.data() as Campus), id: d.id }))
+    .find((c) => matchesCampusDomain(email, c.emailDomains));
+  if (seeded) return seeded;
+
+  const id = `school-${domain.replace(/[^a-z0-9]+/g, '-')}`;
+  return {
+    id,
+    name: domain,
+    shortName: domain,
+    emailDomains: [domain],
+    city: '',
+    state: '',
+    brandColor: 'bright-chartreuse',
+    isLive: true,
+    stats: {
+      userCount: 0,
+      verifiedUserCount: 0,
+      listingCount: 0,
+      postCount: 0,
+      bookingCount: 0,
+    },
+    createdAt: now() as never,
+    updatedAt: now() as never,
+  };
+}

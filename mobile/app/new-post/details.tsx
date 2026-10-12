@@ -10,10 +10,13 @@
  * fold. Rows cannot do that.
  */
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import {
+  ActionSheetIOS,
+  Alert,
   Image,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   Pressable,
   ScrollView,
@@ -27,12 +30,34 @@ import { Icon } from '../../src/components/Icon';
 import { Input } from '../../src/components/Input';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
+import { Toggle } from '../../src/components/Toggle';
 import { usePostDraft } from '../../src/post/postDraft';
 
 export default function PostDetails() {
   const router = useRouter();
   const draft = usePostDraft();
   const cover = draft.photos[0];
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const show = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (event) => {
+        setKeyboardHeight(event.endCoordinates.height);
+      },
+    );
+    const hide = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      },
+    );
+
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   // Reloaded straight onto this screen, or the draft was cleared behind
   // us. There is nothing to describe, so go back to the start.
@@ -55,15 +80,61 @@ export default function PostDetails() {
       : draft.occasions.length === 1
         ? OCCASION_LABELS[draft.occasions[0]!]
         : `${OCCASION_LABELS[draft.occasions[0]!]} +${draft.occasions.length - 1}`;
+  const scheduleLabel = draft.scheduledAt ? formatSchedule(draft.scheduledAt) : null;
+
+  const setScheduleOption = (option: ScheduleOption) => {
+    draft.setScheduledAt(option === 'off' ? null : nextScheduleDate(option));
+  };
+
+  const openSchedule = () => {
+    const options: { label: string; value: ScheduleOption }[] = [
+      { label: 'Off', value: 'off' },
+      { label: 'Later today', value: 'tonight' },
+      { label: 'Tomorrow morning', value: 'tomorrowMorning' },
+      { label: 'Tomorrow evening', value: 'tomorrowEvening' },
+    ];
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          title: 'Schedule post',
+          options: [...options.map((o) => o.label), 'Cancel'],
+          cancelButtonIndex: options.length,
+        },
+        (index) => {
+          const picked = options[index];
+          if (picked) setScheduleOption(picked.value);
+        },
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Schedule post',
+      undefined,
+      [
+        ...options.map((option) => ({
+          text: option.label,
+          onPress: () => setScheduleOption(option.value),
+        })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ],
+      { cancelable: true },
+    );
+  };
 
   return (
     <Screen flush>
       <Header title="New post" onBack={() => router.back()} />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <View style={styles.flex}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            keyboardHeight > 0 && { paddingBottom: keyboardHeight + controls.buttonHeight },
+          ]}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.captionRow}>
             {/* Tapping the thumbnail goes back to the photos, which is
                 where Instagram puts that affordance too. */}
@@ -95,6 +166,9 @@ export default function PostDetails() {
           </View>
 
           <View style={styles.rows}>
+            <Text variant="label" tone="muted" style={styles.sectionLabel}>
+              Post details
+            </Text>
             <Row
               label="Tag pieces"
               value={draft.tagCount > 0 ? String(draft.tagCount) : null}
@@ -105,15 +179,80 @@ export default function PostDetails() {
               value={occasionLabel}
               onPress={() => router.push('/new-post/occasions')}
             />
+            <Row label="Schedule post" value={scheduleLabel} onPress={openSchedule} />
+          </View>
+
+          <View style={styles.advanced}>
+            <Text variant="label" tone="muted" style={styles.sectionLabel}>
+              Advanced settings
+            </Text>
+            <Toggle
+              label="Hide like count"
+              help="Only you will see how many people liked this look."
+              value={draft.settings.hideLikeCount}
+              onValueChange={(value) => draft.setSetting('hideLikeCount', value)}
+            />
+            <Toggle
+              label="Turn off commenting"
+              help="People can still like, save and share this look."
+              value={draft.settings.commentsDisabled}
+              onValueChange={(value) => draft.setSetting('commentsDisabled', value)}
+            />
+            <Toggle
+              label="Turn off sharing"
+              help="People will not be able to send this look in chats."
+              value={draft.settings.sharingDisabled}
+              onValueChange={(value) => draft.setSetting('sharingDisabled', value)}
+            />
+            <Toggle
+              label="Hide from profile grid"
+              help="This look can still appear in feed, but not on your closet profile."
+              value={draft.settings.hideFromProfile}
+              onValueChange={(value) => draft.setSetting('hideFromProfile', value)}
+            />
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
+        <View style={[styles.footer, keyboardHeight > 0 && { bottom: keyboardHeight }]}>
           <Button label="Preview" onPress={() => router.push('/new-post/preview')} />
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Screen>
   );
+}
+
+type ScheduleOption = 'off' | 'tonight' | 'tomorrowMorning' | 'tomorrowEvening';
+
+function nextScheduleDate(option: Exclude<ScheduleOption, 'off'>) {
+  const now = new Date();
+  const date = new Date(now);
+  if (option === 'tonight') {
+    date.setHours(20, 0, 0, 0);
+    if (date <= now) date.setDate(date.getDate() + 1);
+    return date;
+  }
+  date.setDate(date.getDate() + 1);
+  date.setHours(option === 'tomorrowMorning' ? 9 : 20, 0, 0, 0);
+  return date;
+}
+
+function formatSchedule(value: Date) {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const isToday = value.toDateString() === now.toDateString();
+  const isTomorrow = value.toDateString() === tomorrow.toDateString();
+  const time = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(
+    value,
+  );
+  if (isToday) return `Today ${time}`;
+  if (isTomorrow) return `Tomorrow ${time}`;
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(value);
 }
 
 /** One tappable row: label on the left, what it is set to on the right. */
@@ -146,7 +285,7 @@ function Row({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingBottom: spacing.xl },
+  content: { paddingBottom: controls.buttonHeight + spacing.xxl },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
   captionRow: {
     flexDirection: 'row',
@@ -175,6 +314,17 @@ const styles = StyleSheet.create({
   // a one-line box.
   captionInput: { minHeight: controls.thumbnail, textAlignVertical: 'top' },
   rows: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: color.border.default },
+  sectionLabel: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  advanced: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.lg,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: color.border.default,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -186,5 +336,16 @@ const styles = StyleSheet.create({
   rowPressed: { backgroundColor: color.surface.muted },
   rowLabel: { flex: 1, color: color.text.primary },
   rowValue: { marginRight: spacing.sm },
-  footer: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
+  footer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+    backgroundColor: color.surface.page,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: color.border.default,
+  },
 });

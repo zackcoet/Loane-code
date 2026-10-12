@@ -1,11 +1,5 @@
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
-import {
-  COLLECTIONS,
-  LIMITS,
-  type Comment,
-  type Post,
-  type UserSummary,
-} from '@loane/shared';
+import { COLLECTIONS, LIMITS, type Comment, type Post, type UserSummary } from '@loane/shared';
 import { db, now, FieldValue } from '../lib/admin';
 import { failed, invalidArgument, notFound, permissionDenied } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
@@ -72,6 +66,7 @@ export const addComment = onCall<AddInput, Promise<{ commentId: string }>>(
 
     const post = postSnap.data() as Post;
     if (post.status !== 'active') throw failed('That look is no longer up.');
+    if (post.settings?.commentsDisabled) throw failed('Comments are turned off for this look.');
 
     // Blocking has to hold here too. Someone she blocked turning up in
     // her comments is exactly what blocking is supposed to prevent.
@@ -81,10 +76,7 @@ export const addComment = onCall<AddInput, Promise<{ commentId: string }>>(
     // THIS post. The last check is what keeps the thread one level
     // deep: you cannot reply to a reply.
     if (parentCommentId) {
-      const parentSnap = await db()
-        .collection(COLLECTIONS.comments)
-        .doc(parentCommentId)
-        .get();
+      const parentSnap = await db().collection(COLLECTIONS.comments).doc(parentCommentId).get();
       if (!parentSnap.exists) throw notFound('That comment is gone.');
       const parent = parentSnap.data() as Comment;
       if (parent.postId !== postId) throw invalidArgument('That comment is on another look.');

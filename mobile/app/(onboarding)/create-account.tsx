@@ -11,8 +11,8 @@
  * she signs in with.
  *
  * Nothing is created here. The screen checks her school domain against the
- * `campuses` collection so she finds out immediately if we are not at her
- * school yet, then carries her answers to the username step, where one
+ * server so she finds out immediately if the address is not a .edu, then
+ * carries her answers to the username step, where one
  * server-side call builds the login and the profile together.
  *
  * TODO-BEFORE-BETA: we still do NOT send a verification email or link, and
@@ -27,6 +27,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
+  emailDomain,
   fonts,
   LIMITS,
   color,
@@ -60,14 +61,22 @@ export default function CreateAccount() {
   const [campusName, setCampusName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const emailCheck = validateEmail(campusEmail);
+  const emailIsEdu = emailDomain(campusEmail)?.endsWith('.edu') ?? false;
+  const canContinue =
+    firstName.trim().length > 0 && emailCheck.ok && emailIsEdu && password.length > 0;
 
-  // Tell her which school we matched — or that we are not there yet —
-  // while she types, rather than after she has filled in a password.
+  // Tell her which school/domain we matched while she types, rather than
+  // after she has filled in a password.
   useEffect(() => {
     if (debounce.current) clearTimeout(debounce.current);
     setCampusName(null);
 
-    if (!validateEmail(campusEmail).ok) return;
+    if (!emailCheck.ok) return;
+    if (!emailIsEdu) {
+      setError('Use your .edu school email.');
+      return;
+    }
 
     debounce.current = setTimeout(async () => {
       try {
@@ -77,7 +86,7 @@ export default function CreateAccount() {
           setError(null);
         } else {
           setCampusName(null);
-          setError(result.data.reason ?? "Loane isn't at your school yet.");
+          setError(result.data.reason ?? 'Use your .edu school email.');
         }
       } catch {
         // Advisory only — createAccount checks again for real.
@@ -87,7 +96,7 @@ export default function CreateAccount() {
     return () => {
       if (debounce.current) clearTimeout(debounce.current);
     };
-  }, [campusEmail]);
+  }, [campusEmail, emailCheck.ok, emailIsEdu]);
 
   const onContinue = async () => {
     const nameCheck = validateDisplayName(firstName);
@@ -98,6 +107,7 @@ export default function CreateAccount() {
 
     const emailCheck = validateEmail(campusEmail);
     if (!emailCheck.ok) return setError(emailCheck.error ?? null);
+    if (!emailIsEdu) return setError('Use your .edu school email.');
 
     const passwordCheck = validatePassword(password);
     if (!passwordCheck.ok) return setError(passwordCheck.error ?? null);
@@ -107,7 +117,7 @@ export default function CreateAccount() {
     try {
       const result = await checkCampusEmail({ email: campusEmail });
       if (!result.data.allowed) {
-        setError(result.data.reason ?? "Loane isn't at your school yet.");
+        setError(result.data.reason ?? 'Use your .edu school email.');
         return;
       }
       storePassword(password);
@@ -183,14 +193,7 @@ export default function CreateAccount() {
             error={error}
           />
 
-          <Button
-            label="Continue"
-            onPress={onContinue}
-            loading={busy}
-            disabled={
-              firstName.trim().length === 0 || campusEmail.length === 0 || password.length === 0
-            }
-          />
+          <Button label="Continue" onPress={onContinue} loading={busy} disabled={!canContinue} />
 
           {/* Inside the scroll rather than pinned underneath it. Pinned,
               it sat on top of the keyboard and stole the room the

@@ -22,6 +22,7 @@ import { CampusChip } from '../../src/components/CampusChip';
 import { EmptyState } from '../../src/components/EmptyState';
 import { IconButton } from '../../src/components/IconButton';
 import { Logo } from '../../src/components/Logo';
+import { LoaneLoader } from '../../src/components/LoaneLoader';
 import { PostCard } from '../../src/components/PostCard';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
@@ -43,6 +44,7 @@ export default function Feed() {
   const hidden = useHiddenUids();
   const chat = useOpenChat();
   const [tab, setTab] = useState<'campus' | 'following'>('campus');
+  const closetTitle = profile?.firstName ? `${profile.firstName}s Closet` : 'Your Closet';
 
   const visible = useMemo(() => {
     // Blocked either way: her looks simply are not in the feed. This is
@@ -101,6 +103,16 @@ export default function Feed() {
       </View>
 
       <View style={styles.titleRow}>
+        <Text
+          variant="display"
+          tone="heading"
+          style={styles.title}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.65}
+        >
+          {closetTitle}
+        </Text>
         <View style={styles.toggle}>
           {(
             [
@@ -130,7 +142,7 @@ export default function Feed() {
 
       {loading ? (
         <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
+          <LoaneLoader size={34} />
         </View>
       ) : error ? (
         <EmptyState title="Couldn't load your feed" body={error} />
@@ -230,10 +242,12 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    gap: spacing.md,
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.lg,
   },
+  title: { flex: 1 },
   // A cream track with a merlot pill sliding in it.
   toggle: {
     flexShrink: 0,
