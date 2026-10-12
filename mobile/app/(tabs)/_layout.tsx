@@ -14,13 +14,26 @@
 
 import { Tabs } from 'expo-router';
 import { Image, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { color, fontFamilyFor, iconSize, radius, type } from '@loane/shared';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useUnreadCount } from '../../src/hooks/useNotifications';
 import { SuspendedBanner } from '../../src/components/SuspendedBanner';
 import { Icon, type IconName } from '../../src/components/Icon';
 
-const TAB_BAR_ROW_HEIGHT = 64;
+/**
+ * The icon row, ABOVE the home indicator — not including it.
+ *
+ * The bar's real height is this plus the device's bottom inset. The
+ * previous version set `height: 64` flat with `paddingBottom: 0`,
+ * which made 64 the WHOLE bar on a phone with a home indicator: the
+ * indicator area ate into the same 64, the row got what was left, and
+ * the glyphs were clipped by the padding they were sitting behind.
+ *
+ * 72 rather than 64 because Zack asked for more room and the icons are
+ * 33pt — 64 left eleven points above and below before any inset.
+ */
+const TAB_BAR_ROW_HEIGHT = 72;
 const POST_BUTTON_SIZE = 60;
 
 /**
@@ -85,6 +98,16 @@ export default function TabsLayout() {
   // Nobody gets a push notification until Phase 6, so the badge is the
   // only nudge that something needs an answer.
   const unread = useUnreadCount();
+  /*
+    The home indicator's height, from the device rather than guessed.
+
+    Every hard-coded version of this bar was wrong on some phone: 92
+    crowded the indicator, a computed height clipped the icons off
+    screen, a paddingTop pushed them into the indicator band. The inset
+    is the number iOS actually reserves, so the row sits ON TOP of it
+    instead of sharing it.
+  */
+  const insets = useSafeAreaInsets();
 
   return (
     <>
@@ -94,8 +117,17 @@ export default function TabsLayout() {
           headerShown: false,
           tabBarActiveTintColor: color.icon.default,
           tabBarInactiveTintColor: color.text.muted,
-          tabBarStyle: [styles.bar, { height: TAB_BAR_ROW_HEIGHT, paddingBottom: 0 }],
-          tabBarIconStyle: styles.iconLift,
+          tabBarStyle: [
+            styles.bar,
+            {
+              // The row, PLUS the indicator — not the row squeezed into
+              // the space the indicator left.
+              height: TAB_BAR_ROW_HEIGHT + insets.bottom,
+              paddingBottom: insets.bottom,
+              paddingTop: 0,
+            },
+          ],
+          tabBarItemStyle: styles.item,
           tabBarShowLabel: false,
         }}
       >
@@ -164,24 +196,37 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   /**
-   * Colour and the hairline only. NO HEIGHT, NO PADDING.
+   * Colour and the hairline only. The HEIGHT is set per-device in
+   * screenOptions, from the safe-area inset.
    *
-   * Every version of this bar that set its own numbers was wrong on some
+   * Every version of this bar that guessed at numbers was wrong on some
    * phone. A hard-coded 92 crowded the home indicator. A computed
-   * height clipped the icons off the screen entirely. A paddingTop then
+   * height clipped the icons off the screen entirely. A paddingTop
    * pushed them down into the indicator band so they looked cut short.
+   * The last one set height: 64 with paddingBottom: 0, which made 64
+   * the whole bar INCLUDING the indicator area — so the icons were
+   * drawn behind the padding and sliced.
    *
-   * React Navigation already sizes the bar for the device and centres
-   * the icons in the part above the home indicator. The white strip at
-   * the very bottom IS that indicator area — iOS reserves it, Instagram
-   * has it too, and drawing into it is what made the icons look short.
+   * The rule that actually works: the row gets a fixed height of its
+   * own, the indicator gets its real inset as padding underneath, and
+   * the bar is the two added together.
+   *
+   * `overflow: visible` so the raised + can sit proud of the bar
+   * instead of being cut off at the top edge.
    */
   bar: {
     backgroundColor: color.surface.page,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: color.border.default,
+    overflow: 'visible',
   },
-  iconLift: { transform: [{ translateY: -4 }] },
+  /*
+    No translateY any more. The old -4 lift was compensating for the
+    squeeze above; once the row has its own height the icons centre
+    themselves, and lifting them again just moves the clipping to the
+    top edge.
+  */
+  item: { height: TAB_BAR_ROW_HEIGHT, paddingVertical: 0 },
   postButton: {
     width: POST_BUTTON_SIZE,
     height: POST_BUTTON_SIZE,
