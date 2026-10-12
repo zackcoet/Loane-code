@@ -79,15 +79,6 @@ export default function Feed() {
   const hidden = useHiddenUids();
   const chat = useOpenChat();
   const [tab, setTab] = useState<'campus' | 'following'>('campus');
-  /**
-   * "Ella's Closet". A typographic apostrophe, not a straight one —
-   * it is the difference between a designed app and a form.
-   *
-   * Always 's, including after a name that ends in s: "Chris's" is
-   * current style and, more to the point, "Chris' Closet" looks like a
-   * typo to everyone who is not a copy editor.
-   */
-  const closetTitle = profile?.firstName ? `${profile.firstName}\u2019s Closet` : 'Your Closet';
 
   const visible = useMemo(() => {
     // Blocked either way: her looks simply are not in the feed. This is
@@ -145,42 +136,43 @@ export default function Feed() {
         <CampusChip />
       </View>
 
-      <View style={styles.titleRow}>
-        {/*
-          NO adjustsFontSizeToFit. Combined with a flex child that is
-          allowed to shrink, it collapsed the headline to about 8pt —
-          legible only in the sense that the pixels were there. A long
-          name now truncates with an ellipsis instead, which keeps the
-          headline a headline.
-        */}
-        <Text variant="display" tone="heading" style={styles.title} numberOfLines={1}>
-          {closetTitle}
-        </Text>
-        <View style={styles.toggle}>
-          {(
-            [
-              ['campus', 'All'],
-              ['following', 'Following'],
-            ] as const
-          ).map(([value, label]) => (
-            <Pressable
-              key={value}
-              onPress={() => setTab(value)}
-              style={[styles.toggleOption, tab === value && styles.toggleOptionOn]}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: tab === value }}
-            >
-              <Text
-                variant="bodySmall"
-                tone={tab === value ? 'inverse' : 'heading'}
-                uppercase={false}
-                style={styles.toggleLabel}
-              >
-                {label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+      {/*
+        TWO FULL-WIDTH TABS, which is what Ella asked to go back to.
+
+        The headline and the pill toggle are gone: a personalised
+        "Ella's Closet" over a campus feed named something she had not
+        chosen, and a pill that looked like a filter chip rather than
+        the two halves of the feed.
+
+        THE UNDERLINE IS MERLOT, NOT THE BUTTER IN THE SCREENSHOT.
+        Butter is a background colour in our tokens — 1.19:1 on cream —
+        so a two-point line of it is very nearly invisible, which
+        defeats the one thing an active-tab underline is for. Zack's
+        own fallback, and the roles already say merlot for something
+        that belongs to neither lender nor renter.
+      */}
+      <View style={styles.tabs}>
+        {(
+          [
+            ['campus', 'All Campus'],
+            ['following', 'Following'],
+          ] as const
+        ).map(([value, label]) => (
+          <Pressable
+            key={value}
+            onPress={() => setTab(value)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === value }}
+            style={styles.tab}
+          >
+            <Text variant="label" tone={tab === value ? 'heading' : 'muted'}>
+              {label}
+            </Text>
+            {/* Always drawn, only the colour changes, so switching tab
+                does not move the row by two points. */}
+            <View style={[styles.underline, tab === value && styles.underlineOn]} />
+          </Pressable>
+        ))}
       </View>
 
       {loading ? (
@@ -319,36 +311,25 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: color.role.renter.background,
   },
+  tabs: {
+    flexDirection: 'row',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: color.border.default,
+  },
+  tab: { flex: 1, alignItems: 'center', gap: spacing.sm, paddingTop: spacing.sm },
+  underline: {
+    height: 2,
+    width: '100%',
+    backgroundColor: 'transparent',
+  },
+  underlineOn: { backgroundColor: color.role.shared.background },
   campusRow: {
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.sm,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.md,
-  },
-  title: { flex: 1 },
   // A cream track with a merlot pill sliding in it.
-  toggle: {
-    flexShrink: 0,
-    flexDirection: 'row',
-    backgroundColor: color.surface.section,
-    borderRadius: radius.pill,
-    padding: 4,
-  },
   // Compact, so the headline beside it does not have to shrink to fit.
-  toggleOption: {
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-  },
-  toggleOptionOn: { backgroundColor: color.role.shared.background },
-  toggleLabel: { fontWeight: '600' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: {
     paddingTop: spacing.sm,

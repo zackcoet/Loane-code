@@ -16,28 +16,35 @@ export default function Splash() {
 
   return (
     <Screen>
-      <View style={styles.center}>
-        <Logo size={104} lockup="across" />
-        <Text style={styles.tagline}>
-          {brand.taglines.primary.toUpperCase().replace('.', ' .')}
-        </Text>
-      </View>
+      <View style={styles.hero}>
+        <View style={styles.center}>
+          <Logo size={104} lockup="across" />
+          <Text style={styles.tagline}>
+            {brand.taglines.primary.toUpperCase().replace('.', ' .')}
+          </Text>
+        </View>
 
-      <View style={styles.footer}>
-        <Button
-          label="Find your campus closet"
-          onPress={() => router.push('/(onboarding)/create-account')}
-        />
-        <Link href="/(auth)/sign-in" style={styles.signIn}>
-          Sign in
-        </Link>
+        <View style={styles.footer}>
+          <Button
+            label="Find your campus closet"
+            onPress={() => router.push('/(onboarding)/create-account')}
+          />
+          <Link href="/(auth)/sign-in" style={styles.signIn}>
+            Sign in
+          </Link>
+        </View>
       </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  hero: {
+    flex: 1,
+    justifyContent: 'center',
+    transform: [{ translateY: -spacing.xxl }],
+  },
+  center: { alignItems: 'center' },
   tagline: {
     fontFamily: fontFamilyFor(type.label.weight),
     marginTop: spacing.lg,
@@ -45,10 +52,10 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     color: color.text.secondary,
   },
-  footer: { paddingBottom: spacing.xxl },
+  footer: { marginTop: spacing.xxl },
   signIn: {
     fontFamily: fonts.body,
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
     textAlign: 'center',
     fontSize: type.bodySmall.size,
     color: color.text.primary,
