@@ -818,3 +818,45 @@ rental, which is the second question the MVP has to answer. A new event
 would sit outside every funnel we have. `tryon_generate` records whether
 it was a cache hit, because the hit rate is what decides whether paid
 credits can ever work.
+
+---
+
+## 2026-10-12 — Saved is the fitting room
+
+**Decision:** Saved is the main way into try-on. A button at the top —
+"Try on your saved pieces" — opens the Try-On screen showing only what
+she has saved, and every saved piece card carries a small "Try on" that
+opens with that piece already on her.
+
+**Why Saved and not Discover.** She has already shortlisted these. A
+fitting room is for the things you were thinking about anyway, not for
+browsing, and the shortlist is the closest thing Loane has to the pile
+of clothes over your arm.
+
+**Both kinds of saved count.** Pieces she hearted, and pieces tagged in
+looks she saved. A dress she starred on somebody's gameday post is a
+dress she is interested in, and making her go and find the listing to
+save it again is busywork. The seed now creates saved looks too —
+without them that whole second source was untestable and looked like it
+worked only because the first source filled the row.
+
+**AMENDS THE FLAT-PHOTO GATE, for this screen only.** The gate entry
+above says a piece without a flat photo is simply absent, and
+explicitly not greyed out. In the fitting room it IS shown, greyed,
+saying "No try-on photo yet."
+
+The two are not in conflict once you say what the gate is for. It
+exists so nobody is shown a confidently wrong image of a garment — and
+a greyed-out, unpressable card shows no image and makes no claim. In a
+browse, absence is right: she never knew the piece was there. Among her
+OWN saved things, absence reads as broken, because she knows exactly
+what she saved and half of it has vanished. Zack's call, and the right
+one.
+
+**The server gate is unchanged.** `generateTryOn` still refuses a piece
+with no flat photo. Greying out is a display decision; nothing about
+what can actually be generated moved.
+
+**No body photo yet, and she taps Try on:** camera first, then straight
+back to her saved pieces — not back to where she started. Taking a
+photo is a step on the way to something, never the thing itself.

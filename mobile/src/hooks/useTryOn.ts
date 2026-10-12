@@ -34,6 +34,9 @@ import {
 } from '../firebase/callables';
 import { callableErrorMessage } from '../firebase/errors';
 import { useAuth } from '../auth/AuthProvider';
+import { useWishlist } from './useSaved';
+import { useSavedPosts } from './usePostEngagement';
+import { useListingsByIds } from './useListingsByIds';
 import { useUserSettings } from './useUserSettings';
 import { logEvent } from '../analytics/events';
 
@@ -191,6 +194,63 @@ export function useTryOnStack(bodyKind: 'own' | 'preset', presetId?: PresetId) {
   }, []);
 
   return { stack, state, add, undo, reset };
+}
+
+/**
+ * Her fitting room: everything she has saved, whether or not it can be
+ * tried on.
+ *
+ * TWO SOURCES, because "saved" means two things to her and one thing
+ * to the database. Pieces she tapped the heart on, and pieces tagged
+ * in looks she saved — a dress she starred on somebody's gameday post
+ * is a dress she is interested in, and making her go and find the
+ * listing to save it again would be busywork.
+ *
+ * INELIGIBLE PIECES ARE RETURNED, NOT FILTERED OUT. This is the one
+ * place that differs from the rest of try-on, and deliberately: in a
+ * browse, a piece without a flat photo is simply not offered, because
+ * a disclaimer cannot fix a confidently wrong image. Here she is
+ * looking at HER OWN saved things, and a row that quietly drops half
+ * of them reads as broken rather than filtered. So they show, greyed,
+ * saying why. Zack's call, 2026-10-12.
+ *
+ * The server gate is unchanged either way — an ineligible piece cannot
+ * be generated, it can only be explained.
+ */
+export function useFittingRoom() {
+  const wishlist = useWishlist();
+  const savedPosts = useSavedPosts();
+
+  // Pieces tagged in looks she saved. taggedListingIds is maintained by
+  // a Cloud Function, so this needs no reading of per-photo tags.
+  const taggedIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const post of savedPosts.posts) {
+      for (const id of post.taggedListingIds ?? []) ids.add(id);
+    }
+    return [...ids];
+  }, [savedPosts.posts]);
+
+  const tagged = useListingsByIds(taggedIds, taggedIds.length > 0);
+
+  const pieces = useMemo(() => {
+    const seen = new Set<string>();
+    const all: Listing[] = [];
+    // Directly saved first: a piece she deliberately hearted is a
+    // better suggestion than one she saw in somebody's post.
+    for (const listing of [...wishlist.listings, ...tagged.listings]) {
+      if (seen.has(listing.id)) continue;
+      seen.add(listing.id);
+      if (listing.status !== 'active') continue;
+      all.push(listing);
+    }
+    return all;
+  }, [wishlist.listings, tagged.listings]);
+
+  return {
+    pieces,
+    loading: wishlist.loading || savedPosts.loading,
+  };
 }
 
 /** Her saved looks, newest first. */

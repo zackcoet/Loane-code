@@ -18,7 +18,7 @@
  */
 
 import { useRef, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { color, controls, radius, spacing } from '@loane/shared';
@@ -50,6 +50,14 @@ const TIPS: { icon: string; text: string; strong?: boolean }[] = [
 export default function TryOnCamera() {
   const router = useRouter();
   const { profile } = useAuth();
+  /**
+   * Where to go once the photo is saved.
+   *
+   * Coming from Saved, "back" would be the camera's own caller and she
+   * would have to find her way to her pieces again. Taking a photo is
+   * a step on the way to something, never the thing itself.
+   */
+  const { next } = useLocalSearchParams<{ next?: string }>();
   const camera = useRef<CameraView>(null);
   const [permission, requestPermission] = useCameraPermissions();
 
@@ -98,7 +106,11 @@ export default function TryOnCamera() {
       // record one without it.
       await setTryOnBodyPhoto({ path, confirmed: true });
       logEvent('tryon_body_photo_set', { surface: 'tryon' });
-      router.back();
+      if (next === 'saved') {
+        router.replace({ pathname: '/try-on', params: { body: 'own', source: 'saved' } });
+      } else {
+        router.back();
+      }
     } catch (err) {
       setError(callableErrorMessage(err, 'Could not save that photo. Try again.'));
     } finally {

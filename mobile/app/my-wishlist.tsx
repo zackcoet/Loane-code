@@ -20,7 +20,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { color, radius, spacing, type TryOn } from '@loane/shared';
+import { color, controls, radius, spacing, type TryOn } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
 import { Icon } from '../src/components/Icon';
@@ -29,7 +29,7 @@ import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useWishlist } from '../src/hooks/useSaved';
 import { useSavedPosts } from '../src/hooks/usePostEngagement';
-import { useMyTryOns, useSaveTryOn, useTryOnImage } from '../src/hooks/useTryOn';
+import { useMyTryOns, useSaveTryOn, useTryOnBody, useTryOnEnabled, useTryOnImage } from '../src/hooks/useTryOn';
 
 const GRID_COLUMNS = 2;
 
@@ -41,6 +41,26 @@ export default function MyWishlist() {
   const items = useWishlist();
   const looks = useSavedPosts();
   const tryOns = useMyTryOns();
+  const tryOnOn = useTryOnEnabled();
+  const body = useTryOnBody();
+
+  /**
+   * The fitting room door.
+   *
+   * No body photo yet means the camera first, then STRAIGHT to her
+   * saved pieces rather than back here — taking a photo is a step on
+   * the way to something, never the thing itself.
+   */
+  const openFittingRoom = (listingId?: string) => {
+    if (!body.hasPhoto) {
+      router.push({ pathname: '/try-on-camera', params: { next: 'saved' } });
+      return;
+    }
+    router.push({
+      pathname: '/try-on',
+      params: { body: 'own', source: 'saved', ...(listingId ? { listing: listingId } : {}) },
+    });
+  };
 
   const cardWidth = (width - spacing.md * (GRID_COLUMNS + 1)) / GRID_COLUMNS;
 
@@ -51,6 +71,28 @@ export default function MyWishlist() {
   return (
     <Screen flush>
       <Header title="My Wishlist" onBack={() => router.back()} />
+
+      {/* The way in. Saved is where she has already shortlisted things,
+          which makes it the closest thing Loane has to a fitting room. */}
+      {tryOnOn ? (
+        <Pressable
+          onPress={() => openFittingRoom()}
+          accessibilityRole="button"
+          accessibilityLabel="Try on your saved pieces"
+          style={({ pressed }) => [styles.fittingRoom, pressed && styles.fittingRoomPressed]}
+        >
+          <Icon name="sparkles" size={20} tint={color.role.shared.label} />
+          <View style={styles.fittingRoomText}>
+            <Text variant="bodySmall" tone="inverse" uppercase={false} style={styles.strong}>
+              Try on your saved pieces
+            </Text>
+            <Text variant="caption" tone="inverse" uppercase={false} style={styles.quiet}>
+              See them on you before you ask
+            </Text>
+          </View>
+          <Icon name="chevron-forward" size={18} tint={color.role.shared.label} />
+        </Pressable>
+      ) : null}
 
       <View style={styles.tabRow}>
         {(
@@ -112,6 +154,7 @@ export default function MyWishlist() {
                 <ListingCard
                   listing={item}
                   width={cardWidth}
+                  onTryOn={tryOnOn ? openFittingRoom : undefined}
                   onPressOwner={(username) => router.push(`/u/${username}`)}
                   onPress={(listingId) =>
                     router.push({ pathname: '/listing/[id]', params: { id: listingId } })
@@ -206,6 +249,21 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.accent },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   grid: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.xxl },
+  fittingRoom: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    minHeight: controls.minTapTarget + 8,
+    borderRadius: radius.md,
+    backgroundColor: color.role.shared.background,
+  },
+  fittingRoomPressed: { opacity: 0.8 },
+  fittingRoomText: { flex: 1, gap: 1, paddingVertical: spacing.sm },
+  strong: { fontWeight: '600' },
+  quiet: { opacity: 0.85 },
   tryOnImage: {
     borderRadius: radius.md,
     backgroundColor: color.surface.muted,

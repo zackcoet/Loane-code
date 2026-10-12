@@ -8,11 +8,13 @@ import {
   fontFamilyFor,
   type Listing,
   color,
+  controls,
   formatCentsShort,
   radius,
   spacing,
   type,
 } from '@loane/shared';
+import { isTryOnEligible } from '../hooks/useTryOn';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { useIsSaved } from '../hooks/useSaved';
@@ -25,9 +27,15 @@ interface Props {
   onPressOwner?: (username: string) => void;
   /** Hides the heart, e.g. on her own closet. */
   hideSave?: boolean;
+  /**
+   * Shows a small "Try on" under the card. Passed only where it makes
+   * sense — Saved — rather than everywhere a card appears, because a
+   * grid of browse results with a button on every tile is noise.
+   */
+  onTryOn?: (listingId: string) => void;
 }
 
-export function ListingCard({ listing, width, onPress, onPressOwner, hideSave }: Props) {
+export function ListingCard({ listing, width, onPress, onPressOwner, hideSave, onTryOn }: Props) {
   const { saved, toggle } = useIsSaved(listing.id);
   const price =
     listing.pricing.threeDayCents != null
@@ -81,12 +89,44 @@ export function ListingCard({ listing, width, onPress, onPressOwner, hideSave }:
       >
         @{listing.owner.username}
       </Text>
+
+      {/* Only when the piece can actually be tried on. A button that
+          explains why it does nothing belongs in the try-on row, where
+          she is choosing between pieces — not on a card in a grid. */}
+      {onTryOn && isTryOnEligible(listing) ? (
+        <Pressable
+          onPress={() => onTryOn(listing.id)}
+          accessibilityRole="button"
+          accessibilityLabel={`Try on ${listing.name}`}
+          style={({ pressed }) => [styles.tryOn, pressed && styles.tryOnPressed]}
+        >
+          <Icon name="sparkles" size={13} tint={color.role.shared.background} />
+          <Text style={styles.tryOnLabel}>Try on</Text>
+        </Pressable>
+      ) : null}
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: { marginBottom: spacing.lg },
+  tryOn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    height: controls.minTapTarget - 10,
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: color.role.shared.border,
+  },
+  tryOnPressed: { opacity: 0.6 },
+  tryOnLabel: {
+    fontFamily: fontFamilyFor('600'),
+    fontSize: type.caption.size,
+    color: color.role.shared.background,
+  },
   photo: { width: '100%', aspectRatio: 0.75, backgroundColor: color.surface.muted },
   photoPlaceholder: { borderWidth: 1, borderColor: color.border.default },
   heart: {

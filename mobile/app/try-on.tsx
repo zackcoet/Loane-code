@@ -21,7 +21,7 @@
  * reads as a hang. LoaneLoader plus a line of copy.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 import {
@@ -42,10 +42,10 @@ import { LoaneLoader } from '../src/components/LoaneLoader';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useAuth } from '../src/auth/AuthProvider';
-import { useWishlist } from '../src/hooks/useSaved';
 import { useUserListings } from '../src/hooks/useProfile';
 import {
   isTryOnEligible,
+  useFittingRoom,
   useSaveTryOn,
   useTryOnImage,
   useTryOnStack,
@@ -64,12 +64,21 @@ const TABS: { id: Tab; label: string; live: boolean }[] = [
 export default function TryOn() {
   const router = useRouter();
   const { profile } = useAuth();
-  const params = useLocalSearchParams<{ body?: string; preset?: string }>();
+  const params = useLocalSearchParams<{
+    body?: string;
+    preset?: string;
+    /** 'saved' opens as a fitting room: only what she has saved. */
+    source?: string;
+    /** A piece to put on immediately, from a Try on button on a card. */
+    listing?: string;
+  }>();
 
   const bodyKind = params.body === 'own' ? 'own' : 'preset';
   const presetId = (params.preset as PresetId | undefined) ?? 'medium';
 
   const [tab, setTab] = useState<Tab>('tops');
+  /** Guards the preselect so it fires once, not on every render. */
+  const [preselected, setPreselected] = useState(false);
   const { stack, state, add, undo, reset } = useTryOnStack(bodyKind, presetId);
   const { save } = useSaveTryOn();
   const [saved, setSaved] = useState(false);
@@ -77,34 +86,69 @@ export default function TryOn() {
   const resultUrl = useTryOnImage(state.result?.imagePath ?? null);
 
   // --- What she can try on ----------------------------------------------
-  // Her saved pieces and her own closet. Saved first: a piece she
-  // wants is a better first suggestion than a piece she already owns.
-  const wishlist = useWishlist();
+  /**
+   * The fitting room, or everything.
+   *
+   * From Saved she sees only what she has saved — that is the whole
+   * point of the entry point, and a row that quietly added her own
+   * closet would not be the thing the button promised.
+   */
+  const fromSaved = params.source === 'saved';
+  const fitting = useFittingRoom();
   const mine = useUserListings(profile?.uid);
 
-  const eligible = useMemo(() => {
-    const all = [...wishlist.listings, ...mine.items];
+  const available = useMemo(() => {
+    const all = fromSaved ? fitting.pieces : [...fitting.pieces, ...mine.items];
     const seen = new Set<string>();
     return all.filter((l) => {
       if (seen.has(l.id)) return false;
       seen.add(l.id);
-      return isTryOnEligible(l);
+      return true;
     });
-  }, [wishlist.listings, mine.items]);
+  }, [fromSaved, fitting.pieces, mine.items]);
 
+  /**
+   * Ineligible pieces are SHOWN, greyed, saying why — not hidden. In a
+   * browse they would be absent, but these are her own saved things
+   * and a row that drops half of them reads as broken. See
+   * useFittingRoom.
+   */
   const shown = useMemo(
     () =>
-      eligible.filter((l) => {
+      available.filter((l) => {
         // Outerwear rides with Tops: it maps to FASHN's 'tops', and a
         // fourth tab for one category is not worth the navigation.
         if (tab === 'tops') return l.category === 'tops' || l.category === 'outerwear';
         if (tab === 'dresses') return l.category === 'dresses';
         return false;
       }),
-    [eligible, tab],
+    [available, tab],
   );
 
+  const eligible = available;
+
   const activeTab = TABS.find((t) => t.id === tab)!;
+
+  /**
+   * Arriving from a "Try on" button on a card: put that piece on
+   * straight away, and switch to the tab it lives under so the row
+   * underneath makes sense rather than showing an unrelated category.
+   */
+  useEffect(() => {
+    if (preselected || !params.listing) return;
+    const piece = available.find((l) => l.id === params.listing);
+    if (!piece) return;
+    setPreselected(true);
+    if (!isTryOnEligible(piece)) return;
+    setTab(piece.category === 'dresses' ? 'dresses' : 'tops');
+    add({
+      listingId: piece.id,
+      name: piece.name,
+      coverUrl: piece.coverUrl,
+      ownerUid: piece.ownerUid,
+      category: piece.category,
+    });
+  }, [preselected, params.listing, available, add]);
 
   const onSave = async () => {
     if (!state.result) return;
@@ -247,6 +291,7 @@ export default function TryOn() {
           contentContainerStyle={styles.rail}
           renderItem={({ item }) => {
             const on = stack.some((p) => p.listingId === item.id);
+            const canTry = isTryOnEligible(item);
             return (
               <Pressable
                 onPress={() =>
@@ -258,23 +303,34 @@ export default function TryOn() {
                     category: item.category,
                   })
                 }
-                disabled={state.busy || on}
+                disabled={!canTry || state.busy || on}
                 accessibilityRole="button"
-                accessibilityLabel={`Try on ${item.name}`}
-                style={({ pressed }) => [styles.piece, (pressed || on) && styles.piecePressed]}
+                accessibilityLabel={
+                  canTry
+                    ? `Try on ${item.name}`
+                    : `${item.name}. No try-on photo yet.`
+                }
+                style={({ pressed }) => [
+                  styles.piece,
+                  (pressed || on) && styles.piecePressed,
+                  !canTry && styles.pieceOff,
+                ]}
               >
-                {item.flatPhoto?.url ? (
-                  <Image
-                    source={{ uri: item.flatPhoto.url }}
-                    style={styles.pieceImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={styles.pieceImage} />
-                )}
+                <Image
+                  source={{ uri: item.flatPhoto?.url ?? item.coverUrl ?? undefined }}
+                  style={styles.pieceImage}
+                  resizeMode="cover"
+                />
                 <Text variant="caption" numberOfLines={1} uppercase={false}>
                   {item.name}
                 </Text>
+                {/* Why it cannot be tapped, rather than silently
+                    dropping it from a row of her own saved pieces. */}
+                {canTry ? null : (
+                  <Text variant="caption" tone="muted" numberOfLines={2} uppercase={false}>
+                    No try-on photo yet.
+                  </Text>
+                )}
               </Pressable>
             );
           }}
@@ -370,6 +426,8 @@ const styles = StyleSheet.create({
   rail: { paddingHorizontal: spacing.md, paddingVertical: spacing.md, gap: spacing.sm },
   piece: { width: 92, gap: spacing.xs },
   piecePressed: { opacity: 0.5 },
+  // Visibly out of action, still legible. Not hidden — see the row.
+  pieceOff: { opacity: 0.45 },
   pieceImage: {
     width: 92,
     height: 112,

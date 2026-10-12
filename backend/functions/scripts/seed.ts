@@ -1201,6 +1201,7 @@ async function main(): Promise<void> {
   const allPosts = await db.collection(COLLECTIONS.posts).get();
   let followCount = 0;
   let likeCount = 0;
+  let postSaveCount = 0;
 
   for (const follower of users) {
     for (const target of users) {
@@ -1260,8 +1261,40 @@ async function main(): Promise<void> {
         createdAt: FieldValue.serverTimestamp(),
       });
     }
+
+    /*
+      Saved LOOKS, not just saved pieces.
+
+      The fitting room draws from both — a dress she starred on
+      somebody's gameday post is a dress she is interested in. Without
+      saved posts in the seed that whole second source is untestable,
+      and it silently looked like it worked because the first source
+      filled the row.
+
+      Only posts that actually tag something: a saved post with no
+      tagged pieces contributes nothing and proves nothing.
+    */
+    for (const doc of allPosts.docs) {
+      const post = doc.data() as Post;
+      if (post.authorUid === follower.uid) continue;
+      if ((post.taggedListingIds ?? []).length === 0) continue;
+      if (random() > 0.3) continue;
+
+      const id = ids.postSave(follower.uid, post.id);
+      await db.collection(COLLECTIONS.postSaves).doc(id).set({
+        id,
+        uid: follower.uid,
+        postId: post.id,
+        postAuthorUid: post.authorUid,
+        campusId: CAMPUS_ID,
+        createdAt: FieldValue.serverTimestamp(),
+      });
+      postSaveCount += 1;
+    }
   }
-  console.warn(`Created ${followCount} follows and ${likeCount} likes`);
+  console.warn(
+    `Created ${followCount} follows, ${likeCount} likes and ${postSaveCount} saved looks`,
+  );
 
   // --- Chats, reviews and reports -----------------------------------------
   // So the inbox, the Reviews tab and the admin queue all have something
