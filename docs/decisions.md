@@ -684,3 +684,137 @@ in. Enforcing it there means a rules `get()` on the private settings
 document on every listing write, which is a real cost for a weaker
 reason — nobody is meeting anybody at the moment a garment is listed.
 Revisit if listings ever move behind a function.
+
+---
+
+## 2026-10-12 — AI try-on: the gate, the processor, and what launches
+
+The full brief is `docs/try-on-plan.md`. This is the reasoning, recorded
+where people look for reasoning rather than only in a build plan.
+
+### The flat-photo gate
+
+**Decision:** "Try it on" appears only on a listing that has a clean
+*lay it flat, just this piece* photo. No warning, no disclaimer, no
+"results may vary" — without one the button is simply absent.
+
+**Why, and this is the finding the whole feature rests on.** Phase 0 ran
+eleven generations against our own seeded photos. One garment on a plain
+background was genuinely good — the cream poncho kept its fringe, the
+rust bomber kept its zip and ribbed collar. More than one garment in
+frame failed in two ways, and **the quiet one is worse**: given a whole
+clothes rail it picked one garment and rendered it beautifully, with no
+way for a student to know she was looking at the wrong dress. A shelf of
+jeans produced shorts. Three garments on one hanger produced a
+colour-blocked mess.
+
+**Nine of our fifteen seeded listing photos are in the failing category.**
+A disclaimer does not fix a confidently wrong image. Removing the button
+does.
+
+### FASHN direct, not a reseller
+
+**Decision:** FASHN try-on v1.6, called straight from our Cloud
+Function.
+
+fal.ai resells the identical model at the identical price and adds a
+second company holding photographs of students' bodies, with self-serve
+accounts that retain generations indefinitely. That is the entire reason
+it lost. Google's Vertex `virtual-try-on-001` is 20% cheaper and we are
+already a Google customer — genuinely tempting — but its docs do not
+confirm bottoms or dresses, it has no equivalent of the on-body garment
+parameter, and it carries a published discontinuation date of 20 January
+2027. Replicate's IDM-VTON, the one everyone benchmarks, is licensed
+non-commercial and cannot be shipped at all.
+
+**One processor, a written promise not to train on our content, and a
+parameter that shrinks how long they hold an image.** For photographs of
+students' bodies that is worth more than 20%.
+
+### Tops, Outerwear and Dresses. Not Bottoms
+
+Three of our categories, two of FASHN's. Bottoms desaturated and bled
+colour at the hem in both layering tests, so they show "Coming soon"
+rather than being hidden — students should see where this is going.
+Sets wait for Bottoms: a set is really a layering case wearing a
+different hat.
+
+**Underwear and swimwear are excluded structurally, not by a filter.**
+They are absent from `TRYON_CATEGORY_MAP`, so they are never eligible in
+the first place. FASHN's `moderation_level: 'conservative'` is a
+backstop for a mis-tagged listing, not the control.
+
+### A dress over trousers leaves the trousers on
+
+Not a bug we can fix in code. It is why the camera screen says **"wear
+fitted clothes — loose clothing shows through"**, and why that line is
+on the camera rather than in a help article nobody reads.
+
+### The cache is the cost model
+
+Same body plus the same pieces in the same order returns the stored
+result and spends nothing. The key includes **the updatedAt of each
+listing's flat photo**, so replacing a photo misses every cached result
+for that garment — a cache that serves images of a photo that no longer
+exists is worse than no cache.
+
+Preset bodies hash to just the preset id, so **a preset result is shared
+across the whole campus**: one dress on Preset B is generated once,
+forever. That is the main argument for presets existing beyond
+accessibility.
+
+### Privacy: her body photo is the most sensitive thing this app holds
+
+- Body photos and results are **owner-read only in Storage**, which is a
+  new shape in this repo — every other path is readable by any signed-in
+  student because listings and posts appear in feeds. These must not be
+  copied from the rules above them.
+- **Admins get nothing.** No admin read rule, no admin UI that renders
+  one. If a damage claim ever needs one, that is a conversation to have
+  then, with her consent, not a door left open.
+- Nothing from `tryOns` is denormalized anywhere another student can
+  read. No counters, no "3 friends tried this on".
+- **No sharing at all in Phase 1**, not even a share sheet.
+- She confirms "This is a photo of me" before upload, and the timestamp
+  is recorded.
+- One tap in Settings deletes the photo, every look and every file.
+
+### Preset models are ours, with three conditions
+
+FASHN's terms assign us the outputs for commercial use, so we can
+generate three preset bodies and ship them. But: there is no uniqueness
+guarantee (acceptable — they are furniture, not brand marks), no
+IP-infringement guarantee (so each one is reviewed and anything reading
+as a recognisable person is rejected), and **`face_reference` is never
+used** — that would mean basing a preset on a real person's face.
+
+Labelled by build only: **Petite / Medium / Curve**. Never a number,
+never a name. They are not characters.
+
+**Zack and Ella sign off before they ship.** They are brand assets every
+student will see.
+
+### "My Try-Ons", because "Looks" is taken
+
+Saved already has a Looks tab and it means saved posts. A saved post is
+someone else's outfit she liked; a saved try-on is her own body wearing
+a garment. Overloading one tab with both is a privacy smell and a
+usability one, so try-ons get a third tab.
+
+### Changed from the plan: the free limit ships now
+
+The plan put the 5-per-week allowance in Phase 2 alongside paid credits.
+Zack's call, 2026-10-12: **build the free limit now, leave purchases
+off.** The two are separable — a cap protects the bill from the day the
+feature is on, whereas selling credits needs Apple IAP, Terms v2 and
+prices. An admin on/off switch ships with it, defaulting to off.
+
+### Measured as a funnel, not as a toy
+
+When she taps Loane It or Own It from a try-on, it fires the existing
+`listing_view` with `surface: 'tryon'` — **not a bespoke event**. That
+makes try-on → rental directly comparable with feed → rental and post →
+rental, which is the second question the MVP has to answer. A new event
+would sit outside every funnel we have. `tryon_generate` records whether
+it was a cache hit, because the hit rate is what decides whether paid
+credits can ever work.
