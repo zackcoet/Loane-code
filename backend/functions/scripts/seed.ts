@@ -23,6 +23,7 @@
 
 import { initializeApp, deleteApp } from 'firebase-admin/app';
 import { getAuth, type Auth } from 'firebase-admin/auth';
+import { getStorage } from 'firebase-admin/storage';
 import { getFirestore, FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore';
 import { flatPhoto, garmentPhoto, peoplePhoto, type FlatPhotoKey } from './seedPhotos';
 import { LEGAL_V1_EFFECTIVE_DATE, PRIVACY_V1, TERMS_V1 } from '../src/legal/v1';
@@ -128,9 +129,37 @@ interface SeedStudent {
   founding: boolean;
   bio?: string;
   sizes?: { tops: Size; bottoms: Size; dresses: Size; shoe: ShoeSize };
+  /**
+   * Zack's own demo account. Its email, password and uid all come from
+   * outside the loop: the password from the local .env so it is never
+   * in the repo, and the uid FIXED so his body photo in Storage
+   * survives a reseed — a demo that needs a new selfie every time is
+   * not a demo you can rely on in front of somebody.
+   */
+  demo?: {
+    email: string;
+    uid: string;
+    passwordEnv: string;
+    /** Extra free try-ons, on top of the free five. */
+    bonusTryOns: number;
+  };
 }
 
 const STUDENTS: SeedStudent[] = [
+  {
+    first: 'Zack',
+    username: 'zcoetzee',
+    founding: false,
+    bio: 'Demo account.',
+    sizes: { tops: 'M', bottoms: 'M', dresses: 'M', shoe: '9' },
+    demo: {
+      email: 'zcoetzee@email.sc.edu',
+      // Fixed, so users/zack-demo/tryon/body/... keeps working.
+      uid: 'zack-demo',
+      passwordEnv: 'SEED_ZACK_PASSWORD',
+      bonusTryOns: 50,
+    },
+  },
   {
     first: 'Ella',
     username: 'ellapetrickcloset',
@@ -815,6 +844,31 @@ async function main(): Promise<void> {
   });
   console.warn('Created legal docs: Terms v1, Privacy v1');
 
+  /**
+   * Looks for a body photo already in Storage for this uid.
+   *
+   * Returns the fields to merge into her tryOn block, or nothing. Any
+   * failure — no bucket, no emulator storage, no permission — returns
+   * nothing, because a seed that cannot read Storage must still seed.
+   */
+  async function existingBodyPhoto(uid: string) {
+    try {
+      const [files] = await getStorage()
+        .bucket()
+        .getFiles({ prefix: `users/${uid}/tryon/body/` });
+      const newest = files.sort((a, b) => a.name.localeCompare(b.name)).pop();
+      if (!newest) return {};
+      console.warn(`Kept an existing body photo for ${uid}`);
+      return {
+        bodyPhotoPath: newest.name,
+        bodyPhotoUploadedAt: FieldValue.serverTimestamp(),
+        selfConfirmedAt: FieldValue.serverTimestamp(),
+      };
+    } catch {
+      return {};
+    }
+  }
+
   // --- Admin --------------------------------------------------------------
   const adminRecord = await auth.createUser({
     email: 'admin@joinloane.com',
@@ -844,10 +898,31 @@ async function main(): Promise<void> {
   const users: User[] = [];
 
   for (const student of STUDENTS) {
-    const email = `${student.username}@email.sc.edu`;
+    /*
+      Zack's demo account, when its password is set locally.
+
+      Skipped entirely when it is not: a seeded account with a
+      guessable password and 50 try-ons is not something to create by
+      accident, and this script will one day be pointed at a real
+      project.
+    */
+    const demoPassword = student.demo
+      ? process.env[student.demo.passwordEnv]?.trim()
+      : undefined;
+    if (student.demo && !demoPassword) {
+      console.warn(
+        `Skipped ${student.demo.email}: ${student.demo.passwordEnv} is not set in backend/functions/.env.`,
+      );
+      continue;
+    }
+
+    const email = student.demo?.email ?? `${student.username}@email.sc.edu`;
     const record = await auth.createUser({
+      // A fixed uid for the demo account only, so its body photo in
+      // Storage survives a reseed.
+      ...(student.demo ? { uid: student.demo.uid } : {}),
       email,
-      password: PASSWORD,
+      password: demoPassword ?? PASSWORD,
       displayName: student.first,
     });
 
@@ -923,7 +998,19 @@ async function main(): Promise<void> {
         phone: null,
         handoffNotes: 'Usually around Russell House between classes.',
         profileChecklist: { dismissed: false, foundFriendsAt: null },
-        tryOn: newUserTryOn(),
+        tryOn: {
+          ...newUserTryOn(),
+          ...(student.demo ? { bonusGranted: student.demo.bonusTryOns } : {}),
+          /*
+            His body photo, if one is already in Storage.
+
+            The uid is fixed, so the FILE survives a reseed even though
+            every Firestore document is rebuilt. Without this the photo
+            would still be sitting there, orphaned, and he would be
+            asked to take another one before every demo.
+          */
+          ...(student.demo ? await existingBodyPhoto(student.demo.uid) : {}),
+        },
         notificationPreferences: {
           pushEnabled: true,
           rentals: true,
@@ -1406,8 +1493,22 @@ async function main(): Promise<void> {
       with, not a model of what a real student saves.
     */
     const savedHere = new Set<string>();
+    /*
+      Try-on pieces are deduped BY NAME, not by id.
+
+      Every student is given the same four, so saving by id alone put
+      ten Chambray Button Downs in one rail — the same shirt from ten
+      closets, which reads as broken rather than full. Ordinary
+      listings are unaffected: two students really can own different
+      black slip dresses.
+    */
+    const savedGarments = new Set<string>();
     const saveListing = async (listing: Listing) => {
       if (savedHere.has(listing.id)) return;
+      if (listing.flatPhoto) {
+        if (savedGarments.has(listing.name)) return;
+        savedGarments.add(listing.name);
+      }
       savedHere.add(listing.id);
       const id = ids.save(follower.uid, listing.id);
       await db.collection(COLLECTIONS.saves).doc(id).set({
@@ -1438,7 +1539,19 @@ async function main(): Promise<void> {
         !taggedFromSavedLooks.has(l.id) &&
         (TRYON_CATEGORY_MAP as Record<string, string | undefined>)[l.category],
     );
-    for (const listing of tryable.slice(0, TRYABLE_SAVES_PER_USER)) {
+    /*
+      The demo account saves EVERY tryable piece, not a handful.
+
+      A demo where the fitting room happens to be thin is a demo that
+      goes wrong in front of somebody. Everyone else gets the usual
+      sample.
+    */
+    /*
+      The demo account saves every DISTINCT tryable garment; everyone
+      else gets a sample. saveListing does the deduping.
+    */
+    const isDemo = Boolean(STUDENTS.find((st) => st.username === follower.username)?.demo);
+    for (const listing of isDemo ? tryable : tryable.slice(0, TRYABLE_SAVES_PER_USER)) {
       await saveListing(listing);
     }
 
