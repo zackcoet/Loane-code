@@ -55,31 +55,20 @@ export function peoplePhoto(index: number): string {
 }
 
 /**
- * The four garment photos Phase 0 proved are CLEAN — one garment, plain
- * background, nothing else in frame. They are the only seed photos
- * honest enough to use as lay-it-flat photos.
+ * The demo garments.
  *
- * A FLAT PHOTO IS THE GARMENT THE TRY-ON RENDERS. Handing them out by a
- * rotating cursor, as this first did, put a blue chambray shirt on a
- * listing called "Black Satin Slip Dress" — which is precisely the
- * failure the flat-photo gate exists to prevent, reproduced in our own
- * seed. So each file is now named, and the catalogue entry that uses it
- * describes that exact garment.
+ * Fifteen clean product shots Zack generated — one garment, plain
+ * background, whole piece in frame. Each one is used as BOTH the
+ * listing photo and the lay-it-flat photo, so the card and the try-on
+ * can never show different garments. That mismatch is the single worst
+ * failure this feature has, and using one file for both makes it
+ * impossible rather than unlikely.
  *
- * Do not add to this list without re-running scripts/tryOnQualityTest.ts
- * against the file you are adding.
+ * Resized to 760px before inlining. Firestore documents cap at 1MB and
+ * a listing carries the image TWICE, so the originals at 1.5-3MB would
+ * not have fit — the write would have failed at seed time rather than
+ * quietly, but it would still have failed.
  */
-export const FLAT_PHOTO_FILES = {
-  poncho: 'garment-04.jpg',
-  bomber: 'garment-12.jpg',
-  chambray: 'garment-14.jpg',
-  romper: 'garment-15.jpg',
-} as const;
-
-export type FlatPhotoKey = keyof typeof FLAT_PHOTO_FILES;
-
-/** The named photo, inlined. See the note at the top of this file. */
-export function flatPhoto(key: FlatPhotoKey): string {
-  const file = FLAT_PHOTO_FILES[key];
+export function demoGarment(file: string): string {
   return `data:image/jpeg;base64,${readFileSync(join(DIR, file)).toString('base64')}`;
 }

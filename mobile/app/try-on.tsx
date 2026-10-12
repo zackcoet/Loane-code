@@ -16,9 +16,8 @@
  * WHILE A NEW LOOK LOADS she keeps looking at herself with the rings
  * over the top, because ten seconds of blank screen reads as a crash.
  *
- * Bottoms and Shoes are visibly inert: Phase 0 showed bottoms
- * desaturate and bleed at the hem, which is a quality problem we have
- * not solved rather than a screen we have not written.
+ * Tops, Dresses and Bottoms are live — a top and bottoms layer, and a
+ * dress replaces both. Shoes stay inert: they have never been tested.
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -59,7 +58,7 @@ type Tab = 'tops' | 'dresses' | 'bottoms' | 'shoes';
 const TABS: { id: Tab; label: string; live: boolean }[] = [
   { id: 'tops', label: 'Tops', live: true },
   { id: 'dresses', label: 'Dresses', live: true },
-  { id: 'bottoms', label: 'Bottoms', live: false },
+  { id: 'bottoms', label: 'Bottoms', live: true },
   { id: 'shoes', label: 'Shoes', live: false },
 ];
 
@@ -109,7 +108,9 @@ export default function TryOn() {
           ? l.category === 'tops' || l.category === 'outerwear'
           : tab === 'dresses'
             ? l.category === 'dresses'
-            : false,
+            : tab === 'bottoms'
+              ? l.category === 'bottoms'
+              : false,
       ),
     [available, tab],
   );
@@ -133,7 +134,8 @@ export default function TryOn() {
     if (!piece) return;
     setPreselected(true);
     if (!isTryOnEligible(piece)) return;
-    setTab(slotFor(piece.category) === 'dress' ? 'dresses' : 'tops');
+    const slot = slotFor(piece.category);
+    setTab(slot === 'dress' ? 'dresses' : slot === 'bottom' ? 'bottoms' : 'tops');
     room.tap({
       listingId: piece.id,
       name: piece.name,
@@ -272,7 +274,9 @@ export default function TryOn() {
           const n = available.filter((l) =>
             t.id === 'tops'
               ? l.category === 'tops' || l.category === 'outerwear'
-              : l.category === 'dresses',
+              : t.id === 'dresses'
+                ? l.category === 'dresses'
+                : l.category === 'bottoms',
           ).length;
           return (
             <Pressable

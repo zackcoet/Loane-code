@@ -757,6 +757,20 @@ export const TRYON_CATEGORY_MAP = {
   tops: 'tops',
   outerwear: 'tops',
   dresses: 'one-pieces',
+  /*
+    Bottoms, turned on 2026-10-12 after a retest.
+
+    Phase 0 kept them out: they desaturated and bled colour at the hem,
+    both times. Two things changed since, and the retest says they were
+    the cause rather than the category — `segmentation_free: false`,
+    and real lay-it-flat product shots instead of photographs of
+    bottoms being worn on somebody else.
+
+    Four bottoms on both presets, eight generations: jeans, frayed
+    denim shorts, grey sweat shorts, gingham ruffle shorts. Correct
+    colour, correct hem, no bleeding. See scripts/tryOnBottomsTest.ts.
+  */
+  bottoms: 'bottoms',
 } as const;
 
 export type TryOnEligibleCategory = keyof typeof TRYON_CATEGORY_MAP;
@@ -765,12 +779,10 @@ export type TryOnEligibleCategory = keyof typeof TRYON_CATEGORY_MAP;
  * Shown with "Coming soon" rather than being silently absent, so
  * students can see where the feature is going.
  *
- * Bottoms desaturated and bled colour at the hem in both Phase 0
- * layering tests. Re-run the quality harness with flat garment photos
- * AND a body in fitted clothes before turning them on — both
- * conditions, or the retest tells us nothing.
+ * Shoes have never been tested at all. Run the harness before turning
+ * them on, the way bottoms were.
  */
-export const TRYON_COMING_SOON: Category[] = ['bottoms', 'shoes'];
+export const TRYON_COMING_SOON: Category[] = ['shoes'];
 
 /**
  * Free try-ons per account, FOR LIFE — not per week.

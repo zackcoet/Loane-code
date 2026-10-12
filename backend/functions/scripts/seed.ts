@@ -25,7 +25,7 @@ import { initializeApp, deleteApp } from 'firebase-admin/app';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 import { getFirestore, FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore';
-import { flatPhoto, garmentPhoto, peoplePhoto, type FlatPhotoKey } from './seedPhotos';
+import { demoGarment, garmentPhoto, peoplePhoto } from './seedPhotos';
 import { LEGAL_V1_EFFECTIVE_DATE, PRIVACY_V1, TERMS_V1 } from '../src/legal/v1';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -224,7 +224,7 @@ interface SeedItem {
    * flat photo is the garment the try-on renders, so a mismatch here
    * renders the wrong garment convincingly.
    */
-  flatFile?: FlatPhotoKey;
+  flatFile?: string;
 }
 
 /**
@@ -235,69 +235,235 @@ interface SeedItem {
 const TRYABLE_SAVES_PER_USER = 8;
 
 /**
- * The try-on pieces, and the ONLY listings that get a lay-it-flat
- * photo. Each one describes the photograph it carries: a student
- * looking at the card and the try-on sees the same garment.
+ * The demo garments: fifteen pieces Zack generated, categorised from
+ * the images rather than their filenames.
  *
- * Given to every seeded student so there is always something in the
- * fitting room, whoever you sign in as.
+ * THESE ARE THE ONLY LISTINGS WITH A LAY-IT-FLAT PHOTO, and the photo
+ * is the same file as the listing photo — so the card and the try-on
+ * always show the same garment. Prices are what a USC student would
+ * actually pay for three days.
+ *
+ * Dealt out across different closets rather than given to everyone, so
+ * the marketplace looks like a campus instead of fifteen identical
+ * wardrobes.
  */
-const TRYON_PIECES: SeedItem[] = [
+const DEMO_GARMENTS: SeedItem[] = [
+  // --- Tops -------------------------------------------------------------
   {
-    name: 'Cream Fringed Poncho',
+    name: 'Black Satin Cowl-Neck Camisole',
+    brand: 'Aritzia',
+    category: 'tops',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['going_out', 'date_function'],
+    condition: 'like_new',
+    rent: 12,
+    sale: 28,
+    value: 65,
+    description: 'Black satin cami with a draped cowl neck. Goes with everything, dresses up fast.',
+    flatFile: 'demo-camisole.jpg',
+  },
+  {
+    name: 'Burgundy Ribbed Knit Tank',
+    brand: 'Brandy Melville',
+    category: 'tops',
+    size: 'XS',
+    shoeSize: null,
+    occasions: ['gameday', 'going_out'],
+    condition: 'like_new',
+    rent: 9,
+    sale: 20,
+    value: 40,
+    description: 'Garnet ribbed tank. Square neck, fitted. Gameday without trying too hard.',
+    flatFile: 'demo-tank.jpg',
+  },
+  {
+    name: 'Light Blue Striped Oversized Shirt',
+    brand: 'Madewell',
+    category: 'tops',
+    size: 'M',
+    shoeSize: null,
+    occasions: ['vacation', 'going_out'],
+    condition: 'good',
+    rent: 11,
+    sale: 26,
+    value: 70,
+    description: 'Oversized striped button down. Open over a tank or tucked in — both work.',
+    flatFile: 'demo-shirt.jpg',
+  },
+  {
+    name: 'White Eyelet Corset Top',
+    brand: 'Reformation',
+    category: 'tops',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['going_out', 'date_function', 'vacation'],
+    condition: 'like_new',
+    rent: 14,
+    sale: 34,
+    value: 85,
+    description: 'White eyelet corset with boning and a little tie at the bust. Structured, not stiff.',
+    flatFile: 'demo-corset.jpg',
+  },
+
+  // --- Outerwear ---------------------------------------------------------
+  {
+    name: 'Pastel Pink Pearl-Button Cardigan',
     brand: 'Free People',
     category: 'outerwear',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['date_function', 'going_out'],
+    condition: 'like_new',
+    rent: 13,
+    sale: 30,
+    value: 75,
+    description: 'Cropped pink cardigan with pearl buttons. Throws over a slip dress perfectly.',
+    flatFile: 'demo-cardigan.jpg',
+  },
+
+  // --- Dresses -----------------------------------------------------------
+  {
+    name: 'Black Structured Bodycon Mini',
+    brand: 'House of CB',
+    category: 'dresses',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['going_out', 'date_function'],
+    condition: 'like_new',
+    rent: 24,
+    sale: null,
+    value: 160,
+    description: 'Black square-neck bodycon. Thick straps, holds its shape, no adjusting all night.',
+    flatFile: 'demo-bodycon.jpg',
+  },
+  {
+    name: 'Emerald Satin Cowl-Neck Gown',
+    brand: 'Lulus',
+    category: 'dresses',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['formal', 'wedding'],
+    condition: 'like_new',
+    rent: 38,
+    sale: null,
+    value: 240,
+    description: 'Floor-length emerald satin with a cowl neck and a thigh slit. Worn to one formal.',
+    flatFile: 'demo-gown.jpg',
+  },
+  {
+    name: 'Ivory Puff-Sleeve Tiered Dress',
+    brand: 'Hill House',
+    category: 'dresses',
     size: 'M',
+    shoeSize: null,
+    occasions: ['graduation', 'date_function', 'wedding'],
+    condition: 'like_new',
+    rent: 26,
+    sale: 68,
+    value: 150,
+    description: 'Ivory midi with puff sleeves and a tiered skirt. Graduation photos, rehearsal dinners.',
+    flatFile: 'demo-ivory.jpg',
+  },
+  {
+    name: 'Pastel Blue Floral Tiered Sundress',
+    brand: 'For Love & Lemons',
+    category: 'dresses',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['vacation', 'date_function'],
+    condition: 'like_new',
+    rent: 19,
+    sale: 45,
+    value: 110,
+    description: 'Blue floral sundress, ruffled straps, tiered skirt. Lake day into dinner.',
+    flatFile: 'demo-bluesundress.jpg',
+  },
+  {
+    name: 'Pastel Yellow Floral Sundress',
+    brand: 'Princess Polly',
+    category: 'dresses',
+    size: 'XS',
+    shoeSize: null,
+    occasions: ['vacation', 'rush', 'date_function'],
+    condition: 'good',
+    rent: 17,
+    sale: 40,
+    value: 95,
+    description: 'Yellow floral mini with a sweetheart neck. Rush week, day parties, Easter.',
+    flatFile: 'demo-yellowsundress.jpg',
+  },
+  {
+    name: 'Red Gingham Bow-Tie Mini Dress',
+    brand: 'Hollister',
+    category: 'dresses',
+    size: 'S',
     shoeSize: null,
     occasions: ['gameday', 'going_out'],
     condition: 'like_new',
     rent: 18,
-    sale: null,
+    sale: 42,
     value: 90,
-    description: 'Cream knit poncho with a fringed hem. Throws over anything on a cold gameday.',
-    flatFile: 'poncho',
+    description: 'Red gingham mini with tie straps and a full skirt. Made for a Saturday in Columbia.',
+    flatFile: 'demo-ginghamdress.jpg',
+  },
+
+  // --- Bottoms. Not tryable yet; see TRYON_COMING_SOON. ------------------
+  {
+    name: 'Light Blue Straight-Leg Jeans',
+    brand: 'Agolde',
+    category: 'bottoms',
+    size: 'M',
+    shoeSize: null,
+    occasions: ['going_out', 'gameday'],
+    condition: 'good',
+    rent: 15,
+    sale: 48,
+    value: 120,
+    description: 'Light wash straight leg, high rise. The pair you reach for without thinking.',
+    flatFile: 'demo-jeans.jpg',
   },
   {
-    name: 'Rust Bomber Jacket',
-    brand: 'Urban Outfitters',
-    category: 'outerwear',
+    name: 'Light Grey Ruffled Sweat Shorts',
+    brand: 'Aerie',
+    category: 'bottoms',
     size: 'S',
     shoeSize: null,
-    occasions: ['going_out', 'date_function'],
-    condition: 'good',
-    rent: 20,
-    sale: 55,
-    value: 110,
-    description: 'Rust satin bomber, ribbed collar and cuffs, full zip. Runs true to size.',
-    flatFile: 'bomber',
+    occasions: ['gameday'],
+    condition: 'like_new',
+    rent: 8,
+    sale: 18,
+    value: 35,
+    description: 'Grey sweat shorts with a ruffle hem and a drawstring. Tailgate comfortable.',
+    flatFile: 'demo-sweatshorts.jpg',
   },
   {
-    name: 'Chambray Button Down',
-    brand: 'Madewell',
-    category: 'tops',
+    name: 'Light-Wash Frayed Denim Shorts',
+    brand: "Levi's",
+    category: 'bottoms',
+    size: 'S',
+    shoeSize: null,
+    occasions: ['gameday', 'vacation'],
+    condition: 'good',
+    rent: 10,
+    sale: 24,
+    value: 55,
+    description: 'High-rise denim shorts with a frayed hem. Every gameday, every year.',
+    flatFile: 'demo-denimshorts.jpg',
+  },
+  {
+    name: 'Red Gingham Ruffle Shorts',
+    brand: 'Urban Outfitters',
+    category: 'bottoms',
     size: 'S',
     shoeSize: null,
     occasions: ['gameday', 'vacation'],
     condition: 'like_new',
-    rent: 12,
-    sale: 30,
-    value: 70,
-    description: 'Light blue chambray shirt. Wear it open over a tank or tucked into jeans.',
-    flatFile: 'chambray',
-  },
-  {
-    name: 'Olive Linen Romper',
-    brand: 'Reformation',
-    category: 'dresses',
-    size: 'S',
-    shoeSize: null,
-    occasions: ['vacation', 'going_out'],
-    condition: 'like_new',
-    rent: 22,
-    sale: null,
-    value: 120,
-    description: 'Olive linen romper with ring hardware on the straps. One piece, no fuss.',
-    flatFile: 'romper',
+    rent: 9,
+    sale: 22,
+    value: 42,
+    description: 'Red gingham ruffle shorts with a tie waist. Pairs with the gingham dress set.',
+    flatFile: 'demo-ginghamshorts.jpg',
   },
 ];
 
@@ -725,9 +891,9 @@ function image(path: string) {
  * feature look broken while demonstrating exactly the failure the gate
  * exists to prevent.
  */
-function flatImage(path: string, key: FlatPhotoKey) {
-  const uri = flatPhoto(key);
-  return { path, url: uri, width: 600, height: 800, bytes: uri.length };
+function flatImage(path: string, file: string) {
+  const uri = demoGarment(file);
+  return { path, url: uri, width: 760, height: 1013, bytes: uri.length };
 }
 
 function outfitImage(path: string) {
@@ -1051,16 +1217,27 @@ async function main(): Promise<void> {
   // Deal the catalogue out across the closets, so founding closets are
   // fuller and every campus filter has something behind it.
   let cursor = 0;
+  /*
+    Fifteen demo garments spread evenly over the closets, so most
+    students have two or three try-on-ready pieces and none has all of
+    them.
+  */
+  let demoCursor = 0;
+  const demoPerCloset = Math.ceil(DEMO_GARMENTS.length / users.length);
   for (const owner of users) {
     const catalogueCount = owner.isFoundingCloset ? 5 : 2;
     /*
-      Every student also gets the four try-on pieces, so the fitting
-      room has something in it whoever you sign in as — and so there
-      are enough tryable pieces to save from other closets.
+      The demo garments are DEALT OUT across closets, not given to
+      everyone. Fifteen identical wardrobes is not a campus, and the
+      previous version of this put the same four pieces in every
+      student's closet — which made the fitting room a rail of the same
+      shirt from ten different people.
     */
     const items = [
       ...Array.from({ length: catalogueCount }, () => CATALOGUE[cursor++ % CATALOGUE.length]!),
-      ...TRYON_PIECES,
+      ...Array.from({ length: demoPerCloset }, () =>
+        demoCursor < DEMO_GARMENTS.length ? DEMO_GARMENTS[demoCursor++]! : null,
+      ).filter((x): x is SeedItem => x !== null),
     ];
     const count = items.length;
 
@@ -1068,7 +1245,17 @@ async function main(): Promise<void> {
       const item = items[i]!;
 
       const ref = db.collection(COLLECTIONS.listings).doc();
-      const photos = [image(`users/${owner.uid}/listings/${ref.id}/1.jpg`)];
+      /*
+        A demo garment is its OWN listing photo as well as its flat
+        photo — the same file, so the card and the try-on can never
+        show different garments. Everything else keeps the stock
+        photos.
+      */
+      const photos = [
+        item.flatFile
+          ? flatImage(`users/${owner.uid}/listings/${ref.id}/1.jpg`, item.flatFile)
+          : image(`users/${owner.uid}/listings/${ref.id}/1.jpg`),
+      ];
       const rentable = item.rent != null;
       const intent: ListingIntent =
         rentable && item.sale != null ? 'both' : rentable ? 'rent' : 'sell';
@@ -1551,8 +1738,23 @@ async function main(): Promise<void> {
       else gets a sample. saveListing does the deduping.
     */
     const isDemo = Boolean(STUDENTS.find((st) => st.username === follower.username)?.demo);
-    for (const listing of isDemo ? tryable : tryable.slice(0, TRYABLE_SAVES_PER_USER)) {
-      await saveListing(listing);
+    if (isDemo) {
+      /*
+        The demo account saves EVERY demo garment, bottoms included.
+        Bottoms are not tryable yet, so they appear greyed in the
+        fitting room — which is the state worth being able to show
+        rather than hide.
+      */
+      // Including the two he owns himself. Saving your own piece is
+      // odd in real life and exactly right for a demo: all fifteen in
+      // one place, nothing missing mid-sentence.
+      for (const listing of listings.filter((l) => l.flatPhoto)) {
+        await saveListing(listing);
+      }
+    } else {
+      for (const listing of tryable.slice(0, TRYABLE_SAVES_PER_USER)) {
+        await saveListing(listing);
+      }
     }
 
   }
