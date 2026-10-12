@@ -25,8 +25,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Link, useRouter } from 'expo-router';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
+  controls,
   emailDomain,
   fonts,
   LIMITS,
@@ -44,6 +45,7 @@ import { Header } from '../../src/components/Header';
 import { checkCampusEmail } from '../../src/firebase/callables';
 import { callableErrorMessage } from '../../src/firebase/errors';
 import { useSignupDraft } from '../../src/auth/signupDraft';
+import { useKeyboardPadding } from '../../src/hooks/useKeyboardPadding';
 import { text } from '../../src/theme';
 
 export default function CreateAccount() {
@@ -60,6 +62,7 @@ export default function CreateAccount() {
   const [error, setError] = useState<string | null>(null);
   const [campusName, setCampusName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const keyboardInset = useKeyboardPadding(0);
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const emailCheck = validateEmail(campusEmail);
   const emailIsEdu = emailDomain(campusEmail)?.endsWith('.edu') ?? false;
@@ -132,18 +135,12 @@ export default function CreateAccount() {
   return (
     <Screen>
       <Header title="" onBack={() => router.back()} />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        {/* Scrollable, because the keyboard was hiding Continue.
-            Three fields and a headline do not fit in the half of the
-            screen a keyboard leaves, and a fixed body has nowhere to
-            put the button — it just goes under. Scrolling means the
-            content can always be reached, whatever the keyboard and
-            whatever the phone. */}
+      <View style={styles.flex}>
         <ScrollView
-          contentContainerStyle={styles.body}
+          contentContainerStyle={[
+            styles.body,
+            keyboardInset > 0 && { paddingBottom: keyboardInset + controls.buttonHeight },
+          ]}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
@@ -193,11 +190,6 @@ export default function CreateAccount() {
             error={error}
           />
 
-          <Button label="Continue" onPress={onContinue} loading={busy} disabled={!canContinue} />
-
-          {/* Inside the scroll rather than pinned underneath it. Pinned,
-              it sat on top of the keyboard and stole the room the
-              button needed. */}
           <View style={styles.footer}>
             <Text style={styles.altRow}>
               Already have an account?{' '}
@@ -207,7 +199,11 @@ export default function CreateAccount() {
             </Text>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
+
+        <View style={[styles.buttonBar, keyboardInset > 0 && { bottom: keyboardInset }]}>
+          <Button label="Continue" onPress={onContinue} loading={busy} disabled={!canContinue} />
+        </View>
+      </View>
     </Screen>
   );
 }
@@ -222,11 +218,23 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'space-between',
     paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingBottom: controls.buttonHeight + spacing.xxl,
   },
   caption: { marginTop: spacing.sm, marginBottom: spacing.md },
   explainer: { marginBottom: spacing.xl },
   footer: { paddingTop: spacing.xl },
+  buttonBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: spacing.screenPadding,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
+    backgroundColor: color.surface.page,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: color.border.default,
+  },
   altRow: {
     fontFamily: fonts.body,
     textAlign: 'center',

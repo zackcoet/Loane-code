@@ -145,7 +145,13 @@ export default function Activity() {
         right={
           <IconButton
             name="chatbubble-outline"
-            onPress={() => router.push('/messages')}
+            /*
+              The TAB, not the standalone route. Messages is in the bar
+              now, so pushing /messages would stack a second inbox over
+              the tabs with the Messages tab sitting unhighlighted
+              underneath it.
+            */
+            onPress={() => router.push('/(tabs)/messages')}
             accessibilityLabel="Messages"
           />
         }

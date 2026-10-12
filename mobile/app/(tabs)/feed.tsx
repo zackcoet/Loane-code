@@ -17,7 +17,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { color, controls, radius, spacing } from '@loane/shared';
+import { color, controls, spacing } from '@loane/shared';
 import { CampusChip } from '../../src/components/CampusChip';
 import { EmptyState } from '../../src/components/EmptyState';
 import { IconButton } from '../../src/components/IconButton';
@@ -30,7 +30,6 @@ import { Text } from '../../src/components/Text';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { usePagedPosts } from '../../src/hooks/usePagedPosts';
 import { useFollowingUids } from '../../src/hooks/useFollowing';
-import { useUnreadMessageCount } from '../../src/hooks/useMessaging';
 import { useSuggestedClosets } from '../../src/hooks/useSuggestedClosets';
 import { useWalkthrough } from '../../src/hooks/useWalkthrough';
 import { Walkthrough } from '../../src/components/Walkthrough';
@@ -38,6 +37,7 @@ import { useWalkthroughTargets } from '../../src/components/WalkthroughTargets';
 import { useProfileGate } from '../../src/hooks/useProfileGate';
 import { SuggestedClosets } from '../../src/components/SuggestedClosets';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
+import { WalkthroughTarget } from '../../src/components/WalkthroughTargets';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
 import { logEvent } from '../../src/analytics/events';
 
@@ -65,7 +65,6 @@ function suggestionsIndex(postCount: number): number {
 export default function Feed() {
   const router = useRouter();
   const draft = usePostDraft();
-  const unreadMessages = useUnreadMessageCount();
   const suggested = useSuggestedClosets();
   const gate = useProfileGate();
   /*
@@ -120,18 +119,19 @@ export default function Feed() {
         <View style={styles.logoLift}>
           <Logo size={30} lockup="below" tint={color.text.heading} />
         </View>
-        <View>
+        {/*
+          SEARCH, not the chat bubble. Ella's swap: Discover is what
+          somebody reaches for from a feed — "I want that, where do I
+          find one" — and messages moved to the bar where an unread dot
+          is visible from every screen rather than only this one.
+        */}
+        <WalkthroughTarget target="search">
           <IconButton
-            name="chatbubble-outline"
-            onPress={() => router.push('/messages')}
-            accessibilityLabel={
-              unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : 'Messages'
-            }
+            name="search-outline"
+            onPress={() => router.push('/(tabs)/discover')}
+            accessibilityLabel="Search closets"
           />
-          {/* A dot, not a count. The number is in the list; out here
-              all she needs to know is that there is something. */}
-          {unreadMessages > 0 ? <View style={styles.unreadDot} /> : null}
-        </View>
+        </WalkthroughTarget>
       </View>
 
       <View style={styles.campusRow}>
@@ -305,15 +305,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
   },
   logoLift: { transform: [{ translateY: -4 }] },
-  unreadDot: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 9,
-    height: 9,
-    borderRadius: radius.pill,
-    backgroundColor: color.role.renter.background,
-  },
   tabs: {
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,

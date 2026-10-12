@@ -33,7 +33,7 @@
  *
  * ---
  *
- * The bar: Feed, Discover, +, Activity, Profile.
+ * The bar: Feed, Messages, +, Activity, Profile.
  *
  * The + is NOT a tab. It is a raised cherry button in the middle that
  * opens the post sheet, which is where Ella wanted it and where every
@@ -51,6 +51,7 @@ import { Image, StyleSheet, View } from 'react-native';
 import { color, fontFamilyFor, iconSize, radius, type } from '@loane/shared';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useUnreadCount } from '../../src/hooks/useNotifications';
+import { useUnreadMessageCount } from '../../src/hooks/useMessaging';
 import { SuspendedBanner } from '../../src/components/SuspendedBanner';
 import { Icon, type IconName } from '../../src/components/Icon';
 import {
@@ -146,6 +147,8 @@ export default function TabsLayout() {
   // Nobody gets a push notification until Phase 6, so the badge is the
   // only nudge that something needs an answer.
   const unread = useUnreadCount();
+  /** Unread chat messages, for the dot on the Messages tab. */
+  const unreadMessages = useUnreadMessageCount();
 
   return (
     <>
@@ -170,15 +173,21 @@ export default function TabsLayout() {
           }}
         />
         <Tabs.Screen
-          name="discover"
+          name="messages"
           options={{
-            title: 'Discover',
+            title: 'Messages',
             tabBarIcon: ({ focused }) => (
-              <TabIcon
-                name={focused ? 'search' : 'search-outline'}
-                focused={focused}
-                target="discover"
-              />
+              <View>
+                <TabIcon
+                  name={focused ? 'chatbubble' : 'chatbubble-outline'}
+                  focused={focused}
+                  target="messages"
+                />
+                {/* A dot, not a count. The number is in the list; out
+                    here all she needs to know is that there is
+                    something. */}
+                {unreadMessages > 0 ? <View style={styles.unreadDot} /> : null}
+              </View>
             ),
           }}
         />
@@ -188,11 +197,13 @@ export default function TabsLayout() {
           navigation the tab would otherwise do.
 
           It still has to BE a screen for the slot to exist in the bar at
-          all; `messages` is the route behind it, which is also where the
-          header chat button goes, so the two never disagree.
+          all. `discover` is the route behind it now that Messages has
+          taken the second slot: Discover moved to the search icon in
+          the Feed header, so it needs to stay a route without being a
+          tab, which is exactly what this slot is.
         */}
         <Tabs.Screen
-          name="messages"
+          name="discover"
           options={{
             title: 'Post',
             tabBarIcon: () => <PostButton />,
@@ -265,6 +276,15 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
     elevation: 6,
+  },
+  unreadDot: {
+    position: 'absolute',
+    top: -2,
+    right: -4,
+    width: 9,
+    height: 9,
+    borderRadius: radius.pill,
+    backgroundColor: color.role.renter.background,
   },
   avatarRing: {
     width: iconSize.tab,

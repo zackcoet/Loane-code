@@ -41,9 +41,14 @@ const STEPS: Step[] = [
     body: 'Looks from students at USC. Tap a tagged piece to rent it.',
   },
   {
-    target: 'discover',
+    target: 'search',
     title: 'Find a piece',
     body: 'Search closets by occasion, size or price — gameday, formals, rush.',
+  },
+  {
+    target: 'messages',
+    title: 'Your messages',
+    body: 'Handoffs get arranged here. A dot means somebody is waiting on you.',
   },
   {
     target: 'post',

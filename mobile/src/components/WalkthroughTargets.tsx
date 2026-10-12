@@ -10,7 +10,21 @@ import {
 } from 'react';
 import { Keyboard, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 
-export type WalkthroughTargetKey = 'feed' | 'discover' | 'post' | 'activity' | 'profile';
+/**
+ * Every spot the tour can point at.
+ *
+ * `search` is the magnifying glass in the FEED HEADER, not a tab —
+ * Discover moved up there when Messages took the second slot in the
+ * bar. A tour that rings an empty bit of the tab bar is worse than no
+ * tour, so the key follows wherever the thing actually is.
+ */
+export type WalkthroughTargetKey =
+  | 'feed'
+  | 'search'
+  | 'messages'
+  | 'post'
+  | 'activity'
+  | 'profile';
 
 export interface WalkthroughRect {
   x: number;
