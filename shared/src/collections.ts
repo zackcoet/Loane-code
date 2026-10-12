@@ -37,6 +37,14 @@ export const SUBCOLLECTIONS = {
   userBlocked: 'blocked',
   /** users/{uid}/notifications/{notificationId} */
   userNotifications: 'notifications',
+  /**
+   * users/{uid}/dismissedSuggestions/{otherUid}
+   *
+   * Closets she tapped the X on. Written by the app rather than a
+   * function: it moves no counter and affects nothing but what she
+   * herself sees, which is the line "never trust the phone" draws.
+   */
+  userDismissedSuggestions: 'dismissedSuggestions',
   /** conversations/{id}/messages/{messageId} */
   messages: 'messages',
   /** circles/{id}/members/{uid} */

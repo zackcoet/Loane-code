@@ -152,6 +152,24 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      /**
+       * Closets she dismissed from "suggested for you".
+       *
+       * THE APP MAY WRITE THIS, unlike almost everything else under
+       * users/. It moves no counter, grants nothing, and changes only
+       * what she herself is shown — which is the line "never trust the
+       * phone" actually draws. Making her wait on a Cloud Function to
+       * hide a card she just tapped X on would be slower for no gain.
+       *
+       * Only her own, only an empty marker: the document id IS the
+       * data, so there is nothing to forge inside it.
+       */
+      match /dismissedSuggestions/{otherUid} {
+        allow read: if isSelf(userId);
+        allow create, delete: if isSelf(userId) && isActive();
+        allow update: if false;
+      }
+
       // Who she has blocked. Written only by blockUser, so the reverse
       // marker below can never drift out of step with it.
       match /blocked/{blockedUid} {

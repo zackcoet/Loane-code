@@ -1461,6 +1461,37 @@ describe('private settings', () => {
   });
 });
 
+describe('dismissed suggestions', () => {
+  // The one thing under users/ the app may write. It moves no counter
+  // and changes only what she herself sees, so making her wait on a
+  // Cloud Function to hide a card she just tapped X on would be slower
+  // for no gain. These tests are the fence around that exception.
+  it('lets her dismiss a suggested closet', async () => {
+    await assertSucceeds(
+      setDoc(doc(asElla(), 'users', ELLA, 'dismissedSuggestions', MADDIE), {
+        createdAt: new Date(),
+      }),
+    );
+  });
+
+  it('lets her undo it', async () => {
+    await assertSucceeds(deleteDoc(doc(asElla(), 'users', ELLA, 'dismissedSuggestions', MADDIE)));
+  });
+
+  it("stops her writing one into someone else's list", async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'users', MADDIE, 'dismissedSuggestions', ELLA), {
+        createdAt: new Date(),
+      }),
+    );
+  });
+
+  it("stops her reading someone else's dismissals", async () => {
+    // Who she has quietly hidden is nobody else's business.
+    await assertFails(getDoc(doc(asElla(), 'users', MADDIE, 'dismissedSuggestions', ELLA)));
+  });
+});
+
 describe('the show-sizes toggle', () => {
   it('lets her turn her sizes on', async () => {
     await assertSucceeds(
