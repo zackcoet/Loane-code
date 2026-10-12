@@ -317,3 +317,25 @@ export async function cropToSquare(photo: PickedPhoto): Promise<PickedPhoto> {
 
   return { uri: result.uri, width: result.width, height: result.height };
 }
+
+/**
+ * Her body photo for try-on.
+ *
+ * Returns the PATH, not a download URL. These objects are owner-read
+ * only, so a URL would be useless to anybody else anyway — but asking
+ * for one at all is the habit that eventually leaks one, and the
+ * function reads the file server-side from this path.
+ *
+ * A fresh name every time: retaking must change the path, because the
+ * try-on cache key uses it to know her body changed.
+ */
+export async function uploadTryOnBodyPhoto(uid: string, photo: PickedPhoto): Promise<string> {
+  const compressed = await compressPhoto(photo, LISTING_MAX_EDGE);
+
+  const response = await fetch(compressed.uri);
+  const blob = await response.blob();
+
+  const path = storagePaths.tryOnBodyPhoto(uid, `body-${Date.now()}.jpg`);
+  await uploadBytes(ref(storage, path), blob, { contentType: 'image/jpeg' });
+  return path;
+}

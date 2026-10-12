@@ -1,5 +1,5 @@
 /**
- * My Wishlist — Items and Looks.
+ * My Wishlist — Items, Looks and My Try-Ons.
  *
  * Two tabs rather than one mixed grid: a saved garment is something you
  * might rent, a saved look is inspiration. They are different things you
@@ -20,24 +20,27 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { color, spacing } from '@loane/shared';
+import { color, radius, spacing, type TryOn } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
+import { Icon } from '../src/components/Icon';
 import { ListingCard } from '../src/components/ListingCard';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useWishlist } from '../src/hooks/useSaved';
 import { useSavedPosts } from '../src/hooks/usePostEngagement';
+import { useMyTryOns, useSaveTryOn, useTryOnImage } from '../src/hooks/useTryOn';
 
 const GRID_COLUMNS = 2;
 
 export default function MyWishlist() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const [tab, setTab] = useState<'items' | 'looks'>('items');
+  const [tab, setTab] = useState<'items' | 'looks' | 'tryons'>('items');
 
   const items = useWishlist();
   const looks = useSavedPosts();
+  const tryOns = useMyTryOns();
 
   const cardWidth = (width - spacing.md * (GRID_COLUMNS + 1)) / GRID_COLUMNS;
 
@@ -54,6 +57,15 @@ export default function MyWishlist() {
           [
             ['items', `Items${items.listings.length ? ` · ${items.listings.length}` : ''}`],
             ['looks', `Looks${looks.posts.length ? ` · ${looks.posts.length}` : ''}`],
+            /*
+              A THIRD TAB, not an addition to Looks.
+
+              A saved "look" is somebody else's outfit she liked. A saved
+              try-on is her own body wearing a garment. Mixing them is
+              both a privacy smell and a usability one, and the name
+              "Looks" was taken long before try-on existed.
+            */
+            ['tryons', `My Try-Ons${tryOns.items.length ? ` · ${tryOns.items.length}` : ''}`],
           ] as const
         ).map(([value, label]) => (
           <Pressable
@@ -107,6 +119,27 @@ export default function MyWishlist() {
                 />
               </View>
             )}
+          />
+        )
+      ) : tab === 'tryons' ? (
+        tryOns.loading ? (
+          <Loading />
+        ) : tryOns.items.length === 0 ? (
+          <EmptyState
+            title="No try-ons saved yet"
+            body="Try a piece on and tap Save look. Only you can see these."
+            actionLabel="Try something on"
+            onAction={() => router.push('/try-on-body')}
+          />
+        ) : (
+          <FlatList
+            data={tryOns.items}
+            keyExtractor={(t) => t.id}
+            numColumns={GRID_COLUMNS}
+            columnWrapperStyle={styles.gridRow}
+            contentContainerStyle={styles.grid}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => <TryOnTile tryOn={item} width={cardWidth} />}
           />
         )
       ) : looks.loading ? (
@@ -173,6 +206,20 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.accent },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   grid: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.xxl },
+  tryOnImage: {
+    borderRadius: radius.md,
+    backgroundColor: color.surface.muted,
+    overflow: 'hidden',
+    marginBottom: spacing.xs,
+  },
+  tryOnDelete: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    padding: 4,
+    borderRadius: radius.pill,
+    backgroundColor: color.scrim.onPhoto,
+  },
   gridRow: { gap: spacing.md },
   note: { marginBottom: spacing.sm },
   dimmed: { opacity: 0.45 },
@@ -195,3 +242,37 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
 });
+
+/**
+ * One saved try-on.
+ *
+ * The image is fetched with HER credentials from an owner-read path,
+ * so this tile simply cannot render for anybody else — which is the
+ * privacy promise doing its job rather than being asserted.
+ */
+function TryOnTile({ tryOn, width }: { tryOn: TryOn; width: number }) {
+  const url = useTryOnImage(tryOn.imagePath);
+  const { remove } = useSaveTryOn();
+
+  return (
+    <View style={{ width }}>
+      <View style={[styles.tryOnImage, { width, height: width * 1.4 }]}>
+        {url ? (
+          <Image source={{ uri: url }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        ) : null}
+        <Pressable
+          onPress={() => void remove(tryOn.id)}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Delete this try-on"
+          style={styles.tryOnDelete}
+        >
+          <Icon name="close" size={14} tint={color.text.inverse} />
+        </Pressable>
+      </View>
+      <Text variant="caption" tone="muted" numberOfLines={1} uppercase={false}>
+        {tryOn.pieces.map((p: TryOn['pieces'][number]) => p.name).join(' + ') || 'Try-on'}
+      </Text>
+    </View>
+  );
+}

@@ -33,6 +33,7 @@ import { Button } from '../../src/components/Button';
 import { ListingActions } from '../../src/components/ListingActions';
 import { ProfileGateSheet } from '../../src/components/ProfileGateSheet';
 import { useProfileGate } from '../../src/hooks/useProfileGate';
+import { isTryOnEligible, useTryOnEnabled } from '../../src/hooks/useTryOn';
 import { Chip } from '../../src/components/Chip';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
@@ -63,6 +64,9 @@ export default function ListingDetail() {
   // Renting or buying means meeting another student in person, so
   // both need a photo and a phone number. useProfileGate owns the rule.
   const gate = useProfileGate();
+  // The gate is the flat photo, not a setting: without one the button
+  // is simply absent. See docs/decisions.md.
+  const tryOnOn = useTryOnEnabled();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
@@ -326,6 +330,19 @@ export default function ListingDetail() {
           // so rather than opening a request that goes nowhere.
           onOwnIt={() => gate.run('buy', () => Alert.alert('Coming soon', SOON))}
         />
+        {/* Try it on sits between the two buying actions and messaging:
+            it is how she decides, not how she commits. Absent entirely
+            without a lay-it-flat photo — no disclaimer, no greyed-out
+            button, because a confidently wrong try-on is worse than no
+            try-on. */}
+        {tryOnOn && isTryOnEligible(listing) ? (
+          <Button
+            label="Try it on"
+            variant="outline"
+            onPress={() => router.push('/try-on-body')}
+          />
+        ) : null}
+
         {/* Underneath, and quieter. Messaging is how a handoff gets
             arranged, not how a rental starts. */}
         {!isMine ? (

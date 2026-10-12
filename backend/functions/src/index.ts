@@ -121,6 +121,7 @@ export { matchContacts } from './social/matchContacts';
 // and cannot write one field of a tryOn document. See docs/decisions.md.
 export { generateTryOn } from './tryon/generateTryOn';
 export { deleteTryOnData } from './tryon/deleteTryOnData';
+export { setTryOnBodyPhoto, clearTryOnBodyPhoto } from './tryon/setBodyPhoto';
 export { grantTryOns, setTryOnConfig } from './tryon/admin';
 export { sweepUnsavedTryOns, runTryOnSweep } from './tryon/sweepUnsavedTryOns';
 export { acceptLegalDocs, publishLegalDoc, saveLegalDraft } from './legal/legal';

@@ -115,4 +115,14 @@ export const storagePaths = {
   claimPhoto: (uid: string, claimId: string, fileName: string) =>
     `users/${uid}/claims/${claimId}/${fileName}`,
   messagePhoto: (uid: string, fileName: string) => `users/${uid}/messages/${fileName}`,
+  /**
+   * Her body photo for try-on, and the generated results.
+   *
+   * THE ONLY OWNER-READ PATHS IN THE BUCKET. Everything above is
+   * readable by at least any signed-in student, because listing and
+   * post photos appear in feeds. These two are not, and not even an
+   * admin may read them. See backend/storage.rules.
+   */
+  tryOnBodyPhoto: (uid: string, fileName: string) => `users/${uid}/tryon/body/${fileName}`,
+  tryOnResult: (uid: string, fileName: string) => `users/${uid}/tryon/results/${fileName}`,
 } as const;

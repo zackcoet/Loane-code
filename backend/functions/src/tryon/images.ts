@@ -9,12 +9,29 @@
 
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { logger } from 'firebase-functions';
 import { getStorage } from 'firebase-admin/storage';
 import type { ImageRef, PresetId } from '@loane/shared';
 import { internal } from '../lib/errors';
 
+/**
+ * The bucket, named explicitly.
+ *
+ * NOT the ambient default. The app uploads to the bucket in its own
+ * .env — `demo-loane.firebasestorage.app` — and a function resolving
+ * some other default reads an empty bucket and fails with "could not
+ * read that photo", which tells nobody anything. Firebase projects
+ * created after late 2024 use .firebasestorage.app while the SDK's
+ * historical default is .appspot.com, so the two genuinely differ.
+ */
+function bucketName(): string | undefined {
+  if (process.env.STORAGE_BUCKET) return process.env.STORAGE_BUCKET;
+  const projectId = process.env.GCLOUD_PROJECT ?? process.env.GCP_PROJECT;
+  return projectId ? `${projectId}.firebasestorage.app` : undefined;
+}
+
 function bucket() {
-  return getStorage().bucket();
+  return getStorage().bucket(bucketName());
 }
 
 /**
@@ -28,8 +45,14 @@ export async function bodyPhotoDataUri(path: string): Promise<string> {
   try {
     const [buffer] = await bucket().file(path).download();
     return `data:image/jpeg;base64,${buffer.toString('base64')}`;
-  } catch {
-    // Deliberately vague to her, specific in the log via the caller.
+  } catch (error) {
+    // Vague to her, specific in the log — a bucket or path mistake is
+    // a deploy problem and the log is the only place to debug it.
+    logger.error('Try-on could not read a photo', {
+      path,
+      bucket: bucketName(),
+      error: (error as Error)?.message,
+    });
     throw internal('Could not read that photo.');
   }
 }

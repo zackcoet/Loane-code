@@ -62,6 +62,25 @@ export const publishLegalDoc = call<
 >('publishLegalDoc');
 
 /** Turns a callable error into something worth showing an admin. */
+// --- AI try-on -------------------------------------------------------------
+
+/**
+ * Extra free try-ons for one student.
+ *
+ * The allowance is five for life, which Ella and our testers will burn
+ * through in an afternoon of judging the thing. Without this the people
+ * whose opinion we need are the first ones locked out.
+ */
+export const grantTryOns = call<{ uid: string; count: number; reason: string }, { total: number }>(
+  'grantTryOns',
+);
+
+/** The master switch. Off by default; a missing config is not an open door. */
+export const setTryOnConfig = call<
+  { enabled?: boolean; enabledForAdmins?: boolean; reason: string },
+  { ok: true }
+>('setTryOnConfig');
+
 export function adminErrorMessage(error: unknown, fallback: string): string {
   const raw = error instanceof Error ? error.message : '';
   const cleaned = raw.replace(/\s*\[[^\]]+\]\s*$/, '').trim();

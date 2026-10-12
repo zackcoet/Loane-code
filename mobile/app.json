@@ -46,6 +46,12 @@
         }
       ],
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Loane needs your camera so you can take the photo used to try clothes on. It stays private to you."
+        }
+      ],
+      [
         "expo-contacts",
         {
           "contactsPermission": "Loane checks which of your contacts are already on your campus. Only scrambled phone numbers are sent, and your contacts are never saved."

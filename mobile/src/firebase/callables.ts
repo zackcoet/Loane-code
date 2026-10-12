@@ -251,3 +251,52 @@ export const acceptLegalDocs = httpsCallable<
   { termsVersion: number; privacyVersion: number },
   { ok: true }
 >(functions, 'acceptLegalDocs');
+
+// ---------------------------------------------------------------------------
+// AI try-on
+//
+// Everything that costs money, and everything that records consent, runs
+// server-side. The app cannot call FASHN and cannot write a tryOn
+// document or the tryOn block on her private settings.
+// ---------------------------------------------------------------------------
+
+export interface TryOnPieceSummary {
+  listingId: string;
+  name: string;
+  coverUrl: string | null;
+  ownerUid: string;
+  category: string;
+}
+
+export const generateTryOn = httpsCallable<
+  { bodyKind: 'own' | 'preset'; presetId?: string; listingIds: string[] },
+  { tryOnId: string; imagePath: string; cached: boolean; remaining: number }
+>(functions, 'generateTryOn');
+
+/** The confirmation travels with the photo; the server refuses it without. */
+export const setTryOnBodyPhoto = httpsCallable<
+  { path: string; confirmed: boolean },
+  { ok: true }
+>(functions, 'setTryOnBodyPhoto');
+
+export const clearTryOnBodyPhoto = httpsCallable<void, { ok: true }>(
+  functions,
+  'clearTryOnBodyPhoto',
+);
+
+/** Her body photo, every saved look, every file. One tap, from Settings. */
+export const deleteTryOnData = httpsCallable<void, { deleted: number }>(
+  functions,
+  'deleteTryOnData',
+);
+
+// --- Admin only ---
+export const grantTryOns = httpsCallable<
+  { uid: string; count: number; reason: string },
+  { total: number }
+>(functions, 'grantTryOns');
+
+export const setTryOnConfig = httpsCallable<
+  { enabled?: boolean; enabledForAdmins?: boolean; reason: string },
+  { ok: true }
+>(functions, 'setTryOnConfig');

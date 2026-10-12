@@ -24,6 +24,7 @@ import { Screen } from '../src/components/Screen';
 import { Header } from '../src/components/Header';
 import { LegalDocumentModal } from '../src/components/LegalDocumentModal';
 import { useUserSettings } from '../src/hooks/useUserSettings';
+import { deleteTryOnData } from '../src/firebase/callables';
 import { formatPhone } from '@loane/shared';
 import { auth } from '../src/firebase/config';
 
@@ -66,6 +67,31 @@ export default function Settings() {
     );
   };
 
+  /**
+   * Her body photo and every saved look. One tap, no fight.
+   *
+   * The confirmation says what disappears rather than asking "are you
+   * sure" — she should be able to tell exactly what she is getting.
+   */
+  const onDeleteTryOn = () => {
+    Alert.alert(
+      'Delete your try-on photos?',
+      'Your photo and every look you have saved will be deleted. This cannot be undone.',
+      [
+        { text: 'Keep them', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            void deleteTryOnData()
+              .then(() => Alert.alert('Deleted', 'Your try-on photos are gone.'))
+              .catch(() => Alert.alert('Loane', 'Could not delete those. Try again.'));
+          },
+        },
+      ],
+    );
+  };
+
   const rows: Row[] = [
     { label: 'Edit Profile', href: '/edit-profile' },
     { label: 'Notification Preferences', href: '/notification-preferences' },
@@ -89,6 +115,11 @@ export default function Settings() {
       label: 'Campus Email',
       value: settings?.campusEmail ?? '—',
       readOnly: true,
+    },
+    {
+      label: 'Delete my try-on photos',
+      // What goes, in plain words. "Delete my data" tells her nothing.
+      onPress: onDeleteTryOn,
     },
     { label: 'Change Password', href: '/change-password' },
     { label: 'Safety', href: '/safety' },

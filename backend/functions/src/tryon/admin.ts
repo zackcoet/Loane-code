@@ -122,7 +122,13 @@ export const setTryOnConfig = onCall<ConfigInput, Promise<{ ok: true }>>(
       targetType: 'config',
       targetId: 'tryOn',
       notes: reason,
-      after: { enabled, enabledForAdmins },
+      // Only the flags actually being changed. Firestore rejects an
+      // undefined value outright, so spreading both unconditionally
+      // fails the whole write whenever one flag is left alone.
+      after: {
+        ...(enabled === undefined ? {} : { enabled }),
+        ...(enabledForAdmins === undefined ? {} : { enabledForAdmins }),
+      },
     });
 
     await batch.commit();

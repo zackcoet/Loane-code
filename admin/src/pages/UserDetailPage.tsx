@@ -9,6 +9,7 @@ import { ActionDialog } from '../components/ActionDialog';
 import {
   addAdminNote,
   adminErrorMessage,
+  grantTryOns,
   suspendUser,
   unsuspendUser,
 } from '../data/adminActions';
@@ -21,7 +22,7 @@ interface Props {
   onBack: () => void;
 }
 
-type Dialog = 'suspend' | 'unsuspend' | 'note' | null;
+type Dialog = 'suspend' | 'unsuspend' | 'note' | 'grantTryOns' | null;
 
 export function UserDetailPage({ user, data, onBack }: Props) {
   const listings = data.listings.filter((listing) => listing.ownerUid === user.uid);
@@ -49,6 +50,8 @@ export function UserDetailPage({ user, data, onBack }: Props) {
 
   const [dialog, setDialog] = useState<Dialog>(null);
   const [busy, setBusy] = useState(false);
+  /** How many extra try-ons this grant gives. Five is another full free run. */
+  const [grantCount, setGrantCount] = useState(5);
   const [error, setError] = useState<string | null>(null);
 
   const suspended = user.status === 'suspended';
@@ -62,6 +65,7 @@ export function UserDetailPage({ user, data, onBack }: Props) {
       if (dialog === 'suspend') await suspendUser({ uid: user.uid, reason });
       if (dialog === 'unsuspend') await unsuspendUser({ uid: user.uid, reason });
       if (dialog === 'note') await addAdminNote({ uid: user.uid, note: reason });
+      if (dialog === 'grantTryOns') await grantTryOns({ uid: user.uid, count: grantCount, reason });
       setDialog(null);
     } catch (err) {
       setError(adminErrorMessage(err, 'Could not do that.'));
@@ -117,6 +121,12 @@ export function UserDetailPage({ user, data, onBack }: Props) {
           <button className="outline-button" disabled title="Needs a Cloud Function">
             {user.status === 'suspended' ? 'Unsuspend' : 'Suspend'}
           </button>
+          {/* The free allowance is five for life. This is how Ella and
+              our testers are not the first people locked out of the
+              thing they are meant to be judging. */}
+          <button className="outline-button" onClick={() => setDialog('grantTryOns')}>
+            Give free try-ons
+          </button>
         </div>
       </section>
 
@@ -168,6 +178,8 @@ export function UserDetailPage({ user, data, onBack }: Props) {
         title={
           dialog === 'suspend'
             ? `Suspend @${user.username}?`
+            : dialog === 'grantTryOns'
+              ? `Give @${user.username} free try-ons?`
             : dialog === 'unsuspend'
               ? `Lift the suspension on @${user.username}?`
               : 'Add a private note'
@@ -175,12 +187,20 @@ export function UserDetailPage({ user, data, onBack }: Props) {
         description={
           dialog === 'suspend'
             ? 'She can still browse Loane, but cannot post, list, rent or message. She is told why and given an address to appeal to.'
+            : dialog === 'grantTryOns'
+              ? `Adds ${grantCount} try-ons on top of her free five. Each one costs us about $0.08 to generate, unless it comes from the cache.`
             : dialog === 'unsuspend'
               ? 'She gets full access back and is told so.'
               : 'Only admins can read this. She never sees it.'
         }
         confirmLabel={
-          dialog === 'suspend' ? 'Suspend' : dialog === 'unsuspend' ? 'Lift it' : 'Save note'
+          dialog === 'suspend'
+            ? 'Suspend'
+            : dialog === 'unsuspend'
+              ? 'Lift it'
+              : dialog === 'grantTryOns'
+                ? `Give ${grantCount}`
+                : 'Save note'
         }
         danger={error ?? undefined}
         busy={busy}
@@ -189,7 +209,20 @@ export function UserDetailPage({ user, data, onBack }: Props) {
           setDialog(null);
           setError(null);
         }}
-      />
+      >
+          dialog === 'grantTryOns' ? (
+            <label className="field">
+              <span>How many</span>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={grantCount}
+                onChange={(e) => setGrantCount(Number(e.target.value))}
+              />
+            </label>
+          ) : undefined
+      </ActionDialog>
     </>
   );
 }
