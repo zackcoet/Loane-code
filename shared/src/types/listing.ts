@@ -45,6 +45,21 @@ export interface Listing extends BaseDoc, CampusScoped {
   /** Convenience copy of photos[0].url. */
   coverUrl: string | null;
 
+  /**
+   * The lay-it-flat photo: one garment, plain surface, nothing else in
+   * frame.
+   *
+   * ITS PRESENCE IS WHAT SWITCHES "Try it on" ON for this listing.
+   * Optional — a listing without one is a perfectly good listing, it
+   * just cannot be tried on.
+   *
+   * The gate exists because Phase 0 found that a photo with more than
+   * one garment in frame does not fail loudly: it picks one garment and
+   * renders it beautifully, and the student has no way to know she is
+   * looking at the wrong dress. See docs/decisions.md.
+   */
+  flatPhoto: ImageRef | null;
+
   intent: ListingIntent;
   status: ListingStatus;
 

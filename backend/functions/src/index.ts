@@ -115,6 +115,14 @@ export { resolveDispute } from './admin/resolveDispute';
 export { resolveSupportRequest } from './admin/resolveSupportRequest';
 export { suggestedClosets } from './social/suggestedClosets';
 export { matchContacts } from './social/matchContacts';
+
+// --- AI try-on --------------------------------------------------------------
+// Everything that costs money runs server-side. The app cannot call FASHN
+// and cannot write one field of a tryOn document. See docs/decisions.md.
+export { generateTryOn } from './tryon/generateTryOn';
+export { deleteTryOnData } from './tryon/deleteTryOnData';
+export { grantTryOns, setTryOnConfig } from './tryon/admin';
+export { sweepUnsavedTryOns, runTryOnSweep } from './tryon/sweepUnsavedTryOns';
 export { acceptLegalDocs, publishLegalDoc, saveLegalDraft } from './legal/legal';
 
 // --- Later phases -----------------------------------------------------------

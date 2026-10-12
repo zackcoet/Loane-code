@@ -38,7 +38,15 @@ export interface Report extends BaseDoc, CampusScoped {
 export interface AdminAction extends BaseDoc {
   adminUid: string;
   action: string;
-  targetType: ReportTargetType | 'campus' | 'claim' | 'report' | 'supportRequest' | 'legalDoc';
+  targetType:
+    | ReportTargetType
+    | 'campus'
+    | 'claim'
+    | 'report'
+    | 'supportRequest'
+    | 'legalDoc'
+    /** A runtime switch under `config/`, e.g. the try-on on/off flag. */
+    | 'config';
   targetId: string;
   notes: string | null;
   /** Snapshot of what changed, for the audit trail. */

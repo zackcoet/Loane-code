@@ -1491,6 +1491,110 @@ describe('private settings', () => {
   });
 });
 
+describe('try-ons', () => {
+  /**
+   * A try-on is a photograph of a student's body in somebody else's
+   * dress. It is the most sensitive thing this app will ever hold.
+   *
+   * There is NO admin read rule, deliberately, and one of these tests
+   * asserts its absence. If somebody later "fixes" that for a support
+   * workflow, this test is what makes them say so out loud.
+   */
+  const TRYON = 'tryon-ella-1';
+
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'tryOns', TRYON), {
+        id: TRYON,
+        uid: ELLA,
+        bodyKind: 'preset',
+        presetId: 'medium',
+        pieces: [],
+        imagePath: `users/${ELLA}/tryon/results/${TRYON}.jpg`,
+        cacheKey: 'c'.repeat(64),
+        saved: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    });
+  });
+
+  it('is readable by her', async () => {
+    await assertSucceeds(getDoc(doc(asElla(), 'tryOns', TRYON)));
+  });
+
+  it('is NOT readable by another student', async () => {
+    await assertFails(getDoc(doc(asMaddie(), 'tryOns', TRYON)));
+  });
+
+  it('is NOT readable by an admin', async () => {
+    await assertFails(getDoc(doc(asAdmin(), 'tryOns', TRYON)));
+  });
+
+  it('lets her save a look', async () => {
+    await assertSucceeds(
+      updateDoc(doc(asElla(), 'tryOns', TRYON), { saved: true, updatedAt: serverTimestamp() }),
+    );
+  });
+
+  it('lets her delete her own', async () => {
+    await assertSucceeds(deleteDoc(doc(asElla(), 'tryOns', TRYON)));
+  });
+
+  it('stops her creating one', async () => {
+    // The app inventing a try-on document is the app pointing at an
+    // image it never paid for.
+    await assertFails(
+      setDoc(doc(asElla(), 'tryOns', 'forged'), {
+        uid: ELLA,
+        imagePath: `users/${ELLA}/tryon/results/forged.jpg`,
+        saved: true,
+      }),
+    );
+  });
+
+  it('stops her repointing it at a different image', async () => {
+    await assertFails(
+      updateDoc(doc(asElla(), 'tryOns', TRYON), { imagePath: `users/${MADDIE}/tryon/results/x.jpg` }),
+    );
+  });
+
+  it('stops her rewriting the cache key', async () => {
+    // The cache key is what decides whether we pay again. If she could
+    // set it, she could point a key at any stored image.
+    await assertFails(updateDoc(doc(asElla(), 'tryOns', TRYON), { cacheKey: 'd'.repeat(64) }));
+  });
+
+  it("stops another student saving or deleting hers", async () => {
+    await assertFails(updateDoc(doc(asMaddie(), 'tryOns', TRYON), { saved: true }));
+    await assertFails(deleteDoc(doc(asMaddie(), 'tryOns', TRYON)));
+  });
+});
+
+describe('the try-on switch', () => {
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'config', 'tryOn'), {
+        enabled: false,
+        enabledForAdmins: true,
+        updatedAt: new Date(),
+        updatedBy: null,
+      });
+    });
+  });
+
+  it('is readable by a student, so the app can hide the feature', async () => {
+    await assertSucceeds(getDoc(doc(asElla(), 'config', 'tryOn')));
+  });
+
+  it('cannot be switched on from a phone', async () => {
+    // A switch that turns on spending is not flippable from a handset,
+    // even an admin's. It goes through setTryOnConfig, which audits.
+    await assertFails(updateDoc(doc(asElla(), 'config', 'tryOn'), { enabled: true }));
+    await assertFails(updateDoc(doc(asAdmin(), 'config', 'tryOn'), { enabled: true }));
+  });
+});
+
 describe('phone hashes', () => {
   /**
    * The fence around contact matching. A student holding a phone

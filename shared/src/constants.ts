@@ -460,6 +460,16 @@ export const EVENT_TYPES = [
   'save',
   'unsave',
   'tagged_item_tap',
+  // --- AI try-on ---
+  'tryon_open',
+  /**
+   * Records whether it was a cache hit. The hit rate is what decides
+   * whether paid credits can ever work, so it is not optional metadata.
+   */
+  'tryon_generate',
+  'tryon_save',
+  'tryon_body_photo_set',
+  'tryon_body_photo_delete',
   'profile_view',
   'closet_view',
   'follow',
@@ -500,6 +510,8 @@ export const EVENT_SURFACES = [
   'onboarding',
   'activity',
   'messages',
+  /** Anything reached from the try-on screen. */
+  'tryon',
   'other',
 ] as const;
 export type EventSurface = (typeof EVENT_SURFACES)[number];
@@ -704,3 +716,64 @@ export const FULL_REFUND_CUTOFF_HOURS = 48;
  * we do not keep a cut of a rental that never happened.
  */
 export const LATE_CANCEL_LENDER_SHARE_BPS = 5000;
+
+// ---------------------------------------------------------------------------
+// AI try-on
+// ---------------------------------------------------------------------------
+
+/** Preset bodies, labelled by build only. Never a name, never a number. */
+export const TRYON_PRESETS = ['petite', 'medium', 'curve'] as const;
+
+/** How those read in the UI. */
+export const TRYON_PRESET_LABELS = {
+  petite: 'Petite',
+  medium: 'Medium',
+  curve: 'Curve',
+} as const;
+
+/**
+ * Our categories mapped to FASHN's three.
+ *
+ * ANYTHING ABSENT FROM THIS MAP CANNOT BE TRIED ON. That is how
+ * underwear and swimwear are excluded — not by a filter somebody can
+ * forget to apply, but by never being eligible in the first place.
+ *
+ * Outerwear is one of our categories and not one of FASHN's. It maps to
+ * 'tops', and the rust bomber was the second-best result of the whole
+ * Phase 0 test. Zack's call, 2026-10-12.
+ */
+export const TRYON_CATEGORY_MAP = {
+  tops: 'tops',
+  outerwear: 'tops',
+  dresses: 'one-pieces',
+} as const;
+
+export type TryOnEligibleCategory = keyof typeof TRYON_CATEGORY_MAP;
+
+/**
+ * Shown with "Coming soon" rather than being silently absent, so
+ * students can see where the feature is going.
+ *
+ * Bottoms desaturated and bled colour at the hem in both Phase 0
+ * layering tests. Re-run the quality harness with flat garment photos
+ * AND a body in fitted clothes before turning them on — both
+ * conditions, or the retest tells us nothing.
+ */
+export const TRYON_COMING_SOON: Category[] = ['bottoms', 'shoes'];
+
+/**
+ * Free try-ons per account, FOR LIFE — not per week.
+ *
+ * Zack's call, 2026-10-12, replacing the plan's weekly allowance. A
+ * lifetime cap is what protects the bill while paid credits are off;
+ * when they are switched on this becomes the free tier rather than the
+ * only tier.
+ *
+ * Only generations that actually cost money count against it. See
+ * UserTryOn.generationsUsed.
+ */
+export const TRYON_FREE_LIFETIME = 5;
+
+/** What she is told when she runs out, until credits exist. */
+export const TRYON_LIMIT_MESSAGE =
+  "You've used your 5 free try-ons, more coming soon";

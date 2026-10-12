@@ -72,6 +72,33 @@ service firebase.storage {
       allow write: if isOwner(userId) && validUpload();
     }
 
+    /**
+     * TRY-ON. Her body photo, and the generated results.
+     *
+     * OWNER-READ ONLY. THIS IS A NEW SHAPE IN THIS FILE AND MUST NOT BE
+     * COPIED FROM THE RULES ABOVE IT. Every other path here is readable
+     * by at least any signed-in student, because listing and post
+     * photos appear in feeds. These two are not, and the difference is
+     * the entire privacy promise of the feature.
+     *
+     * NO ADMIN READ. An admin has no business looking at a photograph
+     * of a student's body, and the absence of the rule is the control.
+     *
+     * She may write only her BODY photo. Results are written by the
+     * Cloud Function through the Admin SDK, which bypasses rules — so
+     * the app gets no write permission on them at all, and cannot
+     * fabricate a result it did not pay for.
+     */
+    match /users/{userId}/tryon/body/{fileName} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId) && validUpload();
+    }
+
+    match /users/{userId}/tryon/results/{fileName} {
+      allow read: if isOwner(userId);
+      allow write: if false;
+    }
+
     // Damage claim evidence.
     match /users/{userId}/claims/{claimId}/{fileName} {
       allow read: if isOwner(userId) || isAdmin();

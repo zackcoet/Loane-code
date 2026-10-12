@@ -13,6 +13,7 @@ import {
   validateEmail,
   validatePassword,
   validateUsername,
+  newUserTryOn,
 } from '@loane/shared';
 import { auth, db, now, FieldValue } from '../lib/admin';
 import { alreadyTaken, failed, internal, invalidArgument } from '../lib/errors';
@@ -200,6 +201,7 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
           phone: null,
           handoffNotes: null,
           profileChecklist: { dismissed: false, foundFriendsAt: null },
+          tryOn: newUserTryOn(),
           notificationPreferences: {
             pushEnabled: true,
             rentals: true,

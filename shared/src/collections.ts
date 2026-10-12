@@ -36,6 +36,17 @@ export const COLLECTIONS = {
    * backend/functions/src/lib/phoneHash.ts.
    */
   phoneHashes: 'phoneHashes',
+  /**
+   * tryOns/{tryOnId} — generated try-on images. Private to their owner,
+   * written only by Cloud Functions. See docs/decisions.md.
+   */
+  tryOns: 'tryOns',
+  /**
+   * config/{docId} — runtime switches an admin can flip without a
+   * deploy. Readable by any signed-in student so the app can hide a
+   * feature; written only through an admin function.
+   */
+  config: 'config',
   legalDocs: 'legalDocs',
   legalDrafts: 'legalDrafts',
 } as const;

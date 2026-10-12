@@ -50,6 +50,7 @@ import {
   type Size,
   type User,
   newUserStripe,
+  newUserTryOn,
 } from '@loane/shared';
 
 // ---------------------------------------------------------------------------
@@ -826,6 +827,7 @@ async function main(): Promise<void> {
         phone: null,
         handoffNotes: 'Usually around Russell House between classes.',
         profileChecklist: { dismissed: false, foundFriendsAt: null },
+        tryOn: newUserTryOn(),
         notificationPreferences: {
           pushEnabled: true,
           rentals: true,
@@ -866,6 +868,9 @@ async function main(): Promise<void> {
         owner: summaryOf(owner),
         name: item.name,
         description: item.description,
+        // Set for a few pieces further down, so "Try it on" can be
+        // tested without photographing anything.
+        flatPhoto: null,
         brand: item.brand,
         category: item.category,
         size: item.size,

@@ -45,6 +45,7 @@ afterAll(async () => {
 const asElla = () => testEnv.authenticatedContext(ELLA).storage();
 const asMaddie = () => testEnv.authenticatedContext(MADDIE).storage();
 const asStranger = () => testEnv.unauthenticatedContext().storage();
+const asAdmin = () => testEnv.authenticatedContext('uid-admin', { admin: true }).storage();
 
 describe('profile photos', () => {
   it('lets her upload into her own folder', async () => {
@@ -89,5 +90,79 @@ describe('profile photos', () => {
 describe('everything outside a user folder', () => {
   it('is denied', async () => {
     await assertFails(uploadBytes(ref(asElla(), 'somewhere-else/avatar.jpg'), jpeg(), meta));
+  });
+});
+
+describe('try-on photos — the privacy promise', () => {
+  /**
+   * These are the only owner-read paths in the whole bucket. Every
+   * other path here is readable by at least any signed-in student,
+   * because listing and post photos appear in feeds. If one of these
+   * tests ever starts failing because somebody "made it consistent
+   * with the rules above", that is the bug, not the test.
+   */
+  const BODY = `users/${ELLA}/tryon/body/me.jpg`;
+  const RESULT = `users/${ELLA}/tryon/results/look.jpg`;
+
+  beforeAll(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await uploadBytes(ref(ctx.storage(), BODY), jpeg(), meta);
+      await uploadBytes(ref(ctx.storage(), RESULT), jpeg(), meta);
+    });
+  });
+
+  it('lets her upload her own body photo', async () => {
+    await assertSucceeds(
+      uploadBytes(ref(asElla(), `users/${ELLA}/tryon/body/new.jpg`), jpeg(), meta),
+    );
+  });
+
+  it('lets her read her own body photo', async () => {
+    await assertSucceeds(getBytes(ref(asElla(), BODY)));
+  });
+
+  it('stops ANOTHER STUDENT reading her body photo', async () => {
+    await assertFails(getBytes(ref(asMaddie(), BODY)));
+  });
+
+  it('stops ANOTHER STUDENT reading her try-on result', async () => {
+    await assertFails(getBytes(ref(asMaddie(), RESULT)));
+  });
+
+  it('stops a signed-out visitor reading either', async () => {
+    await assertFails(getBytes(ref(asStranger(), BODY)));
+    await assertFails(getBytes(ref(asStranger(), RESULT)));
+  });
+
+  it('stops an ADMIN reading her body photo', async () => {
+    // Deliberate, and the absence of an admin rule is the control.
+    // "We would only look if we had to" is not a control.
+    await assertFails(getBytes(ref(asAdmin(), BODY)));
+  });
+
+  it('stops an ADMIN reading her try-on result', async () => {
+    await assertFails(getBytes(ref(asAdmin(), RESULT)));
+  });
+
+  it('stops her writing a result herself', async () => {
+    // Results come from the function via the Admin SDK. If the app
+    // could write here it could fabricate a result it never paid for.
+    await assertFails(
+      uploadBytes(ref(asElla(), `users/${ELLA}/tryon/results/forged.jpg`), jpeg(), meta),
+    );
+  });
+
+  it('stops her uploading a body photo into someone else’s folder', async () => {
+    await assertFails(
+      uploadBytes(ref(asMaddie(), `users/${ELLA}/tryon/body/not-me.jpg`), jpeg(), meta),
+    );
+  });
+
+  it('rejects a non-image body photo', async () => {
+    await assertFails(
+      uploadBytes(ref(asElla(), `users/${ELLA}/tryon/body/x.pdf`), jpeg(), {
+        contentType: 'application/pdf',
+      }),
+    );
   });
 });

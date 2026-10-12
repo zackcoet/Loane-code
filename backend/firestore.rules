@@ -247,6 +247,43 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    /**
+     * tryOns/{tryOnId} — generated try-on images.
+     *
+     * HERS AND NOBODY ELSE'S. Not another student, not an admin.
+     *
+     * No admin read rule, deliberately. An admin has no business
+     * looking at a photograph of a student's body, and the absence of
+     * the rule is the control — "we would only look if we had to" is
+     * not a control. If a damage claim ever needs one, that is a
+     * conversation to have then, with her consent.
+     *
+     * She may flip `saved` and delete her own. Everything else is a
+     * Cloud Function's job: the app cannot invent a try-on document,
+     * which is what stops it pointing at an image it did not pay for.
+     */
+    match /tryOns/{tryOnId} {
+      allow read: if isSelf(resource.data.uid);
+      allow create: if false;
+      allow update: if isSelf(resource.data.uid)
+        && isActive()
+        && onlyChanges(['saved', 'updatedAt']);
+      allow delete: if isSelf(resource.data.uid);
+    }
+
+    /**
+     * config/{docId} — runtime switches, e.g. whether try-on is on.
+     *
+     * Readable by any signed-in student so the app can hide a feature
+     * without a deploy. Written only through an admin function, which
+     * leaves an audit row — a switch that turns on spending should
+     * never be flippable from a phone.
+     */
+    match /config/{docId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
     // -----------------------------------------------------------------
     // listings — garments in closets
     //
@@ -567,14 +604,16 @@ service cloud.firestore {
           'rental_returned', 'rental_disputed',
           'message_sent', 'comment_created', 'comment_deleted',
           'post_shared', 'invite_shared', 'review_written',
-          'report_submitted', 'user_blocked', 'user_unblocked'
+          'report_submitted', 'user_blocked', 'user_unblocked',
+          'tryon_open', 'tryon_generate', 'tryon_save',
+          'tryon_body_photo_set', 'tryon_body_photo_delete'
         ];
       }
 
       function allowedSurface() {
         return request.resource.data.surface in [
           'feed', 'discover', 'search', 'profile', 'closet', 'listing',
-          'post', 'onboarding', 'activity', 'messages', 'other'
+          'post', 'onboarding', 'activity', 'messages', 'tryon', 'other'
         ];
       }
 

@@ -1,5 +1,6 @@
 import type { Booking } from './types/booking';
 import type { User } from './types/user';
+import type { UserTryOn } from './types/tryOn';
 
 /**
  * Default shapes for the documents Cloud Functions create.
@@ -38,6 +39,21 @@ export function newBookingPayment(): Booking['payment'] {
 }
 
 /** A new user's Stripe block: no account, no card, no payouts. */
+/**
+ * A fresh try-on block. One definition, so an account created by
+ * createAccount and one created by the seed script cannot disagree
+ * about what "has not used any" looks like.
+ */
+export function newUserTryOn(): UserTryOn {
+  return {
+    bodyPhotoPath: null,
+    bodyPhotoUploadedAt: null,
+    selfConfirmedAt: null,
+    generationsUsed: 0,
+    bonusGranted: 0,
+  };
+}
+
 export function newUserStripe(): User['stripe'] {
   return {
     accountId: null,

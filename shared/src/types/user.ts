@@ -1,6 +1,7 @@
 import type { AccountStatus, Size, ShoeSize, UserRole, VerificationMethod } from '../constants';
 import type { BaseDoc, CampusScoped, Timestampish } from './common';
 import type { LegalAcceptance } from './legal';
+import type { UserTryOn } from './tryOn';
 
 /**
  * `users/{uid}`
@@ -215,6 +216,18 @@ export interface UserPrivate {
      */
     foundFriendsAt: Timestampish | null;
   };
+
+  /**
+   * Her try-on state: body photo, consent, and how much of the free
+   * allowance she has used.
+   *
+   * WRITTEN ONLY BY CLOUD FUNCTIONS, unlike `phone` and
+   * `profileChecklist` on this same document. If the app could write
+   * `generationsUsed` the allowance would be a suggestion, and if it
+   * could write `bodyPhotoPath` it could point her account at somebody
+   * else's photo. The rules' onlyChanges allowlist is the enforcement.
+   */
+  tryOn: UserTryOn;
 
   notificationPreferences: {
     pushEnabled: boolean;

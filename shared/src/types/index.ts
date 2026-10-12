@@ -10,3 +10,4 @@ export * from './moderation';
 export * from './support';
 export * from './event';
 export * from './legal';
+export * from './tryOn';
