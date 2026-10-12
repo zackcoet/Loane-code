@@ -235,7 +235,7 @@ export function TaggablePhoto({
                       {tag.priceCents3Day != null
                         ? `${formatCentsShort(tag.priceCents3Day)} · 3 days`
                         : tag.salePriceCents != null
-                          ? `${formatCentsShort(tag.salePriceCents)} to buy`
+                          ? `${formatCentsShort(tag.salePriceCents)} to own`
                           : 'View piece'}
                     </Text>
                   </Pressable>

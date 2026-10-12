@@ -149,7 +149,7 @@ export function ProfileHeader({
       ) : null}
 
       {/* The shop-window line. The closet size is the one number that
-          says "there is something here to rent", so it carries the
+          says "there is something here to borrow", so it carries the
           accent; the price stays plain text beside it rather than
           competing with it for attention. */}
       {listings.length > 0 ? (

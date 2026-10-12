@@ -494,3 +494,70 @@ rules:
 `shared/src/tokens.ts` plus a handful of screens that needed cherry instead
 of butter. No screen reaches past the semantic layer, which is the whole
 reason that rule exists.
+
+---
+
+## 2026-10-11 — The lender pays the fee, 20%. This reverses 2026-10-05
+
+**Decision:** The renter is charged the price on the listing and nothing
+else. Loane's 20% comes out of what the lender receives. A $35 dress: the
+renter pays $35, the lender receives $28, Loane keeps $7.
+
+**This overturns the decision of six days ago**, which had the renter
+paying 15% on top specifically so the lender's number stayed clean. Ella's
+call. Both arguments are recorded here because the question will come back.
+
+**For it:** checkout is a single number, which is the Depop and Vinted
+shape and the one this audience already knows. No fee to explain, no
+surprise at the last step, and the price on the card is the price she
+pays. Margin is also better — about $5.70 net after Stripe on a $35
+rental, against $3.78 under the old rule.
+
+**Against, and still true:** supply is the hard side of a marketplace and
+at one campus it is the only hard side. A lender who wants $35 in hand
+will list at $44, so renters end up paying roughly the same while the
+listings look more expensive — the old rule's prices with none of its
+honesty. 20% is also at the top of the market: Depop takes 10%, Poshmark
+20%, Vinted nothing from sellers. We are at Poshmark's rate with none of
+Poshmark's scale.
+
+**Watch for:** listed prices drifting upward over the first weeks. That is
+the failure mode, and it is measurable — compare median listed price on
+pieces added before and after today.
+
+**The minimum fee is gone.** It existed because Stripe's flat 30c ate a
+small rental when the renter paid. At 20% off the lender, anything above
+about $1.75 already clears Stripe, and a floor would take a brutal share
+of a cheap rental out of her pocket.
+
+**Two things are deliberately not treated alike:**
+
+- **The cleaning fee passes through whole.** Loane takes nothing. It
+  reimburses a dry-clean the lender actually pays for; taking a cut of a
+  cost is not taking a cut of revenue. The renter must tick to agree to it
+  before she can request.
+- **The same-day premium splits 80/20 like the rental.** It is genuinely
+  extra earnings rather than a cost, and the lender is being asked to drop
+  everything and drive, so she gets the bulk of it.
+
+**Also settled today:** lenders and sellers have 24 hours to answer, not
+48. A day is long enough to be fair to someone with classes; two days is
+long enough for the renter to find something else and stop caring.
+
+---
+
+## 2026-10-11 — Loane's own vocabulary
+
+**Decision:** Renting is "Loane It", buying is "Own It", the CTA on a piece
+for sale is "Become the owner", listing is "Put it on Loane", and a piece
+currently out is "On Loane". The section once called Rentals is now On
+Loane. They live in `WORDS` in shared.
+
+**Why in a constants file:** one screen saying "Rent" while the rest says
+"Loane It" is exactly what a vocabulary drifts into, and it reads as a
+half-finished app rather than a brand.
+
+**Where we did NOT apply it:** running prose. "Alex wants to Loane your
+jacket" is not English. Buttons, labels and CTAs use the words exactly;
+sentences stay natural and simply avoid "rent" as a verb. Ella's language
+is meant to make the app sound better, not stranger.

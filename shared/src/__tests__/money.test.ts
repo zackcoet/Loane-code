@@ -6,11 +6,12 @@ import {
   dollarsToCents,
   formatCents,
   formatCentsShort,
+  priceForDuration,
 } from '../money';
 import {
   LATE_CANCEL_LENDER_SHARE_BPS,
   PLATFORM_FEE_BPS,
-  PLATFORM_FEE_MINIMUM_CENTS,
+  RENTAL_DURATIONS,
 } from '../constants';
 
 /**
@@ -47,108 +48,195 @@ describe('formatting', () => {
 
 describe('applyBps', () => {
   it('rounds to the nearest cent', () => {
-    expect(applyBps(3500, 1500)).toBe(525);
-    // 1000 * 15% = 150 exactly.
-    expect(applyBps(1000, 1500)).toBe(150);
-    // 333 * 15% = 49.95 -> 50.
-    expect(applyBps(333, 1500)).toBe(50);
+    expect(applyBps(3500, 2000)).toBe(700);
+    // 1000 * 20% = 200 exactly.
+    expect(applyBps(1000, 2000)).toBe(200);
+    // 333 * 20% = 66.6 -> 67.
+    expect(applyBps(333, 2000)).toBe(67);
   });
 });
 
 describe('calculateFees — the decided policy', () => {
-  it('charges the renter 15% on top and pays the lender her full price', () => {
-    const f = calculateFees($(35), $(200));
+  it('charges the renter the listed price and nothing else', () => {
+    const f = calculateFees({ baseCents: $(35), garmentValueCents: $(200) });
     expect(f.baseCents).toBe(3500);
-    expect(f.platformFeeCents).toBe(525);
-    expect(f.renterTotalCents).toBe(4025);
-    expect(f.lenderPayoutCents).toBe(3500);
-    expect(f.feePaidBy).toBe('renter');
+    // The whole point of the Depop model: no Loane line at checkout.
+    expect(f.renterTotalCents).toBe(3500);
+    expect(f.feePaidBy).toBe('lender');
   });
 
-  it('defaults to the renter paying', () => {
-    expect(calculateFees($(35), $(200)).feePaidBy).toBe('renter');
-    expect(PLATFORM_FEE_BPS).toBe(1500);
+  it('takes 20% out of what the lender receives', () => {
+    const f = calculateFees({ baseCents: $(35), garmentValueCents: $(200) });
+    expect(f.platformFeeCents).toBe(700);
+    expect(f.lenderPayoutCents).toBe(2800);
+  });
+
+  it('defaults to the lender paying', () => {
+    expect(calculateFees({ baseCents: $(35), garmentValueCents: $(200) }).feePaidBy).toBe('lender');
+    expect(PLATFORM_FEE_BPS).toBe(2000);
   });
 
   it('sets the liability cap to the full documented garment value', () => {
-    expect(calculateFees($(35), $(200)).liabilityCapCents).toBe(20000);
+    expect(calculateFees({ baseCents: $(35), garmentValueCents: $(200) }).liabilityCapCents).toBe(
+      20000,
+    );
   });
 
-  it('never holds anything — the cap is not part of what she pays', () => {
-    const f = calculateFees($(35), $(200));
-    expect(f.renterTotalCents).toBe(f.baseCents + f.platformFeeCents);
-    expect(f.renterTotalCents).toBeLessThan(f.liabilityCapCents);
-  });
-});
-
-describe('calculateFees — the minimum fee', () => {
-  it('applies the floor when the percentage is smaller', () => {
-    // $5 * 15% = 75c, below the 150c floor.
-    const f = calculateFees($(5), $(40));
-    expect(f.platformFeeCents).toBe(PLATFORM_FEE_MINIMUM_CENTS);
-    expect(f.renterTotalCents).toBe(650);
-  });
-
-  it('does not apply the floor once the percentage exceeds it', () => {
-    // $10 * 15% = 150c, exactly the floor.
-    expect(calculateFees($(10), $(40)).platformFeeCents).toBe(150);
-    // $11 * 15% = 165c, above it.
-    expect(calculateFees($(11), $(40)).platformFeeCents).toBe(165);
-  });
-
-  it('never charges a fee larger than the rental itself', () => {
-    // A $1 piece must not carry a $1.50 fee.
-    const f = calculateFees($(1), $(10));
+  it('has no minimum fee, so a cheap rental is not gouged', () => {
+    const f = calculateFees({ baseCents: $(5), garmentValueCents: $(40) });
     expect(f.platformFeeCents).toBe(100);
-    expect(f.renterTotalCents).toBe(200);
-    expect(f.lenderPayoutCents).toBe(100);
+    expect(f.lenderPayoutCents).toBe(400);
+    expect(f.renterTotalCents).toBe(500);
   });
 
   it('handles a free item without going negative', () => {
-    const f = calculateFees(0, $(10));
+    const f = calculateFees({ baseCents: 0, garmentValueCents: $(10) });
     expect(f.platformFeeCents).toBe(0);
     expect(f.renterTotalCents).toBe(0);
     expect(f.lenderPayoutCents).toBe(0);
   });
 });
 
-describe('calculateFees — the other splits still add up', () => {
-  it('lender-pays takes the fee out of the payout', () => {
-    const f = calculateFees($(35), $(200), 'lender');
-    expect(f.renterTotalCents).toBe(3500);
-    expect(f.lenderPayoutCents).toBe(2975);
+describe('calculateFees — the cleaning fee passes through whole', () => {
+  it('adds it to what the renter pays', () => {
+    const f = calculateFees({
+      baseCents: $(35),
+      garmentValueCents: $(200),
+      cleaningFeeCents: $(8),
+    });
+    expect(f.cleaningFeeCents).toBe(800);
+    expect(f.renterTotalCents).toBe(4300);
+  });
+
+  it('takes NO commission on it', () => {
+    const plain = calculateFees({ baseCents: $(35), garmentValueCents: $(200) });
+    const cleaned = calculateFees({
+      baseCents: $(35),
+      garmentValueCents: $(200),
+      cleaningFeeCents: $(8),
+    });
+    // The fee is identical; the lender simply receives $8 more.
+    expect(cleaned.platformFeeCents).toBe(plain.platformFeeCents);
+    expect(cleaned.lenderPayoutCents).toBe(plain.lenderPayoutCents + 800);
+  });
+
+  it('gives the lender every cent of it', () => {
+    const f = calculateFees({
+      baseCents: $(35),
+      garmentValueCents: $(200),
+      cleaningFeeCents: $(8),
+    });
+    expect(f.lenderPayoutCents).toBe(2800 + 800);
+  });
+});
+
+describe('calculateFees — same-day splits like the rental', () => {
+  it('adds 25% of the rental to what she pays', () => {
+    const f = calculateFees({ baseCents: $(35), garmentValueCents: $(200), sameDay: true });
+    expect(f.sameDayPremiumCents).toBe(875);
+    expect(f.renterTotalCents).toBe(3500 + 875);
+  });
+
+  it('commissions the premium at the same 20%', () => {
+    const f = calculateFees({ baseCents: $(35), garmentValueCents: $(200), sameDay: true });
+    expect(f.platformFeeCents).toBe(875);
+    expect(f.lenderPayoutCents).toBe(4375 - 875);
+  });
+
+  it('is zero when she is not in a hurry', () => {
+    expect(
+      calculateFees({ baseCents: $(35), garmentValueCents: $(200) }).sameDayPremiumCents,
+    ).toBe(0);
+  });
+
+  it('stacks with a cleaning fee, commissioning only the right part', () => {
+    const f = calculateFees({
+      baseCents: $(35),
+      garmentValueCents: $(200),
+      cleaningFeeCents: $(8),
+      sameDay: true,
+    });
+    expect(f.renterTotalCents).toBe(3500 + 875 + 800);
+    // 20% of rental + premium, never of the cleaning.
+    expect(f.platformFeeCents).toBe(875);
+    expect(f.lenderPayoutCents).toBe(3500 + 875 + 800 - 875);
+  });
+});
+
+describe('calculateFees — the old rules still reconcile', () => {
+  it('renter-pays adds the fee on top, as it did in September', () => {
+    const f = calculateFees({
+      baseCents: $(35),
+      garmentValueCents: $(200),
+      feePaidBy: 'renter',
+    });
+    expect(f.renterTotalCents).toBe(3500 + 700);
+    expect(f.lenderPayoutCents).toBe(3500);
   });
 
   it('split halves it, odd cent to the renter', () => {
-    // $33.33 * 15% = 499.95 -> 500c. Half is 250 each, even.
-    const even = calculateFees(3333, $(200), 'split');
-    expect(even.platformFeeCents).toBe(500);
-    expect(even.renterTotalCents).toBe(3583);
-    expect(even.lenderPayoutCents).toBe(3083);
-
-    // 1007c * 15% = 151.05 -> 151c, which is odd and clears the 150c floor.
-    // (A smaller base would be lifted to the floor and never test the halving.)
-    const odd = calculateFees(1007, $(200), 'split');
-    expect(odd.platformFeeCents).toBe(151);
-    expect(odd.renterTotalCents).toBe(1007 + 76);
-    expect(odd.lenderPayoutCents).toBe(1007 - 75);
+    // 701c * 20% = 140.2 -> 140c, even. 703c * 20% = 140.6 -> 141c, odd.
+    const odd = calculateFees({
+      baseCents: 703,
+      garmentValueCents: $(200),
+      feePaidBy: 'split',
+    });
+    expect(odd.platformFeeCents).toBe(141);
+    expect(odd.renterTotalCents).toBe(703 + 71);
+    expect(odd.lenderPayoutCents).toBe(703 - 70);
   });
 
-  it('conserves money for every split at every price', () => {
-    const splits = ['renter', 'lender', 'split'] as const;
+  it('conserves money for every rule at every price', () => {
+    const rules = ['lender', 'renter', 'split'] as const;
     for (let base = 0; base <= 50_000; base += 7) {
-      for (const feePaidBy of splits) {
-        const f = calculateFees(base, $(200), feePaidBy);
-        // The money Loane keeps is exactly the gap between the two sides.
-        expect(f.renterTotalCents - f.lenderPayoutCents).toBe(
-          f.platformFeeCents,
-        );
-        // And nothing is ever a fraction of a cent.
-        expect(Number.isInteger(f.platformFeeCents)).toBe(true);
-        expect(Number.isInteger(f.renterTotalCents)).toBe(true);
-        expect(Number.isInteger(f.lenderPayoutCents)).toBe(true);
-        expect(f.lenderPayoutCents).toBeGreaterThanOrEqual(0);
+      for (const feePaidBy of rules) {
+        for (const sameDay of [false, true]) {
+          for (const cleaningFeeCents of [0, 800]) {
+            const f = calculateFees({
+              baseCents: base,
+              garmentValueCents: $(200),
+              cleaningFeeCents,
+              sameDay,
+              feePaidBy,
+            });
+            // Loane keeps exactly the gap between the two sides.
+            expect(f.renterTotalCents - f.lenderPayoutCents).toBe(f.platformFeeCents);
+            // Nothing is ever a fraction of a cent.
+            expect(Number.isInteger(f.platformFeeCents)).toBe(true);
+            expect(Number.isInteger(f.renterTotalCents)).toBe(true);
+            expect(Number.isInteger(f.lenderPayoutCents)).toBe(true);
+            expect(f.lenderPayoutCents).toBeGreaterThanOrEqual(0);
+          }
+        }
       }
+    }
+  });
+});
+
+describe('priceForDuration', () => {
+  const pricing = { oneDayCents: 1200, threeDayCents: 1800, sevenDayCents: 2800 };
+
+  it('returns the price for each supported length', () => {
+    expect(priceForDuration(pricing, 1)).toBe(1200);
+    expect(priceForDuration(pricing, 3)).toBe(1800);
+    expect(priceForDuration(pricing, 7)).toBe(2800);
+  });
+
+  it('never silently falls back to another length', () => {
+    // The bug this helper exists to prevent: a 1-day rental charged the
+    // 3-day price because the old code was `days === 7 ? seven : three`.
+    expect(priceForDuration(pricing, 2)).toBeNull();
+    expect(priceForDuration(pricing, 0)).toBeNull();
+    expect(priceForDuration(pricing, 30)).toBeNull();
+  });
+
+  it('passes a missing price through as null', () => {
+    expect(priceForDuration({ ...pricing, oneDayCents: null }, 1)).toBeNull();
+  });
+
+  it('covers every duration the app offers', () => {
+    for (const days of RENTAL_DURATIONS) {
+      expect(priceForDuration(pricing, days)).not.toBeNull();
     }
   });
 });

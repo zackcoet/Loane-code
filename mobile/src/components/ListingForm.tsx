@@ -7,6 +7,7 @@
 
 import { ActionSheetIOS, Alert, Platform, ScrollView, StyleSheet, View } from 'react-native';
 import {
+  WORDS,
   CATEGORIES,
   CATEGORY_LABELS,
   CONDITIONS,
@@ -216,8 +217,16 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
 
       {rentable ? (
         <View style={styles.section}>
-          <Text variant="label">Rental pricing</Text>
+          <Text variant="label">{WORDS.rent} pricing</Text>
           <View style={styles.priceRow}>
+            <Input
+              label="1 day"
+              value={form.oneDay}
+              onChangeText={(v) => set('oneDay', v)}
+              placeholder="$0"
+              keyboardType="decimal-pad"
+              style={styles.priceInput}
+            />
             <Input
               label="3 days"
               value={form.threeDay}
@@ -235,6 +244,15 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
               style={styles.priceInput}
             />
           </View>
+
+          <Input
+            label="Cleaning fee (optional)"
+            value={form.cleaningFee}
+            onChangeText={(v) => set('cleaningFee', v)}
+            placeholder="$0"
+            keyboardType="decimal-pad"
+            hint="Charged on top of the rental. You keep all of it — Loane takes no cut of cleaning."
+          />
         </View>
       ) : null}
 

@@ -11,13 +11,16 @@
 
 import { useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import {
   RENTAL_DURATIONS,
+  WORDS,
   REQUEST_EXPIRY_HOURS,
   addDays,
   calculateFees,
+  priceForDuration,
   color,
+  radius,
   formatCents,
   formatRange,
   spacing,
@@ -27,6 +30,7 @@ import { Button } from '../src/components/Button';
 import { Calendar } from '../src/components/Calendar';
 import { Card } from '../src/components/Card';
 import { Chip } from '../src/components/Chip';
+import { Icon } from '../src/components/Icon';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
 import { Input } from '../src/components/Input';
@@ -52,16 +56,28 @@ export default function RequestRental() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const baseCents = useMemo(() => {
-    if (!listing) return null;
-    return days === 7 ? listing.pricing.sevenDayCents : listing.pricing.threeDayCents;
-  }, [listing, days]);
+  /** She must tick this before requesting, when there is a fee to tick. */
+  const [cleaningAgreed, setCleaningAgreed] = useState(false);
+
+  const baseCents = useMemo(
+    () => (listing ? priceForDuration(listing.pricing, days) : null),
+    [listing, days],
+  );
 
   const fees = useMemo(
     () =>
-      baseCents != null && listing ? calculateFees(baseCents, listing.garmentValueCents) : null,
+      baseCents != null && listing
+        ? calculateFees({
+            baseCents,
+            garmentValueCents: listing.garmentValueCents,
+            cleaningFeeCents: listing.cleaningFeeCents ?? 0,
+          })
+        : null,
     [baseCents, listing],
   );
+
+  const cleaningFeeCents = listing?.cleaningFeeCents ?? 0;
+  const needsCleaningConsent = cleaningFeeCents > 0;
 
   if (loading) {
     return (
@@ -185,14 +201,39 @@ export default function RequestRental() {
               }
             </Text>
 
+            {/* No Loane line here, on purpose. She pays the listed
+                price; our cut comes out of the lender's side. Showing a
+                fee she is not paying would be a lie. */}
             {fees ? (
               <View style={styles.breakdown}>
-                <Line label={`Rental · ${days} days`} value={formatCents(fees.baseCents)} />
-                <Line label="Loane fee" value={formatCents(fees.platformFeeCents)} />
+                <Line
+                  label={`${WORDS.rent} · ${days} ${days === 1 ? 'day' : 'days'}`}
+                  value={formatCents(fees.baseCents)}
+                />
+                {fees.cleaningFeeCents > 0 ? (
+                  <Line label="Cleaning" value={formatCents(fees.cleaningFeeCents)} />
+                ) : null}
                 <Line label="Total" value={formatCents(fees.renterTotalCents)} strong />
               </View>
             ) : null}
           </Card>
+        ) : null}
+
+        {needsCleaningConsent ? (
+          <Pressable
+            onPress={() => setCleaningAgreed((v) => !v)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: cleaningAgreed }}
+            style={styles.consent}
+          >
+            <View style={[styles.checkbox, cleaningAgreed && styles.checkboxOn]}>
+              {cleaningAgreed ? <Icon name="checkmark" size={16} tint={color.text.inverse} /> : null}
+            </View>
+            <Text variant="bodySmall" style={styles.consentText}>
+              I agree to the {formatCents(cleaningFeeCents)} cleaning fee. @
+              {listing.owner.username} has it dry-cleaned after every rental and keeps all of it.
+            </Text>
+          </Pressable>
         ) : null}
 
         {/* Payments are Phase 5 and are paused until the company is
@@ -226,7 +267,7 @@ export default function RequestRental() {
           label="Send request"
           onPress={onSend}
           loading={sending}
-          disabled={!startDate}
+          disabled={!startDate || (needsCleaningConsent && !cleaningAgreed)}
           style={styles.send}
         />
         <Text variant="caption" tone="muted" style={styles.footnote}>
@@ -272,6 +313,24 @@ const styles = StyleSheet.create({
   noticeBody: { marginTop: spacing.xs },
   multiline: { height: 80, textAlignVertical: 'top', marginTop: spacing.lg },
   error: { marginBottom: spacing.sm },
+  consent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginTop: spacing.md,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: color.border.strong,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  checkboxOn: { backgroundColor: color.icon.default, borderColor: color.icon.default },
+  consentText: { flex: 1 },
   send: { marginTop: spacing.sm },
   footnote: { marginTop: spacing.sm, textAlign: 'center' },
 });

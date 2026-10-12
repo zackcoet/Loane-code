@@ -20,6 +20,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import {
+  WORDS,
   CATEGORY_LABELS,
   OCCASION_LABELS,
   color,
@@ -313,11 +314,10 @@ export default function ListingDetail() {
           />
           {rentable ? (
             <Button
-              // "Check availability" rather than "Request to rent".
-              // It already opens a calendar of her free dates, but the
-              // old label sounded like committing to something rather
-              // than looking, so nobody found the calendar behind it.
-              label="Check availability"
+              // Step 4 turns this into the two side-by-side buttons from
+              // Ella's mockup, with prices on them. For now it just
+              // speaks the right language.
+              label={WORDS.rent}
               onPress={() =>
                 router.push({ pathname: '/request-rental', params: { id: listing.id } })
               }
@@ -326,7 +326,7 @@ export default function ListingDetail() {
           ) : null}
           {sellable && !rentable ? (
             <Button
-              label="Buy"
+              label={WORDS.buyCta}
               // TODO-PHASE5: payments.
               onPress={() => Alert.alert('Coming soon', SOON)}
               style={styles.primaryAction}

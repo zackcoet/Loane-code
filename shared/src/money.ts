@@ -3,8 +3,8 @@ import {
   LATE_CANCEL_LENDER_SHARE_BPS,
   LIABILITY_CAP_BPS,
   PLATFORM_FEE_BPS,
-  PLATFORM_FEE_MINIMUM_CENTS,
   PLATFORM_FEE_PAID_BY,
+  SAME_DAY_PREMIUM_BPS,
 } from './constants';
 import type { Cents } from './types/common';
 
@@ -38,9 +38,21 @@ export function applyBps(cents: Cents, bps: number): Cents {
 export type FeePaidBy = 'renter' | 'lender' | 'split';
 
 export interface FeeBreakdown {
+  /** The rental or sale price on the listing. */
   baseCents: Cents;
+  /**
+   * The lender's optional cleaning charge. Passed through to her WHOLE —
+   * it reimburses a real cost rather than being revenue, so Loane takes
+   * no cut of it.
+   */
+  cleaningFeeCents: Cents;
+  /** Paid to get the piece today. Splits 80/20 like the rental. */
+  sameDayPremiumCents: Cents;
+  /** Loane's cut. */
   platformFeeCents: Cents;
+  /** What the renter is charged, all in. */
   renterTotalCents: Cents;
+  /** What the lender receives. */
   lenderPayoutCents: Cents;
   /**
    * The most she can be charged later if a damage or non-return claim is
@@ -50,59 +62,104 @@ export interface FeeBreakdown {
   feePaidBy: FeePaidBy;
 }
 
-/**
- * Work out who pays what for a booking.
- *
- * Decided in Phase 5: the renter pays the fee on top, and the lender
- * receives exactly the price she listed. The other two splits stay
- * implemented because each booking stores its own `feePaidBy`, so a
- * booking made under a different rule must still add up years later.
- */
-export function calculateFees(
-  baseCents: Cents,
-  garmentValueCents: Cents,
-  feePaidBy: FeePaidBy = PLATFORM_FEE_PAID_BY,
-): FeeBreakdown {
-  // The minimum exists to cover Stripe's flat 30c on small rentals, but it
-  // must never exceed the rental itself — a $1 item would otherwise carry a
-  // $1.50 fee.
-  const platformFeeCents = Math.min(
-    baseCents,
-    Math.max(applyBps(baseCents, PLATFORM_FEE_BPS), PLATFORM_FEE_MINIMUM_CENTS),
-  );
+export interface FeeInput {
+  baseCents: Cents;
+  garmentValueCents: Cents;
+  /** Optional, set by the lender on the listing. */
+  cleaningFeeCents?: Cents;
+  /** True when she is asking for the piece today. */
+  sameDay?: boolean;
+  /** Overridable so a booking made under an old rule still adds up. */
+  feePaidBy?: FeePaidBy;
+}
 
+/**
+ * Work out who pays what.
+ *
+ * THE RENTER PAYS THE LISTED PRICE. There is no Loane line at checkout.
+ * Loane's 20% comes out of what the lender receives, which is why
+ * `renterTotalCents` does not include the platform fee.
+ *
+ * Two things are deliberately NOT treated the same:
+ *
+ *   cleaning fee     passed through to the lender whole. It reimburses a
+ *                    dry-clean she actually pays for; taking a cut of a
+ *                    cost is not a cut of revenue.
+ *   same-day premium split 80/20 like the rental. She is being asked to
+ *                    drop everything and drive, so she gets the bulk, but
+ *                    it is genuinely extra earnings rather than a cost.
+ *
+ * `feePaidBy` still supports the old renter-pays and split rules, because
+ * every booking stores its own breakdown and one made in September must
+ * still reconcile today.
+ */
+export function calculateFees(input: FeeInput): FeeBreakdown {
+  const {
+    baseCents,
+    garmentValueCents,
+    cleaningFeeCents = 0,
+    sameDay = false,
+    feePaidBy = PLATFORM_FEE_PAID_BY,
+  } = input;
+
+  const sameDayPremiumCents = sameDay ? applyBps(baseCents, SAME_DAY_PREMIUM_BPS) : 0;
+
+  // Everything Loane takes a cut of. Cleaning is excluded on purpose.
+  const commissionable = baseCents + sameDayPremiumCents;
+  const platformFeeCents = applyBps(commissionable, PLATFORM_FEE_BPS);
   const liabilityCapCents = applyBps(garmentValueCents, LIABILITY_CAP_BPS);
 
   let renterTotalCents: Cents;
   let lenderPayoutCents: Cents;
 
   switch (feePaidBy) {
-    case 'renter':
-      renterTotalCents = baseCents + platformFeeCents;
-      lenderPayoutCents = baseCents;
-      break;
     case 'lender':
-      renterTotalCents = baseCents;
-      lenderPayoutCents = baseCents - platformFeeCents;
+      // Today's rule. She pays what the listing says, plus the lender's
+      // own cleaning charge; the fee is invisible to her.
+      renterTotalCents = commissionable + cleaningFeeCents;
+      lenderPayoutCents = renterTotalCents - platformFeeCents;
+      break;
+    case 'renter':
+      renterTotalCents = commissionable + cleaningFeeCents + platformFeeCents;
+      lenderPayoutCents = commissionable + cleaningFeeCents;
       break;
     case 'split': {
-      // The odd cent goes to the renter's side, deliberately and always, so
-      // that renterTotal - fee === lenderPayout holds exactly.
+      // The odd cent goes to the renter's side, deliberately and always,
+      // so that renterTotal - lenderPayout === platformFee exactly.
       const half = Math.round(platformFeeCents / 2);
-      renterTotalCents = baseCents + half;
-      lenderPayoutCents = baseCents - (platformFeeCents - half);
+      renterTotalCents = commissionable + cleaningFeeCents + half;
+      lenderPayoutCents = commissionable + cleaningFeeCents - (platformFeeCents - half);
       break;
     }
   }
 
   return {
     baseCents,
+    cleaningFeeCents,
+    sameDayPremiumCents,
     platformFeeCents,
     renterTotalCents,
     lenderPayoutCents,
     liabilityCapCents,
     feePaidBy,
   };
+}
+
+/**
+ * The price for a given rental length.
+ *
+ * One place, because `days === 7 ? seven : three` was written in two
+ * files and both would have quietly charged a one-day rental the
+ * three-day price the moment that option existed.
+ */
+export function priceForDuration(
+  pricing: { oneDayCents: Cents | null; threeDayCents: Cents | null; sevenDayCents: Cents | null },
+  days: number,
+): Cents | null {
+  if (days === 1) return pricing.oneDayCents;
+  if (days === 7) return pricing.sevenDayCents;
+  if (days === 3) return pricing.threeDayCents;
+  return null;
 }
 
 // ---------------------------------------------------------------------------

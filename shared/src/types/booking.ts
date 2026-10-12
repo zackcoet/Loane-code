@@ -45,7 +45,11 @@ export interface Booking extends BaseDoc, CampusScoped {
   amounts: {
     /** Rental price or sale price. */
     baseCents: Cents;
-    /** Loane's cut. */
+    /** The lender's cleaning charge. Passed through to her whole. */
+    cleaningFeeCents: Cents;
+    /** Paid to get the piece today. Splits 80/20 like the rental. */
+    sameDayPremiumCents: Cents;
+    /** Loane's cut. Taken from the lender, invisible to the renter. */
     platformFeeCents: Cents;
     /** What the renter is charged. */
     renterTotalCents: Cents;

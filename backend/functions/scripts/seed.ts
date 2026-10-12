@@ -35,6 +35,7 @@ import {
   SIZES,
   addDays,
   calculateFees,
+  priceForDuration,
   newBookingPayment,
   ids,
   type Booking,
@@ -876,11 +877,18 @@ async function main(): Promise<void> {
         intent,
         status: 'active',
         pricing: {
+          // An overnight is cheaper than three days but not a third of
+          // it — the lender still loses the piece for a weekend either
+          // way. 0.7x is the usual shape.
+          oneDayCents: item.rent != null ? Math.round(item.rent * 0.7) * 100 : null,
           threeDayCents: item.rent != null ? item.rent * 100 : null,
           // A week is worth more than two three-day rentals to a lender,
           // but less than double to a renter. 1.6x is the usual shape.
           sevenDayCents: item.rent != null ? Math.round(item.rent * 1.6) * 100 : null,
         },
+        // Roughly a third of closets charge for cleaning, so the seed
+        // has both kinds to look at.
+        cleaningFeeCents: item.rent != null && cursor % 3 === 0 ? 800 : null,
         salePriceCents: item.sale != null ? item.sale * 100 : null,
         garmentValueCents: item.value * 100,
         // MVP: every request needs the lender's approval.
@@ -1055,9 +1063,12 @@ async function main(): Promise<void> {
     const startDate = start.toISOString().slice(0, 10);
     const endDate = addDays(startDate, plan.days);
 
-    const baseCents =
-      (plan.days === 7 ? listing.pricing.sevenDayCents : listing.pricing.threeDayCents) ?? 2500;
-    const amounts = calculateFees(baseCents, listing.garmentValueCents);
+    const baseCents = priceForDuration(listing.pricing, plan.days) ?? 2500;
+    const amounts = calculateFees({
+      baseCents,
+      garmentValueCents: listing.garmentValueCents,
+      cleaningFeeCents: listing.cleaningFeeCents ?? 0,
+    });
 
     const ref = db.collection(COLLECTIONS.bookings).doc();
     const handedOver = ['with_renter', 'returned', 'completed', 'disputed'].includes(plan.status);

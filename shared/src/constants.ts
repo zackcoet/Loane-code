@@ -123,7 +123,13 @@ export const CONDITIONS = ['new_with_tags', 'like_new', 'good', 'well_loved'] as
 export type Condition = (typeof CONDITIONS)[number];
 
 /** The only two rental durations we support at MVP. */
-export const RENTAL_DURATIONS = [3, 7] as const;
+/**
+ * How long a piece can go out for.
+ *
+ * One day was added for the overnight case — a date function, one party —
+ * which is most of what a campus actually rents for.
+ */
+export const RENTAL_DURATIONS = [1, 3, 7] as const;
 export type RentalDuration = (typeof RENTAL_DURATIONS)[number];
 
 // ---------------------------------------------------------------------------
@@ -226,12 +232,16 @@ export const TERMINAL_BOOKING_STATUSES: readonly BookingStatus[] = [
 ];
 
 /**
- * How long a lender has to answer a request.
+ * How long a lender or seller has to answer a request.
  *
- * 48 hours, or the day before the rental starts, whichever comes first —
+ * 24 hours, or the day before the rental starts, whichever comes first —
  * a request for this Saturday should not sit unanswered until Saturday.
+ *
+ * Was 48. Ella's call: a day is long enough to be fair to someone with
+ * classes, and two days is long enough for the renter to find something
+ * else and stop caring.
  */
-export const REQUEST_EXPIRY_HOURS = 48;
+export const REQUEST_EXPIRY_HOURS = 24;
 
 /**
  * How long after a return the lender has to flag a problem.
@@ -562,29 +572,27 @@ export const RESERVED_USERNAMES = [
 export const CURRENCY = 'usd' as const;
 
 /**
- * Loane's cut of a rental, in basis points (1500 = 15%).
+ * Loane's cut, in basis points (2000 = 20%).
  *
- * Decided in Phase 5: the renter pays it on top of the rental price and the
- * lender receives the full amount she listed. See docs/decisions.md.
+ * THE LENDER PAYS IT, out of what she receives. The renter is charged the
+ * price on the listing and nothing else — no line item, no "Loane fee" at
+ * checkout. She pays $35, the lender receives $28.
  *
- * Every booking still records its own `amounts`, so changing this later
- * never rewrites the history of a booking already made.
+ * This REVERSES the 2026-10-05 decision, which had the renter paying 15%
+ * on top. Ella's call, and it is the Depop shape. See docs/decisions.md
+ * for the argument on both sides, including the one against: a lender who
+ * wants $35 in hand will list at $44, so the prices renters see drift up
+ * even though the checkout looks cleaner.
+ *
+ * No minimum fee any more. One was needed when the renter paid, to cover
+ * Stripe's flat 30c; at 20% off the lender, anything above about $1.75
+ * already clears Stripe, and a floor would take a brutal share of a cheap
+ * rental out of the lender's pocket.
  */
-export const PLATFORM_FEE_BPS = 1500;
+export const PLATFORM_FEE_BPS = 2000;
 
-/**
- * The smallest fee Loane will charge on a booking.
- *
- * Stripe takes 2.9% + 30c of whatever the renter pays. On a $5 rental a
- * percentage-only fee does not cover the flat 30c, so the booking would
- * cost us money to process.
- */
-export const PLATFORM_FEE_MINIMUM_CENTS = 150;
-
-/**
- * Who absorbs the platform fee. The booking records its own copy.
- */
-export const PLATFORM_FEE_PAID_BY = 'renter' as const;
+/** Who absorbs the platform fee. The booking records its own copy. */
+export const PLATFORM_FEE_PAID_BY = 'lender' as const;
 
 /**
  * The most a renter can be charged for damage or non-return, as a share of
@@ -596,6 +604,60 @@ export const PLATFORM_FEE_PAID_BY = 'renter' as const;
  * charged if an admin rules her at fault on a claim.
  */
 export const LIABILITY_CAP_BPS = 10_000;
+
+// ---------------------------------------------------------------------------
+// Same-day rentals
+// ---------------------------------------------------------------------------
+
+/**
+ * What a renter pays on top to get a piece the same day, in basis points
+ * of the rental price. 2500 = 25%.
+ *
+ * It splits 80/20 like the rental itself: the lender is being asked to
+ * drop everything and drive, so she gets the bulk of it.
+ */
+export const SAME_DAY_PREMIUM_BPS = 2500;
+
+/**
+ * How long a lender has to answer a same-day request before it expires.
+ *
+ * TWO HOURS IS ONLY MEANINGFUL WITH PUSH NOTIFICATIONS. Until those land
+ * (they need a development build — Expo Go cannot do push), this window
+ * depends on her happening to open the app, and most same-day requests
+ * will simply expire. The flow is built and correct; it is not yet good.
+ */
+export const SAME_DAY_RESPONSE_HOURS = 2;
+
+// ---------------------------------------------------------------------------
+// Vocabulary
+// ---------------------------------------------------------------------------
+
+/**
+ * The words Loane uses for its own verbs.
+ *
+ * Renting is "Loane It", buying is "Own It", and a piece that is out
+ * right now is "On Loane". Ella's language, and it is half the brand —
+ * the app should not say "rent" anywhere a student can see.
+ *
+ * They live here rather than inline so the vocabulary cannot drift: one
+ * screen saying "Rent" while the rest says "Loane It" is exactly what a
+ * constants file prevents. Grep for "Rent" in the mobile app before
+ * adding a string; if it is user-facing it probably belongs here.
+ */
+export const WORDS = {
+  /** The renting action. Replaces "Rent". */
+  rent: 'Loane It',
+  /** The buying action. Replaces "Buy". */
+  buy: 'Own It',
+  /** The call to action on a piece that is for sale. */
+  buyCta: 'Become the owner',
+  /** What a lender does when she adds a piece. */
+  list: 'Put it on Loane',
+  /** A piece that is out with a renter right now. */
+  out: 'On Loane',
+  /** The section that was called "Rentals". */
+  rentals: 'On Loane',
+} as const;
 
 // ---------------------------------------------------------------------------
 // Authorization lifetime

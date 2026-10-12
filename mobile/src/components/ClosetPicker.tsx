@@ -62,7 +62,7 @@ export function ClosetPicker({ visible, listings, takenIds, onPick, onClose }: P
                     {item.pricing.threeDayCents != null
                       ? `${formatCentsShort(item.pricing.threeDayCents)} · 3 days`
                       : item.salePriceCents != null
-                        ? `${formatCentsShort(item.salePriceCents)} to buy`
+                        ? `${formatCentsShort(item.salePriceCents)} to own`
                         : '—'}
                   </Text>
                 </View>

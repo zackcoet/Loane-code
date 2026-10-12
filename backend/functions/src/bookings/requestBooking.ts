@@ -6,6 +6,7 @@ import {
   COLLECTIONS,
   REQUEST_EXPIRY_HOURS,
   calculateFees,
+  priceForDuration,
   newBookingPayment,
   daysBetween,
   formatRange,
@@ -135,14 +136,20 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
 
       // --- 5. Price and create ---------------------------------------------
       const durationDays = daysBetween(startDate, endDate);
-      const baseCents =
-        durationDays === 7 ? listing.pricing.sevenDayCents : listing.pricing.threeDayCents;
+      const baseCents = priceForDuration(listing.pricing, durationDays);
 
       if (baseCents == null) {
         throw failed(`This piece isn't available for ${durationDays} days.`);
       }
 
-      const amounts = calculateFees(baseCents, listing.garmentValueCents);
+      // The renter is charged the listed price plus the lender's own
+      // cleaning charge. Loane's cut comes out of the lender's side, so
+      // it never appears in what she pays.
+      const amounts = calculateFees({
+        baseCents,
+        garmentValueCents: listing.garmentValueCents,
+        cleaningFeeCents: listing.cleaningFeeCents ?? 0,
+      });
 
       const lenderSnap = await tx.get(db().collection(COLLECTIONS.users).doc(listing.ownerUid));
       if (!lenderSnap.exists) throw notFound('We could not find that closet.');

@@ -148,7 +148,7 @@ function ClosetTile({
       accessibilityRole="button"
       accessibilityLabel={
         price
-          ? `${listing.name}, ${price}${rent != null ? ' for three days' : ' to buy'}`
+          ? `${listing.name}, ${price}${rent != null ? ' for three days' : ' to own'}`
           : listing.name
       }
       style={({ pressed }) => [

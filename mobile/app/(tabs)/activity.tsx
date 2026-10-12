@@ -20,6 +20,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import {
+  WORDS,
   TERMINAL_BOOKING_STATUSES,
   color,
   controls,
@@ -176,9 +177,9 @@ export default function Activity() {
           <Loading />
         ) : nothingAtAll ? (
           <EmptyState
-            title="No rentals yet"
+            title={`Nothing ${WORDS.out} yet`}
             body="Requests on your pieces, and the ones you have asked for, both land here."
-            actionLabel="Find something to rent"
+            actionLabel="Find something to wear"
             onAction={() => router.push('/(tabs)/discover')}
           />
         ) : (

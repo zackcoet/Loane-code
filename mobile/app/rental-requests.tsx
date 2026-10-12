@@ -5,7 +5,7 @@
  *
  * My Rentals shows everything, in every status, for the whole history —
  * which is the right screen for "where is my dress" and the wrong one
- * for "somebody asked to rent my jacket an hour ago". This is only the
+ * for "somebody asked for my jacket an hour ago". This is only the
  * requests: the ones on my pieces that need a yes or no, and mine that
  * are still waiting on somebody else.
  *
@@ -18,6 +18,7 @@ import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
 import {
+  WORDS,
   BOOKING_STATUS_LABELS,
   color,
   formatCentsShort,
@@ -61,7 +62,7 @@ export default function RentalRequests() {
     note:
       incoming.length === 0
         ? 'Nobody has asked to rent one of your pieces right now.'
-        : `${incoming.length} ${incoming.length === 1 ? 'person wants' : 'people want'} to rent from you`,
+        : `${incoming.length} ${incoming.length === 1 ? 'person wants' : 'people want'} something from your closet`,
   });
   incoming.forEach((booking) => rows.push({ kind: 'booking', booking, incoming: true }));
   rows.push({
@@ -76,7 +77,7 @@ export default function RentalRequests() {
 
   return (
     <Screen flush>
-      <Header title="Rental Requests" onBack={() => router.back()} />
+      <Header title="Requests" onBack={() => router.back()} />
 
       {loading ? (
         <View style={styles.loading}>
@@ -86,7 +87,7 @@ export default function RentalRequests() {
         <EmptyState
           title="No requests right now"
           body="Requests on your pieces, and the ones you have sent, both land here."
-          actionLabel="See all your rentals"
+          actionLabel={`See all ${WORDS.rentals}`}
           onAction={() => router.push('/my-rentals')}
         />
       ) : (
@@ -141,7 +142,7 @@ function RequestRow({
       accessibilityRole="button"
       accessibilityLabel={
         incoming
-          ? `${other.displayName} wants to rent ${booking.listing.name}`
+          ? `${other.displayName} wants ${booking.listing.name}`
           : `Your request for ${booking.listing.name}`
       }
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}

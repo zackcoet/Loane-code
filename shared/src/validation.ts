@@ -189,9 +189,11 @@ export interface ListingDraft {
   condition: string | null;
   occasions: Occasion[];
   intent: 'rent' | 'sell' | 'both' | null;
+  oneDayCents: Cents | null;
   threeDayCents: Cents | null;
   sevenDayCents: Cents | null;
   salePriceCents: Cents | null;
+  cleaningFeeCents: Cents | null;
   garmentValueCents: Cents | null;
   photoCount: number;
 }
@@ -240,18 +242,36 @@ export function validateListingDraft(draft: ListingDraft): ValidationResult {
   const sellable = draft.intent === 'sell' || draft.intent === 'both';
 
   if (rentable) {
-    if (draft.threeDayCents == null) return fail('Set a 3-day rental price.');
+    if (draft.oneDayCents == null) return fail('Set a 1-day price.');
+    const one = validatePriceCents(draft.oneDayCents, '1-day price');
+    if (!one.ok) return one;
+
+    if (draft.threeDayCents == null) return fail('Set a 3-day price.');
     const three = validatePriceCents(draft.threeDayCents, '3-day price');
     if (!three.ok) return three;
 
-    if (draft.sevenDayCents == null) return fail('Set a 7-day rental price.');
+    if (draft.sevenDayCents == null) return fail('Set a 7-day price.');
     const seven = validatePriceCents(draft.sevenDayCents, '7-day price');
     if (!seven.ok) return seven;
 
-    // Not a hard rule of the world, but a 7-day price below the 3-day one
-    // is almost always a typo, and it would quietly cost her money.
+    // None of these are hard rules of the world, but a longer rental
+    // priced below a shorter one is almost always a typo, and it would
+    // quietly cost her money on every booking.
+    if (draft.threeDayCents < draft.oneDayCents) {
+      return fail('The 3-day price is lower than the 1-day price. Is that right?');
+    }
     if (draft.sevenDayCents < draft.threeDayCents) {
       return fail('The 7-day price is lower than the 3-day price. Is that right?');
+    }
+  }
+
+  // Optional, but if she sets one it has to be a real amount. A cleaning
+  // fee larger than the rental itself is a typo, not a policy.
+  if (draft.cleaningFeeCents != null) {
+    const cleaning = validatePriceCents(draft.cleaningFeeCents, 'Cleaning fee');
+    if (!cleaning.ok) return cleaning;
+    if (draft.threeDayCents != null && draft.cleaningFeeCents > draft.threeDayCents) {
+      return fail('The cleaning fee is more than the 3-day price. Is that right?');
     }
   }
 

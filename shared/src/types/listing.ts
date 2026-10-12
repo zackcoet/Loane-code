@@ -50,9 +50,20 @@ export interface Listing extends BaseDoc, CampusScoped {
 
   /** Set when intent is "rent" or "both". */
   pricing: {
+    /** Overnight — a date function, one party. The common campus case. */
+    oneDayCents: Cents | null;
     threeDayCents: Cents | null;
     sevenDayCents: Cents | null;
   };
+
+  /**
+   * The lender's optional dry-cleaning charge, added at checkout.
+   *
+   * Passed through to her WHOLE — Loane takes no cut, because this
+   * reimburses a cost rather than being earnings. The renter has to tick
+   * to agree to it before she can request.
+   */
+  cleaningFeeCents: Cents | null;
   /** Set when intent is "sell" or "both". */
   salePriceCents: Cents | null;
   /**

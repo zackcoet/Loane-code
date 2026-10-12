@@ -44,10 +44,13 @@ export interface ListingFormState {
   occasions: Occasion[];
   intent: ListingIntent | null;
   /** Kept as typed text so "12.5" behaves while she is still typing. */
+  oneDay: string;
   threeDay: string;
   sevenDay: string;
   salePrice: string;
   garmentValue: string;
+  /** Optional. Blank means she does not charge for cleaning. */
+  cleaningFee: string;
   photos: FormPhoto[];
   availableNow: boolean;
   blackoutDates: IsoDate[];
@@ -63,10 +66,12 @@ export const EMPTY_FORM: ListingFormState = {
   condition: 'like_new',
   occasions: [],
   intent: null,
+  oneDay: '',
   threeDay: '',
   sevenDay: '',
   salePrice: '',
   garmentValue: '',
+  cleaningFee: '',
   photos: [],
   availableNow: true,
   blackoutDates: [],
@@ -176,10 +181,12 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
       condition: form.condition,
       occasions: form.occasions,
       intent: form.intent,
+      oneDayCents: toCents(form.oneDay),
       threeDayCents: toCents(form.threeDay),
       sevenDayCents: toCents(form.sevenDay),
       salePriceCents: toCents(form.salePrice),
       garmentValueCents: toCents(form.garmentValue),
+      cleaningFeeCents: toCents(form.cleaningFee),
       photoCount: form.photos.length,
     }),
     [form],
@@ -246,9 +253,11 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
           // "Available now" off means it is listed but not bookable yet.
           status: form.availableNow ? ('active' as const) : ('paused' as const),
           pricing: {
+            oneDayCents: rentable ? draft.oneDayCents : null,
             threeDayCents: rentable ? draft.threeDayCents : null,
             sevenDayCents: rentable ? draft.sevenDayCents : null,
           },
+          cleaningFeeCents: rentable ? draft.cleaningFeeCents : null,
           salePriceCents: sellable ? draft.salePriceCents : null,
           garmentValueCents: draft.garmentValueCents ?? 0,
           // MVP: every rental request needs the lender's approval.

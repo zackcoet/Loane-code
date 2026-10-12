@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Alert, Linking, Pressable, StyleSheet, View } from 'react-native';
 import {
+  WORDS,
   BOOKING_STATUS_LABELS,
   LIMITS,
   brand,
@@ -149,8 +150,8 @@ export default function Help() {
         <View style={styles.panel}>
           {bookings.length === 0 && !renting.loading && !lending.loading ? (
             <EmptyState
-              title="No rentals yet"
-              body="Your Renting and Lending history will appear here."
+              title={`Nothing ${WORDS.out} yet`}
+              body={`Your Renting and Lending history will appear here.`}
             />
           ) : (
             <View style={styles.stack}>
