@@ -17,7 +17,7 @@ import { color, fontSize, radius, spacing } from '@loane/shared';
 
 type Tokens = Record<string, unknown>;
 
-/** { text: { primary: '#111' } } -> { 'text-primary': '#111' } */
+/** { text: { primary: '#231619' } } -> { 'text-primary': '#231619' } */
 function flatten(input: Tokens, prefix = ''): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [key, value] of Object.entries(input)) {

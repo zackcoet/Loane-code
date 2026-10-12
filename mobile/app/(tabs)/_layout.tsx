@@ -14,8 +14,7 @@
 
 import { Tabs } from 'expo-router';
 import { Image, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { color, iconSize, radius, type } from '@loane/shared';
+import { color, fontFamilyFor, iconSize, radius, type } from '@loane/shared';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useUnreadCount } from '../../src/hooks/useNotifications';
 import { SuspendedBanner } from '../../src/components/SuspendedBanner';
@@ -87,22 +86,6 @@ export default function TabsLayout() {
   // only nudge that something needs an answer.
   const unread = useUnreadCount();
 
-  /**
-   * How much of the home-indicator area the bar keeps as padding.
-   *
-   * React Navigation reserves the WHOLE inset — 34pt on a notched
-   * iPhone — below the icons. Measured on an iPhone 17 Pro that left the
-   * icons at 796-824pt with 50pt of empty white beneath them: more than
-   * half the bar doing nothing, which reads as a second blank bar under
-   * the real one.
-   *
-   * Giving back 16pt of it drops the icons without crowding the
-   * indicator, which still has ~20pt of clearance. Max(10) keeps a
-   * sensible gap on a phone with a home button, where the inset is 0.
-   */
-  const insets = useSafeAreaInsets();
-  const bottomPad = Math.max(10, insets.bottom - 16);
-
   return (
     <>
       <SuspendedBanner />
@@ -111,10 +94,7 @@ export default function TabsLayout() {
           headerShown: false,
           tabBarActiveTintColor: color.icon.default,
           tabBarInactiveTintColor: color.text.muted,
-          tabBarStyle: [
-            styles.bar,
-            { height: TAB_BAR_ROW_HEIGHT + bottomPad, paddingBottom: bottomPad },
-          ],
+          tabBarStyle: [styles.bar, { height: TAB_BAR_ROW_HEIGHT, paddingBottom: 0 }],
           tabBarShowLabel: false,
         }}
       >
@@ -227,6 +207,7 @@ const styles = StyleSheet.create({
   avatarRingActive: { borderColor: color.icon.default },
   avatarImage: { width: '100%', height: '100%', borderRadius: radius.pill },
   badge: {
+    fontFamily: fontFamilyFor('500'),
     backgroundColor: color.role.shared.background,
     color: color.role.shared.label,
     fontSize: type.caption.size,

@@ -12,14 +12,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  collection,
-  limit,
-  onSnapshot,
-  orderBy,
-  query,
-  where,
-} from 'firebase/firestore';
+import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { COLLECTIONS, LIMITS, type Comment } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
@@ -145,8 +138,7 @@ export function useComments(postId: string | undefined) {
    */
   const canDelete = useCallback(
     (comment: Comment, postAuthorUid: string | undefined) =>
-      Boolean(profile) &&
-      (comment.authorUid === profile?.uid || postAuthorUid === profile?.uid),
+      Boolean(profile) && (comment.authorUid === profile?.uid || postAuthorUid === profile?.uid),
     [profile],
   );
 

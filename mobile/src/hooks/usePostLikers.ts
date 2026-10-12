@@ -11,15 +11,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import {
-  collection,
-  documentId,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  where,
-} from 'firebase/firestore';
+import { collection, documentId, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { COLLECTIONS, type Like, type User, type UserSummary } from '@loane/shared';
 import { db } from '../firebase/config';
 

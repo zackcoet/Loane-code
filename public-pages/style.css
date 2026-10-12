@@ -1,13 +1,43 @@
+/*
+ * The public Terms and Privacy pages on joinloane.com.
+ *
+ * These are the only Loane anyone sees without an account — App Store
+ * review reads them, and so does a student deciding whether this is a
+ * real company. They were Helvetica on pure white with grey greys,
+ * which is nobody's brand.
+ *
+ * Every value here mirrors shared/src/tokens.ts. There is no build step
+ * on this folder, so it cannot import them; if a token changes, change
+ * it here too. The hexes are named in comments for exactly that reason.
+ */
+
+:root {
+  --cream: #f6efe4; /* palette.cream — the band */
+  --merlot: #5e1a2e; /* palette.merlot — headings */
+  --ink: #231619; /* palette.ink900 — body, warm near-black */
+  --ink-muted: #6b5e52; /* palette.ink600 */
+  --hairline: #e2d8c8; /* palette.grey200 */
+  --white: #ffffff;
+}
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  background: #ffffff;
-  color: #111111;
-  font-family: Helvetica, Arial, sans-serif;
-  line-height: 1.55;
+  background: var(--white);
+  color: var(--ink);
+  /* Figtree and DM Serif Display, the app's faces. The stack falls back
+     to the system sans if Google Fonts is blocked, which is better than
+     a blank page on a legal document. */
+  font-family:
+    Figtree,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    sans-serif;
+  line-height: 1.6;
 }
 
 .page {
@@ -17,7 +47,7 @@ body {
 }
 
 .home {
-  color: #111111;
+  color: var(--merlot);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 3px;
@@ -26,16 +56,24 @@ body {
 
 .label,
 .meta {
-  color: #6b6b6b;
+  color: var(--ink-muted);
   font-size: 12px;
   letter-spacing: 1.2px;
   text-transform: uppercase;
 }
 
+h1,
+h2 {
+  color: var(--merlot);
+}
+
 h1 {
   margin: 20px 0 6px;
+  /* The serif, as on the app's own headlines. */
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-weight: 400;
   font-size: clamp(32px, 6vw, 52px);
-  line-height: 1;
+  line-height: 1.1;
 }
 
 .content {
@@ -49,6 +87,8 @@ h1 {
 
 .content h2 {
   margin: 28px 0 8px;
+  font-family: Figtree, sans-serif;
+  font-weight: 700;
   font-size: 20px;
 }
 
@@ -57,12 +97,15 @@ h1 {
 }
 
 .content a {
-  color: #111111;
+  color: var(--merlot);
 }
 
+/* A cream band, the way the app uses it: to set a block apart rather
+   than to fill a page. */
 pre {
   white-space: pre-wrap;
-  border: 1px solid #e5e5e5;
-  padding: 10px;
+  background: var(--cream);
+  border: 1px solid var(--hairline);
+  padding: 14px;
   overflow-x: auto;
 }

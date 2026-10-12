@@ -17,7 +17,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { brand, color, controls, radius, spacing } from '@loane/shared';
+import { color, controls, radius, spacing } from '@loane/shared';
 import { CampusChip } from '../../src/components/CampusChip';
 import { EmptyState } from '../../src/components/EmptyState';
 import { IconButton } from '../../src/components/IconButton';
@@ -100,22 +100,7 @@ export default function Feed() {
         <CampusChip />
       </View>
 
-      {/* The serif gets the brand's own line, with the toggle beside
-          it — a headline and a control on one row, from the mockup. */}
       <View style={styles.titleRow}>
-        {/* One line, always. The headline and the toggle share a row,
-            so on a small phone the type shrinks rather than wrapping
-            and shoving the toggle down. */}
-        <Text
-          variant="display"
-          tone="heading"
-          style={styles.title}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.65}
-        >
-          {brand.taglines.primary}
-        </Text>
         <View style={styles.toggle}>
           {(
             [
@@ -245,12 +230,10 @@ const styles = StyleSheet.create({
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.md,
+    justifyContent: 'flex-end',
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.lg,
   },
-  title: { flex: 1 },
   // A cream track with a merlot pill sliding in it.
   toggle: {
     flexShrink: 0,

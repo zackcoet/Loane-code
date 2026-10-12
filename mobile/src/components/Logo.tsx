@@ -84,6 +84,9 @@ export function Logo({ size = 96, lockup = 'auto', tint = color.icon.default }: 
               key={letter}
               style={[
                 styles.letter,
+                // Size only; styles.letter carries the family. The mark
+                // scales with `diameter`, so these cannot be constants.
+                // eslint-disable-next-line no-restricted-syntax
                 { fontSize: diameter * 0.3, lineHeight: diameter * 0.36, color: tint },
               ]}
             >
@@ -100,7 +103,14 @@ export function Logo({ size = 96, lockup = 'auto', tint = color.icon.default }: 
   return (
     <View style={styles.stack}>
       {mark}
-      <Text style={[styles.wordmarkBelow, { fontSize: Math.max(11, diameter * 0.4), color: tint }]}>
+      <Text
+        style={[
+          styles.wordmarkBelow,
+          // Size only; styles.wordmarkBelow carries the family.
+          // eslint-disable-next-line no-restricted-syntax
+          { fontSize: Math.max(11, diameter * 0.4), color: tint },
+        ]}
+      >
         LOANE
       </Text>
     </View>

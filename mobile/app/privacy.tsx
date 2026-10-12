@@ -8,7 +8,7 @@
 
 import { useRouter } from 'expo-router';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { brand, color, spacing, type } from '@loane/shared';
+import { fonts, fontFamilyFor, brand, color, spacing, type } from '@loane/shared';
 import { Screen } from '../src/components/Screen';
 import { Header } from '../src/components/Header';
 
@@ -65,14 +65,21 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
-  cardTitle: { fontSize: type.body.size, fontWeight: '600', color: color.text.primary },
+  cardTitle: {
+    fontFamily: fontFamilyFor('600'),
+    fontSize: type.body.size,
+    fontWeight: '600',
+    color: color.text.primary,
+  },
   cardBody: {
+    fontFamily: fonts.body,
     fontSize: type.bodySmall.size,
     lineHeight: type.bodySmall.lineHeight,
     color: color.text.secondary,
     marginTop: 4,
   },
   link: {
+    fontFamily: fonts.body,
     marginTop: spacing.lg,
     fontSize: type.body.size,
     color: color.text.primary,

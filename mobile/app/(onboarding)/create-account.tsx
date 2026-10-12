@@ -27,6 +27,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
+  fonts,
   LIMITS,
   color,
   spacing,
@@ -224,6 +225,7 @@ const styles = StyleSheet.create({
   explainer: { marginBottom: spacing.xl },
   footer: { paddingTop: spacing.xl },
   altRow: {
+    fontFamily: fonts.body,
     textAlign: 'center',
     fontSize: type.bodySmall.size,
     color: color.text.secondary,

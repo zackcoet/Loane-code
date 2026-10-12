@@ -8,7 +8,7 @@
  */
 
 import { ActionSheetIOS, Alert, Image, Platform, Pressable, StyleSheet, View } from 'react-native';
-import { color, controls, spacing, type } from '@loane/shared';
+import { fontFamilyFor, color, controls, spacing, type } from '@loane/shared';
 import { Text } from './Text';
 
 export interface GridPhoto {
@@ -134,5 +134,5 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   addBusy: { opacity: 0.6 },
-  label: { fontSize: type.caption.size },
+  label: { fontFamily: fontFamilyFor('500'), fontSize: type.caption.size },
 });

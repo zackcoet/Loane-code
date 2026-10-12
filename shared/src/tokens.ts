@@ -4,7 +4,7 @@
  *
  * TWO LAYERS, on purpose.
  *
- *   palette   what a colour IS.      palette.ink900 = '#111111'
+ *   palette   what a colour IS.      palette.ink900 = '#231619'
  *   color     what a colour is FOR.  color.text.primary = palette.ink900
  *
  * Screens only ever touch the second layer. That way "make the borders a

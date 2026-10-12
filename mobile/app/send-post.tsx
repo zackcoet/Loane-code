@@ -24,7 +24,16 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { LIMITS, color, controls, radius, spacing, type, type UserSummary } from '@loane/shared';
+import {
+  fonts,
+  LIMITS,
+  color,
+  controls,
+  radius,
+  spacing,
+  type,
+  type UserSummary,
+} from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { Button } from '../src/components/Button';
 import { EmptyState } from '../src/components/EmptyState';
@@ -233,7 +242,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: color.surface.muted,
   },
-  search: { flex: 1, fontSize: type.bodySmall.size, color: color.text.primary },
+  search: {
+    fontFamily: fonts.body,
+    flex: 1,
+    fontSize: type.bodySmall.size,
+    color: color.text.primary,
+  },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
   person: {
@@ -262,6 +276,7 @@ const styles = StyleSheet.create({
     borderTopColor: color.border.default,
   },
   note: {
+    fontFamily: fonts.body,
     minHeight: controls.minTapTarget,
     paddingHorizontal: spacing.md,
     borderWidth: 1,

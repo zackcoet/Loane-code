@@ -13,7 +13,7 @@
  */
 
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { color, controls, radius, spacing, type } from '@loane/shared';
+import { fonts, color, controls, radius, spacing, type } from '@loane/shared';
 import { useCampus } from '../hooks/useCampus';
 
 export function CampusChip({ onPress }: { onPress?: () => void }) {
@@ -49,6 +49,7 @@ const styles = StyleSheet.create({
   },
   dot: { width: 14, height: 14, borderRadius: 7, marginRight: spacing.sm },
   text: {
+    fontFamily: fonts.body,
     flexShrink: 1,
     fontSize: type.bodySmall.size,
     color: color.text.primary,

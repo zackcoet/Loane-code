@@ -15,7 +15,7 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { color, controls, radius, spacing, type, type UserSummary } from '@loane/shared';
+import { fonts, color, controls, radius, spacing, type, type UserSummary } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
@@ -150,7 +150,12 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: color.surface.muted,
   },
-  search: { flex: 1, fontSize: type.bodySmall.size, color: color.text.primary },
+  search: {
+    fontFamily: fonts.body,
+    flex: 1,
+    fontSize: type.bodySmall.size,
+    color: color.text.primary,
+  },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
   sectionLabel: { paddingVertical: spacing.sm },

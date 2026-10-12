@@ -21,6 +21,7 @@ import { useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { signInWithCustomToken } from 'firebase/auth';
 import {
+  fonts,
   color,
   normalizeUsername,
   spacing,
@@ -239,6 +240,7 @@ const styles = StyleSheet.create({
   explainer: { marginTop: spacing.sm, marginBottom: spacing.xl },
   footer: { paddingBottom: spacing.xxxl },
   finePrint: {
+    fontFamily: fonts.body,
     marginBottom: spacing.md,
     color: color.text.secondary,
     textAlign: 'center',
@@ -246,6 +248,7 @@ const styles = StyleSheet.create({
     lineHeight: typography.caption.lineHeight,
   },
   link: {
+    fontFamily: fonts.body,
     color: color.text.primary,
     fontSize: typography.caption.size,
     lineHeight: typography.caption.lineHeight,

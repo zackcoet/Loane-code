@@ -23,6 +23,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import {
+  fonts,
   OCCASIONS,
   OCCASION_LABELS,
   type Occasion,
@@ -343,6 +344,7 @@ const styles = StyleSheet.create({
   },
   searchGlyph: { marginRight: spacing.sm },
   searchInput: {
+    fontFamily: fonts.body,
     flex: 1,
     fontSize: type.bodySmall.size,
     color: color.text.primary,

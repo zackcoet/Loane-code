@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { color, iconSize, radius, spacing, type } from '@loane/shared';
+import { fonts, fontFamilyFor, color, iconSize, radius, spacing, type } from '@loane/shared';
 import { Icon, type IconName } from '../src/components/Icon';
 import { Logo } from '../src/components/Logo';
 import { usePostDraft } from '../src/post/postDraft';
@@ -125,6 +125,7 @@ const styles = StyleSheet.create({
   spacer: { width: 32, alignItems: 'flex-end' },
   center: { flex: 1, alignItems: 'center' },
   kicker: {
+    fontFamily: fontFamilyFor('500'),
     marginTop: spacing.sm,
     fontSize: type.label.size,
     letterSpacing: type.label.letterSpacing,
@@ -154,10 +155,16 @@ const styles = StyleSheet.create({
   },
   optionText: { flex: 1 },
   optionTitle: {
+    fontFamily: fontFamilyFor('500'),
     fontSize: type.label.size,
     letterSpacing: type.label.letterSpacing,
     textTransform: 'uppercase',
     color: color.text.primary,
   },
-  optionBody: { fontSize: type.bodySmall.size, color: color.text.secondary, marginTop: 4 },
+  optionBody: {
+    fontFamily: fonts.body,
+    fontSize: type.bodySmall.size,
+    color: color.text.secondary,
+    marginTop: 4,
+  },
 });

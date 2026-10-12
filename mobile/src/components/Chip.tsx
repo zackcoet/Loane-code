@@ -9,7 +9,7 @@
  */
 
 import { Pressable, StyleSheet, Text } from 'react-native';
-import { color, controls, radius, spacing, type } from '@loane/shared';
+import { fonts, color, controls, radius, spacing, type } from '@loane/shared';
 
 interface Props {
   label: string;
@@ -49,6 +49,6 @@ const styles = StyleSheet.create({
     backgroundColor: color.role.shared.background,
     borderColor: color.role.shared.border,
   },
-  text: { fontSize: type.bodySmall.size, color: color.text.primary },
+  text: { fontFamily: fonts.body, fontSize: type.bodySmall.size, color: color.text.primary },
   textActive: { color: color.role.shared.label },
 });

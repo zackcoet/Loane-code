@@ -9,7 +9,7 @@
 
 import { StyleSheet, Switch, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { color, controls, spacing, type } from '@loane/shared';
+import { fonts, color, controls, spacing, type } from '@loane/shared';
 import { Screen } from '../src/components/Screen';
 import { Header } from '../src/components/Header';
 import { useUserSettings } from '../src/hooks/useUserSettings';
@@ -85,7 +85,12 @@ const styles = StyleSheet.create({
     borderTopColor: color.border.default,
   },
   rowText: { flex: 1, marginRight: spacing.md },
-  label: { fontSize: type.body.size, color: color.text.primary },
+  label: { fontFamily: fonts.body, fontSize: type.body.size, color: color.text.primary },
   labelDisabled: { color: color.text.muted },
-  help: { fontSize: type.bodySmall.size, color: color.text.muted, marginTop: 2 },
+  help: {
+    fontFamily: fonts.body,
+    fontSize: type.bodySmall.size,
+    color: color.text.muted,
+    marginTop: 2,
+  },
 });

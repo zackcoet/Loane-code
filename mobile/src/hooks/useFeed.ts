@@ -8,11 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
-import {
-  COLLECTIONS,
-  type Listing,
-  type Post,
-} from '@loane/shared';
+import { COLLECTIONS, type Listing, type Post } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 

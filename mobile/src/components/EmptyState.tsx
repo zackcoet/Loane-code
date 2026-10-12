@@ -56,6 +56,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   body: {
+    fontFamily: fonts.body,
     marginTop: spacing.md,
     fontSize: type.body.size,
     lineHeight: type.body.lineHeight,

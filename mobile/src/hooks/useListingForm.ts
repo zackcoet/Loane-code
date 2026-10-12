@@ -30,8 +30,7 @@ import { cropToSquare, uploadListingPhoto, type PickedPhoto } from '../lib/photo
 
 /** Photos in the form are either freshly picked or already uploaded. */
 export type FormPhoto =
-  | { kind: 'local'; picked: PickedPhoto }
-  | { kind: 'uploaded'; ref: ImageRef };
+  { kind: 'local'; picked: PickedPhoto } | { kind: 'uploaded'; ref: ImageRef };
 
 export interface ListingFormState {
   name: string;
@@ -105,10 +104,13 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
     setError(null);
   }, []);
 
-  const set = useCallback(<K extends keyof ListingFormState>(key: K, value: ListingFormState[K]) => {
-    setForm((current) => ({ ...current, [key]: value }));
-    setError(null);
-  }, []);
+  const set = useCallback(
+    <K extends keyof ListingFormState>(key: K, value: ListingFormState[K]) => {
+      setForm((current) => ({ ...current, [key]: value }));
+      setError(null);
+    },
+    [],
+  );
 
   const toggleOccasion = useCallback((occasion: Occasion) => {
     setForm((current) => ({

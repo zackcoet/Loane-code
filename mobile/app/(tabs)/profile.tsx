@@ -7,7 +7,7 @@
 
 import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { color, controls, spacing, type } from '@loane/shared';
+import { fontFamilyFor, color, controls, spacing, type } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { EmptyState } from '../../src/components/EmptyState';
 import { IconButton } from '../../src/components/IconButton';
@@ -127,6 +127,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: controls.minTapTarget * 2,
   },
   handle: {
+    fontFamily: fontFamilyFor('500'),
     textAlign: 'center',
     fontSize: type.label.size,
     letterSpacing: type.label.letterSpacing,

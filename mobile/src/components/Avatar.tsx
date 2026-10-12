@@ -3,7 +3,7 @@
  */
 
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { color } from '@loane/shared';
+import { color, fontFamilyFor } from '@loane/shared';
 
 interface Props {
   url?: string | null;
@@ -23,7 +23,17 @@ export function Avatar({ url, name, size = 48 }: Props) {
 
   return (
     <View style={[styles.base, styles.fallback, shape]}>
-      <Text style={[styles.initial, { fontSize: size * 0.4 }]}>{initial || '·'}</Text>
+      <Text
+        style={[
+          styles.initial,
+          // Size only; styles.initial carries the family. An avatar's
+          // letter scales with its circle, so this cannot be a constant.
+          // eslint-disable-next-line no-restricted-syntax
+          { fontSize: size * 0.4 },
+        ]}
+      >
+        {initial || '·'}
+      </Text>
     </View>
   );
 }
@@ -31,5 +41,5 @@ export function Avatar({ url, name, size = 48 }: Props) {
 const styles = StyleSheet.create({
   base: { backgroundColor: color.surface.muted, borderWidth: 1, borderColor: color.border.default },
   fallback: { alignItems: 'center', justifyContent: 'center' },
-  initial: { color: color.text.muted, fontWeight: '500' },
+  initial: { fontFamily: fontFamilyFor('500'), color: color.text.muted, fontWeight: '500' },
 });

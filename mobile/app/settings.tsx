@@ -11,6 +11,7 @@ import { useRouter, type Href } from 'expo-router';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { signOut } from 'firebase/auth';
 import {
+  fonts,
   color,
   controls,
   iconSize,
@@ -142,9 +143,19 @@ const styles = StyleSheet.create({
   },
   rowPressed: { backgroundColor: color.surface.muted },
   rowRight: { flexDirection: 'row', alignItems: 'center', flexShrink: 1, marginLeft: spacing.md },
-  label: { fontSize: typography.body.size, color: color.text.primary },
-  value: { flexShrink: 1, fontSize: typography.bodySmall.size, color: color.text.muted },
-  chevron: { fontSize: iconSize.sm, color: color.text.muted, marginLeft: spacing.sm },
+  label: { fontFamily: fonts.body, fontSize: typography.body.size, color: color.text.primary },
+  value: {
+    fontFamily: fonts.body,
+    flexShrink: 1,
+    fontSize: typography.bodySmall.size,
+    color: color.text.muted,
+  },
+  chevron: {
+    fontFamily: fonts.body,
+    fontSize: iconSize.sm,
+    color: color.text.muted,
+    marginLeft: spacing.sm,
+  },
   logOut: {
     marginTop: spacing.lg,
     borderTopWidth: StyleSheet.hairlineWidth,

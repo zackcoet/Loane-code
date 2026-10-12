@@ -6,14 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import {
-  collection,
-  documentId,
-  getDocs,
-  onSnapshot,
-  query,
-  where,
-} from 'firebase/firestore';
+import { collection, documentId, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import { COLLECTIONS, type Follow, type User, type UserSummary } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';

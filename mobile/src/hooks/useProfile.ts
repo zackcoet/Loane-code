@@ -13,13 +13,7 @@ import {
   query,
   where,
 } from 'firebase/firestore';
-import {
-  COLLECTIONS,
-  type Listing,
-  type Post,
-  type User,
-  ids,
-} from '@loane/shared';
+import { COLLECTIONS, type Listing, type Post, type User, ids } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 

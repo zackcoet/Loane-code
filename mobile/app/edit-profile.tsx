@@ -24,6 +24,7 @@ import {
 } from 'react-native';
 import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import {
+  fonts,
   COLLECTIONS,
   LIMITS,
   SHOE_SIZES,
@@ -297,6 +298,7 @@ const styles = StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
   photoBlock: { alignItems: 'center', marginBottom: spacing.xl },
   photoAction: {
+    fontFamily: fonts.body,
     marginTop: spacing.md,
     fontSize: type.bodySmall.size,
     color: color.text.primary,
@@ -307,12 +309,18 @@ const styles = StyleSheet.create({
   sizeHelp: { marginTop: spacing.xs, marginBottom: spacing.md },
   sizeGroup: { marginBottom: spacing.lg },
   sizeLabel: {
+    fontFamily: fonts.body,
     fontSize: type.bodySmall.size,
     color: color.text.secondary,
     marginBottom: spacing.sm,
   },
   sizeScroll: { flexGrow: 0, flexShrink: 0 },
   sizeRow: { gap: spacing.sm, alignItems: 'center', paddingRight: spacing.md },
-  error: { color: color.status.error, fontSize: type.bodySmall.size, marginBottom: spacing.md },
+  error: {
+    fontFamily: fonts.body,
+    color: color.status.error,
+    fontSize: type.bodySmall.size,
+    marginBottom: spacing.md,
+  },
   save: { marginTop: spacing.md, height: controls.buttonHeight },
 });

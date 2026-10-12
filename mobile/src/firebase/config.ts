@@ -71,7 +71,8 @@ function resolveEmulatorHost(): string {
 
 const EMULATOR_HOST = resolveEmulatorHost();
 
-export const app: FirebaseApp = getApps().length > 0 ? getApps()[0]! : initializeApp(firebaseConfig);
+export const app: FirebaseApp =
+  getApps().length > 0 ? getApps()[0]! : initializeApp(firebaseConfig);
 
 function createAuth(): Auth {
   try {

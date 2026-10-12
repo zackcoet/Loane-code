@@ -5,14 +5,8 @@
     "ecmaVersion": 2022,
     "sourceType": "module"
   },
-  "plugins": [
-    "@typescript-eslint"
-  ],
-  "extends": [
-    "eslint:recommended",
-    "plugin:@typescript-eslint/recommended",
-    "prettier"
-  ],
+  "plugins": ["@typescript-eslint"],
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
   "env": {
     "es2022": true,
     "node": true,
@@ -40,10 +34,7 @@
     "no-console": [
       "warn",
       {
-        "allow": [
-          "warn",
-          "error"
-        ]
+        "allow": ["warn", "error"]
       }
     ],
     "eqeqeq": [
@@ -71,19 +62,39 @@
   },
   "overrides": [
     {
-      "files": [
-        "shared/src/tokens.ts"
-      ],
+      "files": ["shared/src/tokens.ts"],
       "rules": {
         "no-restricted-syntax": "off"
       }
     },
     {
-      "files": [
-        "backend/functions/scripts/**"
-      ],
+      "files": ["backend/functions/scripts/**"],
       "rules": {
         "no-restricted-syntax": "off"
+      }
+    },
+    {
+      "files": ["mobile/**/*.tsx", "mobile/**/*.ts"],
+      "rules": {
+        "no-restricted-syntax": [
+          "error",
+          {
+            "selector": "Literal[value=/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/]",
+            "message": "Raw colours are not allowed outside shared/src/tokens.ts. Use a semantic token, e.g. color.text.primary or color.border.default. See docs/design-system.md."
+          },
+          {
+            "selector": "Literal[value=/^\\s*(?:rgba?|hsla?)\\s*\\(/]",
+            "message": "Raw colours are not allowed outside shared/src/tokens.ts \u2014 this rule only caught #hex before, and five rgba() values slipped past it. For a label or backdrop over a photo use color.scrim.onPhoto, color.scrim.behindPanel or color.shadow.textOnPhoto. See docs/design-system.md."
+          },
+          {
+            "selector": "Property[key.name='fontSize'] > Literal",
+            "message": "Raw font sizes are not allowed. Use a token, e.g. type.body.size or fontSize.md. See docs/design-system.md."
+          },
+          {
+            "selector": "ObjectExpression:has(> Property[key.name='fontSize']):not(:has(> Property[key.name='fontFamily']))",
+            "message": "A style with fontSize must also set fontFamily. React Native falls back to the system font SILENTLY for anything it is not told about, so a missing family is a block of San Francisco nobody notices. Use fontFamilyFor(type.x.weight), or fonts.display for the serif. Better still, use the shared <Text> component, which does this for you."
+          }
+        ]
       }
     }
   ]

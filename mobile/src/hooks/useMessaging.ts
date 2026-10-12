@@ -83,9 +83,7 @@ export function useConversation(conversationId: string | undefined) {
     return onSnapshot(
       doc(db, COLLECTIONS.conversations, conversationId),
       (snap) =>
-        setConversation(
-          snap.exists() ? { ...(snap.data() as Conversation), id: snap.id } : null,
-        ),
+        setConversation(snap.exists() ? { ...(snap.data() as Conversation), id: snap.id } : null),
       () => setConversation(null),
     );
   }, [conversationId]);

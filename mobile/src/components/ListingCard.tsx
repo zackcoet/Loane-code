@@ -3,7 +3,16 @@
  */
 
 import { Image, Pressable, StyleSheet, View } from 'react-native';
-import { type Listing, color, formatCentsShort, radius, spacing, type } from '@loane/shared';
+import {
+  fonts,
+  fontFamilyFor,
+  type Listing,
+  color,
+  formatCentsShort,
+  radius,
+  spacing,
+  type,
+} from '@loane/shared';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { useIsSaved } from '../hooks/useSaved';
@@ -93,6 +102,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   name: {
+    fontFamily: fonts.body,
     marginTop: spacing.sm,
     fontSize: type.bodySmall.size,
     color: color.text.primary,
@@ -103,15 +113,22 @@ const styles = StyleSheet.create({
   // one the thing to tap.
   priceTag: { alignSelf: 'flex-start' },
   price: {
+    fontFamily: fontFamilyFor('600'),
     fontSize: type.bodySmall.size,
     fontWeight: '600',
     color: color.text.heading,
   },
   size: {
+    fontFamily: fontFamilyFor('500'),
     marginLeft: spacing.sm,
     fontSize: type.caption.size,
     letterSpacing: type.caption.letterSpacing,
     color: color.text.muted,
   },
-  owner: { fontSize: type.caption.size, color: color.text.muted, marginTop: 2 },
+  owner: {
+    fontFamily: fontFamilyFor('500'),
+    fontSize: type.caption.size,
+    color: color.text.muted,
+    marginTop: 2,
+  },
 });

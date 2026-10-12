@@ -19,8 +19,11 @@ body {
   margin: 0;
   background: var(--white);
   color: var(--loane-text-primary);
+  /* Figtree, the same face as the app. The admin is internal, but a
+     dashboard in Helvetica next to an app in Figtree is still two
+     different products to anyone looking at both. */
   font-family:
-    Helvetica,
+    Figtree,
     -apple-system,
     'Segoe UI',
     Roboto,

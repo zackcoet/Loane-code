@@ -24,6 +24,7 @@ import {
   View,
 } from 'react-native';
 import {
+  fonts,
   LIMITS,
   color,
   controls,
@@ -299,6 +300,7 @@ const styles = StyleSheet.create({
     borderTopColor: color.border.default,
   },
   input: {
+    fontFamily: fonts.body,
     flex: 1,
     minHeight: controls.minTapTarget,
     maxHeight: 120,

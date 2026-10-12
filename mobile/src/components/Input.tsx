@@ -5,7 +5,7 @@
  */
 
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
-import { color, controls, spacing, type, fonts } from '@loane/shared';
+import { fontFamilyFor, color, controls, spacing, type, fonts } from '@loane/shared';
 
 interface Props extends TextInputProps {
   error?: string | null;
@@ -35,6 +35,7 @@ export function Input({ error, label, hint, style, ...inputProps }: Props) {
 const styles = StyleSheet.create({
   wrapper: { marginBottom: spacing.lg },
   label: {
+    fontFamily: fontFamilyFor('500'),
     fontSize: type.label.size,
     letterSpacing: type.label.letterSpacing,
     textTransform: 'uppercase',
@@ -51,6 +52,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   inputError: { borderBottomColor: color.status.error },
-  error: { marginTop: spacing.sm, fontSize: type.bodySmall.size, color: color.status.error },
-  hint: { marginTop: spacing.sm, fontSize: type.bodySmall.size, color: color.text.muted },
+  error: {
+    fontFamily: fonts.body,
+    marginTop: spacing.sm,
+    fontSize: type.bodySmall.size,
+    color: color.status.error,
+  },
+  hint: {
+    fontFamily: fonts.body,
+    marginTop: spacing.sm,
+    fontSize: type.bodySmall.size,
+    color: color.text.muted,
+  },
 });

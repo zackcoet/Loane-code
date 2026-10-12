@@ -6,7 +6,7 @@
 
 import { Link, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import { brand, color, spacing, type, fontFamilyFor } from '@loane/shared';
+import { fonts, brand, color, spacing, type, fontFamilyFor } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { Logo } from '../../src/components/Logo';
 import { Screen } from '../../src/components/Screen';
@@ -47,6 +47,7 @@ const styles = StyleSheet.create({
   },
   footer: { paddingBottom: spacing.xxl },
   signIn: {
+    fontFamily: fonts.body,
     marginTop: spacing.lg,
     textAlign: 'center',
     fontSize: type.bodySmall.size,

@@ -7,7 +7,7 @@ import { Link, useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { color, normalizeEmail, spacing, type, validateEmail } from '@loane/shared';
+import { fonts, color, normalizeEmail, spacing, type, validateEmail } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { Input } from '../../src/components/Input';
 import { Screen } from '../../src/components/Screen';
@@ -129,6 +129,7 @@ const styles = StyleSheet.create({
   caption: { marginTop: spacing.sm, marginBottom: spacing.xl },
   footer: { paddingTop: spacing.xl },
   altRow: {
+    fontFamily: fonts.body,
     textAlign: 'center',
     fontSize: type.bodySmall.size,
     color: color.text.secondary,

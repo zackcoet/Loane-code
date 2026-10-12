@@ -8,8 +8,7 @@
 import { FunctionsError } from 'firebase/functions';
 
 export function callableErrorMessage(error: unknown, fallback: string): string {
-  const raw =
-    error instanceof FunctionsError || error instanceof Error ? error.message : '';
+  const raw = error instanceof FunctionsError || error instanceof Error ? error.message : '';
 
   // Strip a trailing " [400]" / " [already-exists]" style suffix.
   const cleaned = raw.replace(/\s*\[[^\]]+\]\s*$/, '').trim();

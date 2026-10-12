@@ -350,15 +350,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  burstHeart: {
-    fontSize: fontSize['6xl'],
-    lineHeight: 110,
-    color: color.text.inverse,
-    // A shadow so it reads on a pale photo as well as a dark one.
-    textShadowColor: color.shadow.textOnPhoto,
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
-  },
   hint: {
     position: 'absolute',
     left: spacing.md,

@@ -8,11 +8,7 @@
 
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
-import {
-  COLLECTIONS,
-  type Campus,
-  color,
-} from '@loane/shared';
+import { COLLECTIONS, type Campus, color } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 
