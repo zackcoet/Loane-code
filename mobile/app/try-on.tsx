@@ -114,12 +114,16 @@ export default function TryOn() {
     [available, tab],
   );
 
-  // No photo yet: the camera, once. She comes straight back here.
+  /*
+    No photo yet: the chooser, not the camera.
+
+    She may not want to put a photograph of her own body into an app at
+    all, and a model is a perfectly good answer — sending her straight
+    to a viewfinder presumes she has already decided.
+  */
   useEffect(() => {
     if (bodyKind !== 'own') return;
-    if (settings && !bodyPhotoPath) {
-      router.replace({ pathname: '/try-on-camera', params: { next: 'saved' } });
-    }
+    if (settings && !bodyPhotoPath) router.replace('/try-on-body');
   }, [settings, bodyPhotoPath, bodyKind, router]);
 
   // Arriving from a Try on button on a card.
@@ -152,9 +156,11 @@ export default function TryOn() {
         onBack={() => router.back()}
         right={
           <Pressable
-            onPress={() => router.push({ pathname: '/try-on-camera', params: { next: 'saved' } })}
+            // The chooser, not the camera: from here she can swap
+            // between her own photo and a model either way round.
+            onPress={() => router.push('/try-on-body')}
             accessibilityRole="button"
-            accessibilityLabel="Change your photo"
+            accessibilityLabel="Change photo or model"
             style={styles.changePhoto}
           >
             <Text variant="caption" tone="secondary" uppercase={false} style={styles.underline}>

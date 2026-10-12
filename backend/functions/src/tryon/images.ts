@@ -84,13 +84,22 @@ export async function garmentDataUri(ref: ImageRef): Promise<string> {
  */
 export async function presetImageDataUri(presetId: PresetId): Promise<string> {
   try {
-    const file = join(__dirname, '..', '..', 'assets', 'tryon-presets', `${presetId}.jpg`);
+    /*
+      __dirname is backend/functions/lib at runtime (esbuild emits one
+      CJS bundle there), so ONE level up is backend/functions. Two was
+      backend/, which silently found nothing and reported "that body is
+      not available yet" for every preset.
+
+      The folder is deployed because firebase.json's functions `ignore`
+      list does not exclude it.
+    */
+    const file = join(__dirname, '..', 'assets', 'tryon-presets', `${presetId}.jpg`);
     const buffer = await readFile(file);
     return `data:image/jpeg;base64,${buffer.toString('base64')}`;
   } catch {
-    // Until Zack and Ella sign the presets off, these files do not
-    // exist — so this says so plainly rather than looking like a bug.
-    throw internal('That body is not available yet.');
+    // A missing preset file is a deploy mistake, not her mistake.
+    logger.error('Preset image missing', { presetId });
+    throw internal('That model is not available right now.');
   }
 }
 

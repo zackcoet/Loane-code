@@ -1,8 +1,14 @@
-import type { Category } from '../constants';
+import type { Category, TRYON_PRESETS } from '../constants';
 import type { BaseDoc, Timestampish } from './common';
 
-/** Which preset body. Labelled by build only — never a name, never a number. */
-export type PresetId = 'petite' | 'medium' | 'curve';
+/**
+ * Which preset body.
+ *
+ * Derived from TRYON_PRESETS rather than written out again, so adding
+ * a preset is one list and an image — not a type here that drifts out
+ * of step with the list over there.
+ */
+export type PresetId = (typeof TRYON_PRESETS)[number];
 
 /**
  * `tryOns/{tryOnId}` — one generated image.

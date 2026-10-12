@@ -13,7 +13,14 @@
  */
 
 import { useRouter } from 'expo-router';
-import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  type ImageSourcePropType,
+} from 'react-native';
 import {
   TRYON_PRESETS,
   TRYON_PRESET_LABELS,
@@ -30,6 +37,8 @@ import { Icon } from '../src/components/Icon';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useTryOnBody } from '../src/hooks/useTryOn';
+import femalePreset from '../assets/tryon-presets/female.jpg';
+import malePreset from '../assets/tryon-presets/male.jpg';
 
 export default function TryOnBody() {
   const router = useRouter();
@@ -91,7 +100,8 @@ export default function TryOnBody() {
           Or use a model
         </Text>
         <Text variant="bodySmall" tone="muted" uppercase={false} style={styles.hint}>
-          Computer-generated. They depict no real person.
+          Computer-generated. They depict no real person. Everyone shares these, so trying a
+          piece on a model is usually instant.
         </Text>
 
         <View style={styles.presets}>
@@ -111,31 +121,14 @@ export default function TryOnBody() {
 }
 
 function PresetCard({ id, onPress }: { id: PresetId; onPress: () => void }) {
-  /**
-   * The files land in piece 6, once Zack and Ella have signed them off.
-   * Until then the card says so rather than rendering a broken image —
-   * a grey box with a label under it looks like a bug, and this does
-   * not.
-   */
-  const source = PRESET_IMAGES[id];
-
   return (
     <Pressable
-      onPress={source ? onPress : undefined}
-      disabled={!source}
+      onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={TRYON_PRESET_LABELS[id]}
+      accessibilityLabel={`Use the ${TRYON_PRESET_LABELS[id]} model`}
       style={({ pressed }) => [styles.preset, pressed && styles.pressed]}
     >
-      <View style={styles.presetImage}>
-        {source ? (
-          <Image source={source} style={styles.presetImage} resizeMode="cover" />
-        ) : (
-          <Text variant="caption" tone="muted" uppercase={false} style={styles.soon}>
-            Coming soon
-          </Text>
-        )}
-      </View>
+      <Image source={PRESET_IMAGES[id]} style={styles.presetImage} resizeMode="cover" />
       <Text variant="caption" tone="heading">
         {TRYON_PRESET_LABELS[id]}
       </Text>
@@ -144,10 +137,20 @@ function PresetCard({ id, onPress }: { id: PresetId; onPress: () => void }) {
 }
 
 /**
- * Deliberately empty until the presets are approved. One entry per
- * preset goes in here in piece 6 and nothing else changes.
+ * The preset images, bundled.
+ *
+ * ADDING A PRESET IS A LINE HERE, A LINE IN TRYON_PRESETS, AND THE
+ * IMAGE. Nothing else in the app changes — the cards, the cache and
+ * the function all read the list.
+ *
+ * Imported statically, one per preset: React Native's bundler resolves
+ * asset paths at build time, so a path built from a variable would not
+ * be bundled at all.
  */
-const PRESET_IMAGES: Partial<Record<PresetId, number>> = {};
+const PRESET_IMAGES: Record<PresetId, ImageSourcePropType> = {
+  female: femalePreset,
+  male: malePreset,
+};
 
 const styles = StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xxl },

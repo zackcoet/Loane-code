@@ -15,7 +15,7 @@ import { isSharedKey, tryOnCacheKey, type CacheBody } from '../tryon/cacheKey';
  *     of students
  */
 
-const PRESET: CacheBody = { kind: 'preset', presetId: 'medium' };
+const PRESET: CacheBody = { kind: 'preset', presetId: 'female' };
 const MINE: CacheBody = {
   kind: 'own',
   bodyPhotoPath: 'users/uid-ella/tryon/body/me.jpg',
@@ -39,8 +39,8 @@ describe('tryOnCacheKey', () => {
   });
 
   it('differs per preset body', () => {
-    const curve: CacheBody = { kind: 'preset', presetId: 'curve' };
-    expect(tryOnCacheKey(curve, [dress])).not.toBe(tryOnCacheKey(PRESET, [dress]));
+    const male: CacheBody = { kind: 'preset', presetId: 'male' };
+    expect(tryOnCacheKey(male, [dress])).not.toBe(tryOnCacheKey(PRESET, [dress]));
   });
 
   it('differs per garment', () => {
@@ -59,7 +59,7 @@ describe('tryOnCacheKey', () => {
     // so there is no way for a caller to accidentally scope it.
     const key = tryOnCacheKey(PRESET, [dress]);
     expect(JSON.stringify(PRESET)).not.toContain('uid');
-    expect(tryOnCacheKey({ kind: 'preset', presetId: 'medium' }, [dress])).toBe(key);
+    expect(tryOnCacheKey({ kind: 'preset', presetId: 'female' }, [dress])).toBe(key);
   });
 
   it("never collides with somebody else's own-photo key", () => {
