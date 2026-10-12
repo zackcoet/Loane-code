@@ -6,6 +6,9 @@ import { db, now, Timestamp } from '../lib/admin';
 import { requireAdmin } from '../lib/guards';
 import { completeBooking, notify, pieceName } from './transitions';
 
+/** How long before a request expires we nudge the lender. */
+const EXPIRY_NUDGE_HOURS = 6;
+
 /**
  * The clock. Four things happen purely because time passed:
  *
@@ -126,6 +129,39 @@ async function sweep(): Promise<SweepResult> {
       });
     }
 
+    /*
+      THE LENDER'S SIDE OF THE HANDOFF.
+
+      "Starts tomorrow" told her it was coming. This one lands on the
+      morning it has to happen, which is the reminder somebody actually
+      acts on — a rental that falls over usually falls over because one
+      of them forgot the day of.
+    */
+    if (booking.status === 'confirmed' && booking.startDate === today && !sent.dropoffToday) {
+      due.push({
+        key: 'dropoffToday',
+        uid: booking.lenderUid,
+        title: 'Drop off today',
+        body: `${pieceName(booking)} goes to ${booking.renter.displayName} today.`,
+      });
+      due.push({
+        key: 'dropoffToday',
+        uid: booking.renterUid,
+        title: 'Pick up today',
+        body: `${pieceName(booking)} from ${booking.lender.displayName} is yours today.`,
+      });
+    }
+
+    // A day's warning beats finding out on the morning.
+    if (booking.status === 'with_renter' && booking.endDate === tomorrow && !sent.dueTomorrow) {
+      due.push({
+        key: 'dueTomorrow',
+        uid: booking.renterUid,
+        title: 'Due back tomorrow',
+        body: `Return ${pieceName(booking)} to ${booking.lender.displayName} tomorrow.`,
+      });
+    }
+
     if (booking.status === 'with_renter' && booking.endDate === today && !sent.dueToday) {
       due.push({
         key: 'dueToday',
@@ -161,7 +197,10 @@ async function sweep(): Promise<SweepResult> {
     for (const item of due) {
       notify(batch, {
         uid: item.uid,
-        type: item.key === 'dueToday' || item.key === 'overdue' ? 'return_reminder' : 'rental_upcoming',
+        type:
+        item.key === 'dueToday' || item.key === 'dueTomorrow' || item.key === 'overdue'
+          ? 'return_reminder'
+          : 'rental_upcoming',
         title: item.title,
         body: item.body,
         bookingId: doc.id,
@@ -192,6 +231,42 @@ async function sweep(): Promise<SweepResult> {
     oldAlerts.docs.forEach((doc) => batch.delete(doc.ref));
     await batch.commit();
     alertsPurged = oldAlerts.size;
+  }
+
+  /*
+    A REQUEST RUNNING OUT OF TIME.
+
+    She has 24 hours — 2 if it is same-day — and an auto-decline she
+    never saw coming costs the renter her evening and the lender the
+    rental. The nudge goes out when a quarter of the window is left,
+    so it is a prompt rather than an alarm.
+  */
+  const soon = Timestamp.fromMillis(Date.now() + EXPIRY_NUDGE_HOURS * 3600_000);
+  const expiring = await db()
+    .collection(COLLECTIONS.bookings)
+    .where('status', '==', 'requested')
+    .where('expiresAt', '<', soon)
+    .limit(200)
+    .get();
+
+  for (const doc of expiring.docs) {
+    const booking = doc.data() as Booking & { remindersSent?: Record<string, boolean> };
+    if (booking.remindersSent?.expiringSoon) continue;
+
+    const batch = db().batch();
+    notify(batch, {
+      uid: booking.lenderUid,
+      type: 'rental_requested',
+      title: 'A request is about to expire',
+      body: `${booking.renter.displayName} is waiting on ${pieceName(booking)}. Answer before it declines itself.`,
+      bookingId: booking.id,
+    });
+    batch.update(doc.ref, {
+      remindersSent: { ...(booking.remindersSent ?? {}), expiringSoon: true },
+      updatedAt: now(),
+    });
+    await batch.commit();
+    reminders += 1;
   }
 
   if (expired || completed || reminders || alertsPurged) {
