@@ -214,14 +214,21 @@ export default function ClosetCalendar() {
 
             {cal.runs.map((run) => (
               <View key={run.listingId} style={styles.weekRow}>
-                <Text
-                  variant="caption"
-                  numberOfLines={2}
-                  uppercase={false}
+                {/* Tapping the piece opens its blocked dates — the
+                    weekend she wants it herself. This is the screen
+                    where she notices she needs to. */}
+                <Pressable
+                  onPress={() =>
+                    router.push({ pathname: '/blocked-dates', params: { id: run.listingId } })
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel={`Block dates on ${run.name}`}
                   style={styles.pieceLabel}
                 >
-                  {run.name}
-                </Text>
+                  <Text variant="caption" numberOfLines={2} uppercase={false}>
+                    {run.name}
+                  </Text>
+                </Pressable>
                 {fortnight.map((d) => (
                   <View
                     key={d}

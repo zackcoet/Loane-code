@@ -45,9 +45,24 @@ export const propagateProfileChanges = onDocumentUpdated(
       isVerified: after.isVerified,
     };
 
+    /*
+      EVERY COPY, not just the two that render in a grid.
+
+      A username change used to update listings and posts and stop
+      there, so her old handle stayed on her comments and at the top of
+      every chat she was in — the two places a name is read most often.
+      changeUsername carried a TODO saying exactly this.
+
+      Bookings are deliberately NOT rewritten: a completed rental is a
+      record of what happened, and the name on it then is part of that
+      record. A live one shows her current name because it reads the
+      user document.
+    */
     const updated = {
       listings: await rewrite(COLLECTIONS.listings, 'ownerUid', after.uid, { owner: summary }),
       posts: await rewrite(COLLECTIONS.posts, 'authorUid', after.uid, { author: summary }),
+      comments: await rewrite(COLLECTIONS.comments, 'authorUid', after.uid, { author: summary }),
+      conversations: await rewriteConversations(after.uid, summary),
     };
 
     logger.info('Refreshed denormalized profile copies', { uid: after.uid, ...updated });
@@ -55,6 +70,30 @@ export const propagateProfileChanges = onDocumentUpdated(
 );
 
 /** Rewrites one field across every document owned by this user. */
+/**
+ * A chat stores both people's summaries under `participants`, keyed by
+ * uid, so the patch path is built per document rather than being one
+ * fixed field.
+ */
+async function rewriteConversations(uid: string, summary: UserSummary): Promise<number> {
+  const snap = await db()
+    .collection(COLLECTIONS.conversations)
+    .where('participantUids', 'array-contains', uid)
+    .get();
+  if (snap.empty) return 0;
+
+  let written = 0;
+  for (let i = 0; i < snap.docs.length; i += BATCH_SIZE) {
+    const batch = db().batch();
+    for (const doc of snap.docs.slice(i, i + BATCH_SIZE)) {
+      batch.update(doc.ref, { [`participants.${uid}`]: summary, updatedAt: now() });
+      written += 1;
+    }
+    await batch.commit();
+  }
+  return written;
+}
+
 async function rewrite(
   collection: string,
   ownerField: string,

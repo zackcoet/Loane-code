@@ -130,31 +130,27 @@ Only post photos you have the right to share. If you tag or post other people, m
 
 Meet in public, well-lit places on or near campus. Check the item before you accept it. Keep messages and payments in the app. Loane doesn't run background checks and isn't responsible for what happens at an in-person handoff. **Loane is a marketplace, not an emergency service.** If you feel unsafe, contact campus police or call 911.
 
-## 12. AI support assistant
-
-Loane may offer an AI assistant in Help & Support. It's labeled as AI, it can make mistakes, and it can't issue refunds, change rentals, or make decisions on claims. Ask for a person at any time and your conversation goes to our team.
-
-## 13. Disclaimers
+## 12. Disclaimers
 
 The Service is provided "as is" and "as available." To the fullest extent the law allows, Loane makes no warranties about the Service or any item, user, or content on it.
 
-## 14. Limitation of liability
+## 13. Limitation of liability
 
 To the fullest extent the law allows, Loane won't be liable for indirect, incidental, or consequential damages, or for anything that happens between users. Loane's total liability to you for any claim is limited to the greater of the fees you paid Loane in the 12 months before the claim, or $100.
 
-## 15. Indemnity
+## 14. Indemnity
 
 You agree to cover Loane's losses and legal costs if a claim against Loane comes from your content, your items, your conduct, or your breaking these Terms.
 
-## 16. Disputes and governing law
+## 15. Disputes and governing law
 
 These Terms are governed by the laws of the State of South Carolina, without regard to its conflict-of-law rules. Any dispute will be resolved in the state or federal courts located in Richland County, South Carolina. Either of us may bring a qualifying claim in small claims court instead. To the extent the law allows, claims must be brought individually, not as part of a class or representative action. Before filing any claim, contact team@joinloane.com so we can try to resolve it informally.
 
-## 17. Changes to these Terms
+## 16. Changes to these Terms
 
 We may update these Terms. If a change is significant, we'll tell you in the app or by email before it takes effect. Using Loane after that means you accept the new Terms.
 
-## 18. Contact
+## 17. Contact
 
 Loane, Inc. · team@joinloane.com
 `;

@@ -44,9 +44,9 @@ export const changeUsername = onCall<{ username: string }, Promise<{ username: s
       tx.update(userRef, { username: next, updatedAt: now() });
     });
 
-    // TODO-PHASE2/3: her username is denormalized onto her listings and
-    // posts. A background job should refresh those copies. Until listings
-    // and posts are editable this is only cosmetic on already-seeded data.
+    // Her username is denormalized onto her listings, posts, comments
+    // and chats. propagateProfileChanges rewrites all four when the
+    // user document changes, so nothing here has to.
     logger.info('Username changed', { uid: user.uid, from: current, to: next });
 
     return { username: next };
