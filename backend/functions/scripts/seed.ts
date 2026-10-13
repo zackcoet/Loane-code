@@ -1107,9 +1107,15 @@ async function main(): Promise<void> {
       // Founding closets are verified by hand; everyone else by domain match.
       verificationMethod: student.founding ? 'manual_admin' : 'domain_claimed',
       verifiedAt: FieldValue.serverTimestamp() as never,
-      // Nobody has proven inbox control — we do not email a code yet.
-      emailConfirmed: false,
-      emailConfirmedAt: null,
+      /*
+        Seeded students count as confirmed.
+
+        There is no inbox behind ellapetrickcloset@email.sc.edu, so a
+        code could never arrive — leaving them unconfirmed would lock
+        every test account out the moment verification is switched on.
+      */
+      emailConfirmed: true,
+      emailConfirmedAt: FieldValue.serverTimestamp() as never,
       // Half the seeded students show their sizes, half do not, so both
       // states are visible without editing a profile by hand.
       showSizes: users.length % 2 === 0,
@@ -1211,6 +1217,18 @@ async function main(): Promise<void> {
     Turning it back on is one admin action. docs/decisions.md has the
     exact steps.
   */
+  /*
+    Email verification: OFF until a real email service is configured.
+    A required verification with nothing able to send a code is a
+    locked front door.
+  */
+  await db.collection(COLLECTIONS.config).doc('verification').set({
+    required: false,
+    updatedAt: FieldValue.serverTimestamp(),
+    updatedBy: null,
+  });
+  console.warn('Email verification is OFF (no email service yet).');
+
   await db.collection(COLLECTIONS.config).doc('tryOn').set({
     enabled: false,
     enabledForAdmins: false,

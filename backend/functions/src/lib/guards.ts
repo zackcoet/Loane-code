@@ -3,6 +3,7 @@ import type { User } from '@loane/shared';
 import { COLLECTIONS, SUBCOLLECTIONS, type UserPrivate } from '@loane/shared';
 import { db } from './admin';
 import { failed, notFound, permissionDenied, unauthenticated } from './errors';
+import { verificationRequired } from '../tryon/config';
 
 /**
  * Checks every callable function runs before doing anything.
@@ -53,6 +54,22 @@ export async function requireVerifiedStudent(request: CallableRequest): Promise<
   if (!user.isVerified) {
     throw permissionDenied('Verify your campus email first.');
   }
+
+  /*
+    PROVEN, not merely claimed.
+
+    `isVerified` means her domain is on the approved list, which is
+    true from the moment she types the address. `emailConfirmed` means
+    we sent a code there and she typed it back. Only the second one is
+    evidence.
+
+    Behind a flag so this cannot lock everybody out before email
+    actually works — see verificationRequired().
+  */
+  if (!user.emailConfirmed && (await verificationRequired())) {
+    throw permissionDenied('Confirm your school email to carry on.');
+  }
+
   return user;
 }
 

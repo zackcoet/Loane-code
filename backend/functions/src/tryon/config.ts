@@ -45,3 +45,17 @@ export async function assertTryOnEnabled(request: CallableRequest): Promise<void
   }
   throw failed('Try-on is switched off. An admin can turn it on from the dashboard.');
 }
+
+/**
+ * Whether an unverified student is blocked.
+ *
+ * OFF UNTIL EMAIL WORKS. A required verification with no working email
+ * service is a locked front door: nobody can sign up, and the failure
+ * looks like the app being broken rather than a missing secret. Turn
+ * it on from the admin dashboard once RESEND_API_KEY is set and a test
+ * code has actually arrived.
+ */
+export async function verificationRequired(): Promise<boolean> {
+  const snap = await db().collection(COLLECTIONS.config).doc('verification').get();
+  return (snap.data() as { required?: boolean } | undefined)?.required ?? false;
+}

@@ -124,6 +124,10 @@ export { generateTryOn } from './tryon/generateTryOn';
 export { deleteTryOnData } from './tryon/deleteTryOnData';
 export { setTryOnBodyPhoto, clearTryOnBodyPhoto } from './tryon/setBodyPhoto';
 export { checkPhoto } from './tryon/checkPhoto';
+export {
+  sendVerificationCode,
+  confirmVerificationCode,
+} from './auth/emailVerification';
 export { prepareFlatPhoto } from './tryon/prepareFlatPhoto';
 export { grantTryOns, setTryOnConfig } from './tryon/admin';
 export { sweepUnsavedTryOns, runTryOnSweep } from './tryon/sweepUnsavedTryOns';
