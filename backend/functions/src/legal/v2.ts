@@ -21,8 +21,10 @@
  *   age            "at least 18" becomes "a current student". Zack's
  *                  call: being a student is the actual requirement,
  *                  and sign-up asks for no birthday.
- *   phone, contacts, AI photo checks, AI try-on, credits — all new,
- *                  and none of them are covered by v1 at all.
+ *   phone, contacts  new, and not covered by v1 at all.
+ *
+ * TRY-ON IS NOT IN HERE. It is off for v1 — see v2-tryon.ts, which
+ * holds the clauses ready to paste back when the feature returns.
  *
  * Markdown, because that is what LegalDocumentModal renders.
  */
@@ -31,7 +33,7 @@ export const TERMS_V2 = String.raw`# Terms of Service
 
 **Effective date:** DRAFT — not yet in effect · **Company:** Loane, Inc., a Delaware corporation · **Contact:** team@joinloane.com
 
-> **This is version 2.** What changed since v1: the service fee moved from the renter to the lender, lenders answer within 24 hours instead of 48, you can now buy a piece outright ("Own It"), same-day rentals exist, and Loane now offers AI try-on. Each is explained below.
+> **This is version 2.** What changed since v1: the service fee moved from the renter to the lender, lenders answer within 24 hours instead of 48, you can now buy a piece outright ("Own It"), and same-day rentals exist. Each is explained below.
 
 ## 1. Welcome to Loane
 
@@ -104,43 +106,17 @@ Repeated cancellations may limit your account.
 
 **Loane's decision.** Loane makes a good-faith decision based on the evidence available. Loane is not an insurer and doesn't guarantee that a lender will recover the full value of an item.
 
-## 8. AI features
-
-Loane uses AI in two places. Both are described here so you know what happens to your photos.
-
-### Photo checks
-
-When you add a photo of yourself for try-on, or a lay-it-flat photo of a garment you're listing, **the photo is sent to a third-party AI service to check it will work** — that it shows one whole garment, or one whole person, on a plain background. The photo is sent for that check and is not stored by us to perform it. **A photo that fails the check is never saved at all.**
-
-### AI try-on
-
-If you choose to use try-on:
-
-- **We collect a photograph of your body.** It is private to your account. No other student can see it, and no Loane admin can see it.
-- **You confirm the photo is of you** before it's uploaded. Uploading a photo of anyone else is a breach of these Terms and grounds for suspension.
-- **Your photo and the garment photo are sent to a third-party AI processor, FASHN**, located outside your campus and possibly outside the United States, for the sole purpose of generating the image. FASHN does not use them to train, fine-tune, or improve any model. We keep them until you delete them; FASHN keeps them only for the length of the request.
-- **Try-on output is an AI approximation. It is not a representation of fit, size, colour, or condition**, and must not be relied on when deciding to rent or buy.
-- **Try-on results are for your own use.** They must not be posted, published, or shared as a representation of a garment or a lender.
-- **The preset models are computer-generated and depict no real person.**
-- **Unsaved try-ons are deleted automatically after 7 days.** Saved ones are kept until you delete them.
-- **You can delete everything in one tap**, in Settings. That removes your body photo, every saved look, and every generated file.
-- Try-on usage is recorded as events containing a listing id and a timestamp. **The events never contain the image.**
-
-**Try-on credits.** Every student gets a number of free try-ons. If Loane later sells additional credits: credits are a limited licence to use a digital feature. **They are not money and are not refundable** except where the law requires. They expire if your account is closed, have no cash value, and cannot be transferred between students. **All purchases are made through Apple**, so refunds are requested from Apple and not from Loane.
-
-**We may limit, meter, or withdraw** try-on, or any other feature, at any time.
-
-## 9. Finding friends
+## 8. Finding friends
 
 If you choose to check your contacts, **only scrambled (hashed) versions of phone numbers are sent** to Loane. We never receive your contacts' names, emails, or phone numbers, and **we never store your address book.** The comparison happens and is thrown away. See the Privacy Policy for the detail.
 
-## 10. Your content
+## 9. Your content
 
-You own the photos, posts, listings, comments, and reviews you share. You give Loane a worldwide, non-exclusive, royalty-free license to host, display, and share your content to run and promote the Service. We'll ask you before using your content in paid advertising. **Your body photo and your try-on results are not covered by this license** — they are private to you and are never displayed or promoted.
+You own the photos, posts, listings, comments, and reviews you share. You give Loane a worldwide, non-exclusive, royalty-free license to host, display, and share your content to run and promote the Service. We'll ask you before using your content in paid advertising.
 
 Only post photos you have the right to share. If you tag or post other people, make sure they're OK with it.
 
-## 11. Rules for using Loane
+## 10. Rules for using Loane
 
 **Don't list** counterfeit, stolen, or recalled items; underwear, swimwear bottoms, or items that can't be cleaned hygienically; or anything illegal or unsafe.
 
@@ -150,35 +126,35 @@ Only post photos you have the right to share. If you tag or post other people, m
 
 **Reporting and enforcement.** You can report a user, listing, post, comment, review, or rental in the app. We may remove content, limit features, or suspend or remove accounts that break these Terms. If your account is suspended, contact team@joinloane.com to appeal.
 
-## 12. Safety
+## 11. Safety
 
 Meet in public, well-lit places on or near campus. Check the item before you accept it. Keep messages and payments in the app. Loane doesn't run background checks and isn't responsible for what happens at an in-person handoff. **Loane is a marketplace, not an emergency service.** If you feel unsafe, contact campus police or call 911.
 
-## 13. AI support assistant
+## 12. AI support assistant
 
 Loane may offer an AI assistant in Help & Support. It's labeled as AI, it can make mistakes, and it can't issue refunds, change rentals, or make decisions on claims. Ask for a person at any time and your conversation goes to our team.
 
-## 14. Disclaimers
+## 13. Disclaimers
 
 The Service is provided "as is" and "as available." To the fullest extent the law allows, Loane makes no warranties about the Service or any item, user, or content on it.
 
-## 15. Limitation of liability
+## 14. Limitation of liability
 
 To the fullest extent the law allows, Loane won't be liable for indirect, incidental, or consequential damages, or for anything that happens between users. Loane's total liability to you for any claim is limited to the greater of the fees you paid Loane in the 12 months before the claim, or $100.
 
-## 16. Indemnity
+## 15. Indemnity
 
 You agree to cover Loane's losses and legal costs if a claim against Loane comes from your content, your items, your conduct, or your breaking these Terms.
 
-## 17. Disputes and governing law
+## 16. Disputes and governing law
 
 These Terms are governed by the laws of the State of South Carolina, without regard to its conflict-of-law rules. Any dispute will be resolved in the state or federal courts located in Richland County, South Carolina. Either of us may bring a qualifying claim in small claims court instead. To the extent the law allows, claims must be brought individually, not as part of a class or representative action. Before filing any claim, contact team@joinloane.com so we can try to resolve it informally.
 
-## 18. Changes to these Terms
+## 17. Changes to these Terms
 
 We may update these Terms. If a change is significant, we'll tell you in the app or by email before it takes effect. Using Loane after that means you accept the new Terms.
 
-## 19. Contact
+## 18. Contact
 
 Loane, Inc. · team@joinloane.com
 `;
@@ -187,7 +163,7 @@ export const PRIVACY_V2 = String.raw`# Privacy Policy
 
 **Effective date:** DRAFT — not yet in effect · **Company:** Loane, Inc., a Delaware corporation · **Contact:** team@joinloane.com
 
-> **This is version 2.** What's new since v1: your phone number, finding friends from contacts, AI photo checks, and AI try-on — including that we collect a photograph of your body if you choose to use it.
+> **This is version 2.** What's new since v1: your phone number and finding friends from contacts.
 
 ## What we collect
 
@@ -199,8 +175,6 @@ export const PRIVACY_V2 = String.raw`# Privacy Policy
 
 **What you do on Loane:** listings, posts, comments, reviews, messages, rentals, purchases, and a log of meaningful actions (for example, that a listing was viewed) with a timestamp.
 
-**Your body photo, if you use try-on.** See below — this is the most sensitive thing we hold, and it has its own section.
-
 ## Finding friends from your contacts
 
 This only happens if you tap it, and only when you tap it.
@@ -210,47 +184,24 @@ This only happens if you tap it, and only when you tap it.
 - We can't reverse the scrambling to recover a number from it without a secret key we hold separately. We're being precise rather than reassuring: a phone number is short, so scrambling alone is not enough, which is why the stored version is scrambled a second time with a key the app never sees.
 - **Remove your phone number in Settings** and you immediately stop matching anyone's contacts.
 
-## AI photo checks
-
-When you add a body photo for try-on, or a lay-it-flat photo of something you're listing, **the photo is sent to a third-party AI service (Anthropic) to check that it will work** — one whole garment, or one whole person, plain background, enough light. We don't store the photo to run that check. **If it fails, the photo is never saved at all.**
-
-## AI try-on
-
-If you choose to use try-on:
-
-**What we collect.** A photograph of your body, which you confirm is of you before it's uploaded. We record that you confirmed, and when.
-
-**Who can see it.** You, and nobody else. **Not other students. Not Loane admins.** There is no screen anywhere in Loane, including our own admin tools, that shows a student's body photo or her try-on results.
-
-**Who we send it to.** Your body photo and the garment photo are sent to **FASHN**, a third-party AI processor, for the sole purpose of generating the image. FASHN may be located outside the United States. **FASHN does not use them to train, fine-tune, or improve any model.** We hold them until you delete them; FASHN holds them only for the length of the request.
-
-**How long we keep it.** Your body photo until you delete it. **Try-ons you don't save are deleted automatically after 7 days.** Saved looks are kept until you delete them.
-
-**What we log.** That a try-on happened, which listing it was for, and when. **The events never contain the image.**
-
-**Deleting it.** Settings → Delete my try-on photos. One tap removes your body photo, every saved look, and every generated file. We don't ask you to confirm twice.
-
 ## Who else sees your information
 
-- **Other students on your campus** see your public profile, your listings, your posts, and your reviews. They do not see your school email, your phone number, your sizes unless you've turned that on, or anything to do with try-on.
+- **Other students on your campus** see your public profile, your listings, your posts, and your reviews. They do not see your school email, your phone number, your sizes unless you've turned that on.
 - **The student you're renting from or to** sees your name, your profile, and — once a rental is agreed — your phone number, so you can arrange the handoff.
 - **Stripe** processes payments. Loane never stores your full card number.
-- **FASHN** receives try-on photos, as described above.
-- **Anthropic** receives photos for the checks described above.
-- **Loane admins** can see reports, claims, listings, posts and account details in order to run the service and resolve disputes. **They cannot see body photos or try-on results.**
+- **Loane admins** can see reports, claims, listings, posts and account details in order to run the service and resolve disputes. 
 - **Nobody buys this data.** We don't sell personal information.
 
 ## Your choices
 
 - Remove your phone number, at any time, in Settings.
-- Delete your try-on photos, at any time, in one tap.
 - Turn off showing your sizes.
 - Delete your account in Settings, once open rentals are finished or cancelled.
 - Choose which notifications you receive.
 
 ## Security
 
-Access is controlled by security rules enforced on our servers rather than in the app. Body photos and try-on results are stored so that only the account that owns them can read them — a restriction that applies to Loane staff as well.
+Access is controlled by security rules enforced on our servers rather than in the app.
 
 ## Changes
 

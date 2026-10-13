@@ -57,8 +57,8 @@ const STEPS: Step[] = [
   },
   {
     target: 'profile',
-    title: 'Saved, and try-on',
-    body: 'Heart a piece to save it. From Saved you can see it on yourself before you ask.',
+    title: 'Saved pieces',
+    body: 'Heart a piece to save it, and find it again here.',
   },
   {
     target: 'activity',

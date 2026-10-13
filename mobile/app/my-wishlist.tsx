@@ -103,7 +103,14 @@ export default function MyWishlist() {
               both a privacy smell and a usability one, and the name
               "Looks" was taken long before try-on existed.
             */
-            ['tryons', `My Try-Ons${tryOns.items.length ? ` · ${tryOns.items.length}` : ''}`],
+            /*
+              Try-on is off for v1, so the tab is not rendered at all —
+              not greyed, not "coming soon". It should look like it
+              never existed. See docs/decisions.md.
+            */
+            ...((tryOnOn
+              ? [['tryons', `My Try-Ons${tryOns.items.length ? ` · ${tryOns.items.length}` : ''}`]]
+              : []) as [typeof tab, string][]),
           ] as const
         ).map(([value, label]) => (
           <Pressable

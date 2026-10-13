@@ -35,6 +35,7 @@ import { useWalkthrough } from '../../src/hooks/useWalkthrough';
 import { Walkthrough } from '../../src/components/Walkthrough';
 import { useWalkthroughTargets } from '../../src/components/WalkthroughTargets';
 import { useProfileGate } from '../../src/hooks/useProfileGate';
+import { useTryOnEnabled } from '../../src/hooks/useTryOn';
 import { SuggestedClosets } from '../../src/components/SuggestedClosets';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
 import { WalkthroughTarget } from '../../src/components/WalkthroughTargets';
@@ -67,6 +68,11 @@ export default function Feed() {
   const draft = usePostDraft();
   const suggested = useSuggestedClosets();
   const gate = useProfileGate();
+  /*
+    Try-on is off for v1. One switch hides every way in, and the Feed
+    line is one of them — see docs/decisions.md.
+  */
+  const tryOnOn = useTryOnEnabled();
   /*
     Here rather than on a screen of its own: the tour points at the tab
     bar, and the tab bar only exists once she is inside the app. The
@@ -273,11 +279,14 @@ export default function Feed() {
                   she has no photo yet, and brings her back itself —
                   one place decides that rather than every caller.
                 */
-                onTryOnLook={(listingIds) =>
-                  router.push({
-                    pathname: '/try-on',
-                    params: { listings: listingIds.join(',') },
-                  })
+                onTryOnLook={
+                  tryOnOn
+                    ? (listingIds) =>
+                        router.push({
+                          pathname: '/try-on',
+                          params: { listings: listingIds.join(',') },
+                        })
+                    : undefined
                 }
                 onEdit={
                   item.authorUid === profile?.uid

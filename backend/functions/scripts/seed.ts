@@ -1202,17 +1202,22 @@ async function main(): Promise<void> {
     exactly like a broken feature. It was set once by hand and never
     written down anywhere a reseed would restore it.
 
-    On the demo project it is simply on. This collection is never
-    seeded against a real project, and the live switch is an admin
-    action with an audit row behind it.
+    OFF, because try-on is not in v1. Zack's call, 2026-10-13.
+
+    Both flags are false so it is hidden from admins too — "hide it
+    completely" includes us, and an admin-only feature that nobody
+    remembers is on is how a half-finished thing reaches a student.
+
+    Turning it back on is one admin action. docs/decisions.md has the
+    exact steps.
   */
   await db.collection(COLLECTIONS.config).doc('tryOn').set({
-    enabled: true,
-    enabledForAdmins: true,
+    enabled: false,
+    enabledForAdmins: false,
     updatedAt: FieldValue.serverTimestamp(),
     updatedBy: null,
   });
-  console.warn('Try-on switched ON for the emulator');
+  console.warn('Try-on is OFF (v1). See docs/decisions.md to turn it on.');
 
   // --- Listings -----------------------------------------------------------
   const listings: Listing[] = [];

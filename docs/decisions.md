@@ -960,3 +960,62 @@ replaces both.
 
 **Shoes stay off.** They have never been tested at all. Run the
 harness before turning them on, the way bottoms were.
+
+---
+
+## 2026-10-13 — Try-on is off for v1, and comes back in v2
+
+**Decision:** AI try-on does not launch. Every way into it is hidden
+behind one switch. No code is deleted.
+
+**Why one switch and not a branch or a delete:** the feature works. It
+generates, it caches across the campus, the privacy rules are tested,
+and the bottoms retest passed. Deleting that to put it back in a month
+would cost more than it saved, and a long-lived branch would rot
+against everything else that is still moving. A flag that defaults to
+off is the cheapest honest way to say "not yet".
+
+**Hidden, not disabled.** No greyed buttons, no "coming soon". With
+the switch off it should look like try-on was never built: no "Try it
+on" on a listing, no fitting-room banner in Saved, no "Try this look
+on" in the feed, no My Try-Ons tab, no try-on row in Settings, no
+lay-it-flat step when adding a piece, and nothing in the walkthrough.
+
+### To turn it back on
+
+1. **Admin dashboard → Overview → AI Try-On → "Turn on for everyone"**,
+   with a reason. That is the whole switch for a running environment.
+   For a dry run first, use **"Allow admin preview"** instead, which
+   turns it on only for admin accounts.
+2. **Set the keys**, if they are not already set on that project:
+   ```bash
+   firebase functions:secrets:set FASHN_API_KEY --project loane-code
+   firebase functions:secrets:set ANTHROPIC_API_KEY --project loane-code
+   ```
+   Without FASHN nothing generates. Without ANTHROPIC the photo check
+   is skipped and photos are let through — it fails open by design.
+3. **Flip the seed default** in `backend/functions/scripts/seed.ts`
+   (`config/tryOn` → `enabled: true`) so local environments match.
+4. **Put the legal text back.** `backend/functions/src/legal/v2-tryon.ts`
+   holds the Terms and Privacy clauses, finished, with paste
+   instructions at the top. Then re-run
+   `scripts/seedLegalV2Draft.ts` and review in admin.
+   **Do not turn try-on on for students before this is published** —
+   it is the clause that says we hold a photograph of her body.
+5. **Re-run the harness** if anything about the model or the prompts
+   changed in between: `scripts/tryOnQualityTest.ts`, and
+   `scripts/tryOnBottomsTest.ts` for bottoms.
+
+### Cancelled, not postponed
+
+"Make it try-on ready" and the try-on post photos were already built
+before this decision. They are not being extended, and they are hidden
+with everything else. Noted so nobody reads the backlog later and
+thinks they are outstanding work.
+
+### What stays visible, deliberately
+
+The **flat photo field** remains on the Listing type and on seeded
+demo garments, and the demo garments remain the listing photos. They
+are good product shots in their own right, and ripping them out would
+make the seeded marketplace worse to look at for no gain.

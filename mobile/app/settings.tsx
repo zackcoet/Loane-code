@@ -25,6 +25,7 @@ import { Header } from '../src/components/Header';
 import { LegalDocumentModal } from '../src/components/LegalDocumentModal';
 import { useUserSettings } from '../src/hooks/useUserSettings';
 import { deleteTryOnData } from '../src/firebase/callables';
+import { useTryOnEnabled } from '../src/hooks/useTryOn';
 import { formatPhone } from '@loane/shared';
 import { auth } from '../src/firebase/config';
 
@@ -44,6 +45,7 @@ export default function Settings() {
   // Her campus email is no longer on the public profile — it is hers
   // and an admin's to read, and nobody else's.
   const { settings, save } = useUserSettings();
+  const tryOnOn = useTryOnEnabled();
 
   /**
    * Removing her number is a real privacy control, not a cosmetic one:
@@ -116,11 +118,21 @@ export default function Settings() {
       value: settings?.campusEmail ?? '—',
       readOnly: true,
     },
-    {
-      label: 'Delete my try-on photos',
-      // What goes, in plain words. "Delete my data" tells her nothing.
-      onPress: onDeleteTryOn,
-    },
+    /*
+      Only while try-on exists. With the feature off there is nothing
+      to delete, and a row offering to delete photos she was never
+      asked for is worse than no row.
+    */
+    ...(tryOnOn
+      ? [
+          {
+            label: 'Delete my try-on photos',
+            // What goes, in plain words. "Delete my data" tells her
+            // nothing.
+            onPress: onDeleteTryOn,
+          },
+        ]
+      : []),
     { label: 'Change Password', href: '/change-password' },
     { label: 'Safety', href: '/safety' },
     { label: 'Help & Support', href: '/help' },

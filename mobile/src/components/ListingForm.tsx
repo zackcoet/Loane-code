@@ -49,6 +49,7 @@ import { Toggle } from './Toggle';
 import { photoUri, type useListingForm } from '../hooks/useListingForm';
 import { useKeyboardPadding } from '../hooks/useKeyboardPadding';
 import { MakeTryOnReady } from './MakeTryOnReady';
+import { useTryOnEnabled } from '../hooks/useTryOn';
 import { pickPhoto } from '../lib/photo';
 
 const CONDITION_LABELS: Record<Condition, string> = {
@@ -83,6 +84,8 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
   const sellable = form.intent === 'sell' || form.intent === 'both';
   const isShoes = form.category === 'shoes';
   const needsSize = form.category != null && !UNSIZED.includes(form.category);
+  // Try-on is off for v1: no flat-photo step, nothing to explain.
+  const tryOnOn = useTryOnEnabled();
   const tryOnEligible =
     form.category != null && form.category in TRYON_CATEGORY_MAP;
 
@@ -159,7 +162,7 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
         cannot put a handbag on anybody is asking for work that buys
         her nothing.
       */}
-      {tryOnEligible ? (
+      {tryOnOn && tryOnEligible ? (
         <View style={styles.tryOnCard}>
           <View style={styles.tryOnHead}>
             <Icon name="sparkles" size={18} tint={color.role.shared.background} />
