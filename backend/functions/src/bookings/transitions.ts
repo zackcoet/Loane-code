@@ -82,7 +82,17 @@ export function notify(
     type: NotificationType;
     title: string;
     body: string;
-    bookingId: string;
+    /*
+      A booking, a post, or neither.
+
+      This used to take a bookingId and nothing else, which is why
+      likes, comments and follows had no alerts: there was no way to
+      send one that was not about a rental. The deep link follows
+      whichever ref is given.
+    */
+    bookingId?: string;
+    postId?: string;
+    deepLink?: string;
     actor?: { uid: string; username: string; photoUrl: string | null };
   },
 ): void {
@@ -101,8 +111,17 @@ export function notify(
     actorUid: params.actor?.uid ?? null,
     actorUsername: params.actor?.username ?? null,
     actorPhotoUrl: params.actor?.photoUrl ?? null,
-    deepLink: `/rental/${params.bookingId}`,
-    refs: { bookingId: params.bookingId },
+    deepLink:
+      params.deepLink ??
+      (params.bookingId
+        ? `/rental/${params.bookingId}`
+        : params.postId
+          ? `/post/${params.postId}`
+          : null),
+    refs: {
+      ...(params.bookingId ? { bookingId: params.bookingId } : {}),
+      ...(params.postId ? { postId: params.postId } : {}),
+    },
     readAt: null,
     pushSentAt: null,
     createdAt: now(),

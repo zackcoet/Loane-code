@@ -1,5 +1,6 @@
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { COLLECTIONS, ids, type Like, type Post, type PostSave } from '@loane/shared';
+import { notify } from '../bookings/transitions';
 import { db, now, FieldValue } from '../lib/admin';
 import { invalidArgument, notFound } from '../lib/errors';
 import { requireActiveUser } from '../lib/guards';
@@ -32,6 +33,13 @@ async function setEdge(
     kind === 'like'
       ? db().collection(COLLECTIONS.likes).doc(ids.like(user.uid, postId))
       : db().collection(COLLECTIONS.postSaves).doc(ids.postSave(user.uid, postId));
+
+  /*
+    Captured from inside the transaction so the alert can be sent after
+    it commits. Null when nothing changed — tapping like twice must not
+    send two notifications.
+  */
+  let notifyAuthorUid: string | null = null;
 
   await db().runTransaction(async (tx) => {
     const [postSnap, edgeSnap] = await Promise.all([tx.get(postRef), tx.get(edgeRef)]);
@@ -83,13 +91,32 @@ async function setEdge(
         tx.set(edgeRef, save);
       }
       tx.update(postRef, { [counter]: FieldValue.increment(1), ...likerPatch });
+      // Likes only. A save is private — she is not telling the author
+      // she bookmarked it.
+      if (kind === 'like' && post.authorUid !== user.uid) notifyAuthorUid = post.authorUid;
     } else {
       tx.delete(edgeRef);
       tx.update(postRef, { [counter]: FieldValue.increment(-1), ...likerPatch });
     }
   });
 
-  // TODO-PHASE6: notify the author of a new like.
+  /*
+    After the commit, not inside it: an alert that fails must not undo
+    the like she actually made.
+  */
+  if (notifyAuthorUid) {
+    const batch = db().batch();
+    notify(batch, {
+      uid: notifyAuthorUid,
+      type: 'post_liked',
+      title: `@${user.username} liked your look`,
+      body: 'Tap to see it.',
+      postId,
+      actor: { uid: user.uid, username: user.username, photoUrl: user.photoUrl },
+    });
+    await batch.commit();
+  }
+
   return { on };
 }
 

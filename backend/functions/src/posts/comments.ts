@@ -1,5 +1,6 @@
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { COLLECTIONS, LIMITS, type Comment, type Post, type UserSummary } from '@loane/shared';
+import { notify } from '../bookings/transitions';
 import { db, now, FieldValue } from '../lib/admin';
 import { failed, invalidArgument, notFound, permissionDenied } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
@@ -107,7 +108,26 @@ export const addComment = onCall<AddInput, Promise<{ commentId: string }>>(
     });
     await batch.commit();
 
-    // TODO-PHASE7: notify the author of a new comment once push exists.
+    /*
+      Never to herself: replying under your own look should not alert
+      you about it. After the commit, so a failed alert cannot lose the
+      comment.
+    */
+    if (post.authorUid !== user.uid) {
+      const alert = db().batch();
+      notify(alert, {
+        uid: post.authorUid,
+        type: 'post_commented',
+        title: `@${user.username} commented on your look`,
+        // The comment itself, trimmed — the whole point of a comment
+        // alert is knowing whether it needs an answer.
+        body: body.length > 80 ? `${body.slice(0, 77)}…` : body,
+        postId,
+        actor: { uid: user.uid, username: user.username, photoUrl: user.photoUrl },
+      });
+      await alert.commit();
+    }
+
     return { commentId: ref.id };
   },
 );

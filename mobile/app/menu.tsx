@@ -53,7 +53,14 @@ const ITEMS: Item[] = [
   { label: 'Find Friends', icon: 'person-add-outline', href: '/contacts' },
   { label: 'Search Students', icon: 'search-outline', href: '/find-friends' },
   { label: 'Invite Friends', icon: 'share-outline', href: '/invite-friends' },
-  { label: 'Payouts & Payment Info', icon: 'card-outline', href: '/payouts' },
+  /*
+    Payouts is hidden until Stripe exists. The screen is a placeholder
+    that says "payments are coming soon", and a menu row leading to a
+    promise is worse than no row — it invites her to go and check
+    whether she has been paid.
+
+    Put it back when Stripe Connect lands; the screen is still there.
+  */
   { label: 'Safety', icon: 'shield-checkmark-outline', href: '/safety' },
   { label: 'Help & Support', icon: 'help-circle-outline', href: '/help' },
   { label: 'Settings', icon: 'settings-outline', href: '/settings' },

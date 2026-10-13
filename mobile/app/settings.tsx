@@ -99,13 +99,11 @@ export default function Settings() {
     { label: 'Notification Preferences', href: '/notification-preferences' },
     { label: 'Privacy', href: '/privacy' },
     { label: 'Blocked', href: '/blocked-users' },
-    {
-      label: 'Linked Bank Account',
-      value: 'Not linked',
-      // TODO-PHASE5: Stripe Connect onboarding.
-      onPress: () =>
-        Alert.alert('Coming soon', 'Payouts and bank details arrive with payments in Phase 5.'),
-    },
+    /*
+      "Linked Bank Account" is hidden with Payouts, and for the same
+      reason: it alerted "coming soon" when tapped, which is a row
+      whose only function is to disappoint.
+    */
     {
       label: 'Phone Number',
       value: settings?.phone ? formatPhone(settings.phone) : 'Not added',

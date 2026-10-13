@@ -1,6 +1,7 @@
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
 import { COLLECTIONS, ids, type Follow } from '@loane/shared';
+import { notify } from '../bookings/transitions';
 import { db, now, FieldValue } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
@@ -72,7 +73,27 @@ async function setFollow(
 
   logger.info(shouldFollow ? 'Followed' : 'Unfollowed', { from: me.uid, to: targetUid });
 
-  // TODO-PHASE6: notify the person who was followed.
+  /*
+    Only on follow, never on unfollow. Nobody needs to be told they
+    have been unfollowed, and sending it would be unkind for no
+    purpose.
+
+    Outside the transaction: an alert failing must not undo the follow
+    itself, which is the thing she actually asked for.
+  */
+  if (shouldFollow) {
+    const batch = db().batch();
+    notify(batch, {
+      uid: targetUid,
+      type: 'new_follower',
+      title: `@${me.username} followed you`,
+      body: 'Take a look at her closet.',
+      deepLink: `/u/${me.username}`,
+      actor: { uid: me.uid, username: me.username, photoUrl: me.photoUrl },
+    });
+    await batch.commit();
+  }
+
   return { following: shouldFollow };
 }
 

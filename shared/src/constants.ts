@@ -421,6 +421,7 @@ export const NOTIFICATION_TYPES = [
   'return_confirmed',
   'new_follower',
   'post_liked',
+  'post_commented',
   'new_message',
   'review_requested',
   'review_received',

@@ -25,6 +25,7 @@ import { callableErrorMessage } from '../../src/firebase/errors';
 import { logEvent } from '../../src/analytics/events';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
+import { useReportOrBlock } from '../../src/hooks/useReportOrBlock';
 import { IconButton } from '../../src/components/IconButton';
 import { ReportSheet } from '../../src/components/ReportSheet';
 
@@ -37,6 +38,18 @@ export default function OtherProfile() {
   const { following } = useIsFollowing(user?.uid);
   const chat = useOpenChat();
   const [reporting, setReporting] = useState(false);
+  /*
+    Report OR block. The "…" was labelled "Report or block" and only
+    reported — the label was right and the menu was missing.
+  */
+  const reportOrBlock = useReportOrBlock({
+    uid: user?.uid ?? '',
+    username: user?.username ?? '',
+    onReport: () => setReporting(true),
+    // Her content is already hidden from her, so there is nothing
+    // left on this screen to look at.
+    onBlocked: () => router.back(),
+  });
   const hidden = useHiddenUids();
   const [busy, setBusy] = useState(false);
 
@@ -114,7 +127,7 @@ export default function OtherProfile() {
             <IconButton
               name="ellipsis-horizontal"
               accessibilityLabel="Report or block"
-              onPress={() => setReporting(true)}
+              onPress={reportOrBlock.open}
             />
           )
         }

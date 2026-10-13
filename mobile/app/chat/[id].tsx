@@ -40,9 +40,13 @@ import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useConversation } from '../../src/hooks/useMessaging';
+import { useReportOrBlock } from '../../src/hooks/useReportOrBlock';
+import { IconButton } from '../../src/components/IconButton';
+import { ReportSheet } from '../../src/components/ReportSheet';
 import { pickPhoto, uploadMessagePhoto } from '../../src/lib/photo';
 
 export default function Chat() {
+  const [reporting, setReporting] = useState(false);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
@@ -58,6 +62,12 @@ export default function Chat() {
 
   const otherUid = conversation?.participantUids.find((uid) => uid !== profile?.uid);
   const them = otherUid ? conversation?.participants?.[otherUid] : undefined;
+  const reportOrBlock = useReportOrBlock({
+    uid: them?.uid ?? '',
+    username: them?.username ?? '',
+    onReport: () => setReporting(true),
+    onBlocked: () => router.back(),
+  });
 
   /** Send a photo — showing a stain, or how something fits. */
   const onAttach = async () => {
@@ -118,17 +128,35 @@ export default function Chat() {
           // tapping the person at the top of a chat to open them is
           // what every other messaging app does.
           them ? (
-            <Pressable
-              onPress={() => router.push(`/u/${them.username}`)}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={`Open @${them.username}'s closet`}
-              style={styles.headerAvatar}
-            >
-              <Avatar url={them.photoUrl} name={them.displayName} size={32} />
-            </Pressable>
+            // Her face AND the "…": report or block has to be reachable
+            // from the screen where somebody is actually messaging her,
+            // not only from a profile.
+            <View style={styles.headerRight}>
+              <Pressable
+                onPress={() => router.push(`/u/${them.username}`)}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel={`Open @${them.username}'s closet`}
+                style={styles.headerAvatar}
+              >
+                <Avatar url={them.photoUrl} name={them.displayName} size={32} />
+              </Pressable>
+              <IconButton
+                name="ellipsis-horizontal"
+                accessibilityLabel="Report or block"
+                onPress={reportOrBlock.open}
+              />
+            </View>
           ) : null
         }
+      />
+
+      <ReportSheet
+        visible={reporting}
+        onClose={() => setReporting(false)}
+        targetType="user"
+        targetId={them?.uid ?? ''}
+        targetLabel={them ? `@${them.username}` : 'this student'}
       />
 
       <KeyboardAvoidingView
@@ -273,6 +301,7 @@ function Bubble({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   headerAvatar: {
     width: controls.minTapTarget,
     height: controls.minTapTarget,
