@@ -113,7 +113,8 @@ export default function ClosetCalendar() {
         ))}
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.scroll} contentContainerStyle={styles.content}>
         {view === 'month' ? (
           <>
             <View style={styles.monthBar}>
@@ -272,6 +273,13 @@ function DayList({ label, items }: { label: string; items: { id: string; listing
 }
 
 const styles = StyleSheet.create({
+  /*
+    flex, so the ScrollView has a height of its own inside a flex
+    column. Without it, it takes its CONTENT's height, overflows the
+    screen and clips instead of scrolling — which is exactly what
+    happened on the listing page.
+  */
+  scroll: { flex: 1 },
   centre: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
   tabs: { flexDirection: 'row', gap: spacing.xs, paddingHorizontal: spacing.md },

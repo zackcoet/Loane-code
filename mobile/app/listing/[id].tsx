@@ -155,7 +155,22 @@ export default function ListingDetail() {
         }
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      {/*
+        `style` as well as `contentContainerStyle`, and the flex is the
+        whole point.
+
+        Without it the ScrollView has no height of its own inside a
+        flex column: it takes its content's height, overflows the
+        screen, and CLIPS instead of scrolling. It got away with that
+        while there was one fixed sibling below it; adding the
+        availability strip made it a second, and the page stopped
+        scrolling entirely.
+      */}
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
         {/* Photo carousel */}
         <View>
           <ScrollView
@@ -431,6 +446,7 @@ const styles = StyleSheet.create({
   stripFree: { backgroundColor: color.surface.muted },
   headerActions: { flexDirection: 'row', alignItems: 'center' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  scroll: { flex: 1 },
   content: { paddingBottom: spacing.xxl },
   photo: { aspectRatio: 0.85, backgroundColor: color.surface.muted },
   dots: {

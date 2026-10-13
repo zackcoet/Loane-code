@@ -37,6 +37,7 @@ import {
 import { db, now, Timestamp } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireHandoffReady, requireVerifiedStudent } from '../lib/guards';
+import { rateLimit } from '../lib/rateLimit';
 import { assertNotBlocked } from '../moderation/block';
 import { notify } from './transitions';
 
@@ -51,6 +52,7 @@ export const requestPurchase = onCall<Input, Promise<{ bookingId: string }>>(
     const buyer = await requireVerifiedStudent(request);
     // A purchase is still two students meeting in person.
     await requireHandoffReady(buyer, 'you buy');
+    await rateLimit(buyer.uid, 'rentalRequest');
 
     const { listingId, message } = request.data ?? {};
     if (!listingId) throw invalidArgument('Pick a piece to buy.');

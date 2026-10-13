@@ -47,6 +47,12 @@ export const COLLECTIONS = {
    * feature; written only through an admin function.
    */
   config: 'config',
+  /**
+   * rateLimits/{action}__{uid or ip} — one counter per person per
+   * action. Written only by Cloud Functions; no client ever reads or
+   * writes it, and the security rules seal it shut.
+   */
+  rateLimits: 'rateLimits',
   legalDocs: 'legalDocs',
   legalDrafts: 'legalDrafts',
 } as const;

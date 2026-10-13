@@ -1019,3 +1019,65 @@ The **flat photo field** remains on the Listing type and on seeded
 demo garments, and the demo garments remain the listing photos. They
 are good product shots in their own right, and ripping them out would
 make the seeded marketplace worse to look at for no gain.
+
+---
+
+## 2026-10-13 — Email verification is paused, App Check waits for a build
+
+### Email verification (OTP): built, switched off, paused
+
+**Decision:** the backend stays, the flag stays off, and the screens
+are not built yet. Zack's call.
+
+**What exists:** `sendVerificationCode` and `confirmVerificationCode`,
+a 6-digit code hashed with her uid, a 10-minute expiry, five sends an
+hour, five wrong guesses before the code dies, and
+`requireVerifiedStudent` refusing unconfirmed students — all behind
+`config/verification.required`, which is **false**.
+
+**A code, never a link**, and this is the part not to lose: university
+mail systems run scanners that follow every link in incoming mail,
+which burns a one-time link before the student has opened it.
+
+**What is left to do:**
+
+1. Sign up for **Resend**, verify `joinloane.com` as a sending domain,
+   and set `RESEND_API_KEY`. Free to 3,000 emails/month, then $20 for
+   50,000.
+2. Build the two screens: a "check your email" step after sign-up with
+   six boxes and a resend, and a way back into it for somebody who
+   closed the app midway.
+3. Decide what an unverified student may still do. Today the guard is
+   all-or-nothing; browsing while unverified may be the kinder shape.
+4. Send one real code to a real `sc.edu` address and confirm it
+   arrives and is not filtered. **Only then** flip
+   `config/verification.required`.
+5. Seeded accounts are already marked confirmed, so turning it on does
+   not lock the test accounts out.
+
+**Why it is paused rather than finished:** it cannot be switched on
+without a mail provider and a domain record, and half a flow behind a
+flag that nobody can test is not worth the screens yet.
+
+### App Check: waits for the development build
+
+**It does not work in Expo Go**, which is how the app is being run
+today. Adding it now would mean either turning it off in development —
+so it is never actually exercised — or breaking the only way Zack can
+look at the app.
+
+It goes in with the development build, alongside push notifications,
+which are blocked on exactly the same thing. Until then the rate
+limits below are the protection.
+
+### Rate limits: in, on everything that creates
+
+Set so a normal student never meets one. **If a real student ever hits
+one, the number is wrong and should be raised rather than defended** —
+each one logs a warning precisely so we find that out.
+
+One gap, stated rather than hidden: **chat messages are not rate
+limited**, because they are written by the app directly under the
+security rules and there is no function to limit. Starting a
+conversation is limited; the messages inside it are not. Closing that
+means either moving sends behind a function or relying on App Check.

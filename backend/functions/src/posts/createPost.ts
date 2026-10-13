@@ -12,6 +12,7 @@ import {
   isTryOnReady,
 } from '@loane/shared';
 import { db, now, FieldValue, Timestamp } from '../lib/admin';
+import { rateLimit } from '../lib/rateLimit';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
 
@@ -72,6 +73,7 @@ export const createPost = onCall<CreatePostInput, Promise<CreatePostResult>>(
   { region: 'us-central1' },
   async (request: CallableRequest<CreatePostInput>): Promise<CreatePostResult> => {
     const author = await requireVerifiedStudent(request);
+    await rateLimit(author.uid, 'post');
     const {
       photos = [],
       caption = '',

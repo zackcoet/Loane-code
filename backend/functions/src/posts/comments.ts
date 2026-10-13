@@ -2,6 +2,7 @@ import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { COLLECTIONS, LIMITS, type Comment, type Post, type UserSummary } from '@loane/shared';
 import { notify } from '../bookings/transitions';
 import { db, now, FieldValue } from '../lib/admin';
+import { rateLimit } from '../lib/rateLimit';
 import { failed, invalidArgument, notFound, permissionDenied } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
 import { assertNotBlocked } from '../moderation/block';
@@ -53,6 +54,7 @@ export const addComment = onCall<AddInput, Promise<{ commentId: string }>>(
   { region: 'us-central1' },
   async (request: CallableRequest<AddInput>) => {
     const user = await requireVerifiedStudent(request);
+    await rateLimit(user.uid, 'comment');
     const postId = request.data?.postId;
     const body = (request.data?.body ?? '').trim();
     const parentCommentId = request.data?.parentCommentId ?? null;

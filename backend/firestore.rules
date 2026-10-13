@@ -244,6 +244,19 @@ service cloud.firestore {
      * the app could write one, a student could point somebody else's
      * number at her own account and be matched by all of their friends.
      */
+    /**
+     * rateLimits/{id} — SEALED.
+     *
+     * If the app could read these it would know exactly how close
+     * somebody is to a limit; if it could write them it could reset
+     * its own counter, which is the whole limit gone. Only the
+     * functions touch this, with admin credentials.
+     */
+    match /rateLimits/{id} {
+      allow read: if false;
+      allow write: if false;
+    }
+
     match /phoneHashes/{hash} {
       allow read: if false;
       allow write: if false;

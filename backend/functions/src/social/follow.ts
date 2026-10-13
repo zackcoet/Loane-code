@@ -3,6 +3,7 @@ import { logger } from 'firebase-functions';
 import { COLLECTIONS, ids, type Follow } from '@loane/shared';
 import { notify } from '../bookings/transitions';
 import { db, now, FieldValue } from '../lib/admin';
+import { rateLimit } from '../lib/rateLimit';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
 import { assertNotBlocked } from '../moderation/block';
@@ -35,6 +36,7 @@ async function setFollow(
   shouldFollow: boolean,
 ): Promise<FollowResult> {
   const me = await requireVerifiedStudent(request);
+  await rateLimit(me.uid, 'follow');
   const targetUid = request.data?.uid;
 
   if (!targetUid) throw invalidArgument('Who do you want to follow?');

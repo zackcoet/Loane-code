@@ -1,6 +1,7 @@
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { COLLECTIONS, ids, type Conversation, type User, type UserSummary } from '@loane/shared';
 import { db, now } from '../lib/admin';
+import { rateLimit } from '../lib/rateLimit';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
 import { assertNotBlocked } from '../moderation/block';
@@ -46,6 +47,7 @@ export const openConversation = onCall<OpenInput, Promise<{ conversationId: stri
   { region: 'us-central1' },
   async (request: CallableRequest<OpenInput>): Promise<{ conversationId: string }> => {
     const me = await requireVerifiedStudent(request);
+    await rateLimit(me.uid, 'conversation');
     const { withUid, listingId, bookingId } = request.data ?? {};
 
     if (!withUid) throw invalidArgument('Who do you want to message?');

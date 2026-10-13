@@ -17,6 +17,7 @@ import {
   newUserTryOn,
 } from '@loane/shared';
 import { auth, db, now, FieldValue } from '../lib/admin';
+import { callerIp, rateLimit } from '../lib/rateLimit';
 import { alreadyTaken, failed, internal, invalidArgument } from '../lib/errors';
 import { latestLegalVersions } from '../legal/legal';
 
@@ -68,6 +69,18 @@ const EDU_MESSAGE = 'Use your .edu school email.';
 export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountResult>>(
   { region: 'us-central1' },
   async (request: CallableRequest<CreateAccountInput>): Promise<CreateAccountResult> => {
+    /*
+      BY IP, because there is no uid yet — an account is what this
+      function makes. The IP is the only thing we have before one
+      exists, and it is imperfect: a whole dorm behind one NAT shares
+      it, which is why the limit is five an hour rather than one.
+
+      An unknown IP is not limited at all. Bucketing every unknown
+      caller together would lock out the world the first time a proxy
+      stopped forwarding the header.
+    */
+    await rateLimit(callerIp(request.rawRequest), 'signUp');
+
     const {
       firstName: rawFirstName,
       email: rawEmail,

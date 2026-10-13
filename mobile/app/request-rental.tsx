@@ -181,6 +181,7 @@ export default function RequestRental() {
     <Screen flush>
       <Header title="Request to rent" onBack={() => router.back()} />
       <ScrollView
+        style={styles.scroll}
         contentContainerStyle={[
           styles.content,
           keyboardHeight > 0 && {
@@ -355,6 +356,13 @@ function Line({ label, value, strong }: { label: string; value: string; strong?:
 }
 
 const styles = StyleSheet.create({
+  /*
+    flex, so the ScrollView has a height of its own inside a flex
+    column. Without it, it takes its CONTENT's height, overflows the
+    screen and clips instead of scrolling — which is exactly what
+    happened on the listing page.
+  */
+  scroll: { flex: 1 },
   sameDayNote: { marginBottom: spacing.sm },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },

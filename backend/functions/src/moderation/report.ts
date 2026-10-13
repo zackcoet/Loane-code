@@ -12,6 +12,7 @@ import {
   type ReportTargetType,
 } from '@loane/shared';
 import { db, now } from '../lib/admin';
+import { rateLimit } from '../lib/rateLimit';
 import { invalidArgument } from '../lib/errors';
 import { requireActiveUser } from '../lib/guards';
 
@@ -41,6 +42,7 @@ export const submitReport = onCall<ReportInput, Promise<{ reportId: string }>>(
   { region: 'us-central1' },
   async (request: CallableRequest<ReportInput>): Promise<{ reportId: string }> => {
     const reporter = await requireActiveUser(request);
+    await rateLimit(reporter.uid, 'report');
     const { targetType, targetId, targetUid, reason, details = '', photos = [] } = request.data ?? {};
 
     if (!(REPORT_TARGET_TYPES as readonly string[]).includes(targetType)) {
