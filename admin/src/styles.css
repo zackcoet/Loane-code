@@ -111,42 +111,22 @@ h3 {
 }
 
 .brand-mark {
-  position: relative;
-  width: 120px;
-  height: 54px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 32px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 3px;
+  color: var(--merlot);
 }
 
-.brand-mark::before,
-.brand-mark::after {
-  content: '';
-  position: absolute;
-  width: 54px;
-  height: 54px;
-  border: 1px solid var(--loane-text-primary);
-  border-radius: 50%;
-  z-index: 0;
-}
-
-.brand-mark::before {
-  left: 4px;
-}
-
-.brand-mark::after {
-  right: 4px;
-}
-
-.brand-mark span {
-  position: relative;
-  z-index: 1;
-  background: var(--white);
+/* Width only. The SVG is wider than it is tall and carries its own
+   ratio; setting a height as well squashes the circles. */
+.brand-logo {
+  width: 68px;
+  display: block;
 }
 
 .nav-list {

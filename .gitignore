@@ -66,3 +66,4 @@ coverage/
 # ad-hoc queries and sometimes real ids, and none of them belong in the
 # repo. The committed scripts next to them have real names.
 backend/functions/scripts/_*.ts
+__pycache__/

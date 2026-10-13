@@ -52,6 +52,16 @@ body {
   font-weight: 700;
   letter-spacing: 3px;
   text-decoration: none;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Width only: the mark is wider than it is tall and carries its ratio. */
+.home img {
+  width: 56px;
+  display: block;
 }
 
 .label,

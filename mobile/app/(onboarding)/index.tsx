@@ -18,7 +18,7 @@ export default function Splash() {
     <Screen>
       <View style={styles.hero}>
         <View style={styles.center}>
-          <Logo size={104} lockup="across" />
+          <Logo size={104} lockup="below" />
           <Text style={styles.tagline}>
             {brand.taglines.primary.toUpperCase().replace('.', ' .')}
           </Text>

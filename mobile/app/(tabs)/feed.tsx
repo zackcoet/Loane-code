@@ -123,7 +123,7 @@ export default function Feed() {
           accessibilityLabel="Open menu"
         />
         <View style={styles.logoLift}>
-          <Logo size={30} lockup="below" tint={color.text.heading} />
+          <Logo size={30} lockup="below" />
         </View>
         {/*
           SEARCH, not the chat bubble. Ella's swap: Discover is what

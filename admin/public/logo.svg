@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The Loane mark. GENERATED — edit brand/generate-brand.py, not this file.
+
+  Two filled circles overlapping in butter. The lens is the right
+  circle, clipped to the left one, which is the only way to paint a true
+  intersection rather than an eyeballed leaf shape.
+
+  Both rings are drawn LAST, so each circle reads as a whole circle
+  crossing the other. Painting the cherry circle over the ballet ring
+  instead would make the left one look cut off.
+
+  Colours are brand tokens: ballet / balletSoft / cherry / merlot /
+  butter. See shared/src/tokens.ts.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 333 209"
+     width="333" height="209" role="img" aria-label="Loane">
+  <title>Loane</title>
+  <defs>
+    <clipPath id="loane-left">
+      <circle cx="104.5" cy="104.5" r="100"/>
+    </clipPath>
+  </defs>
+
+  <circle cx="104.5" cy="104.5" r="100" fill="#FBE4EC"/>
+  <circle cx="228.5" cy="104.5" r="100" fill="#C8213F"/>
+
+  <g clip-path="url(#loane-left)">
+    <circle cx="228.5" cy="104.5" r="100" fill="#F7DC7A"/>
+  </g>
+
+  <circle cx="104.5" cy="104.5" r="100"
+          fill="none" stroke="#EFAFC2" stroke-width="9"/>
+  <circle cx="228.5" cy="104.5" r="100"
+          fill="none" stroke="#5E1A2E" stroke-width="9"/>
+</svg>

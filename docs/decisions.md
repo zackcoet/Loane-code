@@ -1081,3 +1081,35 @@ limited**, because they are written by the app directly under the
 security rules and there is no function to limit. Starting a
 conversation is limited; the messages inside it are not. Closing that
 means either moving sends behind a function or relying on App Check.
+
+## 2026-10-13 — The new mark
+
+Two overlapping outline rings became **two filled circles overlapping
+in butter**: a pale ballet circle with a ballet ring on the left, a
+cherry circle with a merlot ring on the right.
+
+**Why the lens matters.** The overlap is a colour neither circle has on
+its own, which is the product in one shape — two closets, and the thing
+that only exists where they meet. It is also the first mark we have had
+that is recognisable at 29pt.
+
+**The letters came off the circles.** The old lockup sat L O A N E
+across two outlines, which worked because the rings were empty. On
+filled circles the L and the O land on cherry and disappear. The
+wordmark now always sits underneath, and `lockup="across"` resolves to
+`below` so nothing had to be renamed in a hurry.
+
+**One file holds the geometry.** `brand/generate-brand.py` writes the
+SVG artwork, both web copies and every PNG from the same constants, and
+`mobile/src/components/Logo.tsx` draws the mark on screen with the same
+two ratios under the same names. The old mark drifted precisely because
+the icon was redrawn by hand at a different stroke weight than the
+logo, and the two quietly stopped being the same drawing.
+
+**Colours are all existing tokens** — balletSoft, ballet, cherry,
+merlot, butter — gathered under `color.logo` rather than reused from
+`color.role`, so reading the mark never looks like it means lender or
+renter.
+
+**Open:** the pale pink fill is `balletSoft`. If the pink in Zack's
+reference is deeper than that, it is one constant in one file.

@@ -15,12 +15,11 @@ export function AdminLayout({ adminEmail, children, page, title, onPageChange }:
   return (
     <div className="admin-shell">
       <aside className="sidebar">
-        <div className="brand-mark" aria-label="Loane">
-          <span>L</span>
-          <span>O</span>
-          <span>A</span>
-          <span>N</span>
-          <span>E</span>
+        <div className="brand-mark">
+          {/* The mark itself, served from admin/public. Written by
+              brand/generate-brand.py — do not hand-edit the copy. */}
+          <img src="/logo.svg" alt="" className="brand-logo" />
+          <span aria-label="Loane">LOANE</span>
         </div>
         <nav className="nav-list" aria-label="Admin navigation">
           {NAV_ITEMS.map((item) => (

@@ -199,6 +199,33 @@ export const color = {
   },
 
   /**
+   * THE MARK. Two filled circles overlapping in butter.
+   *
+   * The only place in the app where these colours are used as pure
+   * brand rather than to say who an element is for, which is why they
+   * are listed apart from `role` — reading `color.role.renter` into the
+   * logo would make the mark look like it meant something.
+   *
+   * The left circle is the quiet one and the right circle is the loud
+   * one, and the lens where they cross is the third colour neither of
+   * them has on its own. That is the whole idea of the mark: two
+   * closets, and what happens between them.
+   *
+   * The artwork lives in brand/logo-flat.svg; these are the same six
+   * colours, for the version drawn on screen.
+   */
+  logo: {
+    leftFill: palette.balletSoft,
+    leftRing: palette.ballet,
+    rightFill: palette.cherry,
+    rightRing: palette.merlot,
+    /** The lens. Never a text colour — butter on cream is 1.19:1. */
+    overlap: palette.butter,
+    /** LOANE, under the mark. */
+    wordmark: palette.merlot,
+  },
+
+  /**
    * WHO AN ELEMENT IS FOR. Ella's rule, and the spine of the palette.
    *
    *   lender  butter, merlot text   — her closet, her earnings, her

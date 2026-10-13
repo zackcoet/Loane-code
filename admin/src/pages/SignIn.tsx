@@ -58,6 +58,7 @@ export function SignIn({ rejected }: Props) {
     return (
       <main style={styles.wrapper}>
         <div style={styles.panel} className="card">
+          <img src="/logo.svg" alt="" style={styles.mark} />
           <p className="label">Loane Admin</p>
           <h1 style={styles.heading}>This account isn&apos;t an admin.</h1>
           <p style={styles.body}>
@@ -75,6 +76,7 @@ export function SignIn({ rejected }: Props) {
   return (
     <main style={styles.wrapper}>
       <form style={styles.panel} className="card" onSubmit={onSubmit}>
+        <img src="/logo.svg" alt="" style={styles.mark} />
         <p className="label">Loane Admin</p>
         <h1 style={styles.heading}>Sign in.</h1>
 
@@ -117,6 +119,8 @@ const styles: Record<string, React.CSSProperties> = {
     background: color.surface.page,
   },
   panel: { width: '100%', maxWidth: 380 },
+  /* The mark, above the label. Width only — the SVG carries its ratio. */
+  mark: { width: 64, display: 'block', marginBottom: 16 },
   heading: { fontSize: fontSize['2xl'], fontWeight: 700, margin: '8px 0 32px' },
   body: { fontSize: fontSize.sm, color: color.text.secondary, marginTop: 8 },
 };
