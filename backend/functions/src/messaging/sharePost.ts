@@ -97,6 +97,7 @@ export const sharePost = onCall<ShareInput, Promise<ShareResult>>(
         body: note,
         photo: null,
         sharedPost,
+        replyTo: null,
         readBy: [me.uid],
         isDeleted: false,
       };

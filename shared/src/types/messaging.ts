@@ -54,7 +54,29 @@ export interface Message extends BaseDoc {
     caption: string;
     authorUsername: string;
   } | null;
+  /**
+   * The message this one answers, when she swiped to reply.
+   *
+   * A copy of the original rather than just its id, for the same reason
+   * as sharedPost: the quote renders instantly even when the original is
+   * far up the thread and not loaded. The security rules check the copy
+   * against the real message, so nobody can put words in someone else's
+   * mouth by forging a quote. Older messages have no field at all.
+   */
+  replyTo?: MessageReply | null;
   readBy: string[];
   /** Soft delete so moderation can still see it. */
   isDeleted: boolean;
+}
+
+/** The quoted original inside a reply. See Message.replyTo. */
+export interface MessageReply {
+  messageId: string;
+  senderUid: string;
+  /** The original's words, copied whole. May be empty for a photo. */
+  body: string;
+  /** So the quote can say "Photo" when there were no words. */
+  hasPhoto: boolean;
+  /** So the quote can say "A look" when there were no words. */
+  hasSharedPost: boolean;
 }

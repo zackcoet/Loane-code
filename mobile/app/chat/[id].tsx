@@ -6,7 +6,7 @@
  * they are sent.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActionSheetIOS,
@@ -28,9 +28,12 @@ import {
   controls,
   iconSize,
   radius,
+  replyFor,
+  replyPreview,
   spacing,
   type,
   type Message,
+  type MessageReply,
 } from '@loane/shared';
 import { Avatar } from '../../src/components/Avatar';
 import { EmptyState } from '../../src/components/EmptyState';
@@ -44,6 +47,7 @@ import { useReportOrBlock } from '../../src/hooks/useReportOrBlock';
 import { IconButton } from '../../src/components/IconButton';
 import { ReportSheet } from '../../src/components/ReportSheet';
 import { pickPhoto, uploadMessagePhoto } from '../../src/lib/photo';
+import { SwipeToReply } from '../../src/components/SwipeToReply';
 
 export default function Chat() {
   const [reporting, setReporting] = useState(false);
@@ -54,6 +58,11 @@ export default function Chat() {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [attaching, setAttaching] = useState(false);
+  // The message she swiped on, shown above the composer until she sends
+  // or taps the ×.
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const listRef = useRef<FlatList<Message>>(null);
+  const inputRef = useRef<TextInput>(null);
 
   // Opening the thread is what clears the badge.
   useEffect(() => {
@@ -68,6 +77,28 @@ export default function Chat() {
     onReport: () => setReporting(true),
     onBlocked: () => router.back(),
   });
+
+  /** Who a quote is from, in the words the thread uses. */
+  const nameFor = useCallback(
+    (senderUid: string) =>
+      senderUid === profile?.uid ? 'You' : them ? `@${them.username}` : 'Them',
+    [profile?.uid, them],
+  );
+
+  const startReply = useCallback((message: Message) => {
+    setReplyingTo(message);
+    inputRef.current?.focus();
+  }, []);
+
+  /** Tapping a quote scrolls up to the original, if it is loaded. */
+  const jumpTo = useCallback(
+    (messageId: string) => {
+      const index = messages.findIndex((m) => m.id === messageId);
+      if (index < 0) return;
+      listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
+    },
+    [messages],
+  );
 
   /** Send a photo — showing a stain, or how something fits. */
   const onAttach = async () => {
@@ -93,8 +124,9 @@ export default function Chat() {
       const picked = await pickPhoto(source, 'free');
       if (!picked) return;
       const uploaded = await uploadMessagePhoto(profile.uid, picked);
-      await send(draft, uploaded);
+      await send(draft, uploaded, replyingTo ? replyFor(replyingTo) : null);
       setDraft('');
+      setReplyingTo(null);
     } catch {
       Alert.alert('Loane', 'Could not send that photo. Try again.');
     } finally {
@@ -107,9 +139,13 @@ export default function Chat() {
     if (!text || sending) return;
     setSending(true);
     setDraft('');
+    const reply = replyingTo;
+    setReplyingTo(null);
     try {
-      await send(text);
+      await send(text, undefined, reply ? replyFor(reply) : null);
     } catch {
+      // Put the reply back too, so the retry still answers the same thing.
+      setReplyingTo(reply);
       // Put it back so she does not lose what she typed.
       setDraft(text);
     } finally {
@@ -172,15 +208,60 @@ export default function Chat() {
           <EmptyState title="Say hello" body="Ask about fit, condition, or where to meet." />
         ) : (
           <FlatList
+            ref={listRef}
             data={messages}
             keyExtractor={(m) => m.id}
             inverted
             contentContainerStyle={styles.list}
+            // Rows are different heights, so a jump to a far-off quote
+            // can miss on the first try. Scroll near it, then try again.
+            onScrollToIndexFailed={({ index, averageItemLength }) => {
+              listRef.current?.scrollToOffset({ offset: index * averageItemLength });
+              setTimeout(
+                () => listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 }),
+                250,
+              );
+            }}
             renderItem={({ item }) => (
-              <Bubble message={item} mine={item.senderUid === profile?.uid} router={router} />
+              <Bubble
+                message={item}
+                mine={item.senderUid === profile?.uid}
+                router={router}
+                onReply={() => startReply(item)}
+                onJumpTo={jumpTo}
+                quoteName={item.replyTo ? nameFor(item.replyTo.senderUid) : ''}
+                quoteGone={
+                  item.replyTo
+                    ? messages.find((m) => m.id === item.replyTo!.messageId)?.isDeleted === true
+                    : false
+                }
+              />
             )}
           />
         )}
+
+        {replyingTo ? (
+          <View style={styles.replyBar}>
+            <View style={styles.replyBarText}>
+              <Text variant="caption" tone="muted">
+                Replying to{' '}
+                {nameFor(replyingTo.senderUid) === 'You'
+                  ? 'yourself'
+                  : nameFor(replyingTo.senderUid)}
+              </Text>
+              <Text variant="bodySmall" tone="secondary" numberOfLines={1}>
+                {replyPreview(replyFor(replyingTo))}
+              </Text>
+            </View>
+            <IconButton
+              name="close"
+              size={iconSize.sm}
+              tint={color.icon.muted}
+              accessibilityLabel="Cancel reply"
+              onPress={() => setReplyingTo(null)}
+            />
+          </View>
+        ) : null}
 
         <View style={styles.composer}>
           <Pressable
@@ -197,6 +278,7 @@ export default function Chat() {
             )}
           </Pressable>
           <TextInput
+            ref={inputRef}
             value={draft}
             onChangeText={setDraft}
             placeholder="Message"
@@ -226,76 +308,156 @@ function Bubble({
   message,
   mine,
   router,
+  onReply,
+  onJumpTo,
+  quoteName,
+  quoteGone,
 }: {
   message: Message;
   mine: boolean;
   router: ReturnType<typeof useRouter>;
+  onReply: () => void;
+  onJumpTo: (messageId: string) => void;
+  /** "You" or "@maddie" — who said the quoted message. */
+  quoteName: string;
+  /** The original was taken down by moderation since she replied. */
+  quoteGone: boolean;
 }) {
+  // Long-press offers Reply too, for anyone who never discovers the
+  // swipe. One option for now; copy and react can join it later.
+  const onLongPress = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options: ['Cancel', 'Reply'], cancelButtonIndex: 0 },
+        (i) => i === 1 && onReply(),
+      );
+    } else {
+      Alert.alert('Message', undefined, [
+        { text: 'Reply', onPress: onReply },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
+  };
+
   return (
-    <View style={[styles.bubbleRow, mine ? styles.rowMine : styles.rowTheirs]}>
-      <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
-        {/* A look somebody sent. The snapshot is what renders; tapping
+    <SwipeToReply onReply={onReply}>
+      <Pressable
+        onLongPress={onLongPress}
+        delayLongPress={350}
+        // One VoiceOver element with a Reply action — except a shared
+        // look, whose card must stay its own button to be openable.
+        accessible={!message.sharedPost}
+        accessibilityLabel={message.body || (message.photo ? 'Photo' : 'Message')}
+        accessibilityActions={[{ name: 'reply', label: 'Reply' }]}
+        onAccessibilityAction={(e) => e.nativeEvent.actionName === 'reply' && onReply()}
+        style={[styles.bubbleRow, mine ? styles.rowMine : styles.rowTheirs]}
+      >
+        <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
+          {message.replyTo ? (
+            <Quote
+              reply={message.replyTo}
+              name={quoteName}
+              gone={quoteGone}
+              onPress={() => onJumpTo(message.replyTo!.messageId)}
+            />
+          ) : null}
+          {/* A look somebody sent. The snapshot is what renders; tapping
             opens the live post, which is where the truth is. */}
-        {message.sharedPost ? (
-          <Pressable
-            onPress={() =>
-              router.push({
-                pathname: '/post/[id]',
-                params: { id: message.sharedPost!.postId },
-              })
-            }
-            accessibilityRole="button"
-            accessibilityLabel={`Open @${message.sharedPost.authorUsername}'s look`}
-            style={styles.sharedPost}
-          >
-            {message.sharedPost.photoUrl ? (
-              <Image
-                source={{ uri: message.sharedPost.photoUrl }}
-                style={styles.sharedPhoto}
-                resizeMode="cover"
-              />
-            ) : (
-              <View style={styles.sharedPhoto} />
-            )}
-            {/* The card sets its own colours instead of taking the
+          {message.sharedPost ? (
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: '/post/[id]',
+                  params: { id: message.sharedPost!.postId },
+                })
+              }
+              accessibilityRole="button"
+              accessibilityLabel={`Open @${message.sharedPost.authorUsername}'s look`}
+              style={styles.sharedPost}
+            >
+              {message.sharedPost.photoUrl ? (
+                <Image
+                  source={{ uri: message.sharedPost.photoUrl }}
+                  style={styles.sharedPhoto}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.sharedPhoto} />
+              )}
+              {/* The card sets its own colours instead of taking the
                 bubble's. It sat on a pale panel while inheriting the
                 dark bubble's inverse text, which on my own messages
                 came out white on near-white. A card is a card whoever
                 sent it. */}
-            <View style={styles.sharedText}>
-              <Text variant="caption" tone="muted">
-                @{message.sharedPost.authorUsername}
-              </Text>
-              <Text variant="bodySmall" tone="primary" numberOfLines={2}>
-                {message.sharedPost.caption || 'Shared a look'}
-              </Text>
-              <View style={styles.sharedCta}>
-                <Text variant="caption" tone="muted" uppercase={false}>
-                  Tap to open
+              <View style={styles.sharedText}>
+                <Text variant="caption" tone="muted">
+                  @{message.sharedPost.authorUsername}
                 </Text>
-                <Icon name="chevron-forward" size={14} tint={color.icon.muted} />
+                <Text variant="bodySmall" tone="primary" numberOfLines={2}>
+                  {message.sharedPost.caption || 'Shared a look'}
+                </Text>
+                <View style={styles.sharedCta}>
+                  <Text variant="caption" tone="muted" uppercase={false}>
+                    Tap to open
+                  </Text>
+                  <Icon name="chevron-forward" size={14} tint={color.icon.muted} />
+                </View>
               </View>
-            </View>
-          </Pressable>
-        ) : null}
-        {message.photo ? (
-          <Image
-            source={{ uri: message.photo.url }}
-            style={styles.bubblePhoto}
-            resizeMode="cover"
-          />
-        ) : null}
-        {message.body ? (
-          <Text
-            variant="bodySmall"
-            tone={mine ? 'inverse' : 'primary'}
-            style={message.photo || message.sharedPost ? styles.captionUnderPhoto : undefined}
-          >
-            {message.body}
-          </Text>
-        ) : null}
-      </View>
-    </View>
+            </Pressable>
+          ) : null}
+          {message.photo ? (
+            <Image
+              source={{ uri: message.photo.url }}
+              style={styles.bubblePhoto}
+              resizeMode="cover"
+            />
+          ) : null}
+          {message.body ? (
+            <Text
+              variant="bodySmall"
+              tone={mine ? 'inverse' : 'primary'}
+              style={message.photo || message.sharedPost ? styles.captionUnderPhoto : undefined}
+            >
+              {message.body}
+            </Text>
+          ) : null}
+        </View>
+      </Pressable>
+    </SwipeToReply>
+  );
+}
+
+/**
+ * The quoted message at the top of a reply.
+ *
+ * Its own pale panel whoever sent the reply, for the same reason as the
+ * shared-look card: inheriting the dark bubble's colours made it vanish.
+ */
+function Quote({
+  reply,
+  name,
+  gone,
+  onPress,
+}: {
+  reply: MessageReply;
+  name: string;
+  gone: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Replying to ${name}. Tap to see the original.`}
+      style={styles.quote}
+    >
+      <Text variant="caption" tone="muted">
+        {name}
+      </Text>
+      <Text variant="bodySmall" tone={gone ? 'muted' : 'secondary'} numberOfLines={2}>
+        {gone ? 'Message unavailable' : replyPreview(reply)}
+      </Text>
+    </Pressable>
   );
 }
 
@@ -370,6 +532,34 @@ const styles = StyleSheet.create({
     backgroundColor: color.surface.muted,
   },
   captionUnderPhoto: { marginTop: spacing.sm },
+  quote: {
+    minWidth: 160,
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: color.border.accent,
+    backgroundColor: color.surface.page,
+    gap: 2,
+  },
+  replyBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingLeft: spacing.md,
+    paddingVertical: spacing.xs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: color.border.default,
+    backgroundColor: color.surface.section,
+  },
+  replyBarText: {
+    flex: 1,
+    gap: 2,
+    borderLeftWidth: 3,
+    borderLeftColor: color.border.accent,
+    paddingLeft: spacing.sm,
+  },
   sharedPost: {
     width: 232,
     borderRadius: radius.md,

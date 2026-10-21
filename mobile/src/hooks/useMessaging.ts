@@ -20,7 +20,14 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { COLLECTIONS, LIMITS, type Conversation, type ImageRef, type Message } from '@loane/shared';
+import {
+  COLLECTIONS,
+  LIMITS,
+  type Conversation,
+  type ImageRef,
+  type Message,
+  type MessageReply,
+} from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { logEvent } from '../analytics/events';
@@ -116,7 +123,7 @@ export function useConversation(conversationId: string | undefined) {
   }, [conversationId, uid, conversation]);
 
   const send = useCallback(
-    async (body: string, photo?: ImageRef) => {
+    async (body: string, photo?: ImageRef, replyTo?: MessageReply | null) => {
       const text = body.trim();
       // A photo on its own is a perfectly good message.
       if (!conversationId || !uid || (!text && !photo)) return;
@@ -127,6 +134,9 @@ export function useConversation(conversationId: string | undefined) {
         senderUid: uid,
         body: text,
         photo: photo ?? null,
+        // A copy of the message she is answering. The rules check it
+        // against the original, so it must come from replyFor().
+        replyTo: replyTo ?? null,
         readBy: [uid],
         isDeleted: false,
         createdAt: serverTimestamp(),

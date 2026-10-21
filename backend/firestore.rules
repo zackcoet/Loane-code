@@ -542,6 +542,25 @@ service cloud.firestore {
 
         allow read: if inThread() || isAdmin();
 
+        // A reply carries a copy of the message it answers so the quote
+        // shows even when the original is far up the thread. The copy
+        // must match the real message word for word, in this same
+        // thread, and the original must not have been taken down —
+        // otherwise a reply could put words in the other person's mouth.
+        function validReply() {
+          let r = request.resource.data.replyTo;
+          let path = /databases/$(database)/documents/conversations/$(conversationId)/messages/$(r.messageId);
+          return r is map
+            && r.keys().hasOnly(['messageId', 'senderUid', 'body', 'hasPhoto', 'hasSharedPost'])
+            && r.messageId is string
+            && exists(path)
+            && get(path).data.isDeleted == false
+            && r.senderUid == get(path).data.senderUid
+            && r.body == get(path).data.body
+            && r.hasPhoto == (get(path).data.get('photo', null) != null)
+            && r.hasSharedPost == (get(path).data.get('sharedPost', null) != null);
+        }
+
         // A shared look is written by the sharePost function, never by
         // the app: it moves the post's share count and the snapshot in
         // the bubble has to be the real post. So an app-written message
@@ -551,7 +570,10 @@ service cloud.firestore {
           && request.resource.data.senderUid == uid()
           && request.resource.data.isDeleted == false
           && (!('sharedPost' in request.resource.data)
-              || request.resource.data.sharedPost == null);
+              || request.resource.data.sharedPost == null)
+          && (!('replyTo' in request.resource.data)
+              || request.resource.data.replyTo == null
+              || validReply());
 
         // She may mark a message read; she may not edit what was said.
         allow update: if inThread() && onlyChanges(['readBy', 'updatedAt']);

@@ -908,6 +908,86 @@ describe('conversations', () => {
     );
   });
 
+  describe('replying to a message', () => {
+    const reply = (replyTo: Record<string, unknown>) =>
+      setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', `m-reply-${Math.random()}`), {
+        conversationId: 'chat-1',
+        senderUid: ELLA,
+        body: 'yes!',
+        readBy: [ELLA],
+        isDeleted: false,
+        photo: null,
+        sharedPost: null,
+        replyTo,
+      });
+    const honest = {
+      messageId: 'm1',
+      senderUid: MADDIE,
+      body: 'hi',
+      hasPhoto: false,
+      hasSharedPost: false,
+    };
+
+    it('lets her quote what was really said', async () => {
+      await assertSucceeds(reply(honest));
+    });
+
+    it('allows a message that says replyTo is null', async () => {
+      await assertSucceeds(
+        setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm-noreply'), {
+          conversationId: 'chat-1',
+          senderUid: ELLA,
+          body: 'hello',
+          readBy: [ELLA],
+          isDeleted: false,
+          replyTo: null,
+        }),
+      );
+    });
+
+    it('refuses a quote that changes the words', async () => {
+      await assertFails(reply({ ...honest, body: 'I will give it to you for free' }));
+    });
+
+    it('refuses a quote pinned on the wrong person', async () => {
+      await assertFails(reply({ ...honest, senderUid: ELLA }));
+    });
+
+    it('refuses a quote of a message that does not exist', async () => {
+      await assertFails(reply({ ...honest, messageId: 'nope' }));
+    });
+
+    it('refuses a quote of a message from another thread', async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'conversations', 'chat-other', 'messages', 'mx'), {
+          conversationId: 'chat-other',
+          senderUid: MADDIE,
+          body: 'secret',
+          readBy: [MADDIE],
+          isDeleted: false,
+        });
+      });
+      await assertFails(reply({ ...honest, messageId: 'mx', body: 'secret' }));
+    });
+
+    it('refuses a quote of a message moderation took down', async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'conversations', 'chat-1', 'messages', 'm-gone'), {
+          conversationId: 'chat-1',
+          senderUid: MADDIE,
+          body: 'removed',
+          readBy: [MADDIE],
+          isDeleted: true,
+        });
+      });
+      await assertFails(reply({ ...honest, messageId: 'm-gone', body: 'removed' }));
+    });
+
+    it('refuses extra fields smuggled into the quote', async () => {
+      await assertFails(reply({ ...honest, sharedPost: { postId: 'p' } }));
+    });
+  });
+
   it('stops an outsider posting into the thread', async () => {
     await assertFails(
       setDoc(
@@ -1555,7 +1635,9 @@ describe('try-ons', () => {
 
   it('stops her repointing it at a different image', async () => {
     await assertFails(
-      updateDoc(doc(asElla(), 'tryOns', TRYON), { imagePath: `users/${MADDIE}/tryon/results/x.jpg` }),
+      updateDoc(doc(asElla(), 'tryOns', TRYON), {
+        imagePath: `users/${MADDIE}/tryon/results/x.jpg`,
+      }),
     );
   });
 
@@ -1565,7 +1647,7 @@ describe('try-ons', () => {
     await assertFails(updateDoc(doc(asElla(), 'tryOns', TRYON), { cacheKey: 'd'.repeat(64) }));
   });
 
-  it("stops another student saving or deleting hers", async () => {
+  it('stops another student saving or deleting hers', async () => {
     await assertFails(updateDoc(doc(asMaddie(), 'tryOns', TRYON), { saved: true }));
     await assertFails(deleteDoc(doc(asMaddie(), 'tryOns', TRYON)));
   });
@@ -1631,7 +1713,7 @@ describe('phone hashes', () => {
     );
   });
 
-  it("cannot be repointed at her own account", async () => {
+  it('cannot be repointed at her own account', async () => {
     await assertFails(updateDoc(doc(asElla(), 'phoneHashes', HASH), { uid: ELLA }));
   });
 
