@@ -46,9 +46,9 @@ Every run should move the app measurably closer to that. Prefer **finishing and 
 Pick the **highest unfinished item**. Finish it fully (UI, backend, rules, tests, empty/loading/error states) before moving on. If an item is blocked, log why and skip to the next.
 
 ### A. Messaging (make DMs feel like Instagram)
-1. Reply to a specific message (swipe to reply, quoted preview).
+✅ 1. Reply to a specific message (swipe to reply, quoted preview).
 2. Share a post or listing into a DM from anywhere (share sheet → pick people → sends as a rich card that opens the post/listing).
-3. Send photos in DMs.
+✅ 3. Send photos in DMs. *(was already built before autopilot started — the + in the chat composer)*
 4. Read receipts ("Seen") and unread counts that stay accurate.
 5. Message reactions (double-tap heart).
 6. Inbox polish: search conversations, swipe to delete/mute, pinned "requests" from people you don't follow.
@@ -118,6 +118,7 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 1. Add tests for every new backend function and rules change.
 2. Fix lint warnings and any `TODO` that's under an hour of work.
 3. Performance: images sized properly, lists virtualized, no needless re-renders.
+4. *(suggested)* Let the overnight runner start the emulators: it can't download the Firestore emulator (Google's download site is blocked from the cloud runner), so rules and booking tests only run on Zack's laptop or in CI (see C3).
 
 ---
 
