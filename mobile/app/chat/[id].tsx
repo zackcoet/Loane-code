@@ -51,6 +51,7 @@ import {
   useConversation,
 } from '../../src/hooks/useMessaging';
 import { useFollowingUids } from '../../src/hooks/useFollowing';
+import { useHiddenUids } from '../../src/hooks/useBlocks';
 import { useReportOrBlock } from '../../src/hooks/useReportOrBlock';
 import { IconButton } from '../../src/components/IconButton';
 import { ReportSheet } from '../../src/components/ReportSheet';
@@ -125,6 +126,7 @@ export default function Chat() {
 
   const otherUid = conversation?.participantUids.find((uid) => uid !== profile?.uid);
   const them = otherUid ? conversation?.participants?.[otherUid] : undefined;
+  const hidden = useHiddenUids();
   const reportOrBlock = useReportOrBlock({
     uid: them?.uid ?? '',
     username: them?.username ?? '',
@@ -212,6 +214,22 @@ export default function Chat() {
       setSending(false);
     }
   };
+
+  // Blocked either way: no history, no composer. The server refuses new
+  // messages anyway; this just stops her typing into a box that cannot
+  // send. Worded like a deleted account on purpose — it never says who
+  // blocked whom. Reached from an old notification or a shared link.
+  if (otherUid && hidden.has(otherUid)) {
+    return (
+      <Screen flush>
+        <Header title="Chat" onBack={() => router.back()} />
+        <EmptyState
+          title="This chat isn't available"
+          body="You can't message this person right now."
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen flush>

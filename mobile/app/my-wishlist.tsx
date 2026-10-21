@@ -30,6 +30,7 @@ import { Text } from '../src/components/Text';
 import { useWishlist } from '../src/hooks/useSaved';
 import { useSavedPosts } from '../src/hooks/usePostEngagement';
 import { useMyTryOns, useSaveTryOn, useTryOnEnabled, useTryOnImage } from '../src/hooks/useTryOn';
+import { useHiddenUids } from '../src/hooks/useBlocks';
 
 const GRID_COLUMNS = 2;
 
@@ -42,6 +43,7 @@ export default function MyWishlist() {
   const looks = useSavedPosts();
   const tryOns = useMyTryOns();
   const tryOnOn = useTryOnEnabled();
+  const hidden = useHiddenUids();
 
   /**
    * The fitting room door.
@@ -61,8 +63,12 @@ export default function MyWishlist() {
   const cardWidth = (width - spacing.md * (GRID_COLUMNS + 1)) / GRID_COLUMNS;
 
   // A saved piece can be paused, sold or taken down after she saved it.
-  const available = items.listings.filter((l) => l.status === 'active');
-  const unavailable = items.listings.filter((l) => l.status !== 'active');
+  // A piece from a closet blocked either way counts as unavailable — it
+  // reads like a removed piece, and she cannot rent it anyway.
+  const isUp = (l: { status: string; ownerUid: string }) =>
+    l.status === 'active' && !hidden.has(l.ownerUid);
+  const available = items.listings.filter(isUp);
+  const unavailable = items.listings.filter((l) => !isUp(l));
 
   return (
     <Screen flush>

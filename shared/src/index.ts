@@ -20,5 +20,6 @@ export * from './usernameSuggest';
 export * from './replies';
 export * from './shares';
 export * from './receipts';
+export * from './blocking';
 export * from './inbox';
 export * from './messageQuota';

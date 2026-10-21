@@ -41,6 +41,7 @@ import {
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { logEvent } from '../analytics/events';
+import { useHiddenUids } from './useBlocks';
 import { useFollowingUids } from './useFollowing';
 import { useUserSettings } from './useUserSettings';
 
@@ -107,9 +108,11 @@ export function useInbox() {
   const uid = profile?.uid;
   const { conversations, loading } = useConversations();
   const { uids: following, loading: followingLoading } = useFollowingUids();
+  // Threads with anyone blocked either way leave the inbox entirely.
+  const hidden = useHiddenUids();
   const split = useMemo(
-    () => (uid ? splitInbox(conversations, uid, following) : { inbox: [], requests: [] }),
-    [conversations, uid, following],
+    () => (uid ? splitInbox(conversations, uid, following, hidden) : { inbox: [], requests: [] }),
+    [conversations, uid, following, hidden],
   );
   // Wait for who she follows too, or a friend's thread would flash in
   // Requests for a moment on every open.
@@ -124,9 +127,10 @@ export function useUnreadMessageCount(): number {
   const { profile } = useAuth();
   const { conversations } = useConversations();
   const { uids: following } = useFollowingUids();
+  const hidden = useHiddenUids();
   const uid = profile?.uid;
   if (!uid) return 0;
-  return inboxUnreadTotal(conversations, uid, following);
+  return inboxUnreadTotal(conversations, uid, following, hidden);
 }
 
 /**

@@ -21,6 +21,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { color } from '@loane/shared';
 import { AuthProvider, useAuth } from '../src/auth/AuthProvider';
+import { BlocksProvider } from '../src/hooks/useBlocks';
 import { SignupDraftProvider } from '../src/auth/signupDraft';
 import { PostDraftProvider } from '../src/post/postDraft';
 import { SuccessBannerProvider } from '../src/components/SuccessBanner';
@@ -179,16 +180,18 @@ export default function RootLayout() {
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
         <AuthProvider>
-          <SignupDraftProvider>
-            <PostDraftProvider>
-              <SuccessBannerProvider>
-                <WalkthroughTargetsProvider>
-                  <StatusBar style="dark" />
-                  <RootNavigator />
-                </WalkthroughTargetsProvider>
-              </SuccessBannerProvider>
-            </PostDraftProvider>
-          </SignupDraftProvider>
+          <BlocksProvider>
+            <SignupDraftProvider>
+              <PostDraftProvider>
+                <SuccessBannerProvider>
+                  <WalkthroughTargetsProvider>
+                    <StatusBar style="dark" />
+                    <RootNavigator />
+                  </WalkthroughTargetsProvider>
+                </SuccessBannerProvider>
+              </PostDraftProvider>
+            </SignupDraftProvider>
+          </BlocksProvider>
         </AuthProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

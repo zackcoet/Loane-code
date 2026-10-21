@@ -63,18 +63,38 @@ export function isRequestFor(thread: Thread, uid: string, followingUids: Set<str
 }
 
 /**
+ * The thread is with someone she blocked, or who blocked her.
+ *
+ * Such a thread leaves both inboxes entirely — rentals included. The
+ * rental itself carries on from My Rentals, which never needed the
+ * chat; and the server refuses new messages either way, so a thread
+ * left showing would only be a box she could type into and never send.
+ */
+export function isWithBlocked(
+  thread: Pick<Conversation, 'participantUids'>,
+  uid: string,
+  blockedUids: Set<string>,
+): boolean {
+  if (blockedUids.size === 0) return false;
+  return thread.participantUids.some((p) => p !== uid && blockedUids.has(p));
+}
+
+/**
  * Splits the loaded threads into her inbox and her Requests folder,
- * dropping the ones she deleted. Order is kept.
+ * dropping the ones she deleted and the ones with someone blocked
+ * either way. Order is kept.
  */
 export function splitInbox<T extends Thread>(
   threads: T[],
   uid: string,
   followingUids: Set<string>,
+  blockedUids: Set<string> = new Set(),
 ): { inbox: T[]; requests: T[] } {
   const inbox: T[] = [];
   const requests: T[] = [];
   for (const t of threads) {
     if (isHiddenFor(t, uid)) continue;
+    if (isWithBlocked(t, uid, blockedUids)) continue;
     if (isRequestFor(t, uid, followingUids)) requests.push(t);
     else inbox.push(t);
   }
@@ -92,8 +112,9 @@ export function inboxUnreadTotal(
   threads: Thread[],
   uid: string,
   followingUids: Set<string>,
+  blockedUids: Set<string> = new Set(),
 ): number {
-  return splitInbox(threads, uid, followingUids).inbox.reduce(
+  return splitInbox(threads, uid, followingUids, blockedUids).inbox.reduce(
     (total, t) => total + (isMutedFor(t, uid) ? 0 : (t.unreadCounts?.[uid] ?? 0)),
     0,
   );

@@ -30,6 +30,7 @@ import { TaggablePhoto } from './TaggablePhoto';
 import { TaggedPieces } from './TaggedPieces';
 import { Text } from './Text';
 import { useIsLiked, useIsPostSaved } from '../hooks/usePostEngagement';
+import { useHiddenUids } from '../hooks/useBlocks';
 
 /** Longer than this and the caption gets a "more". */
 const CAPTION_PREVIEW_CHARS = 120;
@@ -66,6 +67,9 @@ export function PostCard({
   onTryOnLook,
 }: Props) {
   const { width } = useWindowDimensions();
+  // "Liked by @someone" never names a person blocked either way; the
+  // count alone shows instead, the same as when we do not know who.
+  const hidden = useHiddenUids();
   const [tagsVisible, setTagsVisible] = useState(false);
   const [expandedTag, setExpandedTag] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -263,7 +267,7 @@ export function PostCard({
       <View style={styles.footer}>
         {/* Liked by. */}
         {showLikeCount && post.stats.likeCount > 0 ? (
-          post.lastLiker ? (
+          post.lastLiker && !hidden.has(post.lastLiker.uid) ? (
             <Pressable
               style={styles.likedBy}
               accessibilityRole="button"

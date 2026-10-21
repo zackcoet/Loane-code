@@ -9,13 +9,21 @@
  * See docs/security.md; the seam is real and written down.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { COLLECTIONS } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 
-export function useHiddenUids(): Set<string> {
+const EMPTY: Set<string> = new Set();
+const HiddenUidsContext = createContext<Set<string>>(EMPTY);
+
+/**
+ * Listens to both lists ONCE for the whole app. Every look card checks
+ * "Liked by" against this, so a listener per card would be dozens of
+ * identical subscriptions on one scroll of the feed.
+ */
+export function BlocksProvider({ children }: { children: ReactNode }) {
   const { profile } = useAuth();
   const uid = profile?.uid;
   const [blocked, setBlocked] = useState<string[]>([]);
@@ -43,7 +51,17 @@ export function useHiddenUids(): Set<string> {
     };
   }, [uid]);
 
-  return useMemo(() => new Set([...blocked, ...blockedBy]), [blocked, blockedBy]);
+  const hidden = useMemo(
+    () => (blocked.length + blockedBy.length === 0 ? EMPTY : new Set([...blocked, ...blockedBy])),
+    [blocked, blockedBy],
+  );
+
+  return <HiddenUidsContext.Provider value={hidden}>{children}</HiddenUidsContext.Provider>;
+}
+
+/** Everyone blocked either way. Empty until she is signed in. */
+export function useHiddenUids(): Set<string> {
+  return useContext(HiddenUidsContext);
 }
 
 /** Just the people she blocked, for a "Blocked" settings list. */

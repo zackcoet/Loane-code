@@ -20,6 +20,7 @@ import { Screen } from '../../src/components/Screen';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { db } from '../../src/firebase/config';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
+import { useHiddenUids } from '../../src/hooks/useBlocks';
 import { logEvent } from '../../src/analytics/events';
 
 export default function PostScreen() {
@@ -27,6 +28,7 @@ export default function PostScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
   const chat = useOpenChat();
+  const hidden = useHiddenUids();
 
   const [post, setPost] = useState<Post | null>(null);
   const [reporting, setReporting] = useState(false);
@@ -62,7 +64,8 @@ export default function PostScreen() {
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
-      ) : !post || post.status !== 'active' ? (
+      ) : !post || post.status !== 'active' || hidden.has(post.authorUid) ? (
+        // Blocked either way reads the same as a deleted look.
         <EmptyState title="Not found" body="That look is no longer up." />
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>

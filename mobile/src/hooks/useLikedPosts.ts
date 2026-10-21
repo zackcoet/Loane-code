@@ -7,12 +7,13 @@
  * is what tells us the list moved.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
-import { COLLECTIONS, type Like, type Post } from '@loane/shared';
+import { COLLECTIONS, withoutBlocked, type Like, type Post } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { readPostsInOrder } from './readPostsInOrder';
+import { useHiddenUids } from './useBlocks';
 
 export function useLikedPosts() {
   const { profile } = useAuth();
@@ -68,5 +69,9 @@ export function useLikedPosts() {
     };
   }, [uid]);
 
-  return { posts, loading };
+  // Looks by someone blocked either way drop out, like everywhere else.
+  const hidden = useHiddenUids();
+  const visible = useMemo(() => withoutBlocked(posts, (p) => p.authorUid, hidden), [posts, hidden]);
+
+  return { posts: visible, loading };
 }

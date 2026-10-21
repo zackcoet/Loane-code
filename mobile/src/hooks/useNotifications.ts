@@ -7,7 +7,7 @@
  * rather than decorative.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   collection,
   doc,
@@ -19,9 +19,10 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { COLLECTIONS, type Notification } from '@loane/shared';
+import { COLLECTIONS, isHiddenNotification, type Notification } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
+import { useHiddenUids } from './useBlocks';
 
 export function useNotifications() {
   const { profile } = useAuth();
@@ -61,7 +62,15 @@ export function useNotifications() {
     [uid],
   );
 
-  return { notifications, loading, markRead };
+  // Likes, comments and follows from someone blocked either way are
+  // hidden. Rental alerts are not — see isHiddenNotification.
+  const hidden = useHiddenUids();
+  const visible = useMemo(
+    () => notifications.filter((n) => !isHiddenNotification(n, hidden)),
+    [notifications, hidden],
+  );
+
+  return { notifications: visible, loading, markRead };
 }
 
 /**
@@ -73,11 +82,12 @@ export function useNotifications() {
 export function useUnreadCount(): number {
   const { profile } = useAuth();
   const uid = profile?.uid;
-  const [count, setCount] = useState(0);
+  const [unread, setUnread] = useState<Notification[]>([]);
+  const hidden = useHiddenUids();
 
   useEffect(() => {
     if (!uid) {
-      setCount(0);
+      setUnread([]);
       return;
     }
     return onSnapshot(
@@ -86,10 +96,12 @@ export function useUnreadCount(): number {
         where('readAt', '==', null),
         limit(50),
       ),
-      (snap) => setCount(snap.size),
-      () => setCount(0),
+      (snap) => setUnread(snap.docs.map((d) => d.data() as Notification)),
+      () => setUnread([]),
     );
   }, [uid]);
 
-  return count;
+  // Same filter as the list, so the badge never counts an alert she
+  // cannot find on the Activity tab.
+  return unread.filter((n) => !isHiddenNotification(n, hidden)).length;
 }

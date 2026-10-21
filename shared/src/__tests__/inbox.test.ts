@@ -4,6 +4,7 @@ import {
   isHiddenFor,
   isMutedFor,
   isRequestFor,
+  isWithBlocked,
   splitInbox,
   visibleAfterDelete,
 } from '../inbox';
@@ -103,6 +104,24 @@ describe('splitInbox and the badge', () => {
 
   it('counts only unmuted inbox threads toward the badge', () => {
     expect(inboxUnreadTotal([friend, stranger, deleted, muted], ME, following)).toBe(2);
+  });
+
+  it('drops threads with someone blocked either way, from inbox, requests and badge', () => {
+    const blocked = new Set(['uid-friend', THEM]);
+    const rental = thread({ id: 'rental', bookingId: 'b1' });
+    const { inbox, requests } = splitInbox([friend, stranger, rental], ME, following, blocked);
+    expect(inbox).toEqual([]);
+    expect(requests).toEqual([]);
+    expect(inboxUnreadTotal([friend, stranger, rental], ME, following, blocked)).toBe(0);
+  });
+});
+
+describe('isWithBlocked', () => {
+  it('is true only when the OTHER person is in the set', () => {
+    expect(isWithBlocked(thread(), ME, new Set([THEM]))).toBe(true);
+    expect(isWithBlocked(thread(), ME, new Set([ME]))).toBe(false);
+    expect(isWithBlocked(thread(), ME, new Set())).toBe(false);
+    expect(isWithBlocked(thread(), ME, new Set(['uid-someone-else']))).toBe(false);
   });
 });
 

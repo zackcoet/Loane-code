@@ -6,14 +6,15 @@
  * because both drive a visible count.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, doc, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
-import { COLLECTIONS, ids, type Post, type PostSave } from '@loane/shared';
+import { COLLECTIONS, ids, withoutBlocked, type Post, type PostSave } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { likePost, savePost, unlikePost, unsavePost } from '../firebase/callables';
 import { logEvent } from '../analytics/events';
 import { readPostsInOrder } from './readPostsInOrder';
+import { useHiddenUids } from './useBlocks';
 
 type Kind = 'like' | 'save';
 
@@ -125,5 +126,9 @@ export function useSavedPosts() {
     };
   }, [uid]);
 
-  return { posts, loading };
+  // Looks by someone blocked either way drop out, like everywhere else.
+  const hidden = useHiddenUids();
+  const visible = useMemo(() => withoutBlocked(posts, (p) => p.authorUid, hidden), [posts, hidden]);
+
+  return { posts: visible, loading };
 }

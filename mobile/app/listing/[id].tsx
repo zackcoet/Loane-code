@@ -51,6 +51,7 @@ import { useUserById } from '../../src/hooks/useProfile';
 import { useIsSaved } from '../../src/hooks/useSaved';
 import { usePostsTagging } from '../../src/hooks/usePostsTagging';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
+import { useHiddenUids } from '../../src/hooks/useBlocks';
 import { ReportSheet } from '../../src/components/ReportSheet';
 import { logEvent } from '../../src/analytics/events';
 
@@ -60,7 +61,6 @@ const CONDITION_LABELS: Record<Condition, string> = {
   good: 'Good',
   well_loved: 'Well loved',
 };
-
 
 export default function ListingDetail() {
   // Renting or buying means meeting another student in person, so
@@ -81,6 +81,7 @@ export default function ListingDetail() {
   // moment somebody reviewed her.
   const owner = useUserById(listing?.ownerUid);
   const [reporting, setReporting] = useState(false);
+  const hidden = useHiddenUids();
 
   const [page, setPage] = useState(0);
   const logged = useRef(false);
@@ -108,7 +109,9 @@ export default function ListingDetail() {
     );
   }
 
-  if (notFound || !listing) {
+  // A blocked closet (either way) reads exactly like a removed piece, so
+  // nobody learns who blocked whom. Reached from an old link or a share.
+  if (notFound || !listing || hidden.has(listing.ownerUid)) {
     return (
       <Screen flush>
         <Header title="" onBack={() => router.back()} />
@@ -118,6 +121,8 @@ export default function ListingDetail() {
   }
 
   const isMine = listing.ownerUid === profile?.uid;
+  // Looks by someone blocked either way stay out of "Seen in posts" too.
+  const seenPosts = seenIn.posts.filter((post) => !hidden.has(post.authorUid));
   const rentable = listing.intent === 'rent' || listing.intent === 'both';
   const sellable = listing.intent === 'sell' || listing.intent === 'both';
 
@@ -302,7 +307,7 @@ export default function ListingDetail() {
 
           <View style={styles.seenIn}>
             <Text variant="label">Seen in posts</Text>
-            {seenIn.loading ? null : seenIn.posts.length === 0 ? (
+            {seenIn.loading ? null : seenPosts.length === 0 ? (
               <Text variant="bodySmall" tone="muted" style={styles.seenInBody}>
                 Looks featuring this piece will show up here.
               </Text>
@@ -313,7 +318,7 @@ export default function ListingDetail() {
                 style={styles.seenInScroll}
                 contentContainerStyle={styles.seenInRow}
               >
-                {seenIn.posts.map((post) => (
+                {seenPosts.map((post) => (
                   <Pressable
                     key={post.id}
                     accessibilityRole="button"
@@ -377,9 +382,7 @@ export default function ListingDetail() {
             )
           }
           onOwnIt={() =>
-            gate.run('buy', () =>
-              router.push({ pathname: '/own-it', params: { id: listing.id } }),
-            )
+            gate.run('buy', () => router.push({ pathname: '/own-it', params: { id: listing.id } }))
           }
         />
         {/* Try it on sits between the two buying actions and messaging:
@@ -393,9 +396,7 @@ export default function ListingDetail() {
             variant="outline"
             // Straight into the dressing room with this piece on,
             // rather than a body-choice screen she has already answered.
-            onPress={() =>
-              router.push({ pathname: '/try-on', params: { listing: listing.id } })
-            }
+            onPress={() => router.push({ pathname: '/try-on', params: { listing: listing.id } })}
           />
         ) : null}
 
@@ -441,7 +442,9 @@ function AvailabilityStrip({ listing }: { listing: Listing }) {
           <Text variant="caption" tone="muted" uppercase={false}>
             {Number(d.slice(-2))}
           </Text>
-          <View style={[styles.stripBar, unavailable.has(d) ? styles.stripOut : styles.stripFree]} />
+          <View
+            style={[styles.stripBar, unavailable.has(d) ? styles.stripOut : styles.stripFree]}
+          />
         </View>
       ))}
     </View>
