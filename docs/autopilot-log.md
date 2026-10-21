@@ -3,8 +3,43 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
-- Nothing urgent. The worry from runs 1–4 (rules tests that had never been run) is cleared: the new automatic checks on GitHub ran **all 258 tests, including every security-rule test, and they pass.** One test from run 3 had a mistake in the test itself (not the app) and is fixed.
-- Two small calls, written up in run 5 below: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+- Nothing urgent. Every automatic check on GitHub is green, including the security-rule tests.
+- Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-21 (run 6, ~3 AM Central) — Take down a reported review or message, and a security hole closed
+
+**Plan:** B7 — let an admin take down a reported review or a single message straight from the report (reviews also need the rating worked out again). Skip B8 (flag "Venmo me") — it waits until payments run inside the app, as logged last run. Then start C1: list every place the app writes to the database on its own and check each one is locked down.
+
+**Built:**
+- **Take down a reported review.** In the admin Reports queue, "Take the content down" on a review report now hides the review, and the girl it was about gets her star rating worked out again without it. A spiteful one-star stops counting the moment it's hidden.
+- **Take down a reported message.** The same button on a message report wipes that one message for **both** people. In the chat it now reads "Message removed by Loane", and if it was the last thing said, the Messages list says that too. Nobody can heart it or reply to it. The original words are kept only in the admin history, so you still have a record.
+- The admin dialog now says in one line what "Take the content down" will do for that kind of report before you confirm.
+- **The audit (C1):** a new page, `docs/server-side-audit.md`, lists all 14 things the app still saves on its own, what stops each one being abused, and what's still worth tightening.
+
+**What to tap to see it:**
+- Admin dashboard → Reports → open a report about a review or a message → Action it → "Take the content down" → write a note → Action it.
+- Then on the phone, open that chat: the message reads "Message removed by Loane". For a review, open the profile it was about: the rating has changed.
+
+**Fixed:**
+- **A real security hole:** a student could put back a piece you had taken down. The database checked what she was changing the piece *to*, but not what it was *before*, so a modified app could flip a taken-down (or removed, or sold) piece straight back to live. Now it can't. If she taps Edit on one, the phone explains instead of showing a form that can't save ("Taken down by Loane", "Removed" or "Sold").
+- The behind-the-scenes tests could trip over each other because they share one test database. They now take turns.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database, but GitHub ran everything: **both of tonight's pushes passed all checks**, including the new tests.
+- C1 isn't finished. The audit found four small gaps, none of which let one student touch someone else's things, money or counts: listing names and bios aren't checked by the bad-words filter; bio and display name have no length limit; there's no limit on how fast someone can create listings; and the activity tracking can be padded by a script.
+- A photo inside a removed message is unlinked from the chat but the file itself stays in storage. Fine for now.
+
+**🚨 NEEDS ZACK:**
+- Nothing new. A removed message can't be put back — tell me if you'd like an "undo" for admins.
+
+**Next up:** finish C1 — run the word filter on listing text and bios, and cap bio/name length. Then C2 (security-rules review).
+
+**Commits:**
+- Admin reports: take down a reported review or message
+- Security rules: a student can't put back a piece Loane took down
+- Server-side audit doc, and this log
 
 ---
 
