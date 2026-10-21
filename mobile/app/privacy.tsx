@@ -1,16 +1,16 @@
 /**
  * Privacy.
  *
- * Honest about what is and isn't private on Loane today. Real controls —
- * blocking, a private closet — arrive in Phase 6; saying so is better than
- * showing switches that do nothing.
+ * Honest about what is and isn't private on Loane today, plus the one
+ * real switch so far: whether her chats say "Seen".
  */
 
 import { useRouter } from 'expo-router';
-import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { fonts, fontFamilyFor, brand, color, spacing, type } from '@loane/shared';
+import { Alert, Linking, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { fonts, fontFamilyFor, brand, color, controls, spacing, type } from '@loane/shared';
 import { Screen } from '../src/components/Screen';
 import { Header } from '../src/components/Header';
+import { useUserSettings } from '../src/hooks/useUserSettings';
 
 const FACTS = [
   {
@@ -33,11 +33,34 @@ const FACTS = [
 
 export default function Privacy() {
   const router = useRouter();
+  const { settings, loading, save } = useUserSettings();
+  const receiptsOn = settings?.messaging?.readReceipts ?? true;
 
   return (
     <Screen flush>
       <Header title="Privacy" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.switchRow}>
+          <View style={styles.switchText}>
+            <Text style={styles.cardTitle}>Show read receipts</Text>
+            <Text style={styles.cardBody}>
+              When this is off, people won&apos;t see when you&apos;ve read their messages — and you
+              won&apos;t see theirs.
+            </Text>
+          </View>
+          <Switch
+            value={receiptsOn}
+            disabled={loading}
+            accessibilityLabel="Show read receipts"
+            onValueChange={(next) =>
+              void save({ messaging: { readReceipts: next } }).catch(() =>
+                Alert.alert('Loane', 'Could not save that. Try again.'),
+              )
+            }
+            trackColor={{ true: color.icon.default, false: color.border.default }}
+          />
+        </View>
+
         {FACTS.map((fact) => (
           <View key={fact.title} style={styles.card}>
             <Text style={styles.cardTitle}>{fact.title}</Text>
@@ -59,6 +82,16 @@ export default function Privacy() {
 
 const styles = StyleSheet.create({
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: controls.minTapTarget + 16,
+    borderWidth: 1,
+    borderColor: color.border.default,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  switchText: { flex: 1, marginRight: spacing.md },
   card: {
     borderWidth: 1,
     borderColor: color.border.default,

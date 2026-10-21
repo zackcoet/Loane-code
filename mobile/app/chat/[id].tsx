@@ -63,7 +63,8 @@ export default function Chat() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
-  const { conversation, messages, loading, send, markRead, setLiked } = useConversation(id);
+  const { conversation, messages, loading, send, markRead, setLiked, receiptsOn } =
+    useConversation(id);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [attaching, setAttaching] = useState(false);
@@ -118,7 +119,7 @@ export default function Chat() {
   };
 
   // "Seen" or "Sent" under her newest message, when the newest is hers.
-  const receipt = receiptFor(conversation, messages, profile?.uid);
+  const receipt = receiptFor(conversation, messages, profile?.uid, receiptsOn);
 
   const otherUid = conversation?.participantUids.find((uid) => uid !== profile?.uid);
   const them = otherUid ? conversation?.participants?.[otherUid] : undefined;

@@ -42,6 +42,7 @@ import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { logEvent } from '../analytics/events';
 import { useFollowingUids } from './useFollowing';
+import { useUserSettings } from './useUserSettings';
 
 /** Thrown by send when she has hit the hourly ceiling. */
 export const MESSAGE_QUOTA_FULL = 'message-quota-full';
@@ -190,6 +191,10 @@ export function useConversation(conversationId: string | undefined) {
     );
   }, [conversationId]);
 
+  // Her "Show read receipts" switch. On until she turns it off.
+  const { settings } = useUserSettings();
+  const receiptsOn = settings?.messaging?.readReceipts ?? true;
+
   // Her hourly message counter, kept live so sending never waits on a
   // read to know which write to batch with the message.
   const quotaRef = useRef<MessageQuota | null>(null);
@@ -214,13 +219,15 @@ export function useConversation(conversationId: string | undefined) {
    */
   const markRead = useCallback(async () => {
     if (!conversationId || !uid) return;
-    if (!needsMarkRead(conversation, messages, uid)) return;
+    if (!needsMarkRead(conversation, messages, uid, receiptsOn)) return;
     await updateDoc(doc(db, COLLECTIONS.conversations, conversationId), {
       [`unreadCounts.${uid}`]: 0,
-      [`lastReadAt.${uid}`]: serverTimestamp(),
+      // With "Show read receipts" off, her badge clears but nobody is
+      // told she has seen anything.
+      ...(receiptsOn ? { [`lastReadAt.${uid}`]: serverTimestamp() } : {}),
       updatedAt: serverTimestamp(),
     }).catch(() => {});
-  }, [conversationId, uid, conversation, messages]);
+  }, [conversationId, uid, conversation, messages, receiptsOn]);
 
   const send = useCallback(
     async (body: string, photo?: ImageRef, replyTo?: MessageReply | null) => {
@@ -292,5 +299,5 @@ export function useConversation(conversationId: string | undefined) {
     [messages, conversation, uid],
   );
 
-  return { conversation, messages: visible, loading, send, markRead, setLiked };
+  return { conversation, messages: visible, loading, send, markRead, setLiked, receiptsOn };
 }

@@ -25,8 +25,14 @@ export function receiptFor(
   thread: Thread | null,
   newestFirst: Msg[],
   myUid: string | undefined,
+  /**
+   * Her "Show read receipts" setting. Off means she sees no receipts
+   * either — the Instagram trade: you cannot hide yours and still
+   * watch everyone else's.
+   */
+  receiptsOn = true,
 ): { messageId: string; label: 'Seen' | 'Sent' } | null {
-  if (!thread || !myUid) return null;
+  if (!thread || !myUid || !receiptsOn) return null;
   const newest = newestFirst[0];
   if (!newest || newest.senderUid !== myUid) return null;
 
@@ -54,9 +60,12 @@ export function needsMarkRead(
   thread: Thread | null,
   newestFirst: Msg[],
   myUid: string | undefined,
+  /** With receipts off only her badge is cleared, so only it matters. */
+  receiptsOn = true,
 ): boolean {
   if (!thread || !myUid) return false;
   if ((thread.unreadCounts?.[myUid] ?? 0) > 0) return true;
+  if (!receiptsOn) return false;
 
   const latestFromThem = newestFirst.find((m) => m.senderUid !== myUid);
   if (!latestFromThem) return false;

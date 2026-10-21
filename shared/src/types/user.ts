@@ -241,6 +241,16 @@ export interface UserPrivate {
    */
   walkthrough: { completedAt: Timestampish | null };
 
+  /**
+   * Chat privacy. Optional — accounts from before it existed have none,
+   * and every default is "on", like Instagram.
+   *
+   * `readReceipts` off means her phone never tells anyone she has seen
+   * their message, and in fairness she does not see "Seen" from anyone
+   * else either. Hers to write: it only withholds something about her.
+   */
+  messaging?: { readReceipts: boolean };
+
   notificationPreferences: {
     pushEnabled: boolean;
     rentals: boolean;

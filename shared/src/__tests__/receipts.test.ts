@@ -74,3 +74,29 @@ describe('needsMarkRead', () => {
     expect(needsMarkRead({ unreadCounts: { [ME]: 0 } }, [msg('m2', ME, 2000)], ME)).toBe(false);
   });
 });
+
+describe('with read receipts turned off', () => {
+  const ME_ = 'uid-ella';
+  const THEM_ = 'uid-maddie';
+  const m = (id: string, senderUid: string, ms: number) => ({
+    id,
+    senderUid,
+    createdAt: new Date(ms),
+  });
+
+  it('shows her no receipts at all', () => {
+    const seen = { unreadCounts: {}, lastReadAt: { [THEM_]: new Date(9000) } };
+    expect(receiptFor(seen, [m('m1', ME_, 1000)], ME_, false)).toBeNull();
+  });
+
+  it('still clears her badge', () => {
+    const t = { unreadCounts: { [ME_]: 3 }, lastReadAt: {} };
+    expect(needsMarkRead(t, [m('m1', THEM_, 1000)], ME_, false)).toBe(true);
+  });
+
+  it('never writes just to say she has seen something', () => {
+    const t = { unreadCounts: { [ME_]: 0 }, lastReadAt: {} };
+    expect(needsMarkRead(t, [m('m1', THEM_, 1000)], ME_, false)).toBe(false);
+    expect(needsMarkRead(t, [m('m1', THEM_, 1000)], ME_, true)).toBe(true);
+  });
+});

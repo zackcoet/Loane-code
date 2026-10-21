@@ -158,6 +158,9 @@ service cloud.firestore {
                'profileChecklist',
                // Whether she has seen the walkthrough. Hers to answer.
                'walkthrough',
+               // Whether her phone says "Seen". It only ever withholds
+               // something about her, so it is hers to switch.
+               'messaging',
                'updatedAt'
              ]);
         allow delete: if false;

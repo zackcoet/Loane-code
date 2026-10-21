@@ -273,6 +273,22 @@ describe('users', () => {
 });
 
 describe('private settings', () => {
+  it('lets her turn her own read receipts off', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', ELLA, 'private', 'settings'), { uid: ELLA });
+    });
+    await assertSucceeds(
+      updateDoc(doc(asElla(), 'users', ELLA, 'private', 'settings'), {
+        messaging: { readReceipts: false },
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(asMaddie(), 'users', ELLA, 'private', 'settings'), {
+        messaging: { readReceipts: false },
+      }),
+    );
+  });
+
   it('stops another student reading her contact details', async () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), 'users', ELLA, 'private', 'settings'), {
