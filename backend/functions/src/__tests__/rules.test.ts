@@ -2270,3 +2270,133 @@ describe('the show-sizes toggle', () => {
     await assertFails(updateDoc(doc(asElla(), 'users', MADDIE), { showSizes: true }));
   });
 });
+
+/**
+ * C2 — the security-rules review. Every collection in firestore.rules
+ * now has at least one test proving a student cannot read or write
+ * what she should not. These are the ones that had none before; the
+ * full map is in docs/security-rules-review.md.
+ */
+describe('security review — collections with no test before', () => {
+  const NOSY = 'uid-nosy';
+  const asNosy = () => testEnv.authenticatedContext(NOSY).firestore();
+
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'users', NOSY), userDoc(NOSY));
+      await setDoc(doc(db, 'campuses', CAMPUS), { id: CAMPUS, domains: ['sc.edu'] });
+      await setDoc(doc(db, 'legalDocs', 'terms-v1'), { version: 1, text: 'Terms' });
+      await setDoc(doc(db, 'users', ELLA, 'blockedBy', MADDIE), { uid: MADDIE });
+      await setDoc(doc(db, 'rateLimits', `createAccount__${ELLA}`), { count: 1 });
+      await setDoc(doc(db, 'damageClaims', 'claim-1'), {
+        id: 'claim-1',
+        lenderUid: ELLA,
+        renterUid: MADDIE,
+        status: 'open',
+        amountCents: 2500,
+      });
+      await setDoc(doc(db, 'circles', 'circle-1'), { id: 'circle-1', name: 'Tri Delt' });
+      await setDoc(doc(db, 'circles', 'circle-1', 'members', ELLA), { uid: ELLA });
+    });
+  });
+
+  it('lets anyone read the campus list but nobody change it', async () => {
+    // Signup needs the approved email domains before there is an account.
+    await assertSucceeds(getDoc(doc(asStranger(), 'campuses', CAMPUS)));
+    await assertFails(updateDoc(doc(asElla(), 'campuses', CAMPUS), { domains: ['gmail.com'] }));
+    await assertFails(updateDoc(doc(asAdmin(), 'campuses', CAMPUS), { domains: ['gmail.com'] }));
+    await assertFails(setDoc(doc(asElla(), 'campuses', 'fake-school'), { domains: ['x.edu'] }));
+  });
+
+  it('lets anyone read published Terms but nobody rewrite them', async () => {
+    await assertSucceeds(getDoc(doc(asStranger(), 'legalDocs', 'terms-v1')));
+    await assertFails(updateDoc(doc(asElla(), 'legalDocs', 'terms-v1'), { text: 'new' }));
+    await assertFails(updateDoc(doc(asAdmin(), 'legalDocs', 'terms-v1'), { text: 'new' }));
+    await assertFails(deleteDoc(doc(asAdmin(), 'legalDocs', 'terms-v1')));
+  });
+
+  it('shows "who blocked me" only to her, and lets nobody write it', async () => {
+    await assertSucceeds(getDoc(doc(asElla(), 'users', ELLA, 'blockedBy', MADDIE)));
+    await assertFails(getDoc(doc(asNosy(), 'users', ELLA, 'blockedBy', MADDIE)));
+    // She cannot erase a block against her, and nobody can fake one.
+    await assertFails(deleteDoc(doc(asElla(), 'users', ELLA, 'blockedBy', MADDIE)));
+    await assertFails(setDoc(doc(asMaddie(), 'users', ELLA, 'blockedBy', NOSY), { uid: NOSY }));
+  });
+
+  it('seals the server rate-limit counters shut, even from their owner', async () => {
+    const ref = (db: Firestore) => doc(db, 'rateLimits', `createAccount__${ELLA}`);
+    await assertFails(getDoc(ref(asElla())));
+    await assertFails(updateDoc(ref(asElla()), { count: 0 }));
+    await assertFails(deleteDoc(ref(asElla())));
+    await assertFails(getDoc(ref(asAdmin())));
+  });
+
+  it('shows a damage claim only to the two people in it, and lets nobody edit it', async () => {
+    await assertSucceeds(getDoc(doc(asElla(), 'damageClaims', 'claim-1')));
+    await assertSucceeds(getDoc(doc(asMaddie(), 'damageClaims', 'claim-1')));
+    await assertSucceeds(getDoc(doc(asAdmin(), 'damageClaims', 'claim-1')));
+    await assertFails(getDoc(doc(asNosy(), 'damageClaims', 'claim-1')));
+    // Money: only a Cloud Function, after an admin approves.
+    await assertFails(updateDoc(doc(asElla(), 'damageClaims', 'claim-1'), { amountCents: 99999 }));
+    await assertFails(updateDoc(doc(asMaddie(), 'damageClaims', 'claim-1'), { status: 'denied' }));
+    await assertFails(
+      setDoc(doc(asElla(), 'damageClaims', 'claim-2'), {
+        lenderUid: ELLA,
+        renterUid: MADDIE,
+        amountCents: 5000,
+      }),
+    );
+  });
+
+  it('stops a student filing a report or a support request straight into the database', async () => {
+    // Both go through Cloud Functions so they are rate-limited and
+    // the reporter's name is stamped by the server, not the phone.
+    await assertFails(
+      setDoc(doc(asElla(), 'supportRequests', 'sr-x'), { requesterUid: ELLA, message: 'hi' }),
+    );
+    await assertFails(
+      setDoc(doc(asElla(), 'reports', 'r-x'), { reporterUid: MADDIE, targetUid: NOSY }),
+    );
+  });
+
+  it('keeps circles read-only until they are built', async () => {
+    await assertSucceeds(getDoc(doc(asElla(), 'circles', 'circle-1')));
+    await assertFails(getDoc(doc(asStranger(), 'circles', 'circle-1')));
+    await assertFails(setDoc(doc(asNosy(), 'circles', 'circle-1', 'members', NOSY), { uid: NOSY }));
+    await assertFails(updateDoc(doc(asElla(), 'circles', 'circle-1'), { name: 'Mine' }));
+  });
+
+  it('refuses any collection nobody named in the rules', async () => {
+    // New collections must be opened on purpose, never by accident.
+    await assertFails(setDoc(doc(asElla(), 'somethingNew', 'x'), { a: 1 }));
+    await assertFails(getDoc(doc(asAdmin(), 'somethingNew', 'x')));
+  });
+
+  it('keeps her activity alerts from other students', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', ELLA, 'notifications', 'n-1'), {
+        type: 'like',
+        readAt: null,
+      });
+    });
+    await assertFails(getDoc(doc(asNosy(), 'users', ELLA, 'notifications', 'n-1')));
+    await assertFails(
+      updateDoc(doc(asNosy(), 'users', ELLA, 'notifications', 'n-1'), { readAt: serverTimestamp() }),
+    );
+  });
+
+  it('never lets a student see someone else’s rental', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'bookings', 'b-review'), {
+        id: 'b-review',
+        lenderUid: ELLA,
+        renterUid: MADDIE,
+        participantUids: [ELLA, MADDIE],
+        status: 'requested',
+      });
+    });
+    await assertFails(getDoc(doc(asNosy(), 'bookings', 'b-review')));
+    await assertSucceeds(getDoc(doc(asElla(), 'bookings', 'b-review')));
+  });
+});
