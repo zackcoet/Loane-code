@@ -87,6 +87,9 @@ export const addComment = onCall<AddInput, Promise<{ commentId: string }>>(
       if (parent.parentCommentId) {
         throw invalidArgument('You can reply to a comment, but not to a reply.');
       }
+      // Replying is talking TO the commenter, so it is refused between
+      // blocked people even on a third person's look.
+      if (parent.authorUid !== user.uid) await assertNotBlocked(user.uid, parent.authorUid);
     }
 
     const ref = db().collection(COLLECTIONS.comments).doc();

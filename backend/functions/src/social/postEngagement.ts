@@ -4,6 +4,7 @@ import { notify } from '../bookings/transitions';
 import { db, now, FieldValue } from '../lib/admin';
 import { invalidArgument, notFound } from '../lib/errors';
 import { requireActiveUser } from '../lib/guards';
+import { assertNotBlocked } from '../moderation/block';
 
 /**
  * Likes and saves on a post.
@@ -48,6 +49,12 @@ async function setEdge(
     if (edgeSnap.exists === on) return;
 
     const post = postSnap.data() as Post;
+    // A like sends the author a notification, so it is contact — refused
+    // between blocked people like a comment or a follow. Taking a like
+    // back, and saving (which is private), stay allowed.
+    if (on && kind === 'like' && post.authorUid !== user.uid) {
+      await assertNotBlocked(user.uid, post.authorUid);
+    }
     const counter = kind === 'like' ? 'stats.likeCount' : 'stats.saveCount';
 
     // "Liked by Harper and others" — written here so the feed does not
@@ -120,15 +127,17 @@ async function setEdge(
   return { on };
 }
 
-export const likePost = onCall<PostInput, Promise<{ on: boolean }>>({ region: 'us-central1' }, (r) =>
-  setEdge(r, 'like', true),
+export const likePost = onCall<PostInput, Promise<{ on: boolean }>>(
+  { region: 'us-central1' },
+  (r) => setEdge(r, 'like', true),
 );
 export const unlikePost = onCall<PostInput, Promise<{ on: boolean }>>(
   { region: 'us-central1' },
   (r) => setEdge(r, 'like', false),
 );
-export const savePost = onCall<PostInput, Promise<{ on: boolean }>>({ region: 'us-central1' }, (r) =>
-  setEdge(r, 'save', true),
+export const savePost = onCall<PostInput, Promise<{ on: boolean }>>(
+  { region: 'us-central1' },
+  (r) => setEdge(r, 'save', true),
 );
 export const unsavePost = onCall<PostInput, Promise<{ on: boolean }>>(
   { region: 'us-central1' },

@@ -177,6 +177,12 @@ blocked the other are refused by Cloud Functions (`assertNotBlocked`).
 A modified app cannot get around this. Blocking also removes any follow
 between them in both directions.
 
+The same holds for liking her look, commenting on it, replying to her
+comment, and hearting her message (all of which notify her). Messages
+are written straight from the app, so the refusal for those lives in the
+security rules (`notBlockedInThread`), which also covers a thread that
+existed before the block.
+
 ### Content — filtered on the phone
 
 Hiding her posts from your feed means **your app skips them**. Firestore

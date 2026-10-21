@@ -105,6 +105,24 @@ lands, the outcome is what triggers a claim against the hold.
 
 ---
 
+## 2026-10-21 — A block removes the chat, even a rental's
+
+**Decision:** Once either person blocks, the thread leaves both inboxes
+and new messages and hearts are refused by the security rules — including
+a thread a rental started. Social alerts (likes, comments, follows) from
+a blocked person are hidden; rental alerts (due back, handoff, review)
+are not.
+
+**Why:** A blocked thread left showing would be a box she can type into
+and never send from. The rental itself runs from My Rentals and never
+needed the chat; the alerts that keep a rental on track stay visible so a
+block cannot make someone miss a return.
+
+**Revisit when:** blocking mid-rental turns out to be common, at which
+point the rental screen might want its own "contact Loane" route.
+
+---
+
 ## 2026-09-27 — Blocking is enforced on actions, filtered on content
 
 **Decision:** Messaging, renting and following are refused server-side

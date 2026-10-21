@@ -998,6 +998,55 @@ describe('conversations', () => {
     );
   });
 
+  describe('blocked either way', () => {
+    const plain = {
+      conversationId: 'chat-1',
+      senderUid: ELLA,
+      body: 'still there?',
+      readBy: [ELLA],
+      isDeleted: false,
+    };
+    const block = (blocker: string, blocked: string) =>
+      testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'users', blocker, 'blocked', blocked), {
+          blockedUid: blocked,
+        });
+      });
+
+    it('refuses a message after she blocked the other person', async () => {
+      await block(ELLA, MADDIE);
+      await assertFails(sendAs(asElla(), 'chat-1', 'b1', plain));
+    });
+
+    it('refuses a message after the other person blocked her', async () => {
+      // The thread existed before the block — this is the case
+      // openConversation cannot catch.
+      await block(MADDIE, ELLA);
+      await assertFails(sendAs(asElla(), 'chat-1', 'b2', plain));
+    });
+
+    it('refuses a heart once either has blocked', async () => {
+      await block(MADDIE, ELLA);
+      await assertFails(
+        updateDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm1'), {
+          likedBy: [ELLA],
+        }),
+      );
+    });
+
+    it('still lets her mark the thread read', async () => {
+      await block(MADDIE, ELLA);
+      await assertSucceeds(
+        updateDoc(doc(asElla(), 'conversations', 'chat-1'), { [`unreadCounts.${ELLA}`]: 0 }),
+      );
+    });
+
+    it('is not affected by a block with someone outside the thread', async () => {
+      await block(ELLA, OUTSIDER2);
+      await assertSucceeds(sendAs(asElla(), 'chat-1', 'b3', plain));
+    });
+  });
+
   describe('the hourly message ceiling', () => {
     const plain = {
       conversationId: 'chat-1',

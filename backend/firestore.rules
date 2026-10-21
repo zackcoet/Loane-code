@@ -661,12 +661,27 @@ service cloud.firestore {
                 || (after.windowStart == request.time && after.count == 1));
         }
 
+        // Neither person in this thread has blocked the other. Opening
+        // a thread is already refused between blocked people (see
+        // openConversation), but a thread that existed BEFORE the block
+        // is still there, and messages are written straight from the
+        // app — so without this, blocking someone would not stop her
+        // messages. Two reads, both of tiny marker documents.
+        function notBlockedInThread() {
+          let p = get(/databases/$(database)/documents/conversations/$(conversationId))
+                    .data.participantUids;
+          return p.size() == 2
+            && !exists(/databases/$(database)/documents/users/$(p[0])/blocked/$(p[1]))
+            && !exists(/databases/$(database)/documents/users/$(p[1])/blocked/$(p[0]));
+        }
+
         // A shared look or piece is written by the sharePost or
         // shareListing function, never by the app: the snapshot in the
         // bubble has to be the real thing. So an app-written message
         // must carry sharedPost == null and sharedListing == null.
         allow create: if inThread()
           && isVerifiedStudent()
+          && notBlockedInThread()
           && countedInQuota()
           && request.resource.data.senderUid == uid()
           && request.resource.data.isDeleted == false
@@ -695,7 +710,9 @@ service cloud.firestore {
         // what was said.
         allow update: if inThread()
           && (onlyChanges(['readBy', 'updatedAt'])
-              || (onlyChanges(['likedBy', 'updatedAt']) && validLike()));
+              // A heart pings the other person's inbox, so it is
+              // contact too — refused once either has blocked.
+              || (onlyChanges(['likedBy', 'updatedAt']) && validLike() && notBlockedInThread()));
         allow delete: if false;
       }
     }
