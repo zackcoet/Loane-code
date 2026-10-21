@@ -1,7 +1,7 @@
 import { onCall } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
-import { brand, COLLECTIONS, type Report, type User } from '@loane/shared';
-import { db, now } from '../lib/admin';
+import { brand, COLLECTIONS, type Comment, type Report, type User } from '@loane/shared';
+import { db, FieldValue, now } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { logAdminAction, requireAdminContext, requireReason } from './audit';
 import { notify } from '../bookings/transitions';
@@ -73,7 +73,37 @@ export const resolveReport = onCall<ResolveInput, Promise<{ ok: true }>>(
 
     // --- Carry out the action, in the same commit --------------------
     if (status === 'actioned' && action !== 'none') {
-      if (action === 'content_removed') {
+      if (action === 'content_removed' && report.targetType === 'comment') {
+        // A comment comes down the same way hideComment takes it down:
+        // suspended (she cannot undo ours), and the look's count follows.
+        const commentRef = db().collection(COLLECTIONS.comments).doc(report.targetId);
+        const commentSnap = await commentRef.get();
+        if (!commentSnap.exists) throw notFound('That comment is already gone.');
+        const comment = commentSnap.data() as Comment;
+        if (comment.status === 'active') {
+          batch.update(commentRef, {
+            status: 'suspended',
+            suspendedReason: notes,
+            updatedAt: now(),
+          });
+          const postRef = db().collection(COLLECTIONS.posts).doc(comment.postId);
+          if ((await postRef.get()).exists) {
+            batch.update(postRef, {
+              'stats.commentCount': FieldValue.increment(-1),
+              updatedAt: now(),
+            });
+          }
+        }
+        logAdminAction(batch, {
+          admin,
+          action: 'hide_comment',
+          targetType: 'comment',
+          targetId: report.targetId,
+          notes: `From report ${reportId}: ${notes}`,
+          before: { status: comment.status },
+          after: { status: 'suspended' },
+        });
+      } else if (action === 'content_removed') {
         const collection =
           report.targetType === 'listing'
             ? COLLECTIONS.listings
@@ -82,7 +112,11 @@ export const resolveReport = onCall<ResolveInput, Promise<{ ok: true }>>(
               : null;
 
         if (!collection) {
-          throw failed('That kind of report has no content to remove.');
+          throw failed(
+            report.targetType === 'review'
+              ? "Reviews can't be taken down from a report yet. Warn or suspend her instead."
+              : 'There is nothing to take down for this kind of report. Warn or suspend her instead.',
+          );
         }
 
         const targetRef = db().collection(collection).doc(report.targetId);
@@ -134,8 +168,7 @@ export const resolveReport = onCall<ResolveInput, Promise<{ ok: true }>>(
         notify(batch, {
           uid: report.targetUid,
           type: 'admin_notice',
-          title:
-            action === 'user_suspended' ? 'Your account is suspended' : 'A warning from Loane',
+          title: action === 'user_suspended' ? 'Your account is suspended' : 'A warning from Loane',
           body: `${notes} Write to ${brand.supportEmail} if you think this is wrong.`,
           bookingId: '',
         });
