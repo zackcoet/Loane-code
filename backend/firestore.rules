@@ -101,6 +101,19 @@ service cloud.firestore {
       // signup, never by the app — it has to set campusId and isVerified.
       allow create: if false;
 
+      // Name and bio lengths, MUST match LIMITS in shared/src/constants.ts
+      // (firstName/displayName 1–40, bio ≤ 200). Only a field she is
+      // changing is checked, so a profile written before these limits
+      // existed can still change its photo or sizes.
+      function profileTextOk() {
+        let d = request.resource.data;
+        return (!('firstName' in changed())
+                 || (d.firstName is string && d.firstName.size() >= 1 && d.firstName.size() <= 40))
+          && (!('displayName' in changed())
+                 || (d.displayName is string && d.displayName.size() >= 1 && d.displayName.size() <= 40))
+          && (!('bio' in changed()) || (d.bio is string && d.bio.size() <= 200));
+      }
+
       // She may edit a narrow set of her own fields and nothing else.
       //
       // This is an ALLOW-LIST: anything not named here is refused, so a
@@ -131,7 +144,8 @@ service cloud.firestore {
              'pushTokens',
              'lastActiveAt',
              'updatedAt'
-           ]);
+           ])
+        && profileTextOk();
 
       allow delete: if false;
 

@@ -196,6 +196,24 @@ describe('users', () => {
     );
   });
 
+  it('caps her bio and names at the app’s limits', async () => {
+    const me = doc(asElla(), 'users', ELLA);
+    await assertSucceeds(updateDoc(me, { bio: 'a'.repeat(200) }));
+    await assertFails(updateDoc(me, { bio: 'a'.repeat(201) }));
+    await assertFails(updateDoc(me, { bio: 42 }));
+    await assertSucceeds(updateDoc(me, { displayName: 'b'.repeat(40) }));
+    await assertFails(updateDoc(me, { displayName: 'b'.repeat(41) }));
+    await assertFails(updateDoc(me, { displayName: '' }));
+    await assertFails(updateDoc(me, { firstName: 'c'.repeat(41) }));
+  });
+
+  it('still lets an old over-long bio change her other fields', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', ELLA), userDoc(ELLA, { bio: 'x'.repeat(300) }));
+    });
+    await assertSucceeds(updateDoc(doc(asElla(), 'users', ELLA), { showSizes: true }));
+  });
+
   it('stops her editing someone else’s profile', async () => {
     await assertFails(updateDoc(doc(asMaddie(), 'users', ELLA), { bio: 'hacked' }));
   });
