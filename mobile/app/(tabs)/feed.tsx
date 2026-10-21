@@ -10,8 +10,11 @@ import { useRouter } from 'expo-router';
 import { usePostDraft } from '../../src/post/postDraft';
 import { startLook } from '../../src/post/startLook';
 import {
+  ActionSheetIOS,
   ActivityIndicator,
+  Alert,
   FlatList,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -41,6 +44,7 @@ import { SuggestedClosets } from '../../src/components/SuggestedClosets';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
 import { WalkthroughTarget } from '../../src/components/WalkthroughTargets';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
+import { setUserMuted, useMutedUids } from '../../src/hooks/useMuted';
 import { logEvent } from '../../src/analytics/events';
 
 /**
@@ -85,6 +89,7 @@ export default function Feed() {
   const { posts, loading, loadingMore, error, exhausted, refresh, loadMore } = usePagedPosts();
   const { uids: followingUids } = useFollowingUids();
   const hidden = useHiddenUids();
+  const { uids: mutedUids } = useMutedUids();
   const chat = useOpenChat();
   const [tab, setTab] = useState<'campus' | 'following'>('campus');
   // The look she tapped "…" → Report on, if any.
@@ -95,9 +100,50 @@ export default function Feed() {
   const visible = useMemo(() => {
     // Blocked either way: her looks simply are not in the feed. This is
     // the on-device half of blocking — see docs/security.md.
-    const shown = posts.filter((p) => !hidden.has(p.authorUid));
+    // Muted: hidden from her feed on both tabs, like Instagram — even
+    // someone she follows. Their closet and profile still open.
+    const shown = posts.filter((p) => !hidden.has(p.authorUid) && !mutedUids.has(p.authorUid));
     return tab === 'following' ? shown.filter((p) => followingUids.has(p.authorUid)) : shown;
-  }, [posts, tab, followingUids, hidden]);
+  }, [posts, tab, followingUids, hidden, mutedUids]);
+
+  /** The "…" on someone else's look: mute her, or report the look. */
+  const onMore = useCallback(
+    (post: { id: string; authorUid: string; author: { username: string } }) => {
+      const report = () => setReportingPost({ id: post.id, authorUid: post.authorUid });
+      const mute = () => {
+        if (!profile) return;
+        void setUserMuted(profile.uid, post.authorUid, true)
+          .then(() =>
+            Alert.alert(
+              `Muted @${post.author.username}`,
+              "Her looks won't show in your feed. She won't be told. Undo it from her profile or Settings → Muted.",
+            ),
+          )
+          .catch(() => Alert.alert('Loane', 'Could not mute right now. Try again.'));
+      };
+      const muteLabel = `Mute @${post.author.username}`;
+      if (Platform.OS === 'ios') {
+        ActionSheetIOS.showActionSheetWithOptions(
+          {
+            options: ['Cancel', muteLabel, 'Report this look'],
+            cancelButtonIndex: 0,
+            destructiveButtonIndex: 2,
+          },
+          (index) => {
+            if (index === 1) mute();
+            if (index === 2) report();
+          },
+        );
+      } else {
+        Alert.alert('This look', undefined, [
+          { text: muteLabel, onPress: mute },
+          { text: 'Report', style: 'destructive', onPress: report },
+          { text: 'Cancel', style: 'cancel' },
+        ]);
+      }
+    },
+    [profile],
+  );
 
   const onPressTag = useCallback(
     (listingId: string, postId: string) => {
@@ -298,11 +344,7 @@ export default function Feed() {
                     ? () => router.push({ pathname: '/edit-post', params: { id: item.id } })
                     : undefined
                 }
-                onReport={
-                  item.authorUid !== profile?.uid
-                    ? () => setReportingPost({ id: item.id, authorUid: item.authorUid })
-                    : undefined
-                }
+                onReport={item.authorUid !== profile?.uid ? () => onMore(item) : undefined}
               />
             </>
           )}

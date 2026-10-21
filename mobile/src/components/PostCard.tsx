@@ -184,7 +184,7 @@ export function PostCard({
             onPress={onEdit ?? onReport}
             hitSlop={10}
             accessibilityRole="button"
-            accessibilityLabel={onEdit ? 'Edit this look' : 'Report this look'}
+            accessibilityLabel={onEdit ? 'Edit this look' : 'More options for this look'}
             style={styles.more}
           >
             <Icon name="ellipsis-horizontal" size={iconSize.sm} />

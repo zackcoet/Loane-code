@@ -136,6 +136,7 @@ function RootNavigator() {
       <Stack.Screen name="blocked-dates" options={{ presentation: 'card' }} />
       <Stack.Screen name="chat/[id]" options={{ presentation: 'card' }} />
       <Stack.Screen name="blocked-users" options={{ presentation: 'card' }} />
+      <Stack.Screen name="muted-users" options={{ presentation: 'card' }} />
       <Stack.Screen name="liked" options={{ presentation: 'card' }} />
       <Stack.Screen name="post-likes" options={{ presentation: 'card' }} />
       <Stack.Screen name="follow-list" options={{ presentation: 'card' }} />

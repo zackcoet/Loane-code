@@ -98,6 +98,7 @@ export default function Settings() {
     { label: 'Edit Profile', href: '/edit-profile' },
     { label: 'Notification Preferences', href: '/notification-preferences' },
     { label: 'Privacy', href: '/privacy' },
+    { label: 'Muted', href: '/muted-users' },
     { label: 'Blocked', href: '/blocked-users' },
     /*
       "Linked Bank Account" is hidden with Payouts, and for the same

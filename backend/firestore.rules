@@ -184,6 +184,22 @@ service cloud.firestore {
         allow update: if false;
       }
 
+      // Who she has muted: their looks leave HER feed, and that is all.
+      // The app writes it directly because it changes nothing anyone
+      // else sees — no counter, no notification, no reverse marker. The
+      // shape is pinned so the collection cannot become a scratchpad.
+      match /muted/{otherUid} {
+        allow read: if isSelf(userId);
+        allow create: if isSelf(userId)
+          && isActive()
+          && otherUid != userId
+          && request.resource.data.keys().hasOnly(['mutedUid', 'createdAt'])
+          && request.resource.data.mutedUid == otherUid
+          && request.resource.data.createdAt == request.time;
+        allow delete: if isSelf(userId);
+        allow update: if false;
+      }
+
       // Who she has blocked. Written only by blockUser, so the reverse
       // marker below can never drift out of step with it.
       match /blocked/{blockedUid} {
@@ -777,7 +793,7 @@ service cloud.firestore {
           'rental_returned', 'rental_disputed',
           'message_sent', 'comment_created', 'comment_deleted',
           'post_shared', 'listing_shared', 'invite_shared', 'review_written',
-          'report_submitted', 'user_blocked', 'user_unblocked',
+          'report_submitted', 'user_blocked', 'user_unblocked', 'user_muted', 'user_unmuted',
           'tryon_open', 'tryon_generate', 'tryon_save',
           'tryon_body_photo_set', 'tryon_body_photo_delete'
         ];

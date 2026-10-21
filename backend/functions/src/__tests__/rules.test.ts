@@ -1459,6 +1459,40 @@ describe('blocks', () => {
   });
 });
 
+describe('muting', () => {
+  const mute = (db: Firestore, owner: string, other: string, data?: Record<string, unknown>) =>
+    setDoc(
+      doc(db, 'users', owner, 'muted', other),
+      data ?? { mutedUid: other, createdAt: serverTimestamp() },
+    );
+
+  it('lets her mute someone, see her own list, and unmute', async () => {
+    await assertSucceeds(mute(asElla(), ELLA, MADDIE));
+    await assertSucceeds(getDoc(doc(asElla(), 'users', ELLA, 'muted', MADDIE)));
+    await assertSucceeds(deleteDoc(doc(asElla(), 'users', ELLA, 'muted', MADDIE)));
+  });
+
+  it('keeps her mutes private — the muted person cannot see them', async () => {
+    await assertSucceeds(mute(asElla(), ELLA, MADDIE));
+    await assertFails(getDoc(doc(asMaddie(), 'users', ELLA, 'muted', MADDIE)));
+  });
+
+  it('refuses writing someone else’s mute list', async () => {
+    await assertFails(mute(asMaddie(), ELLA, MADDIE));
+  });
+
+  it('refuses muting herself, a mismatched id, extra fields, or a made-up time', async () => {
+    await assertFails(mute(asElla(), ELLA, ELLA));
+    await assertFails(
+      mute(asElla(), ELLA, MADDIE, { mutedUid: 'uid-other', createdAt: serverTimestamp() }),
+    );
+    await assertFails(
+      mute(asElla(), ELLA, MADDIE, { mutedUid: MADDIE, createdAt: serverTimestamp(), note: 'x' }),
+    );
+    await assertFails(mute(asElla(), ELLA, MADDIE, { mutedUid: MADDIE, createdAt: new Date(0) }));
+  });
+});
+
 describe('admin-only data', () => {
   beforeEach(async () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {

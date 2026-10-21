@@ -80,6 +80,15 @@ export const SUBCOLLECTIONS = {
    * herself sees, which is the line "never trust the phone" draws.
    */
   userDismissedSuggestions: 'dismissedSuggestions',
+  /**
+   * users/{uid}/muted/{otherUid}
+   *
+   * People whose looks she has hidden from her feed without blocking.
+   * Written by the app for the same reason as dismissedSuggestions: it
+   * changes only what she herself sees, and the muted person is never
+   * told or affected. Nothing else reads it.
+   */
+  userMuted: 'muted',
   /** conversations/{id}/messages/{messageId} */
   messages: 'messages',
   /** circles/{id}/members/{uid} */

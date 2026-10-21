@@ -33,7 +33,8 @@ the code is right and this file needs updating.
 | `campuses` | Approved schools and their email domains | Admin only |
 | `users` | Public profile, stats, verification state | Owner (limited fields) + Functions |
 | `users/{uid}/private/settings` | Contact info, notification preferences | Owner only |
-| `users/{uid}/blocked/{uid}` | Blocked users *(Phase 6)* | Owner only |
+| `users/{uid}/blocked/{uid}` | Blocked users | Owner only |
+| `users/{uid}/muted/{uid}` | People whose looks she hid from her feed (written by the app; only affects her) | Owner only |
 | `users/{uid}/notifications/*` | Activity feed rows | Functions only |
 | `usernames` | Uniqueness locks | Functions only |
 | `listings` | Garments in closets | Owner + Functions |

@@ -497,6 +497,8 @@ export const EVENT_TYPES = [
   'report_submitted',
   'user_blocked',
   'user_unblocked',
+  'user_muted',
+  'user_unmuted',
 ] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 
