@@ -8,11 +8,7 @@ import {
   formatCentsShort,
   priceForDuration,
 } from '../money';
-import {
-  LATE_CANCEL_LENDER_SHARE_BPS,
-  PLATFORM_FEE_BPS,
-  RENTAL_DURATIONS,
-} from '../constants';
+import { LATE_CANCEL_LENDER_SHARE_BPS, PLATFORM_FEE_BPS, RENTAL_DURATIONS } from '../constants';
 
 /**
  * Money math. Pure arithmetic, no emulator needed.
@@ -144,9 +140,9 @@ describe('calculateFees — same-day splits like the rental', () => {
   });
 
   it('is zero when she is not in a hurry', () => {
-    expect(
-      calculateFees({ baseCents: $(35), garmentValueCents: $(200) }).sameDayPremiumCents,
-    ).toBe(0);
+    expect(calculateFees({ baseCents: $(35), garmentValueCents: $(200) }).sameDayPremiumCents).toBe(
+      0,
+    );
   });
 
   it('stacks with a cleaning fee, commissioning only the right part', () => {
@@ -210,7 +206,9 @@ describe('calculateFees — the old rules still reconcile', () => {
         }
       }
     }
-  });
+    // About 85,000 cases. Fast on a laptop, but slower machines (CI, the
+    // overnight runner) went past vitest's 5-second default.
+  }, 60_000);
 });
 
 describe('priceForDuration', () => {
@@ -301,10 +299,7 @@ describe('calculateRefund', () => {
   });
 
   it('refunds the renter in full whenever the lender backs out', () => {
-    for (const now of [
-      new Date('2026-10-01T00:00:00Z'),
-      new Date('2026-10-09T23:00:00Z'),
-    ]) {
+    for (const now of [new Date('2026-10-01T00:00:00Z'), new Date('2026-10-09T23:00:00Z')]) {
       const r = calculateRefund({
         amounts,
         startDate: start,
