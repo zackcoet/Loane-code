@@ -8,6 +8,37 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 
 ---
 
+## 2026-10-21 (run 7, ~4 AM Central) — The bad-words filter now covers pieces and profiles
+
+**Plan:** Finish the two small C1 gaps from last night: run the bad-words filter on piece names, piece descriptions, display names and bios, and stop a modified app saving a bio or name longer than the app allows. Leave the two rate-limit gaps (new pieces, activity tracking) for a run where the test database can be checked properly — both touch the "Put it on Loane" flow and are low risk while the campus is small.
+
+**Built:**
+- **The filter now reads pieces and profiles.** If someone puts a threat or a slur in a piece's name or description, or in her display name or bio, a report lands in the admin Reports queue marked "Automatic filter", with the words copied in. Like captions and comments, nothing is blocked — you decide. Only the words she actually changed are checked, so editing a price never files anything.
+- **Length limits on profiles are now enforced by the database,** not just the phone: name up to 40 characters, bio up to 200. The phone already stopped her at these numbers; now a modified app can't get past them either. Anyone with an old, longer bio can still change her photo or sizes.
+
+**What to tap to see it:**
+- Profile → Edit profile → put "kys" in the bio → Save → admin dashboard → Reports → it's there marked "Automatic filter", about her profile.
+- Or: + → Add to My Closet → put "kys" in the description → Put it on Loane → admin → Reports.
+
+**Fixed:**
+- The two audit gaps above (see `docs/server-side-audit.md`).
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download site is blocked here). Type checks, lint, the shared tests (154) and the new filter tests (4) all passed here; GitHub ran the full set with the test database on tonight's code push, including the new length-limit tests: **all passed.**
+- Rate limits on creating pieces and on activity tracking — next.
+
+**🚨 NEEDS ZACK:**
+- Nothing new.
+
+**Next up:** C1's last two gaps (a ceiling on how many pieces one person can list per hour, and on activity tracking), then C2 — the full security-rules review.
+
+**Commits:**
+- Security rules: cap bio and name length at the app's limits
+- Content filter: check piece names, descriptions, display names and bios
+- Autopilot log for run 7
+
+---
+
 ## 2026-10-21 (run 6, ~3 AM Central) — Take down a reported review or message, and a security hole closed
 
 **Plan:** B7 — let an admin take down a reported review or a single message straight from the report (reviews also need the rating worked out again). Skip B8 (flag "Venmo me") — it waits until payments run inside the app, as logged last run. Then start C1: list every place the app writes to the database on its own and check each one is locked down.
