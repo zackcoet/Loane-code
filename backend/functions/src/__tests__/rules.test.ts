@@ -1081,6 +1081,51 @@ describe('conversations', () => {
     );
   });
 
+  describe('hearting a message', () => {
+    const m1 = (as: ReturnType<typeof asElla>) =>
+      doc(as, 'conversations', 'chat-1', 'messages', 'm1');
+
+    it('lets her heart a message, and take it back', async () => {
+      await assertSucceeds(updateDoc(m1(asElla()), { likedBy: [ELLA], updatedAt: new Date() }));
+      await assertSucceeds(updateDoc(m1(asElla()), { likedBy: [] }));
+    });
+
+    it('refuses a heart in someone else’s name', async () => {
+      await assertFails(updateDoc(m1(asElla()), { likedBy: [MADDIE] }));
+    });
+
+    it('refuses taking back the other person’s heart', async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await updateDoc(doc(ctx.firestore(), 'conversations', 'chat-1', 'messages', 'm1'), {
+          likedBy: [MADDIE],
+        });
+      });
+      await assertFails(updateDoc(m1(asElla()), { likedBy: [] }));
+      await assertSucceeds(updateDoc(m1(asElla()), { likedBy: [MADDIE, ELLA] }));
+    });
+
+    it('refuses hearting while also changing the words', async () => {
+      await assertFails(updateDoc(m1(asElla()), { likedBy: [ELLA], body: 'rewritten' }));
+    });
+
+    it('refuses a heart on a message moderation took down', async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await updateDoc(doc(ctx.firestore(), 'conversations', 'chat-1', 'messages', 'm1'), {
+          isDeleted: true,
+        });
+      });
+      await assertFails(updateDoc(m1(asElla()), { likedBy: [ELLA] }));
+    });
+
+    it('refuses an outsider hearting', async () => {
+      await assertFails(
+        updateDoc(m1(testEnv.authenticatedContext(OUTSIDER2).firestore()), {
+          likedBy: [OUTSIDER2],
+        }),
+      );
+    });
+  });
+
   it('lets her clear her own badge', async () => {
     await assertSucceeds(
       updateDoc(doc(asElla(), 'conversations', 'chat-1'), { [`unreadCounts.${ELLA}`]: 0 }),

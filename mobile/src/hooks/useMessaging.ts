@@ -10,6 +10,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   addDoc,
+  arrayRemove,
+  arrayUnion,
   collection,
   doc,
   limit,
@@ -160,5 +162,21 @@ export function useConversation(conversationId: string | undefined) {
     [conversationId, uid],
   );
 
-  return { conversation, messages, loading, send, markRead };
+  /**
+   * Hearts or un-hearts one message. Only ever her own uid — the rules
+   * refuse anything else. A failure is silent: the heart simply does
+   * not appear, which is what she would see anyway.
+   */
+  const setLiked = useCallback(
+    async (messageId: string, on: boolean) => {
+      if (!conversationId || !uid) return;
+      await updateDoc(doc(db, COLLECTIONS.conversations, conversationId, 'messages', messageId), {
+        likedBy: on ? arrayUnion(uid) : arrayRemove(uid),
+        updatedAt: serverTimestamp(),
+      }).catch(() => {});
+    },
+    [conversationId, uid],
+  );
+
+  return { conversation, messages, loading, send, markRead, setLiked };
 }

@@ -595,8 +595,24 @@ service cloud.firestore {
               || request.resource.data.replyTo == null
               || validReply());
 
-        // She may mark a message read; she may not edit what was said.
-        allow update: if inThread() && onlyChanges(['readBy', 'updatedAt']);
+        // A heart on a message: she may add or take back her OWN heart
+        // and nobody else's, and not on a message moderation took down.
+        function validLike() {
+          let after = request.resource.data.get('likedBy', []);
+          let before = resource.data.get('likedBy', []).toSet();
+          return after is list
+            && after.size() <= 2
+            && after.toSet().difference(before)
+                 .union(before.difference(after.toSet()))
+                 .hasOnly([uid()])
+            && resource.data.isDeleted == false;
+        }
+
+        // She may mark a message read, or heart it; she may not edit
+        // what was said.
+        allow update: if inThread()
+          && (onlyChanges(['readBy', 'updatedAt'])
+              || (onlyChanges(['likedBy', 'updatedAt']) && validLike()));
         allow delete: if false;
       }
     }

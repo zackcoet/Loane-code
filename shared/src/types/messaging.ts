@@ -87,6 +87,12 @@ export interface Message extends BaseDoc {
    */
   replyTo?: MessageReply | null;
   readBy: string[];
+  /**
+   * Who has hearted this message — double-tap, like Instagram. At most
+   * the two people in the thread. Each person may add or remove only
+   * herself; the rules check that. Older messages have no field.
+   */
+  likedBy?: string[];
   /** Soft delete so moderation can still see it. */
   isDeleted: boolean;
 }

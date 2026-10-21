@@ -57,7 +57,7 @@ export default function Chat() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
-  const { conversation, messages, loading, send, markRead } = useConversation(id);
+  const { conversation, messages, loading, send, markRead, setLiked } = useConversation(id);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [attaching, setAttaching] = useState(false);
@@ -248,6 +248,8 @@ export default function Chat() {
                 <Bubble
                   message={item}
                   mine={item.senderUid === profile?.uid}
+                  likedByMe={!!profile?.uid && (item.likedBy ?? []).includes(profile.uid)}
+                  onSetLiked={(on) => void setLiked(item.id, on)}
                   router={router}
                   onReply={() => startReply(item)}
                   onJumpTo={jumpTo}
@@ -338,9 +340,22 @@ export default function Chat() {
   );
 }
 
+/**
+ * Two taps closer together than this are a double-tap.
+ *
+ * A timer on the bubble's own Pressable rather than a gesture-handler
+ * Tap: the bubble already takes long-press through that Pressable, and
+ * TaggablePhoto's history is what happens when two touch systems argue
+ * over one finger. The swipe-to-reply pan only claims sideways drags,
+ * so it never sees a tap.
+ */
+const DOUBLE_TAP_MS = 300;
+
 function Bubble({
   message,
   mine,
+  likedByMe,
+  onSetLiked,
   router,
   onReply,
   onJumpTo,
@@ -349,6 +364,9 @@ function Bubble({
 }: {
   message: Message;
   mine: boolean;
+  /** She has hearted this one herself. */
+  likedByMe: boolean;
+  onSetLiked: (on: boolean) => void;
   router: ReturnType<typeof useRouter>;
   onReply: () => void;
   onJumpTo: (messageId: string) => void;
@@ -357,17 +375,37 @@ function Bubble({
   /** The original was taken down by moderation since she replied. */
   quoteGone: boolean;
 }) {
-  // Long-press offers Reply too, for anyone who never discovers the
-  // swipe. One option for now; copy and react can join it later.
+  const hearts = (message.likedBy ?? []).length;
+  const likeLabel = likedByMe ? 'Unlike' : 'Like';
+
+  // Double-tap hearts it, like Instagram. It never un-hearts — tapping
+  // twice more by accident and silently taking it back is worse than
+  // the accidental heart. Taking it back is a tap on the heart itself,
+  // or the long-press menu.
+  const lastTap = useRef(0);
+  const onPress = () => {
+    const nowMs = Date.now();
+    if (nowMs - lastTap.current < DOUBLE_TAP_MS) {
+      lastTap.current = 0;
+      if (!likedByMe && !message.isDeleted) onSetLiked(true);
+    } else {
+      lastTap.current = nowMs;
+    }
+  };
+
+  // Long-press offers Reply and Like too, for anyone who never
+  // discovers the swipe or the double-tap.
   const onLongPress = () => {
+    const toggleLike = () => onSetLiked(!likedByMe);
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        { options: ['Cancel', 'Reply'], cancelButtonIndex: 0 },
-        (i) => i === 1 && onReply(),
+        { options: ['Cancel', 'Reply', likeLabel], cancelButtonIndex: 0 },
+        (i) => (i === 1 ? onReply() : i === 2 ? toggleLike() : undefined),
       );
     } else {
       Alert.alert('Message', undefined, [
         { text: 'Reply', onPress: onReply },
+        { text: likeLabel, onPress: toggleLike },
         { text: 'Cancel', style: 'cancel' },
       ]);
     }
@@ -376,15 +414,29 @@ function Bubble({
   return (
     <SwipeToReply onReply={onReply}>
       <Pressable
+        onPress={onPress}
         onLongPress={onLongPress}
         delayLongPress={350}
         // One VoiceOver element with a Reply action — except a shared
         // look or piece, whose card must stay its own button to be openable.
         accessible={!message.sharedPost && !message.sharedListing}
         accessibilityLabel={message.body || (message.photo ? 'Photo' : 'Message')}
-        accessibilityActions={[{ name: 'reply', label: 'Reply' }]}
-        onAccessibilityAction={(e) => e.nativeEvent.actionName === 'reply' && onReply()}
-        style={[styles.bubbleRow, mine ? styles.rowMine : styles.rowTheirs]}
+        accessibilityValue={
+          hearts > 0 ? { text: hearts === 1 ? '1 heart' : '2 hearts' } : undefined
+        }
+        accessibilityActions={[
+          { name: 'reply', label: 'Reply' },
+          { name: 'like', label: likeLabel },
+        ]}
+        onAccessibilityAction={(e) => {
+          if (e.nativeEvent.actionName === 'reply') onReply();
+          if (e.nativeEvent.actionName === 'like') onSetLiked(!likedByMe);
+        }}
+        style={[
+          styles.bubbleRow,
+          mine ? styles.rowMine : styles.rowTheirs,
+          hearts > 0 && styles.rowHearted,
+        ]}
       >
         <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
           {message.replyTo ? (
@@ -470,6 +522,23 @@ function Bubble({
               {message.body}
             </Text>
           ) : null}
+          {hearts > 0 ? (
+            <Pressable
+              // Tapping the heart takes hers back, or adds hers to theirs.
+              onPress={() => onSetLiked(!likedByMe)}
+              hitSlop={14}
+              accessibilityRole="button"
+              accessibilityLabel={likedByMe ? 'Remove your heart' : 'Heart this message too'}
+              style={[styles.heart, mine ? styles.heartMine : styles.heartTheirs]}
+            >
+              <Icon name="heart" size={12} tint={color.status.error} />
+              {hearts > 1 ? (
+                <Text variant="caption" tone="primary" uppercase={false}>
+                  2
+                </Text>
+              ) : null}
+            </Pressable>
+          ) : null}
         </View>
       </Pressable>
     </SwipeToReply>
@@ -524,6 +593,24 @@ const styles = StyleSheet.create({
   bubbleRow: { flexDirection: 'row' },
   rowMine: { justifyContent: 'flex-end' },
   rowTheirs: { justifyContent: 'flex-start' },
+  // Room for the heart hanging off the bottom of the bubble.
+  rowHearted: { marginBottom: spacing.md },
+  heart: {
+    position: 'absolute',
+    bottom: -spacing.sm - 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radius.pill,
+    backgroundColor: color.surface.page,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: color.border.default,
+  },
+  // Tucked into the inner corner, the side facing the conversation.
+  heartMine: { left: spacing.sm },
+  heartTheirs: { right: spacing.sm },
   bubble: {
     maxWidth: '78%',
     paddingHorizontal: spacing.md,
