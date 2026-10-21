@@ -1,9 +1,23 @@
 import { onCall } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
-import { brand, COLLECTIONS, type Comment, type Report, type User } from '@loane/shared';
+import type { WriteBatch } from 'firebase-admin/firestore';
+import {
+  brand,
+  COLLECTIONS,
+  previewShowsMessage,
+  ratingFromVisible,
+  REMOVED_MESSAGE_TEXT,
+  SUBCOLLECTIONS,
+  type Comment,
+  type Conversation,
+  type Message,
+  type Report,
+  type Review,
+  type User,
+} from '@loane/shared';
 import { db, FieldValue, now } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
-import { logAdminAction, requireAdminContext, requireReason } from './audit';
+import { logAdminAction, requireAdminContext, requireReason, type AdminContext } from './audit';
 import { notify } from '../bookings/transitions';
 
 /**
@@ -103,6 +117,10 @@ export const resolveReport = onCall<ResolveInput, Promise<{ ok: true }>>(
           before: { status: comment.status },
           after: { status: 'suspended' },
         });
+      } else if (action === 'content_removed' && report.targetType === 'review') {
+        await takeDownReview(batch, admin, report, reportId, notes);
+      } else if (action === 'content_removed' && report.targetType === 'message') {
+        await takeDownMessage(batch, admin, report, reportId, notes);
       } else if (action === 'content_removed') {
         const collection =
           report.targetType === 'listing'
@@ -113,9 +131,7 @@ export const resolveReport = onCall<ResolveInput, Promise<{ ok: true }>>(
 
         if (!collection) {
           throw failed(
-            report.targetType === 'review'
-              ? "Reviews can't be taken down from a report yet. Warn or suspend her instead."
-              : 'There is nothing to take down for this kind of report. Warn or suspend her instead.',
+            'There is nothing to take down for this kind of report. Warn or suspend her instead.',
           );
         }
 
@@ -180,3 +196,115 @@ export const resolveReport = onCall<ResolveInput, Promise<{ ok: true }>>(
     return { ok: true };
   },
 );
+
+/**
+ * A reported review comes down the same way the Reviews page hides one:
+ * `isHidden`, and the person it was about gets her rating recomputed
+ * from the reviews still showing — a hidden one-star must count for
+ * nothing. Already hidden (someone got there from the Reviews page
+ * first) is fine: the report still closes, nothing is counted twice.
+ */
+async function takeDownReview(
+  batch: WriteBatch,
+  admin: AdminContext,
+  report: Report,
+  reportId: string,
+  notes: string,
+): Promise<void> {
+  const ref = db().collection(COLLECTIONS.reviews).doc(report.targetId);
+  const snap = await ref.get();
+  if (!snap.exists) throw notFound('That review is already gone.');
+  const review = snap.data() as Review;
+  if (review.isHidden) return;
+
+  const siblings = await db()
+    .collection(COLLECTIONS.reviews)
+    .where('subjectUid', '==', review.subjectUid)
+    .get();
+  const rating = ratingFromVisible(
+    siblings.docs.map((d) => ({ ...(d.data() as Review), id: d.id })),
+    { id: report.targetId, hide: true },
+  );
+
+  batch.update(ref, { isHidden: true, updatedAt: now() });
+  batch.update(db().collection(COLLECTIONS.users).doc(review.subjectUid), {
+    'stats.ratingCount': rating.ratingCount,
+    'stats.ratingAverage': rating.ratingAverage,
+    updatedAt: now(),
+  });
+  logAdminAction(batch, {
+    admin,
+    action: 'hide_review',
+    targetType: 'review',
+    targetId: report.targetId,
+    notes: `From report ${reportId}: ${notes}`,
+    before: { isHidden: false, rating: review.rating },
+    after: { isHidden: true, ...rating },
+  });
+}
+
+/**
+ * A reported message comes down for BOTH people in the chat.
+ *
+ * Its words, photo and any shared card are blanked, not just flagged:
+ * the two people in a chat can read its messages directly, so a flag
+ * alone would only hide it from a well-behaved app. The original is
+ * kept in the audit row (admins only), and the report already holds a
+ * copy of what was said. Replies that quoted it already show "Message
+ * unavailable", and nobody can heart or reply to it any more — the
+ * security rules check `isDeleted`. If it was the newest message, the
+ * inbox preview is replaced too, or the words would live on there.
+ */
+async function takeDownMessage(
+  batch: WriteBatch,
+  admin: AdminContext,
+  report: Report,
+  reportId: string,
+  notes: string,
+): Promise<void> {
+  const [conversationId, messageId] = report.targetId.split('/');
+  if (!conversationId || !messageId) throw failed('This report does not point at a message.');
+
+  const conversationRef = db().collection(COLLECTIONS.conversations).doc(conversationId);
+  const messageRef = conversationRef.collection(SUBCOLLECTIONS.messages).doc(messageId);
+  const [conversationSnap, messageSnap] = await Promise.all([
+    conversationRef.get(),
+    messageRef.get(),
+  ]);
+  if (!messageSnap.exists) throw notFound('That message is already gone.');
+  const message = messageSnap.data() as Message;
+  if (message.isDeleted) return;
+
+  batch.update(messageRef, {
+    isDeleted: true,
+    body: '',
+    photo: null,
+    sharedPost: null,
+    sharedListing: null,
+    likedBy: [],
+    updatedAt: now(),
+  });
+
+  const conversation = conversationSnap.data() as Conversation | undefined;
+  if (conversation && previewShowsMessage(conversation.lastMessage, message)) {
+    batch.update(conversationRef, {
+      'lastMessage.body': REMOVED_MESSAGE_TEXT,
+      updatedAt: now(),
+    });
+  }
+
+  logAdminAction(batch, {
+    admin,
+    action: 'hide_message',
+    targetType: 'message',
+    targetId: report.targetId,
+    notes: `From report ${reportId}: ${notes}`,
+    before: {
+      body: message.body,
+      photoPath: message.photo?.path ?? null,
+      sharedPostId: message.sharedPost?.postId ?? null,
+      sharedListingId: message.sharedListing?.listingId ?? null,
+    },
+    after: { isDeleted: true },
+  });
+}

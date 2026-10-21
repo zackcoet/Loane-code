@@ -7,5 +7,9 @@ export default defineConfig({
     testTimeout: 30_000,
     hookTimeout: 30_000,
     globals: true,
+    // One file at a time. Every file talks to the same emulator, and
+    // some wipe whole collections in beforeEach — run side by side, one
+    // file's cleanup deletes another file's fixtures mid-test.
+    fileParallelism: false,
   },
 });

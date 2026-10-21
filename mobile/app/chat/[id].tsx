@@ -32,6 +32,7 @@ import {
   isRequestFor,
   radius,
   receiptFor,
+  REMOVED_MESSAGE_TEXT,
   replyFor,
   replyPreview,
   spacing,
@@ -519,6 +520,25 @@ function Bubble({
     }
   };
 
+  // Taken down by an admin after a report. The server has already
+  // blanked its words; this says so instead of showing an empty bubble.
+  // No reply, heart or report — there is nothing left to act on.
+  if (message.isDeleted) {
+    return (
+      <View
+        style={[styles.bubbleRow, mine ? styles.rowMine : styles.rowTheirs]}
+        accessible
+        accessibilityLabel={REMOVED_MESSAGE_TEXT}
+      >
+        <View style={[styles.bubble, styles.removed]}>
+          <Text variant="bodySmall" tone="muted" uppercase={false}>
+            {REMOVED_MESSAGE_TEXT}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <SwipeToReply onReply={onReply}>
       <Pressable
@@ -733,6 +753,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: color.border.default,
     borderBottomLeftRadius: radius.sm,
+  },
+  removed: {
+    backgroundColor: color.surface.page,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: color.border.default,
   },
   goneNote: {
     padding: spacing.md,

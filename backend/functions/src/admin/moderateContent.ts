@@ -1,6 +1,13 @@
 import { onCall } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
-import { COLLECTIONS, type Comment, type Listing, type Post, type Review } from '@loane/shared';
+import {
+  COLLECTIONS,
+  ratingFromVisible,
+  type Comment,
+  type Listing,
+  type Post,
+  type Review,
+} from '@loane/shared';
 import { db, now, FieldValue } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { logAdminAction, requireAdminContext, requireReason } from './audit';
@@ -57,9 +64,7 @@ async function moderate(
   notify(batch, {
     uid: ownerUid,
     type: 'admin_notice',
-    title: hide
-      ? `Your ${kind} was taken down`
-      : `Your ${kind} is back up`,
+    title: hide ? `Your ${kind} was taken down` : `Your ${kind} is back up`,
     body: hide ? reason : 'It is visible on your campus again.',
     bookingId: '',
   });
@@ -137,15 +142,10 @@ async function moderateReview(
       db().collection(COLLECTIONS.reviews).where('subjectUid', '==', review.subjectUid),
     );
 
-    const visible = siblings.docs
-      .map((d) => ({ ...(d.data() as Review), id: d.id }))
-      .filter((r) => (r.id === id ? !hide : !r.isHidden));
-
-    const count = visible.length;
-    const average =
-      count === 0
-        ? null
-        : Math.round((visible.reduce((sum, r) => sum + r.rating, 0) / count) * 100) / 100;
+    const { ratingCount: count, ratingAverage: average } = ratingFromVisible(
+      siblings.docs.map((d) => ({ ...(d.data() as Review), id: d.id })),
+      { id, hide },
+    );
 
     tx.update(ref, { isHidden: hide, updatedAt: now() });
     tx.update(db().collection(COLLECTIONS.users).doc(review.subjectUid), {
@@ -169,9 +169,8 @@ async function moderateReview(
   return { ok: true };
 }
 
-export const hideReview = onCall<HideInput, Promise<{ ok: true }>>(
-  { region: 'us-central1' },
-  (r) => moderateReview(r, true),
+export const hideReview = onCall<HideInput, Promise<{ ok: true }>>({ region: 'us-central1' }, (r) =>
+  moderateReview(r, true),
 );
 export const restoreReview = onCall<HideInput, Promise<{ ok: true }>>(
   { region: 'us-central1' },

@@ -19,6 +19,7 @@ export * from './validation';
 export * from './usernameSuggest';
 export * from './replies';
 export * from './shares';
+export * from './ratings';
 export * from './receipts';
 export * from './blocking';
 export * from './inbox';

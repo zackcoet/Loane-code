@@ -27,6 +27,22 @@ const ACTIONS: { value: Action; label: string }[] = [
   { value: 'user_suspended', label: 'Suspend her' },
 ];
 
+/** What "Take the content down" will actually do, per kind of report. */
+function takeDownNote(targetType: Report['targetType']): string {
+  switch (targetType) {
+    case 'post':
+    case 'listing':
+    case 'comment':
+      return 'It is hidden from everyone. You can put it back from its own page.';
+    case 'review':
+      return 'The review is hidden and her rating is worked out again without it.';
+    case 'message':
+      return 'The message is wiped for both people and shows "Message removed by Loane". It cannot be put back.';
+    default:
+      return 'There is nothing to take down for this kind of report. Warn or suspend her instead.';
+  }
+}
+
 const STATUS_TONE: Record<string, 'good' | 'warn' | 'bad' | 'neutral'> = {
   open: 'bad',
   reviewing: 'warn',
@@ -177,6 +193,9 @@ export function ReportsPage({ data, campusId }: { data: AdminData; campusId: str
                 </button>
               ))}
             </div>
+            {action === 'content_removed' && working ? (
+              <p className="cell-note">{takeDownNote(working.report.targetType)}</p>
+            ) : null}
             <p className="cell-note">
               Choosing nothing and confirming marks it actioned with no change. To close it as not a
               problem, use Dismiss below.

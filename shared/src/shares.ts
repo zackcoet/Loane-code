@@ -58,6 +58,27 @@ export function messagePreview(
 export const LIKED_MESSAGE_PREVIEW = 'Liked a message';
 
 /**
+ * What a message reads as once an admin has taken it down, in the
+ * bubble and in the inbox preview.
+ */
+export const REMOVED_MESSAGE_TEXT = 'Message removed by Loane';
+
+/**
+ * Whether the inbox preview is still showing this message, so taking
+ * it down should replace the preview too. The preview holds a copy of
+ * the words (see onMessageCreated), not a message id, so this compares
+ * the copy. Getting it wrong in the rare tie (she sent the exact same
+ * words twice) only means the preview says "removed" a little early.
+ */
+export function previewShowsMessage(
+  preview: { body: string; senderUid: string } | null | undefined,
+  message: Pick<Message, 'body' | 'photo' | 'sharedPost' | 'sharedListing' | 'senderUid'>,
+): boolean {
+  if (!preview) return false;
+  return preview.senderUid === message.senderUid && preview.body === messagePreview(message);
+}
+
+/**
  * What a heart on a message should do to the inbox, if anything.
  *
  * Only a NEW heart from the other person counts — hearting your own
