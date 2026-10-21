@@ -12,11 +12,12 @@
  * exactly what an owner edits. See useListingsByIds.
  */
 
-import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { color, formatCentsShort, radius, spacing, type Listing } from '@loane/shared';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { useListingsByIds } from '../hooks/useListingsByIds';
+import { ThumbImage } from './ThumbImage';
 
 interface Props {
   listingIds: string[];
@@ -111,7 +112,7 @@ function Piece({
         style={styles.pieceTop}
       >
         {listing.coverUrl ? (
-          <Image source={{ uri: listing.coverUrl }} style={styles.photo} resizeMode="cover" />
+          <ThumbImage uri={listing.coverUrl} style={styles.photo} resizeMode="cover" />
         ) : (
           <View style={styles.photo} />
         )}

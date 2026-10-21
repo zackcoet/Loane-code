@@ -11,7 +11,6 @@ import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Pressable,
   StyleSheet,
   View,
@@ -33,6 +32,7 @@ import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useUserListings } from '../src/hooks/useProfile';
+import { ThumbImage } from '../src/components/ThumbImage';
 
 /** What each status means to her, in her words rather than ours. */
 const STATUS_LABEL: Record<ListingStatus, string | null> = {
@@ -83,7 +83,6 @@ export default function MyListings() {
           renderItem={({ item }) => <Row listing={item} thumb={thumb} />}
         />
       )}
-
     </Screen>
   );
 }
@@ -116,7 +115,7 @@ function Row({ listing, thumb }: { listing: Listing; thumb: number }) {
         ]}
       >
         {listing.coverUrl ? (
-          <Image source={{ uri: listing.coverUrl }} style={styles.image} resizeMode="cover" />
+          <ThumbImage uri={listing.coverUrl} style={styles.image} resizeMode="cover" />
         ) : (
           <Text variant="caption" tone="muted">
             No photo

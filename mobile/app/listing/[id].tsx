@@ -54,6 +54,7 @@ import { useOpenChat } from '../../src/hooks/useOpenChat';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
 import { ReportSheet } from '../../src/components/ReportSheet';
 import { logEvent } from '../../src/analytics/events';
+import { ThumbImage } from '../../src/components/ThumbImage';
 
 const CONDITION_LABELS: Record<Condition, string> = {
   new_with_tags: 'New with tags',
@@ -327,8 +328,8 @@ export default function ListingDetail() {
                     style={styles.seenInTile}
                   >
                     {post.photos[0] ? (
-                      <Image
-                        source={{ uri: post.photos[0].url }}
+                      <ThumbImage
+                        uri={post.photos[0].url}
                         style={styles.seenInImage}
                         resizeMode="cover"
                       />

@@ -7,11 +7,12 @@
  * would be refused. See docs/post-tagging.md.
  */
 
-import { FlatList, Image, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, View } from 'react-native';
 import { color, controls, formatCentsShort, spacing, type Listing } from '@loane/shared';
 import { EmptyState } from './EmptyState';
 import { Header } from './Header';
 import { Text } from './Text';
+import { ThumbImage } from './ThumbImage';
 
 interface Props {
   visible: boolean;
@@ -52,7 +53,7 @@ export function ClosetPicker({ visible, listings, takenIds, onPick, onClose }: P
                 style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
               >
                 {item.coverUrl ? (
-                  <Image source={{ uri: item.coverUrl }} style={styles.thumb} resizeMode="cover" />
+                  <ThumbImage uri={item.coverUrl} style={styles.thumb} resizeMode="cover" />
                 ) : (
                   <View style={[styles.thumb, styles.thumbEmpty]} />
                 )}

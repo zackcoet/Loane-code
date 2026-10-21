@@ -64,6 +64,9 @@
  *                               numbers students have saved, so contact
  *                               matching works and stops working the
  *                               moment she removes hers
+ *   - makeThumbnail             writes a small copy of every listing and
+ *                               post photo for grids to load
+ *   - removeThumbnail           deletes it when the photo is deleted
  *
  * Skeletons with TODOs, filled in during later phases:
  *   - social counters  (Phase 3)
@@ -93,6 +96,7 @@ export { propagateProfileChanges } from './triggers/propagateProfileChanges';
 export { syncPhoneHash } from './triggers/syncPhoneHash';
 export { flagEditedCaption } from './triggers/flagEditedCaption';
 export { flagListingText, flagProfileText } from './triggers/flagProfileAndListingText';
+export { makeThumbnail, removeThumbnail } from './storage/thumbnails';
 export { requestBooking } from './bookings/requestBooking';
 export { requestPurchase } from './bookings/requestPurchase';
 export {

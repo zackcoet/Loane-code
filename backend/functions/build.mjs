@@ -27,6 +27,6 @@ await build({
   target: 'node22',
   format: 'cjs',
   sourcemap: true,
-  external: ['firebase-admin', 'firebase-functions', 'stripe'],
+  external: ['firebase-admin', 'firebase-functions', 'stripe', 'sharp'],
   logLevel: 'info',
 });

@@ -31,6 +31,7 @@ import { useWishlist } from '../src/hooks/useSaved';
 import { useSavedPosts } from '../src/hooks/usePostEngagement';
 import { useMyTryOns, useSaveTryOn, useTryOnEnabled, useTryOnImage } from '../src/hooks/useTryOn';
 import { useHiddenUids } from '../src/hooks/useBlocks';
+import { ThumbImage } from '../src/components/ThumbImage';
 
 const GRID_COLUMNS = 2;
 
@@ -219,11 +220,7 @@ export default function MyWishlist() {
               style={[styles.lookTile, { width: cardWidth }]}
             >
               {item.photos[0] ? (
-                <Image
-                  source={{ uri: item.photos[0].url }}
-                  style={styles.lookImage}
-                  resizeMode="cover"
-                />
+                <ThumbImage uri={item.photos[0].url} style={styles.lookImage} resizeMode="cover" />
               ) : null}
               {item.taggedListings.length > 0 ? (
                 <View style={styles.lookBadge}>

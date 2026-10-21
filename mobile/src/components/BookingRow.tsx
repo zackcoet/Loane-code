@@ -11,7 +11,7 @@
  * what needs doing without reading a single line of it.
  */
 
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import {
   BOOKING_STATUS_LABELS,
   TERMINAL_BOOKING_STATUSES,
@@ -23,6 +23,7 @@ import {
   type Booking,
 } from '@loane/shared';
 import { Text } from './Text';
+import { ThumbImage } from './ThumbImage';
 
 /**
  * Does this booking need something from me right now?
@@ -65,11 +66,7 @@ export function BookingRow({ booking, isLender, onPress }: Props) {
     >
       <View style={[styles.thumb, over && styles.dimmed]}>
         {booking.listing.coverUrl ? (
-          <Image
-            source={{ uri: booking.listing.coverUrl }}
-            style={styles.image}
-            resizeMode="cover"
-          />
+          <ThumbImage uri={booking.listing.coverUrl} style={styles.image} resizeMode="cover" />
         ) : null}
       </View>
 

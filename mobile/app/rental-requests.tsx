@@ -16,7 +16,7 @@
 
 import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import {
   WORDS,
   BOOKING_STATUS_LABELS,
@@ -33,6 +33,7 @@ import { Header } from '../src/components/Header';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useMyBookings } from '../src/hooks/useBookings';
+import { ThumbImage } from '../src/components/ThumbImage';
 
 export default function RentalRequests() {
   const router = useRouter();
@@ -148,7 +149,7 @@ function RequestRow({
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
       {booking.listing.coverUrl ? (
-        <Image source={{ uri: booking.listing.coverUrl }} style={styles.photo} resizeMode="cover" />
+        <ThumbImage uri={booking.listing.coverUrl} style={styles.photo} resizeMode="cover" />
       ) : (
         <View style={styles.photo} />
       )}

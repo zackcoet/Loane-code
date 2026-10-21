@@ -54,6 +54,23 @@ service firebase.storage {
       allow write: if isOwner(userId) && validUpload();
     }
 
+    // Thumbnails of listing and post photos, written by the makeThumbnail
+    // Cloud Function (shared/src/thumbnails.ts). Public like the photos
+    // they shrink — grids fetch them without a download token, which
+    // only works because anyone may read them. Nobody writes them from
+    // the app: the Admin SDK bypasses these rules, and a student
+    // uploading her own "thumbnail" could show a different picture in
+    // the grid from the one on the listing.
+    match /users/{userId}/listings/{listingId}/thumbs/{fileName} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /users/{userId}/posts/{postId}/thumbs/{fileName} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Condition photos at drop-off and return. Only the two people in the
     // booking and admins need these, but Storage rules cannot cheaply read
     // Firestore, so we keep them readable to signed-in users and never put

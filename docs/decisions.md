@@ -6,6 +6,37 @@ much as the answer.
 
 ---
 
+## 2026-10-21 — Thumbnails are found by name, not stored on the listing
+
+**Decision:** A Cloud Function (`makeThumbnail`) writes a 480px WebP
+beside every listing and post photo, at a fixed name
+(`…/thumbs/<photo>.webp`, rule in `shared/src/thumbnails.ts`). Grids
+compute that address from the photo's URL and fall back to the full
+photo if it is not there. Nothing is added to the listing or post.
+
+**Why not save the thumbnail URL on the document:** the photo is
+uploaded *before* the listing or post exists, so the function would
+often have nowhere to write; and edits from the app rewrite `photos`,
+which would quietly wipe it. A naming rule needs no document, has no
+race, and makes every old photo work too (it just falls back).
+
+**Why the URL needs no download token:** listing and post photos are
+already readable by anyone (they appear in feeds), and thumbnails get
+the same rule. Only the server may write them — a student uploading
+her own "thumbnail" could show a different picture in the grid from the
+one on the listing.
+
+**Why WebP:** it keeps the transparency of a cut-out flat photo, which
+JPEG would flatten onto black, and it is smaller.
+
+**The phone still compresses before upload** (1600px) — that is what
+keeps uploads quick on campus Wi-Fi. The thumbnail is the second size.
+
+**Full-screen photos keep the full size** (post and listing pages, the
+feed). A 480px copy would look soft there.
+
+---
+
 ## 2026-10-21 — The word filter flags for review; it never blocks
 
 **Decision:** Captions (new and edited), comments and messages run

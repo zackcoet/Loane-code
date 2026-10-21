@@ -22,20 +22,14 @@ import { usePostDraft } from '../post/postDraft';
 import { startLook } from '../post/startLook';
 import { ProfileGateSheet } from './ProfileGateSheet';
 import { useProfileGate } from '../hooks/useProfileGate';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { color, formatCentsShort, radius, spacing, type Listing, type Post } from '@loane/shared';
 import { EmptyState } from './EmptyState';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { useUserListings, useUserPosts } from '../hooks/useProfile';
 import { useIsSaved } from '../hooks/useSaved';
+import { ThumbImage } from './ThumbImage';
 
 const TABS = ['closet', 'posts'] as const;
 type ProfileTab = (typeof TABS)[number];
@@ -93,11 +87,7 @@ export function ProfileTabs({ uid, isMe }: Props) {
                 : 'She has not listed anything yet.'
             }
             actionLabel={isMe ? 'Add a piece' : undefined}
-            onAction={
-              isMe
-                ? () => router.push('/add-to-closet')
-                : undefined
-            }
+            onAction={isMe ? () => router.push('/add-to-closet') : undefined}
           />
         ) : (
           <View style={styles.grid}>
@@ -181,7 +171,7 @@ function ClosetTile({
       ]}
     >
       {listing.coverUrl ? (
-        <Image source={{ uri: listing.coverUrl }} style={styles.image} resizeMode="cover" />
+        <ThumbImage uri={listing.coverUrl} style={styles.image} resizeMode="cover" />
       ) : null}
       {price ? (
         <View style={styles.price}>
@@ -199,11 +189,7 @@ function ClosetTile({
         accessibilityLabel={saved ? `Remove ${listing.name} from saved` : `Save ${listing.name}`}
         style={styles.tileHeart}
       >
-        <Icon
-          name={saved ? 'heart' : 'heart-outline'}
-          size={16}
-          tint={color.text.inverse}
-        />
+        <Icon name={saved ? 'heart' : 'heart-outline'} size={16} tint={color.text.inverse} />
       </Pressable>
     </Pressable>
   );
@@ -223,7 +209,7 @@ function PostTile({ post, size, onPress }: { post: Post; size: number; onPress: 
       ]}
     >
       {post.photos[0] ? (
-        <Image source={{ uri: post.photos[0].url }} style={styles.image} resizeMode="cover" />
+        <ThumbImage uri={post.photos[0].url} style={styles.image} resizeMode="cover" />
       ) : null}
       {post.taggedListings.length > 0 ? (
         <View style={styles.tagged}>

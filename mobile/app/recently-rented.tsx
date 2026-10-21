@@ -8,13 +8,14 @@
 
 import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { color, controls, formatRange, spacing } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useMyBookings } from '../src/hooks/useBookings';
+import { ThumbImage } from '../src/components/ThumbImage';
 
 export default function RecentlyRented() {
   const router = useRouter();
@@ -55,8 +56,8 @@ export default function RecentlyRented() {
               style={({ pressed }) => [styles.row, pressed && styles.pressed]}
             >
               {booking.listing.coverUrl ? (
-                <Image
-                  source={{ uri: booking.listing.coverUrl }}
+                <ThumbImage
+                  uri={booking.listing.coverUrl}
                   style={styles.thumb}
                   resizeMode="cover"
                 />

@@ -2,7 +2,7 @@
  * One garment in the Discover grid.
  */
 
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import {
   fonts,
   fontFamilyFor,
@@ -18,6 +18,7 @@ import { isTryOnEligible } from '../hooks/useTryOn';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { useIsSaved } from '../hooks/useSaved';
+import { ThumbImage } from './ThumbImage';
 
 interface Props {
   listing: Listing;
@@ -53,7 +54,7 @@ export function ListingCard({ listing, width, onPress, onPressOwner, hideSave, o
     >
       <View>
         {listing.coverUrl ? (
-          <Image source={{ uri: listing.coverUrl }} style={styles.photo} resizeMode="cover" />
+          <ThumbImage uri={listing.coverUrl} style={styles.photo} resizeMode="cover" />
         ) : (
           <View style={[styles.photo, styles.photoPlaceholder]} />
         )}

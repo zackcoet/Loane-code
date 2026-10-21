@@ -93,6 +93,35 @@ describe('everything outside a user folder', () => {
   });
 });
 
+describe('thumbnails of listing and post photos', () => {
+  const LISTING_THUMB = `users/${ELLA}/listings/l1/thumbs/1.webp`;
+  const POST_THUMB = `users/${ELLA}/posts/p1/thumbs/1.webp`;
+  const webp = { contentType: 'image/webp' };
+
+  beforeAll(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await uploadBytes(ref(ctx.storage(), LISTING_THUMB), jpeg(), webp);
+      await uploadBytes(ref(ctx.storage(), POST_THUMB), jpeg(), webp);
+    });
+  });
+
+  it('lets a signed-out visitor read them, like the photos themselves', async () => {
+    await assertSucceeds(getBytes(ref(asStranger(), LISTING_THUMB)));
+    await assertSucceeds(getBytes(ref(asStranger(), POST_THUMB)));
+  });
+
+  it('stops her writing her own thumbnail — only the server makes them', async () => {
+    await assertFails(uploadBytes(ref(asElla(), LISTING_THUMB), jpeg(), webp));
+    await assertFails(uploadBytes(ref(asElla(), POST_THUMB), jpeg(), webp));
+  });
+
+  it('still lets her upload the photo itself', async () => {
+    await assertSucceeds(
+      uploadBytes(ref(asElla(), `users/${ELLA}/listings/l1/2.jpg`), jpeg(), meta),
+    );
+  });
+});
+
 describe('try-on photos — the privacy promise', () => {
   /**
    * These are the only owner-read paths in the whole bucket. Every

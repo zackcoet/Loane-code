@@ -26,3 +26,4 @@ export * from './inbox';
 export * from './messageQuota';
 export * from './accountDeletion';
 export * from './contentFilter';
+export * from './thumbnails';

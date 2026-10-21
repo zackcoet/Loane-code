@@ -3,9 +3,10 @@
  * the Posts tab on a profile.
  */
 
-import { FlatList, Image, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { color, spacing, type Post } from '@loane/shared';
 import { Text } from './Text';
+import { ThumbImage } from './ThumbImage';
 
 const COLUMNS = 2;
 
@@ -36,7 +37,7 @@ export function PostGrid({ posts, onPress, header }: Props) {
           style={[styles.tile, { width: tileWidth }]}
         >
           {item.photos[0] ? (
-            <Image source={{ uri: item.photos[0].url }} style={styles.image} resizeMode="cover" />
+            <ThumbImage uri={item.photos[0].url} style={styles.image} resizeMode="cover" />
           ) : null}
           {item.taggedListings.length > 0 ? (
             <View style={styles.badge}>
