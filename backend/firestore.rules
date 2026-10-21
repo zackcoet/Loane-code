@@ -438,6 +438,11 @@ service cloud.firestore {
 
       allow update: if isActive()
         && resource.data.ownerUid == uid()
+        // Only a listing that is hers to manage. 'suspended' is an admin
+        // taking it down and 'removed' went through removeListing; if
+        // the old status were not checked, she could set it straight
+        // back to 'active' (the new-status check below allows that).
+        && resource.data.status in ['draft', 'active', 'paused']
         // She cannot move a listing to another campus, change its owner,
         // write its counters, or un-suspend it after an admin took it down.
         && !changed().hasAny([

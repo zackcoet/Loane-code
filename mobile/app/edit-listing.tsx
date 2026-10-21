@@ -18,7 +18,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { color, spacing } from '@loane/shared';
+import { brand, color, spacing } from '@loane/shared';
 import { Button } from '../src/components/Button';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
@@ -36,6 +36,22 @@ function centsToInput(cents: number | null | undefined): string {
   if (cents == null) return '';
   return cents % 100 === 0 ? String(cents / 100) : (cents / 100).toFixed(2);
 }
+
+/** Why a piece can't be edited, for the statuses the rules lock. */
+const LOCKED_COPY = {
+  suspended: {
+    title: 'Taken down by Loane',
+    body: `This piece was taken down and can't be edited. Write to ${brand.supportEmail} if you think that's a mistake.`,
+  },
+  removed: {
+    title: 'Removed',
+    body: 'This piece is no longer in your closet, so it cannot be edited.',
+  },
+  sold: {
+    title: 'Sold',
+    body: 'This piece has a new owner now, so it cannot be edited.',
+  },
+} as const;
 
 export default function EditListing() {
   const router = useRouter();
@@ -147,6 +163,19 @@ export default function EditListing() {
       <Screen flush>
         <Header title="Edit" onBack={() => router.back()} />
         <EmptyState title="Not yours" body="You can only edit pieces in your own closet." />
+      </Screen>
+    );
+  }
+
+  // Taken down by Loane, removed, or sold to someone else: the rules
+  // refuse any edit, so say why up front instead of letting her fill in
+  // a form that can't save.
+  const locked = LOCKED_COPY[listing.status as keyof typeof LOCKED_COPY];
+  if (locked) {
+    return (
+      <Screen flush>
+        <Header title="Edit" onBack={() => router.back()} />
+        <EmptyState title={locked.title} body={locked.body} />
       </Screen>
     );
   }

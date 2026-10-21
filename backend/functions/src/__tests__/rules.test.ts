@@ -417,6 +417,24 @@ describe('listings', () => {
     await assertFails(deleteDoc(doc(asElla(), 'listings', 'listing-1')));
   });
 
+  // An admin takes a piece down by setting status 'suspended'; removing
+  // one sets 'removed'. Either way the owner must not be able to flip
+  // it straight back to 'active' from her phone.
+  for (const status of ['suspended', 'removed']) {
+    it(`stops her putting a ${status} listing back up herself`, async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await updateDoc(doc(ctx.firestore(), 'listings', 'listing-1'), { status });
+      });
+      await assertFails(updateDoc(doc(asElla(), 'listings', 'listing-1'), { status: 'active' }));
+      await assertFails(updateDoc(doc(asElla(), 'listings', 'listing-1'), { name: 'Back again' }));
+    });
+  }
+
+  it('still lets her pause and unpause her own listing', async () => {
+    await assertSucceeds(updateDoc(doc(asElla(), 'listings', 'listing-1'), { status: 'paused' }));
+    await assertSucceeds(updateDoc(doc(asElla(), 'listings', 'listing-1'), { status: 'active' }));
+  });
+
   // --- Phase 2: the listing rules mirror validateListingDraft ----------
 
   it('refuses a listing with no photos', async () => {
