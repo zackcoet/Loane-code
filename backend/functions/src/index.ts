@@ -55,6 +55,8 @@
  *                               other people's bookings
  *   - onMessageCreated          updates a thread's preview and unread badge
  *   - flagEditedCaption         runs the word filter over an edited caption
+ *   - flagListingText           runs the word filter over a piece's name and description
+ *   - flagProfileText           runs the word filter over an edited display name and bio
  *   - onMessageLiked            "Liked a message" in the inbox when someone hearts one
  *   - propagateProfileChanges   refreshes the copies of her profile stored
  *                               on her listings and posts
@@ -90,6 +92,7 @@ export { onMessageLiked } from './triggers/onMessageLiked';
 export { propagateProfileChanges } from './triggers/propagateProfileChanges';
 export { syncPhoneHash } from './triggers/syncPhoneHash';
 export { flagEditedCaption } from './triggers/flagEditedCaption';
+export { flagListingText, flagProfileText } from './triggers/flagProfileAndListingText';
 export { requestBooking } from './bookings/requestBooking';
 export { requestPurchase } from './bookings/requestPurchase';
 export {
