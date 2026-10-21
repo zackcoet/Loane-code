@@ -247,6 +247,12 @@ export const sharePost = httpsCallable<
   { sentTo: number; conversationId: string | null }
 >(functions, 'sharePost');
 
+/** Sends a piece from someone's closet into one or more chats. */
+export const shareListing = httpsCallable<
+  { listingId: string; toUids: string[]; note?: string },
+  { sentTo: number; conversationId: string | null }
+>(functions, 'shareListing');
+
 export const acceptLegalDocs = httpsCallable<
   { termsVersion: number; privacyVersion: number },
   { ok: true }

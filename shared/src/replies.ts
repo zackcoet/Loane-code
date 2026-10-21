@@ -16,6 +16,7 @@ export function replyFor(original: Message): MessageReply {
     body: original.body,
     hasPhoto: original.photo != null,
     hasSharedPost: original.sharedPost != null,
+    hasSharedListing: original.sharedListing != null,
   };
 }
 
@@ -23,6 +24,7 @@ export function replyFor(original: Message): MessageReply {
 export function replyPreview(reply: MessageReply): string {
   const words = reply.body.trim();
   if (words) return words;
+  if (reply.hasSharedListing) return 'A piece';
   if (reply.hasSharedPost) return 'A look';
   if (reply.hasPhoto) return 'Photo';
   return 'Message';

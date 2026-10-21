@@ -47,6 +47,7 @@ import { useReportOrBlock } from '../../src/hooks/useReportOrBlock';
 import { IconButton } from '../../src/components/IconButton';
 import { ReportSheet } from '../../src/components/ReportSheet';
 import { pickPhoto, uploadMessagePhoto } from '../../src/lib/photo';
+import { SharedListingCard } from '../../src/components/SharedListingCard';
 import { SwipeToReply } from '../../src/components/SwipeToReply';
 
 export default function Chat() {
@@ -345,8 +346,8 @@ function Bubble({
         onLongPress={onLongPress}
         delayLongPress={350}
         // One VoiceOver element with a Reply action — except a shared
-        // look, whose card must stay its own button to be openable.
-        accessible={!message.sharedPost}
+        // look or piece, whose card must stay its own button to be openable.
+        accessible={!message.sharedPost && !message.sharedListing}
         accessibilityLabel={message.body || (message.photo ? 'Photo' : 'Message')}
         accessibilityActions={[{ name: 'reply', label: 'Reply' }]}
         onAccessibilityAction={(e) => e.nativeEvent.actionName === 'reply' && onReply()}
@@ -405,6 +406,17 @@ function Bubble({
               </View>
             </Pressable>
           ) : null}
+          {message.sharedListing ? (
+            <SharedListingCard
+              item={message.sharedListing}
+              onPress={() =>
+                router.push({
+                  pathname: '/listing/[id]',
+                  params: { id: message.sharedListing!.listingId },
+                })
+              }
+            />
+          ) : null}
           {message.photo ? (
             <Image
               source={{ uri: message.photo.url }}
@@ -416,7 +428,11 @@ function Bubble({
             <Text
               variant="bodySmall"
               tone={mine ? 'inverse' : 'primary'}
-              style={message.photo || message.sharedPost ? styles.captionUnderPhoto : undefined}
+              style={
+                message.photo || message.sharedPost || message.sharedListing
+                  ? styles.captionUnderPhoto
+                  : undefined
+              }
             >
               {message.body}
             </Text>

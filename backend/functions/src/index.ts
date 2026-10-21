@@ -28,6 +28,7 @@
  *   - setBlockedDates    the lender's own unavailable days
  *   - openConversation   the one thread between two students
  *   - sharePost          sends a look into one or more chats
+ *   - shareListing       sends a piece into one or more chats
  *   - addComment / deleteComment   comments on a look, and taking one down
  *   - writeReview        only from someone who actually rented with you
  *   - submitReport       flags a user, listing, post or rental for admins
@@ -95,6 +96,7 @@ export {
 export { sweepBookings, runBookingSweep } from './bookings/sweep';
 export { openConversation } from './messaging/openConversation';
 export { sharePost } from './messaging/sharePost';
+export { shareListing } from './messaging/shareListing';
 export { addComment, deleteComment } from './posts/comments';
 export { writeReview, editReview } from './reviews/writeReview';
 export { submitReport } from './moderation/report';

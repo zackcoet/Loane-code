@@ -1,4 +1,5 @@
-import type { BaseDoc, CampusScoped, ImageRef, Timestampish, UserSummary } from './common';
+import type { ListingIntent } from '../constants';
+import type { BaseDoc, CampusScoped, Cents, ImageRef, Timestampish, UserSummary } from './common';
 
 /**
  * `conversations/{conversationId}`
@@ -55,6 +56,15 @@ export interface Message extends BaseDoc {
     authorUsername: string;
   } | null;
   /**
+   * A piece from someone's closet sent into the chat — "would this
+   * work for Saturday?". A snapshot for the same reasons as sharedPost:
+   * it renders instantly, and a piece that later comes down leaves a
+   * card behind rather than a hole. Tapping it opens the live listing,
+   * which is where the real price and dates are. Written only by the
+   * shareListing function. Older messages have no field at all.
+   */
+  sharedListing?: SharedListing | null;
+  /**
    * The message this one answers, when she swiped to reply.
    *
    * A copy of the original rather than just its id, for the same reason
@@ -79,4 +89,22 @@ export interface MessageReply {
   hasPhoto: boolean;
   /** So the quote can say "A look" when there were no words. */
   hasSharedPost: boolean;
+  /**
+   * So the quote can say "A piece" when there were no words. Optional
+   * because replies written before pieces could be shared do not have it.
+   */
+  hasSharedListing?: boolean;
+}
+
+/** The snapshot of a piece inside a message. See Message.sharedListing. */
+export interface SharedListing {
+  listingId: string;
+  photoUrl: string | null;
+  name: string;
+  ownerUsername: string;
+  intent: ListingIntent;
+  /** The cheapest rental price at the time it was sent, if rentable. */
+  rentFromCents: Cents | null;
+  /** The sale price at the time it was sent, if for sale. */
+  salePriceCents: Cents | null;
 }

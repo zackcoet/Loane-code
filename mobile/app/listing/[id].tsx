@@ -142,6 +142,18 @@ export default function ListingDetail() {
               accessibilityLabel={saved ? 'Remove from saved' : 'Save this piece'}
               onPress={() => void toggle('listing')}
             />
+            {/* Send it to a friend — "would this work for Saturday?".
+              Only while it is up: a paused or sold piece should not land
+              in someone's chat looking available. */}
+            {listing.status === 'active' ? (
+              <IconButton
+                name="paper-plane-outline"
+                accessibilityLabel="Send this piece to someone"
+                onPress={() =>
+                  router.push({ pathname: '/send-post', params: { listingId: listing.id } })
+                }
+              />
+            ) : null}
             {isMine ? (
               <IconButton
                 name="create-outline"

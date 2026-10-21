@@ -1,5 +1,8 @@
 /**
- * Sending a look to someone.
+ * Sending a look — or a piece from someone's closet — to someone.
+ *
+ * Opened with `postId` for a look or `listingId` for a piece. Same
+ * people, same screen; only the function at the end differs.
  *
  * The people offered first are the ones she follows and the ones who
  * follow her, because that is almost always who she means. Anyone else
@@ -43,13 +46,13 @@ import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useSuggestedRecipients, useStudentSearch } from '../src/hooks/useFollowing';
 import { useHiddenUids } from '../src/hooks/useBlocks';
-import { sharePost } from '../src/firebase/callables';
+import { shareListing, sharePost } from '../src/firebase/callables';
 import { callableErrorMessage } from '../src/firebase/errors';
 import { logEvent } from '../src/analytics/events';
 
 export default function SendPost() {
   const router = useRouter();
-  const { postId } = useLocalSearchParams<{ postId: string }>();
+  const { postId, listingId } = useLocalSearchParams<{ postId?: string; listingId?: string }>();
   const { people, loading } = useSuggestedRecipients();
   const [term, setTerm] = useState('');
   const { results, searching } = useStudentSearch(term);
@@ -83,16 +86,28 @@ export default function SendPost() {
     );
 
   const onSend = async () => {
-    if (!postId || picked.length === 0 || sending) return;
+    if ((!postId && !listingId) || picked.length === 0 || sending) return;
     setSending(true);
     try {
-      const result = await sharePost({ postId, toUids: picked, note: note.trim() || undefined });
-      logEvent('post_shared', {
-        surface: 'feed',
-        targetType: 'post',
-        targetId: postId,
-        meta: { recipients: result.data.sentTo },
-      });
+      const extra = { toUids: picked, note: note.trim() || undefined };
+      const result = listingId
+        ? await shareListing({ listingId, ...extra })
+        : await sharePost({ postId: postId!, ...extra });
+      if (listingId) {
+        logEvent('listing_shared', {
+          surface: 'listing',
+          targetType: 'listing',
+          targetId: listingId,
+          meta: { recipients: result.data.sentTo },
+        });
+      } else {
+        logEvent('post_shared', {
+          surface: 'feed',
+          targetType: 'post',
+          targetId: postId!,
+          meta: { recipients: result.data.sentTo },
+        });
+      }
       router.back();
       // Sent to one person: drop her straight into that chat, which is
       // where she is going to look for a reply anyway.

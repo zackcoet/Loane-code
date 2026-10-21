@@ -908,6 +908,46 @@ describe('conversations', () => {
     );
   });
 
+  it('refuses a shared piece written by the app', async () => {
+    // shareListing writes these, so the name and price in the card are
+    // the real listing's. A forged "$5 to rent" card from someone
+    // else's closet is the thing this stops.
+    await assertFails(
+      setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm-share-listing'), {
+        conversationId: 'chat-1',
+        senderUid: ELLA,
+        body: 'would this work?',
+        readBy: [ELLA],
+        isDeleted: false,
+        sharedPost: null,
+        sharedListing: {
+          listingId: 'listing-1',
+          photoUrl: null,
+          name: 'forged',
+          ownerUsername: 'someone',
+          intent: 'rent',
+          rentFromCents: 500,
+          salePriceCents: null,
+        },
+      }),
+    );
+  });
+
+  it('still allows an ordinary message that says sharedListing is null', async () => {
+    await assertSucceeds(
+      setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm-plain-2'), {
+        conversationId: 'chat-1',
+        senderUid: ELLA,
+        body: 'hello',
+        readBy: [ELLA],
+        isDeleted: false,
+        photo: null,
+        sharedPost: null,
+        sharedListing: null,
+      }),
+    );
+  });
+
   describe('replying to a message', () => {
     const reply = (replyTo: Record<string, unknown>) =>
       setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', `m-reply-${Math.random()}`), {
@@ -981,6 +1021,32 @@ describe('conversations', () => {
         });
       });
       await assertFails(reply({ ...honest, messageId: 'm-gone', body: 'removed' }));
+    });
+
+    it('accepts the newer quote shape that says whether a piece was sent', async () => {
+      await assertSucceeds(reply({ ...honest, hasSharedListing: false }));
+    });
+
+    it('refuses a quote that claims a piece was sent when none was', async () => {
+      await assertFails(reply({ ...honest, hasSharedListing: true }));
+    });
+
+    it('lets her quote a piece someone sent', async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'conversations', 'chat-1', 'messages', 'm-piece'), {
+          conversationId: 'chat-1',
+          senderUid: MADDIE,
+          body: '',
+          readBy: [MADDIE],
+          isDeleted: false,
+          photo: null,
+          sharedPost: null,
+          sharedListing: { listingId: 'listing-1' },
+        });
+      });
+      await assertSucceeds(
+        reply({ ...honest, messageId: 'm-piece', body: '', hasSharedListing: true }),
+      );
     });
 
     it('refuses extra fields smuggled into the quote', async () => {

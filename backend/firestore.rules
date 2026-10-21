@@ -551,26 +551,32 @@ service cloud.firestore {
           let r = request.resource.data.replyTo;
           let path = /databases/$(database)/documents/conversations/$(conversationId)/messages/$(r.messageId);
           return r is map
-            && r.keys().hasOnly(['messageId', 'senderUid', 'body', 'hasPhoto', 'hasSharedPost'])
+            && r.keys().hasOnly(['messageId', 'senderUid', 'body', 'hasPhoto', 'hasSharedPost',
+                                 'hasSharedListing'])
             && r.messageId is string
             && exists(path)
             && get(path).data.isDeleted == false
             && r.senderUid == get(path).data.senderUid
             && r.body == get(path).data.body
             && r.hasPhoto == (get(path).data.get('photo', null) != null)
-            && r.hasSharedPost == (get(path).data.get('sharedPost', null) != null);
+            && r.hasSharedPost == (get(path).data.get('sharedPost', null) != null)
+            // Optional: replies from before pieces could be shared lack it.
+            && (!('hasSharedListing' in r)
+                || r.hasSharedListing == (get(path).data.get('sharedListing', null) != null));
         }
 
-        // A shared look is written by the sharePost function, never by
-        // the app: it moves the post's share count and the snapshot in
-        // the bubble has to be the real post. So an app-written message
-        // must carry sharedPost == null.
+        // A shared look or piece is written by the sharePost or
+        // shareListing function, never by the app: the snapshot in the
+        // bubble has to be the real thing. So an app-written message
+        // must carry sharedPost == null and sharedListing == null.
         allow create: if inThread()
           && isVerifiedStudent()
           && request.resource.data.senderUid == uid()
           && request.resource.data.isDeleted == false
           && (!('sharedPost' in request.resource.data)
               || request.resource.data.sharedPost == null)
+          && (!('sharedListing' in request.resource.data)
+              || request.resource.data.sharedListing == null)
           && (!('replyTo' in request.resource.data)
               || request.resource.data.replyTo == null
               || validReply());
@@ -640,7 +646,7 @@ service cloud.firestore {
           'rental_cancelled', 'rental_handoff', 'rental_received',
           'rental_returned', 'rental_disputed',
           'message_sent', 'comment_created', 'comment_deleted',
-          'post_shared', 'invite_shared', 'review_written',
+          'post_shared', 'listing_shared', 'invite_shared', 'review_written',
           'report_submitted', 'user_blocked', 'user_unblocked',
           'tryon_open', 'tryon_generate', 'tryon_save',
           'tryon_body_photo_set', 'tryon_body_photo_delete'

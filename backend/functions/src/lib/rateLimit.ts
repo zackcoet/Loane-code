@@ -70,6 +70,13 @@ export const LIMITS = {
   },
 
   /**
+   * Sending a look or a piece to friends. Each send can reach ten
+   * people, so this is sends, not messages — thirty is a very social
+   * evening of "omg would this work for Saturday".
+   */
+  share: { max: 30, windowMs: HOUR, message: 'You are sending a lot. Try again shortly.' },
+
+  /**
    * Reporting. Deliberately generous: somebody reporting a lot of
    * content is usually somebody having a bad time, not an attacker,
    * and the last thing to do is stop her telling us.

@@ -26,6 +26,7 @@ describe('replyFor', () => {
       body: 'Is it true to size?',
       hasPhoto: false,
       hasSharedPost: false,
+      hasSharedListing: false,
     });
   });
 
@@ -50,6 +51,12 @@ describe('replyPreview', () => {
     const base = replyFor(message({ body: '  ' }));
     expect(replyPreview({ ...base, hasPhoto: true })).toBe('Photo');
     expect(replyPreview({ ...base, hasSharedPost: true })).toBe('A look');
+    expect(replyPreview({ ...base, hasSharedListing: true })).toBe('A piece');
     expect(replyPreview(base)).toBe('Message');
+  });
+
+  it('copes with a reply written before pieces could be shared', () => {
+    const { hasSharedListing: _dropped, ...old } = replyFor(message({ body: '' }));
+    expect(replyPreview(old)).toBe('Message');
   });
 });

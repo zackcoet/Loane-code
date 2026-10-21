@@ -1,5 +1,5 @@
 import { onDocumentCreated } from 'firebase-functions/v2/firestore';
-import { COLLECTIONS } from '@loane/shared';
+import { COLLECTIONS, messagePreview } from '@loane/shared';
 import { db, now, FieldValue } from '../lib/admin';
 import type { Conversation, Message } from '@loane/shared';
 
@@ -33,15 +33,9 @@ export const onMessageCreated = onDocumentCreated(
 
     const patch: Record<string, unknown> = {
       lastMessage: {
-        // A photo or a shared look with no words still needs a preview,
-        // or the inbox row reads as an empty message.
-        body: message.body
-          ? message.body.slice(0, 140)
-          : message.sharedPost
-            ? 'Sent a look'
-            : message.photo
-              ? 'Sent a photo'
-              : '',
+        // A photo, a look or a piece with no words still needs a
+        // preview, or the inbox row reads as an empty message.
+        body: messagePreview(message),
         senderUid: message.senderUid,
         sentAt: now(),
       },

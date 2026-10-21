@@ -491,6 +491,7 @@ export const EVENT_TYPES = [
   'comment_created',
   'comment_deleted',
   'post_shared',
+  'listing_shared',
   'invite_shared',
   'review_written',
   'report_submitted',
@@ -552,7 +553,7 @@ export const LIMITS = {
   garmentValue: { minCents: 1_000, maxCents: 500_000 },
   /** How far ahead a rental may be booked. */
   bookingHorizonDays: 180,
-  /** People you can send one look to at a time. */
+  /** People you can send one look, or one piece, to at a time. */
   sharePostRecipients: { max: 10 },
 } as const;
 
