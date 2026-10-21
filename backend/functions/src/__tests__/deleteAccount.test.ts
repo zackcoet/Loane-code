@@ -65,7 +65,9 @@ beforeAll(async () => {
   process.env.FIREBASE_STORAGE_EMULATOR_HOST =
     process.env.FIREBASE_STORAGE_EMULATOR_HOST ?? '127.0.0.1:9199';
   process.env.GCLOUD_PROJECT = PROJECT;
-  app = initializeApp({ projectId: PROJECT }, 'delete-account-tests');
+  // The DEFAULT app, not a named one: the function's Storage calls use
+  // the default app, exactly as they do in production.
+  app = initializeApp({ projectId: PROJECT });
   db = getFirestore(app);
   const mod = await import('../auth/deleteAccount');
   run = (req) => mod.deleteMyAccount.run(req);

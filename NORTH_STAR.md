@@ -60,15 +60,18 @@ Pick the **highest unfinished item**. Finish it fully (UI, backend, rules, tests
 ✅ 1. Report flow everywhere: posts, listings, comments, profiles, messages — with reasons and an optional note; lands in the admin Reports queue.
 ✅ 2. Block works everywhere: blocked users disappear from feed, search, suggestions, comments, DMs, and can't message you.
 ✅ 3. Hide/mute a user without blocking.
-4. **Delete my account** in Settings (Apple requires in-app account deletion): deletes or anonymizes the user's data, with a confirm step.
-5. Basic objectionable-content filter on captions, comments, and messages (word list), with admin review.
-6. Admin: one-click actions on reports (hide content, warn, suspend), with an audit log.
+✅ 4. **Delete my account** in Settings (Apple requires in-app account deletion): deletes or anonymizes the user's data, with a confirm step.
+✅ 5. Basic objectionable-content filter on captions, comments, and messages (word list), with admin review.
+✅ 6. Admin: one-click actions on reports (hide content, warn, suspend), with an audit log.
+
+7. *(suggested)* Let an admin take down a reported review or message straight from the report (today: warn or suspend her; reviews need the rating recalculated).
+8. *(suggested)* Add Venmo / Cash App / Zelle to the word filter once payments run inside the app.
 
 ### C. Production foundations (build it like a real company's app)
 Follow `CLAUDE.md`'s rule: **never trust the phone.** Anything involving money, bookings, trust, counts, or other people goes through a Cloud Function, never a direct write from the app.
 1. **Audit every direct write the app makes** to Firestore/Storage. List them in `docs/server-side-audit.md`. Anything that touches another user, a counter, trust, or could be spammed moves behind a Cloud Function (messages, comments, likes, saves, follows, reports). Security rules then forbid the direct write. Tests for each.
 2. **Security rules review:** every collection has a test proving a student can't read or write what she shouldn't (other people's private settings, DMs she's not in, admin data).
-3. **Automatic checks on GitHub (CI):** a GitHub Actions workflow that runs typecheck, lint, and tests (with emulators) on every push and pull request, so broken code is caught even when nobody's watching.
+✅ 3. **Automatic checks on GitHub (CI):** a GitHub Actions workflow that runs typecheck, lint, and tests (with emulators) on every push and pull request, so broken code is caught even when nobody's watching.
 4. **Image pipeline:** resize and compress uploads server-side into thumbnail + full sizes; lists load thumbnails only.
 5. **Pagination everywhere** (feed, comments, messages, followers, search) with the matching Firestore indexes in `firestore.indexes.json`. Add a script that checks every query has its index, because the emulator doesn't enforce indexes and production does.
 6. **Error handling:** every Cloud Function returns friendly, specific errors; every screen shows a retry instead of a blank or a crash. Functions log structured errors so problems are findable later.
@@ -110,7 +113,7 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 9. Walkthrough tour max 3 steps.
 
 ### G. App Store readiness
-1. Account deletion (see B4).
+✅ 1. Account deletion (see B4).
 2. Every screen works with large text sizes and VoiceOver labels on buttons.
 3. No crashes on: no internet, slow internet, empty data, deleted posts/users.
 4. Privacy: list every type of data collected in `docs/app-store-privacy.md` (for the App Store privacy form).

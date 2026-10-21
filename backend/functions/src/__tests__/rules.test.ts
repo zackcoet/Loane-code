@@ -1077,9 +1077,12 @@ describe('conversations', () => {
 
     it('starts a fresh hour once the old one is over', async () => {
       await seedQuota({ windowStart: new Date(Date.now() - 2 * 3_600_000), count: 500 });
-      const batch = writeBatch(asElla());
-      batch.set(doc(asElla(), 'conversations', 'chat-1', 'messages', 'q5'), plain);
-      batch.set(quotaDoc(asElla()), { windowStart: serverTimestamp(), count: 1 });
+      // One client for the whole batch — a batch refuses documents from
+      // another Firestore instance, and asElla() makes a new one each call.
+      const ella = asElla();
+      const batch = writeBatch(ella);
+      batch.set(doc(ella, 'conversations', 'chat-1', 'messages', 'q5'), plain);
+      batch.set(quotaDoc(ella), { windowStart: serverTimestamp(), count: 1 });
       await assertSucceeds(batch.commit());
     });
 
