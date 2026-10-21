@@ -3,7 +3,51 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
-- Run the emulator tests once on your laptop (`npm run emulators`, then `npm test`) to confirm the new chat rules from runs 1 and 2. The overnight machine still can't start the emulators.
+- Run the emulator tests once on your laptop (`npm run emulators`, then `npm test`) to confirm the new chat rules from runs 1, 2 and 3. The overnight machine still can't start the emulators. **This matters more after run 3:** sending a message now depends on a new security rule, so if that rule has a mistake, messages would stop sending. Please check it before any of this goes live.
+
+---
+
+## 2026-10-21 (run 3, ~midnight Central) — Mute, delete and message requests; a send limit; report a look or a message
+
+**Plan:** Finish the messaging list: the rest of A6 (swipe to mute/delete, message requests), A7 (a limit on how fast messages can be sent), and the two suggested extras A8 (turn "Seen" off) and A9 ("Liked a message" in the inbox). Then start Safety with B1 (report anything). Everything that could be faked by a phone is checked by the server.
+
+**Built:**
+- **Swipe a chat to mute or delete it.** In Messages, swipe a chat to the left: **Mute** and **Delete** appear. Press and hold a chat for the same choices.
+  - **Mute:** the chat stays, with a little crossed-out bell, but it stops adding to your Messages badge.
+  - **Delete:** the chat leaves *your* messages only — the other girl keeps hers. If either of you sends something new, it comes back showing only the new messages.
+- **Message requests.** Messages from someone you don't follow, that you've never answered, now wait in a **Message requests** row at the top of Messages instead of mixing in with your friends. They don't count toward your badge. Open one and a strip says "You don't follow @name. Reply to move this chat to your messages" with a Delete button. Replying moves it into your inbox. Chats about a rental are never treated as requests, and nobody's existing chats were moved.
+- **A limit on sending messages:** 500 an hour per person — far more than any real student sends, but it stops a stolen account or a script from flooding people. Sending still feels instant. Anyone who somehow hits it sees "You are sending a lot of messages. Take a short break, then try again."
+- **Turn "Seen" off.** Settings → Privacy → **Show read receipts**. When off, nobody sees when you've read their messages — and, like Instagram, you don't see theirs either.
+- **"Liked a message" in the inbox.** When someone hearts your message, your inbox shows "Liked a message" and it counts as one unread. Hearting over and over only counts once.
+- **Report a look, or one message.** The "…" on someone else's look (in the feed or on the look's page) now opens Report. In a chat, press and hold one of *their* messages → **Report**. The report lands in the admin Reports queue with a copy of the words that were reported, so you can judge it even though chats are private. Profiles, pieces and comments could already be reported.
+
+**What to tap to see it:**
+- Messages → swipe any chat to the left → Mute (bell appears) or Delete (confirm).
+- Message requests: sign in as a student who doesn't follow Ella → message Ella → sign back in as Ella → Messages → "Message requests" row at the top.
+- Menu → Settings → Privacy → "Show read receipts" switch.
+- In a chat, double-tap one of your friend's messages on her phone → on yours, the inbox row says "Liked a message".
+- Feed → tap the "…" on someone else's look → pick a reason → Submit. Or in a chat, press and hold their message → Report. Then check the admin dashboard → Reports.
+
+**Fixed:**
+- Nothing broken found tonight.
+
+**Skipped / blocked:**
+- **Emulators still can't start on the overnight machine** (Google's download site is blocked here). About 25 new security-rules tests (mute, delete, requests, the send limit, read-receipt setting) are written but **not run tonight**. Type checks, lint and the shared tests (123, including new ones for requests, mute, delete, the send limit, receipts-off and hearts) all pass.
+- No push notifications exist yet, so "Mute" only quiets the badge for now. When push is added it should skip muted chats.
+
+**🚨 NEEDS ZACK:**
+- Please run `npm run emulators` then `npm test` on your laptop **before anything from tonight goes live** — sending messages now goes through a new rule, so a mistake there would stop messages sending. If anything fails, the next run fixes it first.
+- When you next deploy, the live check (`coreFlowLive.ts`) was updated to send messages the new way, so it should still say 19 passed.
+
+**Next up:** B2 — make blocking work everywhere (feed, search, suggestions, comments, chats).
+
+**Commits:**
+- Inbox: swipe to mute or delete a chat, and message requests
+- Chat: limit how fast messages can be sent (500 an hour)
+- Privacy: a switch to turn read receipts off
+- Inbox: 'Liked a message' when someone hearts yours
+- Report a look or a single message
+- Autopilot log for run 3
 
 ---
 

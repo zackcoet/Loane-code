@@ -51,13 +51,13 @@ Pick the **highest unfinished item**. Finish it fully (UI, backend, rules, tests
 ✅ 3. Send photos in DMs. *(was already built before autopilot started — the + in the chat composer)*
 ✅ 4. Read receipts ("Seen") and unread counts that stay accurate.
 ✅ 5. Message reactions (double-tap heart).
-6. Inbox polish: search conversations, swipe to delete/mute, pinned "requests" from people you don't follow. *(search done 2026-10-21; swipe to delete/mute and requests still to do)*
-7. **Rate-limit message sends** (move sending behind a Cloud Function or equivalent) — currently unlimited.
-8. *(suggested)* A setting to turn read receipts off, like Instagram's "Show read receipts".
-9. *(suggested)* When someone hearts your message, update the inbox preview ("Liked a message") and count it as unread.
+✅ 6. Inbox polish: search conversations, swipe to delete/mute, pinned "requests" from people you don't follow.
+✅ 7. **Rate-limit message sends** (move sending behind a Cloud Function or equivalent) — currently unlimited.
+✅ 8. *(suggested)* A setting to turn read receipts off, like Instagram's "Show read receipts".
+✅ 9. *(suggested)* When someone hearts your message, update the inbox preview ("Liked a message") and count it as unread.
 
 ### B. Safety (Apple requires this for apps with user content — guideline 1.2)
-1. Report flow everywhere: posts, listings, comments, profiles, messages — with reasons and an optional note; lands in the admin Reports queue.
+✅ 1. Report flow everywhere: posts, listings, comments, profiles, messages — with reasons and an optional note; lands in the admin Reports queue.
 2. Block works everywhere: blocked users disappear from feed, search, suggestions, comments, DMs, and can't message you.
 3. Hide/mute a user without blocking.
 4. **Delete my account** in Settings (Apple requires in-app account deletion): deletes or anonymizes the user's data, with a confirm step.
