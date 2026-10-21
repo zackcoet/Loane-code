@@ -10,6 +10,9 @@
  * The counter is a fixed one-hour window: `windowStart` and `count`.
  * Starting a new window is only allowed once the server agrees the old
  * one is over, so the phone can never reset its own counter early.
+ *
+ * New listings use exactly the same counter shape (listingQuotas), so
+ * these helpers take the window length rather than assuming messages.
  */
 
 import { LIMITS } from './constants';
@@ -32,12 +35,16 @@ const CLOCK_SLACK_MS = 2 * 60_000;
  * `start` — open a new window (no counter yet, or the old one is over).
  * `bump` — add one to the current window.
  */
-export function quotaWrite(current: MessageQuota | null, nowMs: number): 'start' | 'bump' {
+export function quotaWrite(
+  current: MessageQuota | null,
+  nowMs: number,
+  windowMs: number = LIMITS.messagesPerHour.windowMs,
+): 'start' | 'bump' {
   if (!current) return 'start';
   const startMs = toMillis(current.windowStart);
   // A window still waiting for its server time is brand new.
   if (startMs == null) return 'bump';
-  return nowMs - startMs > LIMITS.messagesPerHour.windowMs + CLOCK_SLACK_MS ? 'start' : 'bump';
+  return nowMs - startMs > windowMs + CLOCK_SLACK_MS ? 'start' : 'bump';
 }
 
 /** The other choice, for a single retry if the server disagreed. */

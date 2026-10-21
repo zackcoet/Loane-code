@@ -61,6 +61,13 @@ export const COLLECTIONS = {
    * exactly one and refuse once it is full. See messageQuota.ts.
    */
   messageQuotas: 'messageQuotas',
+  /**
+   * listingQuotas/{uid} — how many new pieces she has listed this hour.
+   * Same shape and same idea as messageQuotas: listings are written by
+   * the app, so every new one is batched with a tick of this counter
+   * and the rules refuse it once the hour is full.
+   */
+  listingQuotas: 'listingQuotas',
   legalDocs: 'legalDocs',
   legalDrafts: 'legalDrafts',
 } as const;

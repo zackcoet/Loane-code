@@ -35,11 +35,11 @@ import {
   getDoc,
   getDocs,
   getFirestore,
+  increment,
   limit,
   orderBy,
   query,
   serverTimestamp,
-  setDoc,
   updateDoc,
   where,
   writeBatch,
@@ -242,7 +242,15 @@ async function main(): Promise<void> {
     await step(`add to closet — Available now ${status === 'active' ? 'ON' : 'OFF'}`, async () => {
       const listingRef = doc(collection(lender.db, 'listings'));
       const photo = await upload(lender, `users/${lender.uid}/listings/${listingRef.id}/0.jpg`);
-      await setDoc(listingRef, listingBody(listingRef.id, photo, status));
+      // Batched with a tick of her hourly new-piece counter, exactly as
+      // the app does it (listingQuotas) — the rules refuse it otherwise.
+      const quotaRef = doc(lender.db, 'listingQuotas', lender.uid);
+      const quota = await getDoc(quotaRef);
+      const batch = writeBatch(lender.db);
+      batch.set(listingRef, listingBody(listingRef.id, photo, status));
+      if (quota.exists()) batch.update(quotaRef, { count: increment(1) });
+      else batch.set(quotaRef, { windowStart: serverTimestamp(), count: 1 });
+      await batch.commit();
       listings.push(listingRef.id);
       if (status === 'active') listingId = listingRef.id;
       return listingRef.id;
@@ -459,6 +467,7 @@ async function main(): Promise<void> {
       for (const d of s.docs) await d.ref.delete();
     }
     await admin.collection('messageQuotas').doc(uid).delete().catch(() => {});
+    await admin.collection('listingQuotas').doc(uid).delete().catch(() => {});
     const [files] = await adminStorage().bucket().getFiles({ prefix: `users/${uid}/` });
     for (const f of files) await f.delete().catch(() => {});
     for (const [c, field] of [

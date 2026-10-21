@@ -18,6 +18,14 @@ describe('quotaWrite', () => {
     expect(quotaWrite({ windowStart: new Date(0), count: 10 }, HOUR + 3 * 60_000)).toBe('start');
   });
 
+  it('uses the window length it is given (listings share the helper)', () => {
+    const half = HOUR / 2;
+    expect(quotaWrite({ windowStart: new Date(0), count: 3 }, half + 3 * 60_000, half)).toBe(
+      'start',
+    );
+    expect(quotaWrite({ windowStart: new Date(0), count: 3 }, half - 1, half)).toBe('bump');
+  });
+
   it('treats a window still waiting for its server time as open', () => {
     expect(quotaWrite({ windowStart: null, count: 1 }, 5 * HOUR)).toBe('bump');
   });

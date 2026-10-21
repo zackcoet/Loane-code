@@ -107,6 +107,7 @@ export const deleteMyAccount = onCall<void, Promise<{ ok: true }>>(
       await db().recursiveDelete(userRef.collection(sub));
     }
     await db().collection(COLLECTIONS.messageQuotas).doc(uid).delete();
+    await db().collection(COLLECTIONS.listingQuotas).doc(uid).delete();
 
     // Try-on documents. The files go in the storage sweep below.
     await deleteWhere(COLLECTIONS.tryOns, 'uid', uid);

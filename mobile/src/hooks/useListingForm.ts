@@ -7,11 +7,21 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { doc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  increment,
+  serverTimestamp,
+  updateDoc,
+  writeBatch,
+  type DocumentReference,
+} from 'firebase/firestore';
 import {
   COLLECTIONS,
   LIMITS,
   dollarsToCents,
+  otherQuotaWrite,
+  quotaWrite,
   validateListingDraft,
   type Category,
   type Condition,
@@ -19,6 +29,7 @@ import {
   type IsoDate,
   type ListingDraft,
   type ListingIntent,
+  type MessageQuota,
   type Occasion,
   type ShoeSize,
   type Size,
@@ -26,7 +37,41 @@ import {
 } from '@loane/shared';
 import { db } from '../firebase/config';
 import { saveErrorMessage } from '../firebase/errors';
-import { cropToSquare, uploadFlatPhotoPng, uploadListingPhoto, type PickedPhoto } from '../lib/photo';
+import {
+  cropToSquare,
+  uploadFlatPhotoPng,
+  uploadListingPhoto,
+  type PickedPhoto,
+} from '../lib/photo';
+
+/** Shown when she has hit the hourly ceiling on new pieces. */
+export const LISTING_QUOTA_FULL_MESSAGE =
+  "You've put a lot on Loane in the last hour. Take a breather and try this one again in a little while — your draft is still here.";
+
+/** Her hourly new-piece counter, or null if she has none yet. */
+async function readListingQuota(uid: string): Promise<MessageQuota | null> {
+  const snap = await getDoc(doc(db, COLLECTIONS.listingQuotas, uid)).catch(() => null);
+  return snap?.exists() ? (snap.data() as MessageQuota) : null;
+}
+
+/**
+ * Writes a NEW listing together with one tick of her hourly counter.
+ * The security rules refuse a new listing that does not move the
+ * counter by exactly one — see listingQuotas in firestore.rules.
+ */
+async function createCounted(
+  ref: DocumentReference,
+  uid: string,
+  listing: Record<string, unknown>,
+  quota: 'start' | 'bump',
+): Promise<void> {
+  const batch = writeBatch(db);
+  batch.set(ref, listing);
+  const quotaDoc = doc(db, COLLECTIONS.listingQuotas, uid);
+  if (quota === 'start') batch.set(quotaDoc, { windowStart: serverTimestamp(), count: 1 });
+  else batch.update(quotaDoc, { count: increment(1) });
+  await batch.commit();
+}
 
 /** Photos in the form are either freshly picked or already uploaded. */
 export type FormPhoto =
@@ -232,6 +277,20 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
           ? doc(db, COLLECTIONS.listings, existingId)
           : doc(db, COLLECTIONS.listings);
 
+        // A new piece needs room in her hourly counter. Checked before
+        // any photo uploads, so a refused piece leaves no stray files.
+        const windowMs = LIMITS.listingsPerHour.windowMs;
+        const quota = existingId ? null : await readListingQuota(owner.uid);
+        if (
+          !existingId &&
+          quota &&
+          quota.count >= LIMITS.listingsPerHour.max &&
+          quotaWrite(quota, Date.now(), windowMs) === 'bump'
+        ) {
+          setError(LISTING_QUOTA_FULL_MESSAGE);
+          return null;
+        }
+
         const photos: ImageRef[] = [];
         for (const [index, photo] of form.photos.entries()) {
           photos.push(
@@ -318,11 +377,30 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
         if (existingId) {
           await updateDoc(ref, body);
         } else {
-          await setDoc(ref, {
+          const listing = {
             ...body,
             stats: { viewCount: 0, saveCount: 0, tagCount: 0, completedRentals: 0 },
             createdAt: serverTimestamp(),
-          });
+          };
+          const first = quotaWrite(quota, Date.now(), windowMs);
+          try {
+            await createCounted(ref, owner.uid, listing, first);
+          } catch {
+            // Her clock and the server's can disagree about whether the
+            // hour is up. One retry with the other choice settles it;
+            // a second refusal is real and falls through to the catch.
+            try {
+              await createCounted(ref, owner.uid, listing, otherQuotaWrite(first));
+            } catch (err) {
+              // Another phone of hers may have filled the hour meanwhile.
+              const now = await readListingQuota(owner.uid);
+              if ((now?.count ?? 0) >= LIMITS.listingsPerHour.max) {
+                setError(LISTING_QUOTA_FULL_MESSAGE);
+                return null;
+              }
+              throw err;
+            }
+          }
         }
 
         return ref.id;
