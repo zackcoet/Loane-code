@@ -1,0 +1,64 @@
+# Automatic checks on every push and pull request.
+#
+# Catches broken code even when nobody is watching — the overnight
+# runner cannot start the emulators, so this is where the security-rules
+# and booking tests actually run.
+#
+# NEVER DEPLOYS. It uses the demo project only (demo-loane), which the
+# Firebase emulators treat as offline: no real project, no secrets.
+name: CI
+
+on:
+  push:
+    branches: [main, autopilot]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # The emulators are Java programs.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - run: npm ci
+
+      # Shared first: everything else imports its built output.
+      - run: npm run build:shared
+      - run: npm run build:functions
+
+      - run: npm run typecheck
+      - run: npm run lint
+
+      - name: Cache the emulator downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-v1
+
+      # Only the emulators the tests talk to. The functions emulator is
+      # left out: tests call the functions directly, and it would want
+      # server secrets CI does not have.
+      - name: Tests, against the emulators
+        working-directory: backend
+        run: >
+          npx --yes firebase-tools@13
+          emulators:exec --project=demo-loane --only auth,firestore,storage
+          "cd .. && npm test"
