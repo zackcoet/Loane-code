@@ -58,8 +58,8 @@ Pick the **highest unfinished item**. Finish it fully (UI, backend, rules, tests
 
 ### B. Safety (Apple requires this for apps with user content — guideline 1.2)
 ✅ 1. Report flow everywhere: posts, listings, comments, profiles, messages — with reasons and an optional note; lands in the admin Reports queue.
-2. Block works everywhere: blocked users disappear from feed, search, suggestions, comments, DMs, and can't message you.
-3. Hide/mute a user without blocking.
+✅ 2. Block works everywhere: blocked users disappear from feed, search, suggestions, comments, DMs, and can't message you.
+✅ 3. Hide/mute a user without blocking.
 4. **Delete my account** in Settings (Apple requires in-app account deletion): deletes or anonymizes the user's data, with a confirm step.
 5. Basic objectionable-content filter on captions, comments, and messages (word list), with admin review.
 6. Admin: one-click actions on reports (hide content, warn, suspend), with an audit log.

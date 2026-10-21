@@ -3,7 +3,49 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
-- Run the emulator tests once on your laptop (`npm run emulators`, then `npm test`) to confirm the new chat rules from runs 1, 2 and 3. The overnight machine still can't start the emulators. **This matters more after run 3:** sending a message now depends on a new security rule, so if that rule has a mistake, messages would stop sending. Please check it before any of this goes live.
+- Run the emulator tests once on your laptop (`npm run emulators`, then `npm test`) to confirm the new rules from runs 1–4. The overnight machine still can't start the emulators. **This matters:** sending a message depends on security rules that were changed in runs 3 and 4, so if a rule has a mistake, messages would stop sending. Please check it before any of this goes live.
+
+---
+
+## 2026-10-21 (run 4, ~1 AM Central) — Blocking that really works everywhere, and Mute
+
+**Plan:** B2 — find every place a blocked person could still reach or appear, and close it: on the server (so a modified app can't get around it) and on the phone (so she just disappears). Then B3 — a softer "Mute" that hides someone's looks from your feed without blocking.
+
+**Built:**
+- **Blocking now stops old chats too.** Before tonight, if two girls already had a chat and one blocked the other, messages could still be sent in that old chat. Now the server refuses them, in both directions. Hearting a message, liking a look, and replying to someone's comment are refused too once either has blocked.
+- **A blocked person disappears from:**
+  - Messages — the chat leaves the inbox, Message requests, and the unread badge. If she opens it from an old link, it says "This chat isn't available" with no typing box.
+  - Activity — likes, comments and follows from her are hidden, and don't count on the badge. Rental reminders (due back, handoff) still show, so nobody misses a return because of a block.
+  - Her look or piece, if opened from an old link, reads "Not found", the same as a deleted one — it never says who blocked whom.
+  - "Liked by @name" under a look never names her.
+  - Your Liked looks, saved looks, and a piece's "Seen in posts". Saved pieces from her closet move to "no longer available".
+  - (Feed, Discover, search, suggestions, comments and follower lists were already covered.)
+- **Mute.** Tap the "…" on someone's look in the feed → **Mute @name**. Her looks stop showing in your feed (both tabs), and she is never told. You can still message her, rent from her and visit her closet. The "…" on her profile or in a chat now offers **Mute / Unmute** too.
+- **Settings → Muted** lists everyone you've muted with an **Unmute** button.
+
+**What to tap to see it:**
+- Mute: Feed → "…" on someone else's look → Mute @name → her looks vanish from the feed. Menu → Settings → Muted → Unmute brings them back.
+- Block: open a chat → "…" at the top → Block. Back in Messages the chat is gone. On her phone, the chat is gone too, and her Activity no longer shows your likes.
+
+**Fixed:**
+- The hole above: blocking didn't stop messages in a chat that already existed.
+- The "who blocked me" lists are now loaded once for the whole app instead of once per screen, so the feed doesn't open dozens of copies of the same connection.
+
+**Skipped / blocked:**
+- **Emulators still can't start on the overnight machine** (Google's download site is blocked here). About 9 new security-rule tests (blocked chats, muting) are written but **not run tonight**. Type checks, lint and the shared tests (130, including new ones for hiding blocked chats and alerts) all pass.
+- Muting only hides looks from the feed, like Instagram. It doesn't hide her pieces in Discover — easy to add if you want it.
+
+**🚨 NEEDS ZACK:**
+- Same as before: run `npm run emulators` then `npm test` on your laptop before anything goes live. Tonight's block check sits on the "send a message" rule.
+- A small call you may want to make: if two girls are mid-rental and one blocks the other, their chat disappears (the rental itself carries on from My Rentals, and reminders still arrive). Written down in decisions.md — tell me if you'd rather the rental chat stay.
+
+**Next up:** B4 — "Delete my account" in Settings (Apple requires it). It removes or anonymizes her data with a confirm step; it needs care around active rentals, so it gets a full run of its own.
+
+**Commits:**
+- Blocking: refuse messages, hearts, likes and comment replies between blocked people
+- Blocking: hide blocked people from chats, alerts, liked and saved looks
+- Mute someone: hide her looks from your feed without blocking
+- Autopilot log for run 4
 
 ---
 
