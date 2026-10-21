@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { listingShareSnapshot, messagePreview } from '../shares';
+import {
+  LIKED_MESSAGE_PREVIEW,
+  likeInboxUpdate,
+  listingShareSnapshot,
+  messagePreview,
+} from '../shares';
 import type { Listing } from '../types';
 
 function listing(overrides: Partial<Listing> = {}): Listing {
@@ -85,5 +90,28 @@ describe('messagePreview', () => {
   it('copes with messages from before pieces could be shared', () => {
     const { sharedListing: _old, ...older } = empty;
     expect(messagePreview(older as typeof empty)).toBe('');
+  });
+});
+
+describe('likeInboxUpdate', () => {
+  const ME = 'uid-ella';
+  const THEM = 'uid-maddie';
+  const last = { body: 'see you at 4', senderUid: ME };
+
+  it('updates the inbox when the other person hearts her message', () => {
+    expect(likeInboxUpdate([], [THEM], ME, last)).toEqual({ likerUid: THEM, bumpUnread: true });
+  });
+
+  it('ignores hearting your own message', () => {
+    expect(likeInboxUpdate([], [ME], ME, last)).toBeNull();
+  });
+
+  it('ignores taking a heart back', () => {
+    expect(likeInboxUpdate([THEM], [], ME, last)).toBeNull();
+  });
+
+  it('counts a run of hearts from the same person once', () => {
+    const liked = { body: LIKED_MESSAGE_PREVIEW, senderUid: THEM };
+    expect(likeInboxUpdate([], [THEM], ME, liked)).toEqual({ likerUid: THEM, bumpUnread: false });
   });
 });

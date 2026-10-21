@@ -51,6 +51,7 @@
  *                               renters can see them without reading
  *                               other people's bookings
  *   - onMessageCreated          updates a thread's preview and unread badge
+ *   - onMessageLiked            "Liked a message" in the inbox when someone hearts one
  *   - propagateProfileChanges   refreshes the copies of her profile stored
  *                               on her listings and posts
  *   - syncPhoneHash             keeps phoneHashes in step with the phone
@@ -80,6 +81,7 @@ export { countPostEngagement } from './triggers/countPostEngagement';
 export { refreshTagLabels } from './triggers/refreshTagLabels';
 export { syncListingAvailability } from './triggers/syncListingAvailability';
 export { onMessageCreated } from './triggers/onMessageCreated';
+export { onMessageLiked } from './triggers/onMessageLiked';
 export { propagateProfileChanges } from './triggers/propagateProfileChanges';
 export { syncPhoneHash } from './triggers/syncPhoneHash';
 export { requestBooking } from './bookings/requestBooking';

@@ -53,3 +53,30 @@ export function messagePreview(
   if (message.photo) return 'Sent a photo';
   return '';
 }
+
+/** The inbox preview when someone hearts a message, like Instagram's. */
+export const LIKED_MESSAGE_PREVIEW = 'Liked a message';
+
+/**
+ * What a heart on a message should do to the inbox, if anything.
+ *
+ * Only a NEW heart from the other person counts — hearting your own
+ * message, or taking a heart back, changes nothing. And a run of hearts
+ * from the same person adds one to the badge, not one per heart, so
+ * hearting and un-hearting over and over cannot pump up someone's
+ * unread count.
+ */
+export function likeInboxUpdate(
+  likedBefore: string[] | undefined,
+  likedAfter: string[] | undefined,
+  messageSenderUid: string,
+  lastMessage: { body: string; senderUid: string } | null,
+): { likerUid: string; bumpUnread: boolean } | null {
+  const before = new Set(likedBefore ?? []);
+  const added = (likedAfter ?? []).filter((uid) => !before.has(uid) && uid !== messageSenderUid);
+  const likerUid = added[0];
+  if (!likerUid) return null;
+  const alreadyShowing =
+    lastMessage?.body === LIKED_MESSAGE_PREVIEW && lastMessage.senderUid === likerUid;
+  return { likerUid, bumpUnread: !alreadyShowing };
+}
