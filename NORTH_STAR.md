@@ -47,12 +47,14 @@ Pick the **highest unfinished item**. Finish it fully (UI, backend, rules, tests
 
 ### A. Messaging (make DMs feel like Instagram)
 ✅ 1. Reply to a specific message (swipe to reply, quoted preview).
-2. Share a post or listing into a DM from anywhere (share sheet → pick people → sends as a rich card that opens the post/listing).
+✅ 2. Share a post or listing into a DM from anywhere (share sheet → pick people → sends as a rich card that opens the post/listing).
 ✅ 3. Send photos in DMs. *(was already built before autopilot started — the + in the chat composer)*
-4. Read receipts ("Seen") and unread counts that stay accurate.
-5. Message reactions (double-tap heart).
-6. Inbox polish: search conversations, swipe to delete/mute, pinned "requests" from people you don't follow.
+✅ 4. Read receipts ("Seen") and unread counts that stay accurate.
+✅ 5. Message reactions (double-tap heart).
+6. Inbox polish: search conversations, swipe to delete/mute, pinned "requests" from people you don't follow. *(search done 2026-10-21; swipe to delete/mute and requests still to do)*
 7. **Rate-limit message sends** (move sending behind a Cloud Function or equivalent) — currently unlimited.
+8. *(suggested)* A setting to turn read receipts off, like Instagram's "Show read receipts".
+9. *(suggested)* When someone hearts your message, update the inbox preview ("Liked a message") and count it as unread.
 
 ### B. Safety (Apple requires this for apps with user content — guideline 1.2)
 1. Report flow everywhere: posts, listings, comments, profiles, messages — with reasons and an optional note; lands in the admin Reports queue.

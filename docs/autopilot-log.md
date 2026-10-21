@@ -3,7 +3,48 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
-- Run the emulator tests once on your laptop to confirm tonight's chat-reply rules (see the 2026-10-21 entry).
+- Run the emulator tests once on your laptop (`npm run emulators`, then `npm test`) to confirm the new chat rules from runs 1 and 2. The overnight machine still can't start the emulators.
+
+---
+
+## 2026-10-21 (run 2, ~11 PM Central) — Send a piece to a friend, "Seen", hearts, inbox search
+
+**Plan:** Finish the rest of the messaging list in order: A2 (send a listing into a chat — looks already worked), A4 ("Seen" receipts), A5 (double-tap heart), then start A6 (inbox search). Everything that could be faked by a phone is checked by the server rules.
+
+**Built:**
+- **Send a piece to a friend.** Every listing now has a paper-plane button at the top. It opens the same "Send to" screen as looks. The piece shows up in the chat as a card with its photo, name and price ("Loane It from $25 · Own It $90"). Tapping the card opens the listing. Only pieces that are up right now can be sent — not paused, sold or removed ones.
+- **"Seen" and "Sent".** Under your newest message it now says "Sent", and changes to "Seen" once she's opened the chat. A chat left open in the background, or with the phone locked, doesn't count as seen.
+- **Double-tap to heart a message.** A small heart appears on the bubble. Tap the heart (or press and hold → Unlike) to take it back. Double-tapping again never takes it back by accident, same as posts.
+- **Inbox search.** A search box at the top of Messages finds chats by name or @username as you type.
+- **Inbox rows say more:** "You: …" when you sent the last message, and how long ago (e.g. "· 2 hours ago").
+- **Safety:** the app can't fake a shared piece (wrong price or name), can't say someone saw a message when they didn't, and can only add or remove its own heart. Sending looks and pieces now has a generous limit per hour so a script can't spam everyone.
+
+**What to tap to see it:**
+- Discover → open any piece → paper-plane at the top right → pick a friend → Send. You land in the chat with the card.
+- Send a message, then sign in as the other student on a second phone and open the chat — the first phone changes "Sent" to "Seen".
+- In any chat, double-tap a message → a heart appears. Tap the heart to remove it.
+- Messages → type a name in the search box at the top.
+
+**Fixed:**
+- If a chat was left open on another screen, new messages were marked read even though nobody was looking. Now they wait until you're actually looking at the chat.
+
+**Skipped / blocked:**
+- **Emulators still can't start on the overnight machine** (Google's download site is blocked here), so the new security-rules tests (about 15 of them, for pieces, "Seen" and hearts) are written but **not run tonight**. Type checks, lint and the shared tests (95 of them, including new ones for the price on the card and the "Seen" logic) all pass.
+- A6 is only partly done: search is in, but swipe-to-delete/mute and a separate "requests" folder aren't. Those need new settings saved per person and a change to notifications — better as one careful piece next run.
+- No haptics (the little buzz) on the heart — that needs a new add-on that only works in a proper app build, not Expo Go.
+
+**🚨 NEEDS ZACK:**
+- Please run `npm run emulators` then `npm test` on your laptop. If any of tonight's rules tests fail, the next run will fix them first.
+- A small question for later, no rush: should students be able to turn "Seen" off (Instagram lets you)? Logged as a suggestion, not built.
+
+**Next up:** Finish A6 (swipe to delete/mute a chat, message requests from people you don't follow), then A7 (limit how fast messages can be sent).
+
+**Commits:**
+- Chat: send a piece from someone's closet to a friend
+- Chat: "Seen" and "Sent" under your newest message
+- Chat: double-tap a message to heart it
+- Inbox: search by name, "You:" on your own last message, and when
+- Autopilot log for run 2
 
 ---
 

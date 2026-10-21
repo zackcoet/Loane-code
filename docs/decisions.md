@@ -6,6 +6,26 @@ much as the answer.
 
 ---
 
+## 2026-10-21 — "Seen" is one timestamp per person, not a flag per message
+
+**Decision:** A conversation keeps `lastReadAt[uid]` — when each person
+last had the thread open. "Seen" shows under the newest message when it
+is hers and the other person's time is later. The phone writes its own
+key only, and the rules hold it to the server clock (`request.time`).
+
+**Why:** Marking every message read would turn opening a long thread
+into a hundred writes. Instagram only ever shows one receipt, at the
+bottom, so one timestamp is all the screen needs.
+
+**Also:** a chat only counts as "open" while it is the screen in front
+of her and the app is in the foreground — otherwise a chat left open
+behind another screen would say "Seen" for messages nobody read.
+
+**Not built (yet):** a setting to turn receipts off. Logged as a
+suggestion.
+
+---
+
 ## 2026-10-05 — Legal documents are append-only once published
 
 **Decision:** Published Terms and Privacy versions live in `legalDocs` as
