@@ -12,6 +12,9 @@
  *   - checkCampusEmail   "is Loane at my school?" as she types
  *   - checkUsername      "is this taken?" for the claim-username screen
  *   - changeUsername     swaps her handle in one transaction
+ *   - deleteMyAccount    "Delete my account": refuses while a rental is
+ *                        going, removes everything that is hers, keeps
+ *                        shared records under "Deleted account"
  *   - follow / unfollow  the only way follower counts ever move
  *   - save / unsave      the only way a listing's save count ever moves
  *   - removeListing      hides a listing, never deletes it, and refuses
@@ -67,6 +70,7 @@
  */
 
 export { createAccount, checkCampusEmail } from './auth/createAccount';
+export { deleteMyAccount } from './auth/deleteAccount';
 export { checkUsername } from './auth/checkUsername';
 export { changeUsername } from './auth/changeUsername';
 export { follow, unfollow } from './social/follow';

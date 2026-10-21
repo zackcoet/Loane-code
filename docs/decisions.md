@@ -6,6 +6,39 @@ much as the answer.
 
 ---
 
+## 2026-10-21 — Deleting an account leaves a nameless shell, and keeps the handle reserved
+
+**Decision:** "Delete my account" (Settings) runs `deleteMyAccount`. It
+refuses while any rental is requested, confirmed, out, being returned or
+disputed. Otherwise it removes her looks, pieces, comments, likes, saves,
+follows (moving everyone else's counts back), alerts, private settings
+(email, phone — which drops her from contact matching), try-on data,
+profile and post photos, and finally her login. Her `users` document
+stays as a "Deleted account" shell — status `deactivated`, `deletedAt`
+set, no name, photo, bio or sizes — and the existing profile trigger
+renames every copy of her on listings, posts, comments and chats.
+
+**Why a shell, not a delete:** bookings and reviews point at her uid.
+The Privacy Policy already says rental records are kept and reviews stay
+"shown without your name", so the shell is what we promised.
+
+**Kept, without her name:** past rentals, reviews she wrote, and chats
+(the other person's copy is theirs too). Photos of a piece that was ever
+rented stay, because they appear in someone's My Rentals.
+
+**The username stays reserved** (`usernames/{old}` still points at her
+uid). Releasing it would let somebody register her old handle the next
+day and be mistaken for her. An admin can free it by hand if she asks.
+Her shell's handle is `deleted_<id>`, a prefix signup now refuses.
+
+**Needs a fresh password:** the app re-signs-in with her password right
+before the call, and the server refuses a sign-in older than 5 minutes.
+
+**Admins can't delete themselves from the app** — on a two-person team
+that could remove the only way into the dashboard.
+
+---
+
 ## 2026-10-21 — Messages are limited by the rules, not a function
 
 **Decision:** Every message is written in one batch with a tick of

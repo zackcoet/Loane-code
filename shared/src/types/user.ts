@@ -82,6 +82,14 @@ export interface User extends BaseDoc, CampusScoped {
   /** Elevated to "admin" only via a Firebase custom claim, never by the app. */
   role: UserRole;
   status: AccountStatus;
+  /**
+   * When she deleted her account, or absent if she never did.
+   *
+   * A deleted account keeps its document as a "Deleted account" shell
+   * (status `deactivated`) because bookings and reviews point at it.
+   * See shared/src/accountDeletion.ts.
+   */
+  deletedAt?: Timestampish | null;
   /** Set by an admin when suspending. */
   suspendedReason: string | null;
   suspendedUntil: Timestampish | null;

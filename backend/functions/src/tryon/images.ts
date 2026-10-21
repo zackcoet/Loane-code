@@ -127,3 +127,11 @@ export async function storeResult(uid: string, tryOnId: string, base64: string):
 export async function deleteTryOnFolder(uid: string, kind: 'body' | 'results'): Promise<void> {
   await bucket().deleteFiles({ prefix: `users/${uid}/tryon/${kind}/`, force: true });
 }
+
+/**
+ * Deletes every file under one of her folders, e.g. `users/{uid}/posts/`.
+ * Used by account deletion. Missing files are not an error.
+ */
+export async function deleteStorageFolder(prefix: string): Promise<void> {
+  await bucket().deleteFiles({ prefix, force: true });
+}

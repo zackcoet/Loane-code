@@ -11,7 +11,7 @@
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { color, controls, spacing } from '@loane/shared';
+import { color, controls, isDeletedAccount, spacing } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { EmptyState } from '../../src/components/EmptyState';
 import { ProfileHeader } from '../../src/components/ProfileHeader';
@@ -113,6 +113,16 @@ export default function OtherProfile() {
           title="Closet not found"
           body={`We couldn't find @${username ?? ''} on Loane.`}
         />
+      </Screen>
+    );
+  }
+
+  // Reached from an old link or notification after she left Loane.
+  if (isDeletedAccount(user)) {
+    return (
+      <Screen flush>
+        <Header title="" onBack={() => router.back()} />
+        <EmptyState title="Account deleted" body="This person has left Loane." />
       </Screen>
     );
   }

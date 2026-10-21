@@ -11,6 +11,7 @@ import {
   type RentalDuration,
   type Size,
 } from './constants';
+import { DELETED_USERNAME_PREFIX } from './accountDeletion';
 import { daysBetween, isIsoDate } from './dates';
 import type { Cents, DateRange, ImageRef } from './types/common';
 import type { Listing } from './types/listing';
@@ -56,6 +57,11 @@ export function validateUsername(raw: string): ValidationResult {
     return fail('Usernames cannot contain two periods in a row.');
   }
   if ((RESERVED_USERNAMES as readonly string[]).includes(username)) {
+    return fail('That username is reserved.');
+  }
+  // Deleted accounts are renamed deleted_<id> (see accountDeletion.ts).
+  // Nobody may pick one, or she could pose as somebody who left.
+  if (username.startsWith(DELETED_USERNAME_PREFIX)) {
     return fail('That username is reserved.');
   }
   return OK;

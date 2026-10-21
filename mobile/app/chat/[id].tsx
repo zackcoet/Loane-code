@@ -28,6 +28,7 @@ import {
   color,
   controls,
   iconSize,
+  isDeletedSummary,
   isRequestFor,
   radius,
   receiptFor,
@@ -126,6 +127,7 @@ export default function Chat() {
 
   const otherUid = conversation?.participantUids.find((uid) => uid !== profile?.uid);
   const them = otherUid ? conversation?.participants?.[otherUid] : undefined;
+  const themDeleted = isDeletedSummary(them);
   const hidden = useHiddenUids();
   const reportOrBlock = useReportOrBlock({
     uid: them?.uid ?? '',
@@ -388,42 +390,51 @@ export default function Chat() {
           </View>
         ) : null}
 
-        <View style={styles.composer}>
-          <Pressable
-            onPress={onAttach}
-            disabled={attaching}
-            accessibilityRole="button"
-            accessibilityLabel="Send a photo"
-            style={styles.attach}
-          >
-            {attaching ? (
-              <ActivityIndicator color={color.icon.muted} />
-            ) : (
-              <Icon name="add" size={iconSize.md} />
-            )}
-          </Pressable>
-          <TextInput
-            ref={inputRef}
-            value={draft}
-            onChangeText={setDraft}
-            placeholder="Message"
-            placeholderTextColor={color.text.muted}
-            maxLength={LIMITS.messageBody.max}
-            multiline
-            style={styles.input}
-          />
-          <Pressable
-            onPress={onSend}
-            disabled={!draft.trim() || sending}
-            accessibilityRole="button"
-            accessibilityLabel="Send"
-            style={[styles.sendButton, (!draft.trim() || sending) && styles.sendDisabled]}
-          >
-            <Text variant="caption" tone={draft.trim() ? 'inverse' : 'disabled'}>
-              Send
+        {themDeleted ? (
+          // She left Loane. History stays readable; nobody is there to answer.
+          <View style={styles.goneNote}>
+            <Text variant="bodySmall" tone="muted">
+              This account was deleted. You can&apos;t reply.
             </Text>
-          </Pressable>
-        </View>
+          </View>
+        ) : (
+          <View style={styles.composer}>
+            <Pressable
+              onPress={onAttach}
+              disabled={attaching}
+              accessibilityRole="button"
+              accessibilityLabel="Send a photo"
+              style={styles.attach}
+            >
+              {attaching ? (
+                <ActivityIndicator color={color.icon.muted} />
+              ) : (
+                <Icon name="add" size={iconSize.md} />
+              )}
+            </Pressable>
+            <TextInput
+              ref={inputRef}
+              value={draft}
+              onChangeText={setDraft}
+              placeholder="Message"
+              placeholderTextColor={color.text.muted}
+              maxLength={LIMITS.messageBody.max}
+              multiline
+              style={styles.input}
+            />
+            <Pressable
+              onPress={onSend}
+              disabled={!draft.trim() || sending}
+              accessibilityRole="button"
+              accessibilityLabel="Send"
+              style={[styles.sendButton, (!draft.trim() || sending) && styles.sendDisabled]}
+            >
+              <Text variant="caption" tone={draft.trim() ? 'inverse' : 'disabled'}>
+                Send
+              </Text>
+            </Pressable>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </Screen>
   );
@@ -722,6 +733,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: color.border.default,
     borderBottomLeftRadius: radius.sm,
+  },
+  goneNote: {
+    padding: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: color.border.default,
+    alignItems: 'center',
   },
   composer: {
     flexDirection: 'row',

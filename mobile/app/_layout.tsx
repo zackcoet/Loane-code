@@ -119,6 +119,7 @@ function RootNavigator() {
       <Stack.Screen name="settings" options={{ presentation: 'card' }} />
       <Stack.Screen name="edit-profile" options={{ presentation: 'card' }} />
       <Stack.Screen name="change-password" options={{ presentation: 'card' }} />
+      <Stack.Screen name="delete-account" options={{ presentation: 'card' }} />
       <Stack.Screen name="notification-preferences" options={{ presentation: 'card' }} />
       <Stack.Screen name="privacy" options={{ presentation: 'card' }} />
       <Stack.Screen name="u/[username]" options={{ presentation: 'card' }} />

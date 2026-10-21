@@ -291,6 +291,13 @@ export const clearTryOnBodyPhoto = httpsCallable<void, { ok: true }>(
 );
 
 /** Her body photo, every saved look, every file. One tap, from Settings. */
+/**
+ * Deletes her whole account. Needs a password sign-in from the last few
+ * minutes — the delete-account screen re-authenticates first. Refuses
+ * while she has a rental going.
+ */
+export const deleteMyAccount = httpsCallable<void, { ok: true }>(functions, 'deleteMyAccount');
+
 export const deleteTryOnData = httpsCallable<void, { deleted: number }>(
   functions,
   'deleteTryOnData',

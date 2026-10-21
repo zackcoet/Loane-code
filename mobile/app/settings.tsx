@@ -137,6 +137,8 @@ export default function Settings() {
     { label: 'Help & Support', href: '/help' },
     { label: 'Terms & Conditions', onPress: () => setLegalOpen('terms') },
     { label: 'Privacy Policy', onPress: () => setLegalOpen('privacy') },
+    // Apple requires this to be findable in the app, not behind an email.
+    { label: 'Delete my account', href: '/delete-account' },
   ];
 
   const onLogOut = () => {

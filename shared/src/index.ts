@@ -23,3 +23,4 @@ export * from './receipts';
 export * from './blocking';
 export * from './inbox';
 export * from './messageQuota';
+export * from './accountDeletion';
