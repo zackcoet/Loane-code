@@ -8,6 +8,39 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 
 ---
 
+## 2026-10-21 (run 9, ~6 AM Central) — Grids now load small photos
+
+**Plan:** C4 — the image pipeline. Have the server make a small copy of every listing and look photo, and have every grid and list load the small copy instead of the full photo. Then start C5 by checking every database search the app does has its matching "index" (the thing that broke the hourly rental sweep for weeks).
+
+**Built:**
+- **Small photos in grids.** Every time someone posts a look or puts a piece on Loane, the server now makes a small copy of each photo (about a tenth of the size). Discover, profile grids, closets, My Listings, the wishlist, rentals and request rows, "Seen in" on a piece, and the closet picker now load the small copy. Scrolling should feel quicker on campus Wi-Fi and use far less of her data plan.
+- **Nothing can go missing.** If the small copy isn't ready yet (the first second or two after posting) or doesn't exist (photos from before tonight, the demo pictures), the app quietly shows the full photo instead. Full-screen photos — the feed, a look, a piece's page — still use the full size so they stay sharp.
+- **Deleting a photo deletes its small copy too.** The small copies also drop any hidden location data the phone's camera stamped into the photo.
+- **Locked down:** anyone can view the small copies (same as the photos), but only the server can make them — a student can't sneak in a different picture for the grid than the one on her piece. Tested.
+- **Database search check (start of C5):** every search the app and server run was checked against the list of indexes. **None are missing** — the live app shouldn't hit the same kind of crash the rental sweep did.
+
+**What to tap to see it:**
+- It looks the same — it's faster, not different. To check it: + → Add to My Closet → add a piece with a photo → Put it on Loane → go to Discover. Wait a couple of seconds and pull down to refresh; the piece's photo now comes from the small copy.
+- On GitHub: github.com/zackcoet/Loane-code → Actions → tonight's run is a green tick.
+
+**Fixed:**
+- Grids were downloading full-size photos for little squares.
+
+**Skipped / blocked:**
+- **C5 pagination itself isn't done** (loading more as she scrolls in comments, messages, followers and search, plus a script that checks indexes automatically). Tonight only the by-hand index check was done. Next run.
+- The overnight machine still can't start the test database, so GitHub ran the full set: **all passed.** Type checks, lint, the shared tests (165) and the new photo tests (6) passed here too.
+
+**🚨 NEEDS ZACK:**
+- Nothing urgent. When you next publish to the live project, the photo-shrinking runs as a new server function on Google's side — it costs a fraction of a cent per thousand photos, well inside the free tier at our size.
+
+**Next up:** C5 — "load more as you scroll" everywhere, and an automatic index check script.
+
+**Commits:**
+- Image pipeline: small thumbnails for every listing and post photo
+- Autopilot log for run 9
+
+---
+
 ## 2026-10-21 (run 8, ~5 AM Central) — A ceiling on new pieces, and every part of the database now has a lock test
 
 **Plan:** Finish C1 — put a limit on how many pieces one person can list in an hour (same trick as the message limit). Decide what to do about activity tracking. Then C2 — go through every part of the database and make sure each one has a test proving a student can't see or change what she shouldn't.
