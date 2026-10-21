@@ -15,6 +15,7 @@ import { db, now, FieldValue, Timestamp } from '../lib/admin';
 import { rateLimit } from '../lib/rateLimit';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
+import { queueAutoFlag } from '../moderation/autoFlag';
 
 /**
  * `createPost`
@@ -209,6 +210,14 @@ export const createPost = onCall<CreatePostInput, Promise<CreatePostResult>>(
 
     const batch = db().batch();
     batch.set(ref, { ...post, createdAt: now(), updatedAt: now() });
+    // Posted either way; a match only puts the caption in front of an admin.
+    queueAutoFlag(batch, {
+      targetType: 'post',
+      targetId: ref.id,
+      targetUid: author.uid,
+      campusId: post.campusId,
+      text: post.caption,
+    });
     batch.update(db().collection(COLLECTIONS.users).doc(author.uid), {
       'stats.postCount': FieldValue.increment(1),
       updatedAt: now(),

@@ -2,6 +2,7 @@ import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { COLLECTIONS, messagePreview } from '@loane/shared';
 import { db, now, FieldValue } from '../lib/admin';
 import type { Conversation, Message } from '@loane/shared';
+import { queueAutoFlag } from '../moderation/autoFlag';
 
 /**
  * Keeps a conversation's preview and unread badge up to date.
@@ -54,6 +55,16 @@ export const onMessageCreated = onDocumentCreated(
       patch[`unreadCounts.${uid}`] = FieldValue.increment(1);
     }
 
-    await ref.update(patch);
+    // The words go to an admin on a match; the message is sent either way.
+    const batch = db().batch();
+    batch.update(ref, patch);
+    queueAutoFlag(batch, {
+      targetType: 'message',
+      targetId: `${conversationId}/${event.params.messageId}`,
+      targetUid: message.senderUid,
+      campusId: conversation.campusId,
+      text: message.body,
+    });
+    await batch.commit();
   },
 );

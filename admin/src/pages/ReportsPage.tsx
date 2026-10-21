@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Report } from '@loane/shared';
+import { AUTO_FILTER_REPORTER_UID, type Report } from '@loane/shared';
 import type { AdminData } from '../data/adminData';
 import { formatShortDate, humanize, matchesCampus } from '../data/adminData';
 import { EmptyState, Panel, Pill } from '../components/ui';
@@ -89,7 +89,13 @@ export function ReportsPage({ data, campusId }: { data: AdminData; campusId: str
                     <Pill tone={STATUS_TONE[report.status] ?? 'neutral'}>{report.status}</Pill>
                   </td>
                   <td>{report.targetType}</td>
-                  <td>{humanize(report.reason)}</td>
+                  <td>
+                    {humanize(report.reason)}
+                    {/* Filed by the word list, not a student. See contentFilter.ts. */}
+                    {report.reporterUid === AUTO_FILTER_REPORTER_UID ? (
+                      <div className="cell-note">Automatic filter</div>
+                    ) : null}
+                  </td>
                   <td>
                     {report.snapshot ? (
                       <div className="cell-note">Reported: “{report.snapshot}”</div>

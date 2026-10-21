@@ -5,6 +5,7 @@ import { db, now, FieldValue } from '../lib/admin';
 import { rateLimit } from '../lib/rateLimit';
 import { failed, invalidArgument, notFound, permissionDenied } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
+import { queueAutoFlag } from '../moderation/autoFlag';
 import { assertNotBlocked } from '../moderation/block';
 
 /**
@@ -110,6 +111,14 @@ export const addComment = onCall<AddInput, Promise<{ commentId: string }>>(
     batch.update(postRef, {
       'stats.commentCount': FieldValue.increment(1),
       updatedAt: now(),
+    });
+    // Posted either way; a match only puts it in front of an admin.
+    queueAutoFlag(batch, {
+      targetType: 'comment',
+      targetId: ref.id,
+      targetUid: user.uid,
+      campusId: post.campusId,
+      text: body,
     });
     await batch.commit();
 

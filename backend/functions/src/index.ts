@@ -54,6 +54,7 @@
  *                               renters can see them without reading
  *                               other people's bookings
  *   - onMessageCreated          updates a thread's preview and unread badge
+ *   - flagEditedCaption         runs the word filter over an edited caption
  *   - onMessageLiked            "Liked a message" in the inbox when someone hearts one
  *   - propagateProfileChanges   refreshes the copies of her profile stored
  *                               on her listings and posts
@@ -88,6 +89,7 @@ export { onMessageCreated } from './triggers/onMessageCreated';
 export { onMessageLiked } from './triggers/onMessageLiked';
 export { propagateProfileChanges } from './triggers/propagateProfileChanges';
 export { syncPhoneHash } from './triggers/syncPhoneHash';
+export { flagEditedCaption } from './triggers/flagEditedCaption';
 export { requestBooking } from './bookings/requestBooking';
 export { requestPurchase } from './bookings/requestPurchase';
 export {

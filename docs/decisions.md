@@ -6,6 +6,27 @@ much as the answer.
 
 ---
 
+## 2026-10-21 — The word filter flags for review; it never blocks
+
+**Decision:** Captions (new and edited), comments and messages run
+through a short word list (`shared/src/contentFilter.ts`: threats,
+self-harm taunts, common slurs; whole words only, with l33t and
+punctuation undone). A match files an automatic report in the admin
+Reports queue, marked "Automatic filter", with the words copied in.
+The content is posted as normal.
+
+**Why not block:** a word list cannot read context — a friend quoting
+something, a lyric. Silently refusing a message is worse than an admin
+taking a look, and Apple's 1.2 asks for filtering plus a way to act,
+which the Reports queue already is.
+
+**Not on the list (yet): Venmo, Cash App, Zelle.** Asking for payment
+off the app is the marketplace's real risk, but while Stripe is off,
+payments are arranged directly (Terms "Beta period"), so every rental
+chat would be flagged. Add them once payments run in the app.
+
+---
+
 ## 2026-10-21 — Deleting an account leaves a nameless shell, and keeps the handle reserved
 
 **Decision:** "Delete my account" (Settings) runs `deleteMyAccount`. It
