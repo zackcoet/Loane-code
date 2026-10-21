@@ -26,6 +26,7 @@ Every run should move the app measurably closer to that. Prefer **finishing and 
 8. **Don't change these without a note in the log asking first:** brand colors/fonts, the 80/20 fee model, the Loane wording, legal text (Terms/Privacy), anything about how money works.
 9. **Don't delete user-facing features** the founder built, even if they look unused. Hide behind a flag at most, and log it.
 10. **Seed data stays fake.** Never add real people's names, photos, or contact details.
+11. **This file overrides `CLAUDE.md` on one point:** `CLAUDE.md` says to show Zack a plan and wait for his OK. On autopilot runs, don't wait. Write the plan in the log entry, then build. Everything else in `CLAUDE.md` (never trust the phone, tokens, cents, dates, tests) still applies fully.
 
 ---
 
@@ -61,7 +62,20 @@ Pick the **highest unfinished item**. Finish it fully (UI, backend, rules, tests
 5. Basic objectionable-content filter on captions, comments, and messages (word list), with admin review.
 6. Admin: one-click actions on reports (hide content, warn, suspend), with an audit log.
 
-### C. The feed algorithm ("For You")
+### C. Production foundations (build it like a real company's app)
+Follow `CLAUDE.md`'s rule: **never trust the phone.** Anything involving money, bookings, trust, counts, or other people goes through a Cloud Function, never a direct write from the app.
+1. **Audit every direct write the app makes** to Firestore/Storage. List them in `docs/server-side-audit.md`. Anything that touches another user, a counter, trust, or could be spammed moves behind a Cloud Function (messages, comments, likes, saves, follows, reports). Security rules then forbid the direct write. Tests for each.
+2. **Security rules review:** every collection has a test proving a student can't read or write what she shouldn't (other people's private settings, DMs she's not in, admin data).
+3. **Automatic checks on GitHub (CI):** a GitHub Actions workflow that runs typecheck, lint, and tests (with emulators) on every push and pull request, so broken code is caught even when nobody's watching.
+4. **Image pipeline:** resize and compress uploads server-side into thumbnail + full sizes; lists load thumbnails only.
+5. **Pagination everywhere** (feed, comments, messages, followers, search) with the matching Firestore indexes in `firestore.indexes.json`. Add a script that checks every query has its index, because the emulator doesn't enforce indexes and production does.
+6. **Error handling:** every Cloud Function returns friendly, specific errors; every screen shows a retry instead of a blank or a crash. Functions log structured errors so problems are findable later.
+7. **Crash and error reporting:** prepare the code for a crash reporter (e.g. Sentry) but leave it switched off. Signing up for one is **NEEDS ZACK**.
+8. **Feature flags:** one config document controls risky or unfinished features (try-on, OTP, same-day, payments) so they can be switched without a new app build.
+9. **Data export and deletion:** a Cloud Function that exports or deletes everything about one user (needed for account deletion and privacy requests).
+10. **Backups and monitoring for the live project:** write the setup steps in `docs/production-ops.md` (scheduled Firestore backups, budget alerts, error alerts). Don't run them; that's **NEEDS ZACK**.
+
+### D. The feed algorithm ("For You")
 Goal: show each student what she's most likely to love **right now**, so the feed feels personal and fresh. Use the engagement events already tracked.
 1. Make sure events are logged reliably: impressions, time spent on a post (dwell), likes, saves, comments, shares, tagged-piece taps, profile taps, follows, rental/purchase requests.
 2. A ranking score per post combining: **who** (people she follows, mutuals, people she's interacted with), **what** (occasions, sizes, styles, and categories she engages with), **fresh** (newer posts boosted, decays over time), **quality** (engagement rate, not just raw likes), **available** (tagged pieces that are actually rentable for her dates rank higher).
@@ -71,7 +85,7 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 6. Keep it **explainable and tunable**: weights in one config file, documented in `docs/feed-algorithm.md`, with a small script that prints why a post ranked where it did.
 7. **Healthy engagement only:** no fake notifications, no guilt/streak pressure, no hiding the end of the feed with filler. Show "You're all caught up" when she's seen everything new from people she follows.
 
-### D. Instagram-level polish
+### E. Instagram-level polish
 1. Pull-to-refresh and smooth infinite scroll everywhere lists exist.
 2. Skeleton loaders (no blank screens), branded Loane loader for full-screen waits.
 3. Double-tap to like with a heart animation; long-press preview on grid items.
@@ -82,7 +96,7 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 8. Empty states with a clear next action on every screen.
 9. Haptics on key taps (like, follow, send).
 
-### E. Onboarding (from the founder's improvement list)
+### F. Onboarding (from the founder's improvement list)
 1. Rent / lend / both step.
 2. "What's coming up?" occasions step (feeds the algorithm).
 3. Optional size step + "My size" filter in Discover.
@@ -93,14 +107,14 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 8. Onboarding steps tracked in the admin funnel.
 9. Walkthrough tour max 3 steps.
 
-### F. App Store readiness
+### G. App Store readiness
 1. Account deletion (see B4).
 2. Every screen works with large text sizes and VoiceOver labels on buttons.
 3. No crashes on: no internet, slow internet, empty data, deleted posts/users.
 4. Privacy: list every type of data collected in `docs/app-store-privacy.md` (for the App Store privacy form).
 5. Remove any dev-only text, test buttons, or placeholder copy from user-facing screens.
 
-### G. Quality
+### H. Quality
 1. Add tests for every new backend function and rules change.
 2. Fix lint warnings and any `TODO` that's under an hour of work.
 3. Performance: images sized properly, lists virtualized, no needless re-renders.
