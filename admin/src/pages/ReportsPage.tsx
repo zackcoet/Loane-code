@@ -91,6 +91,9 @@ export function ReportsPage({ data, campusId }: { data: AdminData; campusId: str
                   <td>{report.targetType}</td>
                   <td>{humanize(report.reason)}</td>
                   <td>
+                    {report.snapshot ? (
+                      <div className="cell-note">Reported: “{report.snapshot}”</div>
+                    ) : null}
                     {report.details}
                     {(report.photos ?? []).length > 0 ? (
                       <div className="media-row">
@@ -146,7 +149,7 @@ export function ReportsPage({ data, campusId }: { data: AdminData; campusId: str
         danger={
           working?.closing && action === 'user_suspended'
             ? 'She will be suspended immediately and told why.'
-            : error ?? undefined
+            : (error ?? undefined)
         }
         busy={busy}
         onConfirm={(reason) => void run(working?.closing ? 'actioned' : 'reviewing', reason)}
@@ -169,8 +172,8 @@ export function ReportsPage({ data, campusId }: { data: AdminData; campusId: str
               ))}
             </div>
             <p className="cell-note">
-              Choosing nothing and confirming marks it actioned with no change. To close it as
-              not a problem, use Dismiss below.
+              Choosing nothing and confirming marks it actioned with no change. To close it as not a
+              problem, use Dismiss below.
             </p>
             <div className="row-actions" style={{ marginTop: 8 }}>
               <button

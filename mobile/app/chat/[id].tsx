@@ -60,6 +60,8 @@ import { SwipeToReply } from '../../src/components/SwipeToReply';
 
 export default function Chat() {
   const [reporting, setReporting] = useState(false);
+  // One message she is reporting, as opposed to the whole person.
+  const [reportingMessage, setReportingMessage] = useState<Message | null>(null);
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
@@ -253,6 +255,16 @@ export default function Chat() {
         targetLabel={them ? `@${them.username}` : 'this student'}
       />
 
+      <ReportSheet
+        visible={!!reportingMessage}
+        onClose={() => setReportingMessage(null)}
+        targetType="message"
+        // Messages live inside their chat, so the report names both.
+        targetId={reportingMessage && id ? `${id}/${reportingMessage.id}` : ''}
+        targetUid={reportingMessage?.senderUid}
+        targetLabel="this message"
+      />
+
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -289,6 +301,9 @@ export default function Chat() {
                   onSetLiked={(on) => void setLiked(item.id, on)}
                   router={router}
                   onReply={() => startReply(item)}
+                  onReport={
+                    item.senderUid !== profile?.uid ? () => setReportingMessage(item) : undefined
+                  }
                   onJumpTo={jumpTo}
                   quoteName={item.replyTo ? nameFor(item.replyTo.senderUid) : ''}
                   quoteGone={
@@ -414,6 +429,7 @@ function Bubble({
   onSetLiked,
   router,
   onReply,
+  onReport,
   onJumpTo,
   quoteName,
   quoteGone,
@@ -425,6 +441,8 @@ function Bubble({
   onSetLiked: (on: boolean) => void;
   router: ReturnType<typeof useRouter>;
   onReply: () => void;
+  /** Report this one message. Only offered on theirs, never her own. */
+  onReport?: () => void;
   onJumpTo: (messageId: string) => void;
   /** "You" or "@maddie" — who said the quoted message. */
   quoteName: string;
@@ -455,14 +473,19 @@ function Bubble({
     const toggleLike = () => onSetLiked(!likedByMe);
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        { options: ['Cancel', 'Reply', likeLabel], cancelButtonIndex: 0 },
-        (i) => (i === 1 ? onReply() : i === 2 ? toggleLike() : undefined),
+        {
+          options: ['Cancel', 'Reply', likeLabel, ...(onReport ? ['Report'] : [])],
+          cancelButtonIndex: 0,
+          destructiveButtonIndex: onReport ? 3 : undefined,
+        },
+        (i) => (i === 1 ? onReply() : i === 2 ? toggleLike() : i === 3 ? onReport?.() : undefined),
       );
     } else {
       Alert.alert('Message', undefined, [
         { text: 'Reply', onPress: onReply },
         { text: likeLabel, onPress: toggleLike },
-        { text: 'Cancel', style: 'cancel' },
+        ...(onReport ? [{ text: 'Report', onPress: onReport }] : []),
+        { text: 'Cancel', style: 'cancel' as const },
       ]);
     }
   };
@@ -483,10 +506,12 @@ function Bubble({
         accessibilityActions={[
           { name: 'reply', label: 'Reply' },
           { name: 'like', label: likeLabel },
+          ...(onReport ? [{ name: 'report', label: 'Report' }] : []),
         ]}
         onAccessibilityAction={(e) => {
           if (e.nativeEvent.actionName === 'reply') onReply();
           if (e.nativeEvent.actionName === 'like') onSetLiked(!likedByMe);
+          if (e.nativeEvent.actionName === 'report') onReport?.();
         }}
         style={[
           styles.bubbleRow,

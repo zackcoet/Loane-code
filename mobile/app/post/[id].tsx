@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
 import { PostCard } from '../../src/components/PostCard';
+import { ReportSheet } from '../../src/components/ReportSheet';
 import { Screen } from '../../src/components/Screen';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { db } from '../../src/firebase/config';
@@ -28,6 +29,7 @@ export default function PostScreen() {
   const chat = useOpenChat();
 
   const [post, setPost] = useState<Post | null>(null);
+  const [reporting, setReporting] = useState(false);
   const [loading, setLoading] = useState(true);
   const logged = useRef(false);
 
@@ -93,9 +95,21 @@ export default function PostScreen() {
                 ? () => router.push({ pathname: '/edit-post', params: { id: post.id } })
                 : undefined
             }
+            onReport={post.authorUid !== profile?.uid ? () => setReporting(true) : undefined}
           />
         </ScrollView>
       )}
+
+      {post ? (
+        <ReportSheet
+          visible={reporting}
+          onClose={() => setReporting(false)}
+          targetType="post"
+          targetId={post.id}
+          targetUid={post.authorUid}
+          targetLabel="this look"
+        />
+      ) : null}
     </Screen>
   );
 }

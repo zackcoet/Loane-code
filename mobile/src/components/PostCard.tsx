@@ -44,6 +44,8 @@ interface Props {
   onMessageSeller: (ownerUid: string, listingId: string) => void;
   /** Shown on her own posts. */
   onEdit?: () => void;
+  /** Someone else's look: the "…" offers Report instead of Edit. */
+  onReport?: () => void;
   /** True when this is the signed-in student's own look. */
   isMine?: boolean;
   /** Opens Try-On with this look's pieces. Absent on screens without it. */
@@ -59,6 +61,7 @@ export function PostCard({
   onPressLikes,
   onMessageSeller,
   onEdit,
+  onReport,
   isMine = false,
   onTryOnLook,
 }: Props) {
@@ -172,12 +175,12 @@ export function PostCard({
             just not printed over the top of her outfit. */}
 
         <View style={styles.spacer} />
-        {onEdit ? (
+        {onEdit || onReport ? (
           <Pressable
-            onPress={onEdit}
+            onPress={onEdit ?? onReport}
             hitSlop={10}
             accessibilityRole="button"
-            accessibilityLabel="Edit this look"
+            accessibilityLabel={onEdit ? 'Edit this look' : 'Report this look'}
             style={styles.more}
           >
             <Icon name="ellipsis-horizontal" size={iconSize.sm} />

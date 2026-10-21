@@ -24,6 +24,7 @@ import { IconButton } from '../../src/components/IconButton';
 import { Logo } from '../../src/components/Logo';
 import { LoaneLoader } from '../../src/components/LoaneLoader';
 import { PostCard } from '../../src/components/PostCard';
+import { ReportSheet } from '../../src/components/ReportSheet';
 import { ProfileGateSheet } from '../../src/components/ProfileGateSheet';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
@@ -86,6 +87,10 @@ export default function Feed() {
   const hidden = useHiddenUids();
   const chat = useOpenChat();
   const [tab, setTab] = useState<'campus' | 'following'>('campus');
+  // The look she tapped "…" → Report on, if any.
+  const [reportingPost, setReportingPost] = useState<{ id: string; authorUid: string } | null>(
+    null,
+  );
 
   const visible = useMemo(() => {
     // Blocked either way: her looks simply are not in the feed. This is
@@ -293,6 +298,11 @@ export default function Feed() {
                     ? () => router.push({ pathname: '/edit-post', params: { id: item.id } })
                     : undefined
                 }
+                onReport={
+                  item.authorUid !== profile?.uid
+                    ? () => setReportingPost({ id: item.id, authorUid: item.authorUid })
+                    : undefined
+                }
               />
             </>
           )}
@@ -301,6 +311,14 @@ export default function Feed() {
 
       <ProfileGateSheet gate={gate} />
       <Walkthrough visible={tour.visible} onDone={() => void tour.done()} />
+      <ReportSheet
+        visible={!!reportingPost}
+        onClose={() => setReportingPost(null)}
+        targetType="post"
+        targetId={reportingPost?.id ?? ''}
+        targetUid={reportingPost?.authorUid}
+        targetLabel="this look"
+      />
     </Screen>
   );
 }

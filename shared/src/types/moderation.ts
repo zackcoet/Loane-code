@@ -11,13 +11,24 @@ import type { BaseDoc, CampusScoped, ImageRef, Timestampish } from './common';
 export interface Report extends BaseDoc, CampusScoped {
   reporterUid: string;
   targetType: ReportTargetType;
-  /** Id of the reported document. */
+  /**
+   * Id of the reported document. For a message, which lives inside its
+   * conversation, this is `conversationId/messageId`.
+   */
   targetId: string;
   /** The uid behind the target, so admins can act on the person directly. */
   targetUid: string | null;
   reason: ReportReason;
   details: string;
   photos: ImageRef[];
+  /**
+   * What was actually said, copied when the report was filed — for a
+   * message, its words. Messages are private to the two people in the
+   * thread, so without a copy the admin would be judging blind; and if
+   * the sender later deletes or edits around it, the report still shows
+   * what was reported. Older reports have no field.
+   */
+  snapshot?: string | null;
   status: ReportStatus;
 
   /** Admin follow-up. */
