@@ -25,6 +25,18 @@ export interface Conversation extends BaseDoc, CampusScoped {
 
   /** Unread count per uid, kept by a Cloud Function. */
   unreadCounts: Record<string, number>;
+
+  /**
+   * When each person last had the thread open, per uid. Drives "Seen"
+   * under the newest message.
+   *
+   * One timestamp per person rather than marking every message read,
+   * because opening a long thread would otherwise be a hundred writes.
+   * Written by her own phone, and the rules hold it to the server's
+   * clock so nobody can claim to have seen something in the future.
+   * Older threads have no field at all.
+   */
+  lastReadAt?: Record<string, Timestampish>;
 }
 
 /**

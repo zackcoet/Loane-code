@@ -7,11 +7,12 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActionSheetIOS,
   ActivityIndicator,
   Alert,
+  AppState,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -28,6 +29,7 @@ import {
   controls,
   iconSize,
   radius,
+  receiptFor,
   replyFor,
   replyPreview,
   spacing,
@@ -65,10 +67,28 @@ export default function Chat() {
   const listRef = useRef<FlatList<Message>>(null);
   const inputRef = useRef<TextInput>(null);
 
-  // Opening the thread is what clears the badge.
+  // Having the thread open is what clears the badge and tells the
+  // other person "Seen" — but only while she can actually see it. A
+  // chat left open behind another screen, or with the phone locked,
+  // would otherwise mark messages seen that nobody has read.
+  const [focused, setFocused] = useState(true);
+  useFocusEffect(
+    useCallback(() => {
+      setFocused(true);
+      return () => setFocused(false);
+    }, []),
+  );
+  const [appActive, setAppActive] = useState(AppState.currentState === 'active');
   useEffect(() => {
-    void markRead();
-  }, [markRead]);
+    const sub = AppState.addEventListener('change', (state) => setAppActive(state === 'active'));
+    return () => sub.remove();
+  }, []);
+  useEffect(() => {
+    if (focused && appActive) void markRead();
+  }, [markRead, focused, appActive]);
+
+  // "Seen" or "Sent" under her newest message, when the newest is hers.
+  const receipt = receiptFor(conversation, messages, profile?.uid);
 
   const otherUid = conversation?.participantUids.find((uid) => uid !== profile?.uid);
   const them = otherUid ? conversation?.participants?.[otherUid] : undefined;
@@ -224,19 +244,32 @@ export default function Chat() {
               );
             }}
             renderItem={({ item }) => (
-              <Bubble
-                message={item}
-                mine={item.senderUid === profile?.uid}
-                router={router}
-                onReply={() => startReply(item)}
-                onJumpTo={jumpTo}
-                quoteName={item.replyTo ? nameFor(item.replyTo.senderUid) : ''}
-                quoteGone={
-                  item.replyTo
-                    ? messages.find((m) => m.id === item.replyTo!.messageId)?.isDeleted === true
-                    : false
-                }
-              />
+              <>
+                <Bubble
+                  message={item}
+                  mine={item.senderUid === profile?.uid}
+                  router={router}
+                  onReply={() => startReply(item)}
+                  onJumpTo={jumpTo}
+                  quoteName={item.replyTo ? nameFor(item.replyTo.senderUid) : ''}
+                  quoteGone={
+                    item.replyTo
+                      ? messages.find((m) => m.id === item.replyTo!.messageId)?.isDeleted === true
+                      : false
+                  }
+                />
+                {receipt?.messageId === item.id ? (
+                  <Text
+                    variant="caption"
+                    tone="muted"
+                    uppercase={false}
+                    style={styles.receipt}
+                    accessibilityLiveRegion="polite"
+                  >
+                    {receipt.label}
+                  </Text>
+                ) : null}
+              </>
             )}
           />
         )}
@@ -576,6 +609,9 @@ const styles = StyleSheet.create({
     borderLeftColor: color.border.accent,
     paddingLeft: spacing.sm,
   },
+  // Tucked under her own bubble on the right, small and quiet — it
+  // answers a question she has, it is not something to act on.
+  receipt: { alignSelf: 'flex-end', marginTop: 2, marginRight: spacing.xs },
   sharedPost: {
     width: 232,
     borderRadius: radius.md,

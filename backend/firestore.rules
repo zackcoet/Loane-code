@@ -524,13 +524,27 @@ service cloud.firestore {
       // or rewriting the last-message preview. Marking a thread read
       // happens constantly, so making it a round trip to a function
       // would be a lot of latency for one number.
+      //
+      // She may also stamp HER OWN "last had this open" time, which is
+      // what shows "Seen" to the other person. Only her key, and only
+      // the server's clock — so she cannot mark herself as having seen
+      // something before it was sent, or claim someone else saw it.
+      function validLastRead() {
+        let after = request.resource.data.get('lastReadAt', {});
+        let changedKeys = after.diff(resource.data.get('lastReadAt', {})).affectedKeys();
+        return after is map
+          && changedKeys.hasOnly([uid()])
+          && (!(uid() in changedKeys) || after[uid()] == request.time);
+      }
+
       allow update: if isParticipant()
-        && onlyChanges(['unreadCounts', 'updatedAt'])
+        && onlyChanges(['unreadCounts', 'lastReadAt', 'updatedAt'])
         && request.resource.data.unreadCounts
              .diff(resource.data.unreadCounts)
              .affectedKeys()
              .hasOnly([uid()])
-        && request.resource.data.unreadCounts[uid()] == 0;
+        && request.resource.data.unreadCounts[uid()] == 0
+        && validLastRead();
       allow delete: if false;
 
       match /messages/{messageId} {

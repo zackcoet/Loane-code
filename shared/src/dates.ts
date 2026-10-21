@@ -89,11 +89,7 @@ export function unavailableDates(
  * runs into a booked weekend is not actually bookable, and the calendar
  * greys it out for that reason.
  */
-export function canStartOn(
-  startDate: IsoDate,
-  days: number,
-  unavailable: Set<IsoDate>,
-): boolean {
+export function canStartOn(startDate: IsoDate, days: number, unavailable: Set<IsoDate>): boolean {
   const range = { startDate, endDate: addDays(startDate, days) };
   return datesInRange(range).every((day) => !unavailable.has(day));
 }
@@ -158,7 +154,12 @@ export function timeAgo(value: unknown, nowMs: number = Date.now()): string {
   return years === 1 ? '1 year ago' : `${years} years ago`;
 }
 
-function toMillis(value: unknown): number | null {
+/**
+ * Milliseconds since the epoch from anything a Firestore timestamp turns
+ * into, or null when it cannot be read (including a server timestamp
+ * that has not come back yet).
+ */
+export function toMillis(value: unknown): number | null {
   if (value == null) return null;
   if (value instanceof Date) return value.getTime();
   if (typeof value === 'number') return value;

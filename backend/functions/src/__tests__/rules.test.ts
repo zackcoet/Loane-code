@@ -1095,6 +1095,45 @@ describe('conversations', () => {
     );
   });
 
+  describe('"Seen" — when she last had the thread open', () => {
+    it('lets her stamp her own, on the server clock, with her badge', async () => {
+      await assertSucceeds(
+        updateDoc(doc(asElla(), 'conversations', 'chat-1'), {
+          [`unreadCounts.${ELLA}`]: 0,
+          [`lastReadAt.${ELLA}`]: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        }),
+      );
+    });
+
+    it('refuses a time she picked herself', async () => {
+      // A phone-chosen time could claim she saw a message before it was
+      // ever sent, or that she never saw one she did.
+      await assertFails(
+        updateDoc(doc(asElla(), 'conversations', 'chat-1'), {
+          [`lastReadAt.${ELLA}`]: new Date('2030-01-01'),
+        }),
+      );
+    });
+
+    it('refuses stamping the other person as having seen it', async () => {
+      await assertFails(
+        updateDoc(doc(asElla(), 'conversations', 'chat-1'), {
+          [`lastReadAt.${MADDIE}`]: serverTimestamp(),
+        }),
+      );
+    });
+
+    it('refuses an outsider stamping anything', async () => {
+      await assertFails(
+        updateDoc(
+          doc(testEnv.authenticatedContext(OUTSIDER2).firestore(), 'conversations', 'chat-1'),
+          { [`lastReadAt.${OUTSIDER2}`]: serverTimestamp() },
+        ),
+      );
+    });
+  });
+
   it('stops her rewriting the last-message preview', async () => {
     await assertFails(
       updateDoc(doc(asElla(), 'conversations', 'chat-1'), {

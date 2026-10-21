@@ -23,6 +23,7 @@ import {
 import {
   COLLECTIONS,
   LIMITS,
+  needsMarkRead,
   type Conversation,
   type ImageRef,
   type Message,
@@ -112,15 +113,23 @@ export function useConversation(conversationId: string | undefined) {
     );
   }, [conversationId]);
 
-  /** Clears her own badge. The rules allow only her own key. */
+  /**
+   * Clears her own badge and stamps when she last had the thread open,
+   * which is what shows "Seen" to the other person. The rules allow
+   * only her own keys, and only the server's clock.
+   *
+   * needsMarkRead checks first, because this runs on every snapshot of
+   * an open chat and a write per snapshot would loop.
+   */
   const markRead = useCallback(async () => {
     if (!conversationId || !uid) return;
-    if (!conversation || (conversation.unreadCounts?.[uid] ?? 0) === 0) return;
+    if (!needsMarkRead(conversation, messages, uid)) return;
     await updateDoc(doc(db, COLLECTIONS.conversations, conversationId), {
       [`unreadCounts.${uid}`]: 0,
+      [`lastReadAt.${uid}`]: serverTimestamp(),
       updatedAt: serverTimestamp(),
     }).catch(() => {});
-  }, [conversationId, uid, conversation]);
+  }, [conversationId, uid, conversation, messages]);
 
   const send = useCallback(
     async (body: string, photo?: ImageRef, replyTo?: MessageReply | null) => {
