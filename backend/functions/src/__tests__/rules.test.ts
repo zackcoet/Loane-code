@@ -22,9 +22,11 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  increment,
   serverTimestamp,
   setDoc,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 import { EVENT_SURFACES, EVENT_TYPES, newUserStripe } from '@loane/shared';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
@@ -163,6 +165,29 @@ const asElla = () => testEnv.authenticatedContext(ELLA).firestore();
 const asMaddie = () => testEnv.authenticatedContext(MADDIE).firestore();
 const asAdmin = () => testEnv.authenticatedContext(ADMIN, { admin: true }).firestore();
 const asStranger = () => testEnv.unauthenticatedContext().firestore();
+type Firestore = ReturnType<typeof asElla>;
+
+/**
+ * Sends a message the way the app does: in one batch with a tick of
+ * the sender's hourly counter (messageQuotas). Without the tick the
+ * rules refuse every message, so tests about other message rules use
+ * this to make sure the counter is never the reason they pass or fail.
+ */
+async function sendAs(
+  db: Firestore,
+  conversationId: string,
+  messageId: string,
+  data: Record<string, unknown>,
+  senderUid = (data.senderUid as string) ?? ELLA,
+) {
+  const quotaRef = doc(db, 'messageQuotas', senderUid);
+  const quota = await getDoc(quotaRef).catch(() => null);
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'conversations', conversationId, 'messages', messageId), data);
+  if (quota?.exists()) batch.update(quotaRef, { count: increment(1) });
+  else batch.set(quotaRef, { windowStart: serverTimestamp(), count: 1 });
+  return batch.commit();
+}
 
 describe('users', () => {
   it('lets her edit her own bio', async () => {
@@ -860,7 +885,7 @@ describe('conversations', () => {
 
   it('lets a participant send a message as herself', async () => {
     await assertSucceeds(
-      setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm2'), {
+      sendAs(asElla(), 'chat-1', 'm2', {
         conversationId: 'chat-1',
         senderUid: ELLA,
         body: 'hello',
@@ -872,7 +897,7 @@ describe('conversations', () => {
 
   it('stops her sending a message as someone else', async () => {
     await assertFails(
-      setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm3'), {
+      sendAs(asElla(), 'chat-1', 'm3', {
         conversationId: 'chat-1',
         senderUid: MADDIE,
         body: 'forged',
@@ -887,7 +912,7 @@ describe('conversations', () => {
     // and the snapshot has to be the real post. The app writing one
     // directly would be a bubble nobody counted.
     await assertFails(
-      setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm-share'), {
+      sendAs(asElla(), 'chat-1', 'm-share', {
         conversationId: 'chat-1',
         senderUid: ELLA,
         body: 'look at this',
@@ -905,7 +930,7 @@ describe('conversations', () => {
 
   it('still allows an ordinary message that says sharedPost is null', async () => {
     await assertSucceeds(
-      setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm-plain'), {
+      sendAs(asElla(), 'chat-1', 'm-plain', {
         conversationId: 'chat-1',
         senderUid: ELLA,
         body: 'hello',
@@ -922,7 +947,7 @@ describe('conversations', () => {
     // the real listing's. A forged "$5 to rent" card from someone
     // else's closet is the thing this stops.
     await assertFails(
-      setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm-share-listing'), {
+      sendAs(asElla(), 'chat-1', 'm-share-listing', {
         conversationId: 'chat-1',
         senderUid: ELLA,
         body: 'would this work?',
@@ -944,7 +969,7 @@ describe('conversations', () => {
 
   it('still allows an ordinary message that says sharedListing is null', async () => {
     await assertSucceeds(
-      setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm-plain-2'), {
+      sendAs(asElla(), 'chat-1', 'm-plain-2', {
         conversationId: 'chat-1',
         senderUid: ELLA,
         body: 'hello',
@@ -957,9 +982,66 @@ describe('conversations', () => {
     );
   });
 
+  describe('the hourly message ceiling', () => {
+    const plain = {
+      conversationId: 'chat-1',
+      senderUid: ELLA,
+      body: 'hi',
+      readBy: [ELLA],
+      isDeleted: false,
+    };
+    const quotaDoc = (db: Firestore, uid = ELLA) => doc(db, 'messageQuotas', uid);
+    const seedQuota = (data: Record<string, unknown>) =>
+      testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(quotaDoc(ctx.firestore()), data);
+      });
+
+    it('refuses a message that does not tick her counter', async () => {
+      await assertFails(setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'q1'), plain));
+    });
+
+    it('counts messages one at a time', async () => {
+      await assertSucceeds(sendAs(asElla(), 'chat-1', 'q2', plain));
+      await assertSucceeds(sendAs(asElla(), 'chat-1', 'q3', plain));
+    });
+
+    it('refuses the message after the ceiling', async () => {
+      await seedQuota({ windowStart: new Date(), count: 500 });
+      await assertFails(sendAs(asElla(), 'chat-1', 'q4', plain));
+    });
+
+    it('starts a fresh hour once the old one is over', async () => {
+      await seedQuota({ windowStart: new Date(Date.now() - 2 * 3_600_000), count: 500 });
+      const batch = writeBatch(asElla());
+      batch.set(doc(asElla(), 'conversations', 'chat-1', 'messages', 'q5'), plain);
+      batch.set(quotaDoc(asElla()), { windowStart: serverTimestamp(), count: 1 });
+      await assertSucceeds(batch.commit());
+    });
+
+    it('refuses resetting her counter before the hour is up', async () => {
+      await seedQuota({ windowStart: new Date(), count: 500 });
+      await assertFails(setDoc(quotaDoc(asElla()), { windowStart: serverTimestamp(), count: 1 }));
+    });
+
+    it('refuses lowering her counter or jumping it', async () => {
+      await seedQuota({ windowStart: new Date(), count: 10 });
+      await assertFails(updateDoc(quotaDoc(asElla()), { count: 1 }));
+      await assertFails(updateDoc(quotaDoc(asElla()), { count: 12 }));
+    });
+
+    it('keeps her counter private and hers alone', async () => {
+      await seedQuota({ windowStart: new Date(), count: 10 });
+      await assertSucceeds(getDoc(quotaDoc(asElla())));
+      await assertFails(getDoc(quotaDoc(asMaddie(), ELLA)));
+      await assertFails(
+        setDoc(quotaDoc(asMaddie(), ELLA), { windowStart: serverTimestamp(), count: 1 }),
+      );
+    });
+  });
+
   describe('replying to a message', () => {
     const reply = (replyTo: Record<string, unknown>) =>
-      setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', `m-reply-${Math.random()}`), {
+      sendAs(asElla(), 'chat-1', `m-reply-${Math.random()}`, {
         conversationId: 'chat-1',
         senderUid: ELLA,
         body: 'yes!',
@@ -983,7 +1065,7 @@ describe('conversations', () => {
 
     it('allows a message that says replyTo is null', async () => {
       await assertSucceeds(
-        setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'm-noreply'), {
+        sendAs(asElla(), 'chat-1', 'm-noreply', {
           conversationId: 'chat-1',
           senderUid: ELLA,
           body: 'hello',
@@ -1065,22 +1147,13 @@ describe('conversations', () => {
 
   it('stops an outsider posting into the thread', async () => {
     await assertFails(
-      setDoc(
-        doc(
-          testEnv.authenticatedContext(OUTSIDER2).firestore(),
-          'conversations',
-          'chat-1',
-          'messages',
-          'm4',
-        ),
-        {
-          conversationId: 'chat-1',
-          senderUid: OUTSIDER2,
-          body: 'hi',
-          readBy: [],
-          isDeleted: false,
-        },
-      ),
+      sendAs(testEnv.authenticatedContext(OUTSIDER2).firestore(), 'chat-1', 'm4', {
+        conversationId: 'chat-1',
+        senderUid: OUTSIDER2,
+        body: 'hi',
+        readBy: [],
+        isDeleted: false,
+      }),
     );
   });
 
@@ -1381,7 +1454,7 @@ describe('suspension', () => {
       setDoc(doc(asElla(), 'listings', 'listing-sus'), listingDoc(ELLA, { id: 'listing-sus' })),
     );
     await assertFails(
-      setDoc(doc(asElla(), 'conversations', 'chat-s', 'messages', 'm-sus'), {
+      sendAs(asElla(), 'chat-s', 'm-sus', {
         conversationId: 'chat-s',
         senderUid: ELLA,
         body: 'hi',

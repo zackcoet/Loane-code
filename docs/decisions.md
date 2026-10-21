@@ -6,6 +6,24 @@ much as the answer.
 
 ---
 
+## 2026-10-21 — Messages are limited by the rules, not a function
+
+**Decision:** Every message is written in one batch with a tick of
+`messageQuotas/{uid}` — a fixed one-hour window, 500 messages. The
+message rule refuses a message unless that counter moved by exactly one
+in the same batch, and the counter's own rule refuses going past 500,
+lowering it, or starting a new hour before the server agrees the old one
+is over.
+
+**Why not a Cloud Function:** "Messages are written by the app" (below)
+still holds — a callable would add a round trip to every message. The
+batch is still one round trip, so sending feels exactly as before.
+
+**Accepted:** she can read her own counter (her phone needs it to pick
+the right write). Knowing the number does not help get past it.
+
+---
+
 ## 2026-10-21 — Deleting a chat is one-sided; requests are "never answered + not followed"
 
 **Delete:** a thread keeps `hiddenAt[uid]` — when she deleted it. It

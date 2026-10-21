@@ -257,6 +257,44 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    /**
+     * messageQuotas/{uid} — the hourly message ceiling.
+     *
+     * Messages are written by the app for speed, so their limit cannot
+     * live in a function. Every message is batched with a write here,
+     * and the message rule checks the counter moved by exactly one.
+     * She may read her own (her phone needs it to know which write to
+     * send) and nobody else's. She can never lower it: a fresh window
+     * only opens once the server agrees an hour has passed.
+     *
+     * 500 MUST match LIMITS.messagesPerHour in shared/src/constants.ts.
+     */
+    match /messageQuotas/{ownerUid} {
+      function isOwner() {
+        return signedIn() && uid() == ownerUid;
+      }
+      function freshWindow() {
+        return request.resource.data.keys().hasOnly(['windowStart', 'count'])
+          && request.resource.data.windowStart == request.time
+          && request.resource.data.count == 1;
+      }
+
+      allow read: if isOwner() || isAdmin();
+      allow create: if isOwner() && freshWindow();
+      allow update: if isOwner()
+        && request.resource.data.keys().hasOnly(['windowStart', 'count'])
+        && (
+          // The same window, one more message, still under the ceiling.
+          (request.resource.data.windowStart == resource.data.windowStart
+            && request.resource.data.count == resource.data.count + 1
+            && request.resource.data.count <= 500)
+          // The hour is up: start again from one.
+          || (request.time > resource.data.windowStart + duration.value(1, 'h')
+            && freshWindow())
+        );
+      allow delete: if false;
+    }
+
     match /phoneHashes/{hash} {
       allow read: if false;
       allow write: if false;
@@ -609,12 +647,24 @@ service cloud.firestore {
                 || r.hasSharedListing == (get(path).data.get('sharedListing', null) != null));
         }
 
+        // Every message must move her hourly counter by exactly one in
+        // the same batch — see messageQuotas. Either the count went up
+        // by one, or a fresh window opened with this very request.
+        function countedInQuota() {
+          let q = /databases/$(database)/documents/messageQuotas/$(uid());
+          let after = getAfter(q).data;
+          return existsAfter(q)
+            && ((exists(q) && after.count == get(q).data.count + 1)
+                || (after.windowStart == request.time && after.count == 1));
+        }
+
         // A shared look or piece is written by the sharePost or
         // shareListing function, never by the app: the snapshot in the
         // bubble has to be the real thing. So an app-written message
         // must carry sharedPost == null and sharedListing == null.
         allow create: if inThread()
           && isVerifiedStudent()
+          && countedInQuota()
           && request.resource.data.senderUid == uid()
           && request.resource.data.isDeleted == false
           && (!('sharedPost' in request.resource.data)

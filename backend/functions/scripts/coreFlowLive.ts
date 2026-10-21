@@ -42,6 +42,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getDownloadURL, getStorage, ref, uploadBytes } from 'firebase/storage';
@@ -333,7 +334,10 @@ async function main(): Promise<void> {
       [renter, 'where should we meet?'],
       [lender, 'russell house at 4'],
     ] as [Student, string][]) {
-      await setDoc(doc(collection(who.db, 'conversations', conversationId, 'messages')), {
+      // As the app does it: the message and one tick of her hourly
+      // counter in one batch, or the rules refuse the message.
+      const batch = writeBatch(who.db);
+      batch.set(doc(collection(who.db, 'conversations', conversationId, 'messages')), {
         conversationId,
         senderUid: who.uid,
         body,
@@ -344,6 +348,8 @@ async function main(): Promise<void> {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+      batch.set(doc(who.db, 'messageQuotas', who.uid), { windowStart: serverTimestamp(), count: 1 });
+      await batch.commit();
     }
     const msgs = await admin
       .collection('conversations').doc(conversationId).collection('messages').get();
@@ -452,6 +458,7 @@ async function main(): Promise<void> {
       const s = await admin.collection('users').doc(uid).collection(sub).get();
       for (const d of s.docs) await d.ref.delete();
     }
+    await admin.collection('messageQuotas').doc(uid).delete().catch(() => {});
     const [files] = await adminStorage().bucket().getFiles({ prefix: `users/${uid}/` });
     for (const f of files) await f.delete().catch(() => {});
     for (const [c, field] of [

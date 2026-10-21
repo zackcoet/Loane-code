@@ -19,7 +19,7 @@ answer is no.
 | Her own profile | Only her own document, and only the fields she's allowed to change (name, bio, photo, sizes) |
 | Her own listings | Only where `ownerUid` is her uid |
 | Her own posts | Only where `authorUid` is her uid |
-| Her own messages | Only in conversations she is a participant of |
+| Her own messages | Only in conversations she is a participant of, and each one ticks her hourly counter (`messageQuotas/{uid}`, 500 an hour) in the same batch — the rules refuse a message that did not |
 | Her private settings | Only her own subcollection |
 | Events | Create only. She may never read, edit or delete one |
 

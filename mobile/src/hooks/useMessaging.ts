@@ -7,9 +7,8 @@
  * onMessageCreated for why that is not a callable.
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  addDoc,
   arrayRemove,
   arrayUnion,
   collection,
@@ -19,25 +18,51 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  increment,
   updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
 import {
   COLLECTIONS,
   LIMITS,
   inboxUnreadTotal,
   needsMarkRead,
+  otherQuotaWrite,
+  quotaWrite,
   splitInbox,
   visibleAfterDelete,
   type Conversation,
   type ImageRef,
   type Message,
+  type MessageQuota,
   type MessageReply,
 } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { logEvent } from '../analytics/events';
 import { useFollowingUids } from './useFollowing';
+
+/** Thrown by send when she has hit the hourly ceiling. */
+export const MESSAGE_QUOTA_FULL = 'message-quota-full';
+
+/**
+ * Writes one message together with one tick of her hourly counter. See
+ * shared/src/messageQuota.ts for why the two travel together.
+ */
+async function sendCounted(
+  conversationId: string,
+  uid: string,
+  message: Record<string, unknown>,
+  quota: 'start' | 'bump',
+): Promise<void> {
+  const batch = writeBatch(db);
+  batch.set(doc(collection(db, COLLECTIONS.conversations, conversationId, 'messages')), message);
+  const quotaDoc = doc(db, COLLECTIONS.messageQuotas, uid);
+  if (quota === 'start') batch.set(quotaDoc, { windowStart: serverTimestamp(), count: 1 });
+  else batch.update(quotaDoc, { count: increment(1) });
+  await batch.commit();
+}
 
 /** Her inbox, most recent first. */
 export function useConversations() {
@@ -165,6 +190,20 @@ export function useConversation(conversationId: string | undefined) {
     );
   }, [conversationId]);
 
+  // Her hourly message counter, kept live so sending never waits on a
+  // read to know which write to batch with the message.
+  const quotaRef = useRef<MessageQuota | null>(null);
+  useEffect(() => {
+    if (!uid) return;
+    return onSnapshot(
+      doc(db, COLLECTIONS.messageQuotas, uid),
+      (snap) => {
+        quotaRef.current = snap.exists() ? (snap.data() as MessageQuota) : null;
+      },
+      () => {},
+    );
+  }, [uid]);
+
   /**
    * Clears her own badge and stamps when she last had the thread open,
    * which is what shows "Seen" to the other person. The rules allow
@@ -190,7 +229,7 @@ export function useConversation(conversationId: string | undefined) {
       if (!conversationId || !uid || (!text && !photo)) return;
       if (text.length > LIMITS.messageBody.max) return;
 
-      await addDoc(collection(db, COLLECTIONS.conversations, conversationId, 'messages'), {
+      const message = {
         conversationId,
         senderUid: uid,
         body: text,
@@ -202,7 +241,25 @@ export function useConversation(conversationId: string | undefined) {
         isDeleted: false,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
+      };
+
+      // The message and one tick of her hourly counter go in one batch
+      // — the rules refuse a message that did not move the counter. If
+      // the server disagrees about whether the hour is up (her phone's
+      // clock is off), try the other way once.
+      const first = quotaWrite(quotaRef.current, Date.now());
+      try {
+        await sendCounted(conversationId, uid, message, first);
+      } catch {
+        try {
+          await sendCounted(conversationId, uid, message, otherQuotaWrite(first));
+        } catch (err) {
+          if ((quotaRef.current?.count ?? 0) >= LIMITS.messagesPerHour.max) {
+            throw new Error(MESSAGE_QUOTA_FULL);
+          }
+          throw err;
+        }
+      }
       logEvent('message_sent', {
         surface: 'messages',
         targetType: null,

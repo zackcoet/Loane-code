@@ -45,7 +45,11 @@ import { Icon } from '../../src/components/Icon';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
 import { useAuth } from '../../src/auth/AuthProvider';
-import { deleteThreadForMe, useConversation } from '../../src/hooks/useMessaging';
+import {
+  deleteThreadForMe,
+  MESSAGE_QUOTA_FULL,
+  useConversation,
+} from '../../src/hooks/useMessaging';
 import { useFollowingUids } from '../../src/hooks/useFollowing';
 import { useReportOrBlock } from '../../src/hooks/useReportOrBlock';
 import { IconButton } from '../../src/components/IconButton';
@@ -190,7 +194,13 @@ export default function Chat() {
     setReplyingTo(null);
     try {
       await send(text, undefined, reply ? replyFor(reply) : null);
-    } catch {
+    } catch (err) {
+      if (err instanceof Error && err.message === MESSAGE_QUOTA_FULL) {
+        Alert.alert(
+          'Loane',
+          'You are sending a lot of messages. Take a short break, then try again.',
+        );
+      }
       // Put the reply back too, so the retry still answers the same thing.
       setReplyingTo(reply);
       // Put it back so she does not lose what she typed.

@@ -21,3 +21,4 @@ export * from './replies';
 export * from './shares';
 export * from './receipts';
 export * from './inbox';
+export * from './messageQuota';

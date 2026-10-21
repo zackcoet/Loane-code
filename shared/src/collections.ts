@@ -53,6 +53,14 @@ export const COLLECTIONS = {
    * writes it, and the security rules seal it shut.
    */
   rateLimits: 'rateLimits',
+  /**
+   * messageQuotas/{uid} — how many messages she has sent this hour.
+   * Unlike rateLimits this one IS written by the app, in the same
+   * batch as every message, because messages are app-written for
+   * speed. The rules check every message moves her own counter by
+   * exactly one and refuse once it is full. See messageQuota.ts.
+   */
+  messageQuotas: 'messageQuotas',
   legalDocs: 'legalDocs',
   legalDrafts: 'legalDrafts',
 } as const;

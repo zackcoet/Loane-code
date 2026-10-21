@@ -533,6 +533,13 @@ export const LIMITS = {
   brand: { max: 60 },
   postCaption: { max: 1000 },
   messageBody: { max: 2000 },
+  /**
+   * Messages one student may send in an hour. A ceiling on a stolen
+   * account or a script, not a quota — a real student in the busiest
+   * chat of her life should never meet it. If one does, raise it.
+   * MUST match the number in firestore.rules (messageQuotas).
+   */
+  messagesPerHour: { max: 500, windowMs: 3_600_000 },
   commentBody: { min: 1, max: 500 },
   reportDetails: { max: 1000 },
   supportMessage: { min: 1, max: 2000 },
@@ -800,5 +807,4 @@ export const TRYON_COMING_SOON: Category[] = ['shoes'];
 export const TRYON_FREE_LIFETIME = 5;
 
 /** What she is told when she runs out, until credits exist. */
-export const TRYON_LIMIT_MESSAGE =
-  "You've used your 5 free try-ons, more coming soon";
+export const TRYON_LIMIT_MESSAGE = "You've used your 5 free try-ons, more coming soon";
