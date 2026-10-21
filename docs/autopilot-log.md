@@ -8,6 +8,37 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 
 ---
 
+## 2026-10-21 (run 8, ~5 AM Central) — A ceiling on new pieces, and every part of the database now has a lock test
+
+**Plan:** Finish C1 — put a limit on how many pieces one person can list in an hour (same trick as the message limit). Decide what to do about activity tracking. Then C2 — go through every part of the database and make sure each one has a test proving a student can't see or change what she shouldn't.
+
+**Built:**
+- **A limit of 60 new pieces per hour per student.** No real girl listing her closet will ever hit it (each piece takes photos and a form), but a script can no longer flood Discover with thousands of fake pieces. Editing a piece she already has doesn't count. If she somehow does hit it, she sees a friendly "take a breather and try again in a little while — your draft is still here" instead of an error, and no photos get uploaded for nothing.
+- **Security review (C2) finished.** A new page, `docs/security-rules-review.md`, lists every part of the database in one table: who can see it, who can change it, and which test proves it. Ten new tests cover the parts that had none — the school list, published Terms, "who blocked me", damage claims, the server's own counters, reports and support requests, the unbuilt "circles", other girls' alerts and rentals, and a catch-all that refuses anything new nobody opened on purpose. **No holes were found** — every new test passed first time.
+
+**What to tap to see it:**
+- Nothing new to see on the phone — tonight was protection behind the scenes. You can still add a piece normally: + → Add to My Closet → fill it in → Put it on Loane. It works exactly as before.
+- On GitHub: github.com/zackcoet/Loane-code → Actions → tonight's run is a green tick.
+
+**Fixed:**
+- The last open gap in the C1 audit that mattered (no limit on new pieces).
+
+**Skipped / blocked:**
+- **No limit on activity tracking — on purpose.** Adding one would double the database writes on the busiest thing the app does (logging what she scrolls past), which costs money, and could slow fast scrollers. The proper fix is "App Check" (Phase 8), which stops scripts entirely. Written up in the review page.
+- The overnight machine still can't start the test database, so GitHub ran the full set: **all passed.** Type checks, lint and the 155 shared tests passed here too.
+
+**🚨 NEEDS ZACK:**
+- Nothing urgent. One thing to remember: the next time the database rules are published to the live project, publish the new app build at the same time — an older app without tonight's change can't add new pieces under the new rules. (Not a problem before launch, since nobody has an old build.)
+
+**Next up:** C4 — the image pipeline (thumbnails so lists load small photos). Then C5 pagination with an index-checking script.
+
+**Commits:**
+- Rate limit: at most 60 new pieces per hour per student
+- Security rules review: tests for every collection that had none
+- Autopilot log for run 8
+
+---
+
 ## 2026-10-21 (run 7, ~4 AM Central) — The bad-words filter now covers pieces and profiles
 
 **Plan:** Finish the two small C1 gaps from last night: run the bad-words filter on piece names, piece descriptions, display names and bios, and stop a modified app saving a bio or name longer than the app allows. Leave the two rate-limit gaps (new pieces, activity tracking) for a run where the test database can be checked properly — both touch the "Put it on Loane" flow and are low risk while the campus is small.
