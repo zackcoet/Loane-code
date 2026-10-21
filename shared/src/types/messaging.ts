@@ -37,6 +37,35 @@ export interface Conversation extends BaseDoc, CampusScoped {
    * Older threads have no field at all.
    */
   lastReadAt?: Record<string, Timestampish>;
+
+  /**
+   * When each person deleted the thread from her inbox, per uid.
+   *
+   * Deleting is one-sided, like Instagram: the other person keeps her
+   * copy, and the thread comes back the moment someone sends something
+   * new — showing only what came after. Nothing is actually erased,
+   * because moderation may still need to see what was said. Written by
+   * her own phone, own key only, on the server's clock.
+   */
+  hiddenAt?: Record<string, Timestampish>;
+
+  /**
+   * Who has muted the thread. A muted thread stays in her inbox but
+   * never adds to her badge (and, once push exists, never buzzes). She
+   * may add or remove only herself.
+   */
+  mutedUids?: string[];
+
+  /**
+   * Who has ever sent something in the thread. Kept by the
+   * onMessageCreated trigger, never by the phone.
+   *
+   * Drives message requests: a thread from someone she does not follow,
+   * that she has never answered, waits in Requests instead of her
+   * inbox. Threads from before this existed have no field and are
+   * treated as already answered, so nothing she had is moved.
+   */
+  repliedUids?: string[];
 }
 
 /**

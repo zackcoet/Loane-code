@@ -1,6 +1,11 @@
 /**
  * Inbox — every thread, most recent first.
  *
+ * Threads from people she does not follow, that she has never
+ * answered, wait behind a "Message requests" row at the top instead of
+ * landing among her friends — see isRequestFor. Swipe a thread left to
+ * mute or delete it.
+ *
  * The search box narrows by name or @username. It filters the threads
  * already loaded rather than querying, because at campus scale her
  * whole inbox is already on the phone and a search that answers on
@@ -10,29 +15,20 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import {
-  color,
-  controls,
-  fonts,
-  radius,
-  spacing,
-  timeAgo,
-  type,
-  type Conversation,
-} from '@loane/shared';
-import { Avatar } from '../src/components/Avatar';
+import { color, controls, fonts, radius, spacing, type } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
 import { Icon } from '../src/components/Icon';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
+import { ThreadRow } from '../src/components/ThreadRow';
 import { useAuth } from '../src/auth/AuthProvider';
-import { useConversations } from '../src/hooks/useMessaging';
+import { useInbox } from '../src/hooks/useMessaging';
 
 export default function Messages() {
   const router = useRouter();
   const { profile } = useAuth();
-  const { conversations, loading } = useConversations();
+  const { inbox: conversations, requests, loading } = useInbox();
   const [term, setTerm] = useState('');
 
   const shown = useMemo(() => {
@@ -54,7 +50,7 @@ export default function Messages() {
 
       {/* Only once there is something to search. A search box over an
         empty inbox is a question with no possible answer. */}
-      {!loading && conversations.length > 0 ? (
+      {!loading && (conversations.length > 0 || requests.length > 0) ? (
         <View style={styles.searchRow}>
           <Icon name="search" size={18} tint={color.icon.muted} />
           <TextInput
@@ -81,14 +77,27 @@ export default function Messages() {
         </View>
       ) : null}
 
+      {!loading && requests.length > 0 && !term ? (
+        <RequestsRow
+          count={requests.length}
+          unread={requests.some((c) => (c.unreadCounts?.[profile?.uid ?? ''] ?? 0) > 0)}
+          onPress={() => router.push('/message-requests')}
+        />
+      ) : null}
+
       {loading ? (
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
-      ) : conversations.length === 0 ? (
+      ) : conversations.length === 0 && requests.length === 0 ? (
         <EmptyState
           title="No messages yet"
           body="Message someone from her profile or a listing to ask about fit or pickup."
+        />
+      ) : conversations.length === 0 && !term ? (
+        <EmptyState
+          title="Nothing here yet"
+          body="Chats with people you follow show up here. New people are waiting in Message requests."
         />
       ) : shown.length === 0 ? (
         <EmptyState title="Nobody by that name" body="Try her @username." />
@@ -100,7 +109,7 @@ export default function Messages() {
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <Row
+            <ThreadRow
               conversation={item}
               myUid={profile?.uid}
               onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id } })}
@@ -112,83 +121,54 @@ export default function Messages() {
   );
 }
 
-function Row({
-  conversation,
-  myUid,
+/**
+ * The way into Message requests. A row rather than a tab, like
+ * Instagram: requests are occasional, and a whole tab would make the
+ * inbox feel like it had two halves.
+ */
+function RequestsRow({
+  count,
+  unread,
   onPress,
 }: {
-  conversation: Conversation;
-  myUid: string | undefined;
+  count: number;
+  unread: boolean;
   onPress: () => void;
 }) {
-  const otherUid = conversation.participantUids.find((uid) => uid !== myUid);
-  const them = otherUid ? conversation.participants?.[otherUid] : undefined;
-  const unread = myUid ? (conversation.unreadCounts?.[myUid] ?? 0) : 0;
-  const last = conversation.lastMessage;
-  const sentAgo = last ? timeAgo(last.sentAt) : '';
-
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Chat with @${them?.username ?? 'student'}`}
-      style={({ pressed }) => [
-        styles.row,
-        unread > 0 && styles.unreadRow,
-        pressed && styles.pressed,
-      ]}
+      accessibilityLabel={`Message requests, ${count}`}
+      style={({ pressed }) => [styles.requests, pressed && styles.pressed]}
     >
-      <Avatar url={them?.photoUrl} name={them?.displayName} size={48} />
-      <View style={styles.rowText}>
-        <Text numberOfLines={1}>@{them?.username ?? 'student'}</Text>
-        <View style={styles.previewRow}>
-          <Text
-            variant="bodySmall"
-            tone={unread > 0 ? 'primary' : 'secondary'}
-            numberOfLines={1}
-            style={styles.preview}
-          >
-            {/* "You: " on her own last message, so a glance tells her
-              whose turn it is. */}
-            {last && last.senderUid === myUid ? 'You: ' : ''}
-            {last?.body || 'Say hello'}
-          </Text>
-          {sentAgo ? (
-            <Text variant="bodySmall" tone="muted" numberOfLines={1}>
-              {' '}
-              · {sentAgo}
-            </Text>
-          ) : null}
-        </View>
-      </View>
-      {unread > 0 ? (
-        <View style={styles.badge}>
-          <Text variant="caption" tone="inverse">
-            {unread > 9 ? '9+' : unread}
-          </Text>
-        </View>
-      ) : null}
+      <Icon name="mail-unread-outline" size={22} tint={color.icon.default} />
+      <Text style={styles.requestsLabel}>Message requests</Text>
+      {unread ? <View style={styles.dot} /> : null}
+      <Text variant="bodySmall" tone="secondary">
+        {count}
+      </Text>
+      <Icon name="chevron-forward" size={18} tint={color.icon.muted} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list: { paddingBottom: spacing.xxl },
-  row: {
+  requests: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    minHeight: controls.minTapTarget + 16,
+    minHeight: controls.minTapTarget + 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: color.border.default,
   },
-  unreadRow: { backgroundColor: color.surface.muted },
+  requestsLabel: { flex: 1 },
   pressed: { opacity: 0.7 },
-  rowText: { flex: 1, marginLeft: spacing.md },
-  previewRow: { flexDirection: 'row', alignItems: 'center' },
-  preview: { flexShrink: 1 },
+  // An unread request: cherry, because it is asking to be answered.
+  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.button.primary.background },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list: { paddingBottom: spacing.xxl },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -205,14 +185,5 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: type.bodySmall.size,
     color: color.text.primary,
-  },
-  badge: {
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
-    paddingHorizontal: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: color.role.shared.background,
   },
 });

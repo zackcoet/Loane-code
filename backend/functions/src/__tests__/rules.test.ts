@@ -16,7 +16,16 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import {
+  arrayRemove,
+  arrayUnion,
+  deleteDoc,
+  doc,
+  getDoc,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from 'firebase/firestore';
 import { EVENT_SURFACES, EVENT_TYPES, newUserStripe } from '@loane/shared';
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 
@@ -1175,6 +1184,74 @@ describe('conversations', () => {
           doc(testEnv.authenticatedContext(OUTSIDER2).firestore(), 'conversations', 'chat-1'),
           { [`lastReadAt.${OUTSIDER2}`]: serverTimestamp() },
         ),
+      );
+    });
+  });
+
+  describe('deleting and muting a thread', () => {
+    it('lets her delete it from her own inbox, clearing her badge', async () => {
+      await assertSucceeds(
+        updateDoc(doc(asElla(), 'conversations', 'chat-1'), {
+          [`hiddenAt.${ELLA}`]: serverTimestamp(),
+          [`unreadCounts.${ELLA}`]: 0,
+        }),
+      );
+    });
+
+    it('refuses a delete time she picked herself', async () => {
+      await assertFails(
+        updateDoc(doc(asElla(), 'conversations', 'chat-1'), {
+          [`hiddenAt.${ELLA}`]: new Date('2030-01-01'),
+        }),
+      );
+    });
+
+    it('refuses deleting it from the other person’s inbox', async () => {
+      await assertFails(
+        updateDoc(doc(asElla(), 'conversations', 'chat-1'), {
+          [`hiddenAt.${MADDIE}`]: serverTimestamp(),
+        }),
+      );
+    });
+
+    it('lets her mute and unmute it for herself', async () => {
+      await assertSucceeds(
+        updateDoc(doc(asElla(), 'conversations', 'chat-1'), { mutedUids: arrayUnion(ELLA) }),
+      );
+      await assertSucceeds(
+        updateDoc(doc(asElla(), 'conversations', 'chat-1'), { mutedUids: arrayRemove(ELLA) }),
+      );
+    });
+
+    it('refuses muting it for the other person', async () => {
+      await assertFails(
+        updateDoc(doc(asElla(), 'conversations', 'chat-1'), { mutedUids: arrayUnion(MADDIE) }),
+      );
+    });
+
+    it('refuses an outsider muting it', async () => {
+      await assertFails(
+        updateDoc(
+          doc(testEnv.authenticatedContext(OUTSIDER2).firestore(), 'conversations', 'chat-1'),
+          { mutedUids: arrayUnion(OUTSIDER2) },
+        ),
+      );
+    });
+
+    it('refuses her setting her badge to anything but zero', async () => {
+      await assertFails(
+        updateDoc(doc(asElla(), 'conversations', 'chat-1'), {
+          [`unreadCounts.${ELLA}`]: 5,
+          mutedUids: arrayUnion(ELLA),
+        }),
+      );
+    });
+
+    it('refuses her marking herself as having replied', async () => {
+      // Answering is what moves a request into the inbox, so only the
+      // trigger may record it.
+      await assertFails(
+        updateDoc(doc(asElla(), 'conversations', 'chat-1'), { repliedUids: arrayUnion(ELLA) }),
       );
     });
   });

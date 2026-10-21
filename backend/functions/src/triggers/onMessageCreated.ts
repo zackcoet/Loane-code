@@ -39,6 +39,15 @@ export const onMessageCreated = onDocumentCreated(
         senderUid: message.senderUid,
         sentAt: now(),
       },
+      // Who has ever written here. A thread a stranger started stays a
+      // message request for her until she answers — see isRequestFor.
+      // A thread that already had messages before this field existed
+      // counts both people as having written, so a long-running chat
+      // never turns into a "request" the next time someone speaks.
+      repliedUids:
+        !conversation.repliedUids && conversation.lastMessage
+          ? conversation.participantUids
+          : FieldValue.arrayUnion(message.senderUid),
       updatedAt: now(),
     };
     for (const uid of recipients) {

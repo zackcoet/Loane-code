@@ -28,6 +28,7 @@ import {
   color,
   controls,
   iconSize,
+  isRequestFor,
   radius,
   receiptFor,
   replyFor,
@@ -44,7 +45,8 @@ import { Icon } from '../../src/components/Icon';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
 import { useAuth } from '../../src/auth/AuthProvider';
-import { useConversation } from '../../src/hooks/useMessaging';
+import { deleteThreadForMe, useConversation } from '../../src/hooks/useMessaging';
+import { useFollowingUids } from '../../src/hooks/useFollowing';
 import { useReportOrBlock } from '../../src/hooks/useReportOrBlock';
 import { IconButton } from '../../src/components/IconButton';
 import { ReportSheet } from '../../src/components/ReportSheet';
@@ -86,6 +88,30 @@ export default function Chat() {
   useEffect(() => {
     if (focused && appActive) void markRead();
   }, [markRead, focused, appActive]);
+
+  // A chat from someone she does not follow, that she has not answered:
+  // say so above the composer, and offer a way out besides replying.
+  const { uids: following, loading: followingLoading } = useFollowingUids();
+  const isRequest =
+    !!conversation &&
+    !!profile &&
+    !followingLoading &&
+    isRequestFor(conversation, profile.uid, following);
+
+  const onDeleteRequest = () => {
+    if (!conversation || !profile) return;
+    Alert.alert('Delete this request?', 'The chat disappears from your messages only.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () =>
+          void deleteThreadForMe(conversation.id, profile.uid)
+            .then(() => router.back())
+            .catch(() => Alert.alert('Loane', 'Could not delete that chat. Try again.')),
+      },
+    ]);
+  };
 
   // "Seen" or "Sent" under her newest message, when the newest is hers.
   const receipt = receiptFor(conversation, messages, profile?.uid);
@@ -275,6 +301,25 @@ export default function Chat() {
             )}
           />
         )}
+
+        {isRequest && them ? (
+          <View style={styles.requestBar}>
+            <Text variant="bodySmall" tone="secondary" style={styles.requestText}>
+              You don&apos;t follow @{them.username}. Reply to move this chat to your messages.
+            </Text>
+            <Pressable
+              onPress={onDeleteRequest}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Delete this request"
+              style={styles.requestDelete}
+            >
+              <Text variant="caption" tone="error">
+                Delete
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         {replyingTo ? (
           <View style={styles.replyBar}>
@@ -678,6 +723,24 @@ const styles = StyleSheet.create({
     borderLeftColor: color.border.accent,
     backgroundColor: color.surface.page,
     gap: 2,
+  },
+  // A cream band, like the reply strip: information, not an alarm.
+  requestBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: color.border.default,
+    backgroundColor: color.surface.section,
+  },
+  requestText: { flex: 1 },
+  requestDelete: {
+    minHeight: controls.minTapTarget,
+    minWidth: controls.minTapTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   replyBar: {
     flexDirection: 'row',

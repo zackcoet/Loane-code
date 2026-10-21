@@ -6,6 +6,30 @@ much as the answer.
 
 ---
 
+## 2026-10-21 — Deleting a chat is one-sided; requests are "never answered + not followed"
+
+**Delete:** a thread keeps `hiddenAt[uid]` — when she deleted it. It
+leaves her inbox until a newer message arrives, and then only what came
+after shows. Nothing is erased: the other person keeps her copy, and
+moderation can still see what was said. Her own key, server clock only.
+
+**Mute:** `mutedUids` on the thread. A muted thread stays in the inbox
+but never adds to the Messages badge (and, once push exists, should
+never buzz). She may add or remove only herself.
+
+**Requests:** a thread is a request for her when someone she does not
+follow wrote to her and she has never written back. "Has written" is
+`repliedUids`, kept by the onMessageCreated trigger — never the phone,
+because answering is what moves a chat into the inbox. Rental threads
+are never requests. Threads from before this existed are treated as
+answered, so nothing anyone already had moves.
+
+**Why not a stored "accepted" flag:** replying already says yes, and
+following already says "I know her". A separate accept button would be
+a third way to say the same thing.
+
+---
+
 ## 2026-10-21 — "Seen" is one timestamp per person, not a flag per message
 
 **Decision:** A conversation keeps `lastReadAt[uid]` — when each person

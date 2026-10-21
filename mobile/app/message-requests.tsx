@@ -1,0 +1,66 @@
+/**
+ * Message requests — chats from people she does not follow that she has
+ * not answered yet.
+ *
+ * Nothing here adds to her Messages badge. Opening one does not tell
+ * the sender anything new beyond the usual "Seen"; replying moves the
+ * chat into her inbox, and deleting it removes it for her only.
+ */
+
+import { useRouter } from 'expo-router';
+import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
+import { color, spacing } from '@loane/shared';
+import { EmptyState } from '../src/components/EmptyState';
+import { Header } from '../src/components/Header';
+import { Screen } from '../src/components/Screen';
+import { Text } from '../src/components/Text';
+import { ThreadRow } from '../src/components/ThreadRow';
+import { useAuth } from '../src/auth/AuthProvider';
+import { useInbox } from '../src/hooks/useMessaging';
+
+export default function MessageRequests() {
+  const router = useRouter();
+  const { profile } = useAuth();
+  const { requests, loading } = useInbox();
+
+  return (
+    <Screen flush>
+      <Header title="Message requests" onBack={() => router.back()} />
+      {loading ? (
+        <View style={styles.loading}>
+          <ActivityIndicator color={color.icon.default} />
+        </View>
+      ) : requests.length === 0 ? (
+        <EmptyState
+          title="No requests"
+          body="When someone you don't follow messages you, it waits here until you reply."
+        />
+      ) : (
+        <FlatList
+          data={requests}
+          keyExtractor={(c) => c.id}
+          contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            <Text variant="bodySmall" tone="secondary" style={styles.note}>
+              These are from people you don&apos;t follow. Reply to move a chat to your messages.
+            </Text>
+          }
+          renderItem={({ item }) => (
+            <ThreadRow
+              conversation={item}
+              myUid={profile?.uid}
+              canMute={false}
+              onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id } })}
+            />
+          )}
+        />
+      )}
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list: { paddingBottom: spacing.xxl },
+  note: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
+});

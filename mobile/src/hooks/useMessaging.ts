@@ -7,7 +7,7 @@
  * onMessageCreated for why that is not a callable.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   addDoc,
   arrayRemove,
@@ -25,7 +25,10 @@ import {
 import {
   COLLECTIONS,
   LIMITS,
+  inboxUnreadTotal,
   needsMarkRead,
+  splitInbox,
+  visibleAfterDelete,
   type Conversation,
   type ImageRef,
   type Message,
@@ -34,6 +37,7 @@ import {
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { logEvent } from '../analytics/events';
+import { useFollowingUids } from './useFollowing';
 
 /** Her inbox, most recent first. */
 export function useConversations() {
@@ -67,13 +71,59 @@ export function useConversations() {
   return { conversations, loading };
 }
 
-/** Total unread across every thread, for the inbox badge. */
+/**
+ * Her inbox split the way the screen shows it: the threads she reads,
+ * and the message requests from people she does not follow. Deleted
+ * threads are in neither until something new arrives.
+ */
+export function useInbox() {
+  const { profile } = useAuth();
+  const uid = profile?.uid;
+  const { conversations, loading } = useConversations();
+  const { uids: following, loading: followingLoading } = useFollowingUids();
+  const split = useMemo(
+    () => (uid ? splitInbox(conversations, uid, following) : { inbox: [], requests: [] }),
+    [conversations, uid, following],
+  );
+  // Wait for who she follows too, or a friend's thread would flash in
+  // Requests for a moment on every open.
+  return { ...split, loading: loading || followingLoading };
+}
+
+/**
+ * Total unread for the Messages badge. Muted threads, deleted threads
+ * and requests do not count — see inboxUnreadTotal.
+ */
 export function useUnreadMessageCount(): number {
   const { profile } = useAuth();
   const { conversations } = useConversations();
+  const { uids: following } = useFollowingUids();
   const uid = profile?.uid;
   if (!uid) return 0;
-  return conversations.reduce((total, c) => total + (c.unreadCounts?.[uid] ?? 0), 0);
+  return inboxUnreadTotal(conversations, uid, following);
+}
+
+/**
+ * Deletes a thread from HER inbox only. The other person keeps it, and
+ * it comes back for her when someone sends something new. Clears her
+ * badge too — a deleted thread should not leave a number behind.
+ */
+export async function deleteThreadForMe(conversationId: string, uid: string): Promise<void> {
+  await updateDoc(doc(db, COLLECTIONS.conversations, conversationId), {
+    [`hiddenAt.${uid}`]: serverTimestamp(),
+    [`unreadCounts.${uid}`]: 0,
+  });
+}
+
+/** Mutes or unmutes a thread for her alone. */
+export async function setThreadMuted(
+  conversationId: string,
+  uid: string,
+  muted: boolean,
+): Promise<void> {
+  await updateDoc(doc(db, COLLECTIONS.conversations, conversationId), {
+    mutedUids: muted ? arrayUnion(uid) : arrayRemove(uid),
+  });
 }
 
 /** One thread: its messages, and how to send. */
@@ -178,5 +228,12 @@ export function useConversation(conversationId: string | undefined) {
     [conversationId, uid],
   );
 
-  return { conversation, messages, loading, send, markRead, setLiked };
+  // If she deleted this thread once, only what came after shows — the
+  // old history stays gone for her, as on Instagram.
+  const visible = useMemo(
+    () => messages.filter((m) => visibleAfterDelete(conversation, uid, m.createdAt)),
+    [messages, conversation, uid],
+  );
+
+  return { conversation, messages: visible, loading, send, markRead, setLiked };
 }

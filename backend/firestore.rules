@@ -537,14 +537,44 @@ service cloud.firestore {
           && (!(uid() in changedKeys) || after[uid()] == request.time);
       }
 
-      allow update: if isParticipant()
-        && onlyChanges(['unreadCounts', 'lastReadAt', 'updatedAt'])
-        && request.resource.data.unreadCounts
+      // Deleting a thread from her inbox: HER OWN key only, on the
+      // server's clock. Nothing is erased — the other person keeps her
+      // copy and moderation can still see it.
+      function validHidden() {
+        let after = request.resource.data.get('hiddenAt', {});
+        let changedKeys = after.diff(resource.data.get('hiddenAt', {})).affectedKeys();
+        return after is map
+          && changedKeys.hasOnly([uid()])
+          && (!(uid() in changedKeys) || after[uid()] == request.time);
+      }
+
+      // Muting: she may add or remove herself and nobody else.
+      function validMuted() {
+        let after = request.resource.data.get('mutedUids', []);
+        let before = resource.data.get('mutedUids', []).toSet();
+        return after is list
+          && after.size() <= 2
+          && after.toSet().difference(before)
+               .union(before.difference(after.toSet()))
+               .hasOnly([uid()]);
+      }
+
+      // Her badge may be left alone, or cleared to zero — never anyone
+      // else's, and never set to a number.
+      function validUnread() {
+        let changedKeys = request.resource.data.unreadCounts
              .diff(resource.data.unreadCounts)
-             .affectedKeys()
-             .hasOnly([uid()])
-        && request.resource.data.unreadCounts[uid()] == 0
-        && validLastRead();
+             .affectedKeys();
+        return changedKeys.size() == 0
+          || (changedKeys.hasOnly([uid()]) && request.resource.data.unreadCounts[uid()] == 0);
+      }
+
+      allow update: if isParticipant()
+        && onlyChanges(['unreadCounts', 'lastReadAt', 'hiddenAt', 'mutedUids', 'updatedAt'])
+        && validUnread()
+        && validLastRead()
+        && validHidden()
+        && validMuted();
       allow delete: if false;
 
       match /messages/{messageId} {

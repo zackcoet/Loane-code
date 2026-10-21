@@ -20,3 +20,4 @@ export * from './usernameSuggest';
 export * from './replies';
 export * from './shares';
 export * from './receipts';
+export * from './inbox';
