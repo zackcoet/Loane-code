@@ -123,7 +123,7 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 1. Add tests for every new backend function and rules change.
 2. Fix lint warnings and any `TODO` that's under an hour of work.
 3. Performance: images sized properly, lists virtualized, no needless re-renders.
-4. *(suggested)* Let the overnight runner start the emulators: it can't download the Firestore emulator (Google's download site is blocked from the cloud runner), so rules and booking tests only run on Zack's laptop or in CI (see C3).
+✅ 4. *(suggested — solved by C3: GitHub now runs the emulator tests on every push)* Let the overnight runner start the emulators: it can't download the Firestore emulator (Google's download site is blocked from the cloud runner), so rules and booking tests only run on Zack's laptop or in CI (see C3).
 
 ---
 

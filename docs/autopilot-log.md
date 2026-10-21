@@ -3,7 +3,53 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
-- Run the emulator tests once on your laptop (`npm run emulators`, then `npm test`) to confirm the new rules from runs 1–4. The overnight machine still can't start the emulators. **This matters:** sending a message depends on security rules that were changed in runs 3 and 4, so if a rule has a mistake, messages would stop sending. Please check it before any of this goes live.
+- Nothing urgent. The worry from runs 1–4 (rules tests that had never been run) is cleared: the new automatic checks on GitHub ran **all 258 tests, including every security-rule test, and they pass.** One test from run 3 had a mistake in the test itself (not the app) and is fixed.
+- Two small calls, written up in run 5 below: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-21 (run 5, ~2 AM Central) — Delete my account, a bad-words filter, and automatic checks on GitHub
+
+**Plan:** B4 "Delete my account" (Apple requires it), then B5 the word filter, then close the gap in B6 (admin actions on reports), then C3 automatic checks on GitHub — which also lets the security-rule tests finally run somewhere, since this machine can't start the emulators.
+
+**Built:**
+- **Delete my account.** Settings → Delete my account (at the bottom). The screen lists, in plain words, what gets deleted and what stays. She types her password, taps Delete, and confirms once more.
+  - **Deleted:** her profile, photo, bio and sizes; her looks, closet and comments; her likes, saves, followers and following (everyone else's counts go back down); her phone number, school email, try-on photos, alerts, and her login.
+  - **Kept, but shown as "Deleted account":** past rentals (the other girl's record), reviews she wrote, and chats (the other person keeps her copy). This is exactly what our Privacy Policy already promises.
+  - **Refused while a rental is still going** — requested, accepted, out, being returned, or under a claim. She's told to finish or cancel it in My Rentals first.
+  - The server double-checks she typed her password in the last 5 minutes, so an unlocked phone on a desk isn't enough.
+  - Anyone opening her old profile sees "Account deleted". An old chat with her shows "This account was deleted. You can't reply."
+- **Bad-words filter.** Captions (including edited ones), comments and messages are checked against a short list: threats ("kys", "kill yourself") and the common slurs, even when disguised with numbers or symbols. A match **doesn't block anything** — it drops a report in the admin Reports queue marked "Automatic filter", with the words copied in, so you decide.
+- **Admin reports:** "Take the content down" now works on a reported comment too (before, only looks and pieces). Hide, warn and suspend were already there, each with an audit row.
+- **Automatic checks on GitHub.** Every push to main or autopilot (and every pull request) now runs the type checks, lint, and all tests with the emulators. You can see the green tick or red cross on GitHub → Actions. It never deploys anything.
+
+**What to tap to see it:**
+- Delete: Profile → menu → Settings → scroll to the bottom → Delete my account → type the password (`loane1234` for seeded accounts) → Delete my account → Delete. Try it as a student with a rental in progress first — it will say to finish it.
+- Filter: post a comment with "kys" in it → open the admin dashboard → Reports → it's there marked "Automatic filter".
+- Checks: github.com/zackcoet/Loane-code → Actions tab.
+
+**Fixed:**
+- A message-limit test from run 3 was wrongly written (the app was fine). Found by the new GitHub checks on their very first run.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the emulators — but that no longer matters, because GitHub now runs them. Tonight's final run: **258 tests passed, 0 failed.**
+- Reviews and single messages can't be taken down straight from a report yet (warn/suspend still works). Logged as a suggestion.
+- "Download my data" (part of C9) isn't built — only deletion is.
+
+**🚨 NEEDS ZACK:**
+- **Old usernames:** when someone deletes her account, her @handle stays reserved forever so nobody can pose as her. Instagram frees them eventually. Say if you want that.
+- **"Venmo me":** asking to pay outside the app is the real scam risk, but while Stripe is off, students pay each other directly, so the filter would flag every rental chat. It's left off the list until payments run in the app.
+- The word list is in `shared/src/contentFilter.ts` — have a look and add anything you or Ella want flagged.
+
+**Next up:** C1 — list every place the app writes to the database directly and move the risky ones behind the server.
+
+**Commits:**
+- Delete my account: Settings → Delete my account, with a password and confirm step
+- Content filter: flag threats and slurs in captions, comments and messages for admin review
+- Admin reports: 'Take the content down' now works on a reported comment
+- CI: run typecheck, lint and the emulator tests on every push and pull request
+- Tests: fix two emulator tests that CI caught on its first run
+- Autopilot log for run 5
 
 ---
 
