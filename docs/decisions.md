@@ -1507,3 +1507,19 @@ by campus and time).
 
 **When to revisit:** if a campus's week ever hits the 5,000-row cap (it
 logs a warning), move to counting as things happen.
+
+## 2026-10-22 — Pull to refresh on a live list does not reload it (autopilot run 18)
+
+Nearly every list in Loane is a live Firestore listener, so new rows
+already appear on their own. Re-opening a healthy listener on a pull
+would re-read every row (a real cost, and Discover holds up to 1,000
+pieces) and flash the full-screen loader, to fetch data that is already
+current. So `usePullToRefresh` shows the spinner for a moment and, on
+screens that hold an order still on purpose (the feed, Discover's "For
+you"), works that order out again. A broken listener is never reached
+this way — those screens show "Couldn't load … Try again" instead.
+
+Trending taps are measured with `meta.from: 'trending'` on the piece's
+view and on requests made from it, not with a new event surface: a
+surface would mean a rules change and a new column in every report for
+one row of one screen.

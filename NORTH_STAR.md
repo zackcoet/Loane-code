@@ -92,10 +92,10 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 ✅ 6. Keep it **explainable and tunable**: weights in one config file, documented in `docs/feed-algorithm.md`, with a small script that prints why a post ranked where it did. *(Run 17: every dial — feed, Discover, variety, trending, caught-up — is in `FEED_RANKING`; `explainFeed.ts --discover` covers Discover and Trending.)*
 ✅ 7. **Healthy engagement only:** no fake notifications, no guilt/streak pressure, no hiding the end of the feed with filler. Show "You're all caught up" when she's seen everything new from people she follows. *(Run 17: a marker in Following after the last look from the past 3 days, then "Older looks". No streaks or fake notifications found.)*
 
-8. *(suggested)* Count taps on the Trending row (a `surface` for it) so we can see whether trending pieces get rented more.
+✅ 8. *(suggested)* Count taps on the Trending row (a `surface` for it) so we can see whether trending pieces get rented more. *(Run 18: done as a tag, `meta.from: 'trending'`, on the piece's view and on any request made from it — see `docs/feed-algorithm.md`.)*
 
 ### E. Instagram-level polish
-1. Pull-to-refresh and smooth infinite scroll everywhere lists exist.
+1. Pull-to-refresh and smooth infinite scroll everywhere lists exist. *(Run 18: pull to refresh added to Discover, Activity, both profiles, Messages, requests, My Listings, My Rentals, Rental requests, Saved, Liked, Reviews. Still to do: comments, followers/following, who-liked, and a check that every long list pages rather than loading everything.)*
 2. Skeleton loaders (no blank screens), branded Loane loader for full-screen waits.
 3. Double-tap to like with a heart animation; long-press preview on grid items.
 4. Comment threads: reply to a comment, like comments, @mention autocomplete.

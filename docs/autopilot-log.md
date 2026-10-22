@@ -3,12 +3,45 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- Nothing new from run 18.
 - Nothing new from run 17. (When you next deploy: it adds an hourly "Trending" job and two database indexes — normal deploy, nothing to switch on.)
 - From run 16: OK the feel change — All Campus is ranked "For You" (not newest first), and Discover opens on "For you" instead of "Newest". Following is still newest first.
 - New from run 13 (only when you next deploy): after the next deploy to the live project, open the admin dashboard → Overview → **Feature switches** and check it reads: try-on Off, admin preview Off, email codes Off, same-day On, payments Off. Those are the defaults, so it should — but if you'd ever turned on try-on's admin preview on the live project, turn it on again there.
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-22 (run 18, ~6 AM Central) — Measuring Trending, and pull down to refresh everywhere
+
+**Plan:** First the small Trending suggestion (D8) — record when a girl opens a piece from the Trending row, and whether she then asks to rent or buy it, so we can tell if Trending actually leads to rentals. Then start E1 — pull down to refresh on every main list, using one shared piece so they all feel the same.
+
+**Built:**
+- **We can now measure Trending.** When she taps a piece in the "Trending at USC this week" row, Loane notes that she came from Trending — on the piece's page view, and on her rent or buy request if she makes one from there. Nothing changes on screen. In the data you can now compare "opened from Trending" against "asked to rent from Trending".
+- **Pull down to refresh** now works on Discover, Activity, your profile, other girls' profiles, Messages, message requests, My Listings, My Rentals, Rental requests, Saved, Liked and Reviews — the same merlot spinner everywhere.
+  - On Discover, pulling down also re-works the "For you" order using her latest likes (the feed already did this).
+  - Everywhere else the lists already update by themselves the moment something changes, so the pull is the familiar gesture with a quick spinner — it doesn't re-download everything (that would cost money and flash a blank loading screen for nothing).
+
+**What to tap to see it:**
+- Discover → drag the grid down → a spinner appears for a moment, then the For you order is refreshed.
+- Activity, Profile, Messages, or Menu → My Rentals / My Listings / Saved / Liked → drag the list down → spinner.
+- Trending tracking has nothing to tap; it shows up in the events data.
+
+**Fixed:** Nothing broken this run.
+
+**Skipped / blocked:**
+- E1 isn't finished: comments, followers/following lists and "who liked this" still need pull to refresh, and a check that every long list loads in pages. Next run.
+- The overnight machine still can't start the test database (Google's download site is blocked here). Type checks, lint, the index check (81 searches, none missing), the shared tests (239, 2 new), the server tests that don't need the database (62) and the iPhone app build passed here. Nothing tonight changed the database rules or server functions; GitHub runs the full set on tonight's push.
+
+**🚨 NEEDS ZACK:** Nothing new. Older items are listed at the top.
+
+**Next up:** finish E1 (the last few lists, plus making sure long lists load page by page), then E2 — skeleton loaders instead of blank screens.
+
+**Commits:**
+- Trending: count taps on the row, and requests that came from it
+- Pull to refresh on Discover, Activity, profiles, Messages and every list screen
+- Autopilot log for run 18
 
 ---
 
