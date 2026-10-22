@@ -12,6 +12,8 @@ export const PAGE_SIZES = {
   messages: 40,
   /** A post's comments. */
   comments: 30,
+  /** Followers and following lists. */
+  people: 30,
 } as const;
 
 /**

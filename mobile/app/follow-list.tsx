@@ -14,7 +14,7 @@
 import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { color, radius, spacing } from '@loane/shared';
+import { color, controls, radius, spacing } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
@@ -34,7 +34,10 @@ export default function FollowListScreen() {
     name?: string;
   }>();
   const { profile } = useAuth();
-  const { people, loading } = useFollowList(uid, side === 'followers' ? 'followers' : 'following');
+  const { people, loading, error, retry, hasMore, loadMore, loadingMore } = useFollowList(
+    uid,
+    side === 'followers' ? 'followers' : 'following',
+  );
   const hidden = useHiddenUids();
   const [working, setWorking] = useState<string | null>(null);
 
@@ -70,6 +73,13 @@ export default function FollowListScreen() {
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
+      ) : error && visible.length === 0 ? (
+        <EmptyState
+          title="Couldn't load this list"
+          body="Check your connection and try again."
+          actionLabel="Try again"
+          onAction={retry}
+        />
       ) : visible.length === 0 ? (
         <EmptyState
           title={side === 'followers' ? 'No followers yet' : 'Not following anyone yet'}
@@ -88,6 +98,15 @@ export default function FollowListScreen() {
           data={visible}
           keyExtractor={(p) => p.uid}
           contentContainerStyle={styles.list}
+          onEndReached={hasMore ? loadMore : undefined}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.more} accessibilityLabel="Loading more">
+                <ActivityIndicator color={color.icon.default} />
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
             <View style={styles.row}>
               <Pressable
@@ -129,6 +148,7 @@ export default function FollowListScreen() {
 const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
+  more: { minHeight: controls.minTapTarget, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm },
   who: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   pressed: { opacity: 0.6 },

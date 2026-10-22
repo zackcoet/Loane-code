@@ -5,9 +5,18 @@
  * only question ever asked is "is this owner one of them?".
  */
 
-import { useEffect, useState } from 'react';
-import { collection, documentId, getDocs, onSnapshot, query, where } from 'firebase/firestore';
-import { COLLECTIONS, type Follow, type User, type UserSummary } from '@loane/shared';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  collection,
+  documentId,
+  getDocs,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  where,
+} from 'firebase/firestore';
+import { COLLECTIONS, PAGE_SIZES, type Follow, type User, type UserSummary } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 
@@ -195,10 +204,28 @@ export function useStudentSearch(term: string) {
  * Live, because the point of opening her Following list on your own
  * profile is usually to unfollow somebody, and the row should leave the
  * list when you do.
+ *
+ * Newest first, a page at a time: the listener holds one page and grows
+ * by a page as she nears the bottom (the same growing window as
+ * comments), so the whole list on screen stays live. This used to load
+ * every follow at once and sort by name; with paging, name order is not
+ * possible without loading everyone, so it is most recent first — as on
+ * Instagram.
  */
 export function useFollowList(uid: string | undefined, side: 'followers' | 'following') {
   const [people, setPeople] = useState<UserSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [windowSize, setWindowSize] = useState<number>(PAGE_SIZES.people);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
+  // A different list starts from one page again.
+  useEffect(() => {
+    setWindowSize(PAGE_SIZES.people);
+    setLoading(true);
+  }, [uid, side]);
 
   useEffect(() => {
     if (!uid) {
@@ -207,44 +234,65 @@ export function useFollowList(uid: string | undefined, side: 'followers' | 'foll
       return;
     }
     let live = true;
-    setLoading(true);
 
     // Followers are the rows pointing AT her; following are the rows
     // pointing away from her.
     const field = side === 'followers' ? 'followingUid' : 'followerUid';
     const other = side === 'followers' ? 'followerUid' : 'followingUid';
+    const done = (ok: boolean) => {
+      if (!live) return;
+      setError(!ok);
+      setLoading(false);
+      setLoadingMore(false);
+    };
 
     const unsubscribe = onSnapshot(
-      query(collection(db, COLLECTIONS.follows), where(field, '==', uid)),
+      query(
+        collection(db, COLLECTIONS.follows),
+        where(field, '==', uid),
+        orderBy('createdAt', 'desc'),
+        limit(windowSize),
+      ),
       (snap) => {
         const uids = snap.docs.map((d) => (d.data() as Follow)[other]);
+        if (live) setHasMore(snap.docs.length >= windowSize);
         if (uids.length === 0) {
-          if (live) {
-            setPeople([]);
-            setLoading(false);
-          }
+          if (live) setPeople([]);
+          done(true);
           return;
         }
         void readUsers(uids)
           .then((found) => {
             if (!live) return;
-            setPeople(found.sort((a, b) => a.displayName.localeCompare(b.displayName)));
-            setLoading(false);
+            // readUsers returns them in id order; put them back in
+            // follow order, newest first.
+            const rank = new Map(uids.map((u, i) => [u, i]));
+            setPeople(found.sort((a, b) => (rank.get(a.uid) ?? 0) - (rank.get(b.uid) ?? 0)));
+            done(true);
           })
-          .catch(() => {
-            if (live) setLoading(false);
-          });
+          .catch(() => done(false));
       },
-      () => {
-        if (live) setLoading(false);
-      },
+      () => done(false),
     );
 
     return () => {
       live = false;
       unsubscribe();
     };
-  }, [uid, side]);
+  }, [uid, side, windowSize, attempt]);
 
-  return { people, loading };
+  /** Near the bottom: hold one more page. */
+  const loadMore = useCallback(() => {
+    if (!hasMore || loadingMore || loading) return;
+    setLoadingMore(true);
+    setWindowSize((n) => n + PAGE_SIZES.people);
+  }, [hasMore, loadingMore, loading]);
+
+  const retry = useCallback(() => {
+    setError(false);
+    setLoading(true);
+    setAttempt((n) => n + 1);
+  }, []);
+
+  return { people, loading, error, retry, hasMore, loadMore, loadingMore };
 }
