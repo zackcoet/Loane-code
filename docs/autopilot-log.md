@@ -3,8 +3,47 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
-- Nothing urgent. Every automatic check on GitHub is green, including the security-rule tests.
+- Nothing urgent. One small change to OK from run 10: Followers/Following lists are now newest-first instead of A–Z (needed for loading them a page at a time).
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-21 (run 10, ~10 PM Central) — Long chats and comment threads load as you scroll, and an alarm for missing indexes
+
+**Plan:** C5 — "load more as you scroll" and the automatic index check. Build the index check first (it protects the live app from the same crash the rental sweep had), then add paging to the lists that still loaded everything at once: chats, comments, followers/following. Leave search for its own run — it works differently (it searches on the phone).
+
+**Built:**
+- **An automatic alarm for missing indexes.** A database "index" is like the tabs in a filing cabinet: the live database refuses certain searches without the right one, but the test database on a laptop never does — that's exactly how the hourly rental sweep crashed for weeks unnoticed. A new check now reads every search in the app, the admin dashboard and the server (73 of them) and fails if any is missing its index. It runs with the other tests and on GitHub. **Result tonight: none missing.** To prove it works, I removed the rental sweep's index on purpose and it caught both searches that need it straight away.
+- **Long chats load as you scroll up.** A chat used to show only its last 100 messages — anything older was simply gone. Now it opens with the latest 40 (quicker), and scrolling up brings in the next 40 with a small spinner, all the way back to the first message. If it can't load (bad signal), she sees "Couldn't load earlier messages. Tap to try again." Hearts, "Seen" and takedowns stay live on everything she's scrolled through.
+- **Comments load 30 at a time,** with more as she scrolls down (up to 200, the old maximum). If they fail to load she now sees "Couldn't load comments — Try again" instead of a misleading "No comments yet".
+- **Followers and Following lists load 30 at a time,** newest first (like Instagram), with more as she scrolls and a Try again screen if they fail. Before, they loaded everyone at once.
+
+**What to tap to see it:**
+- Chats: Messages → open a long chat → scroll up past the top; a spinner appears and older messages fill in. (The demo chats are short — to really see it you'd need a chat with more than 40 messages.)
+- Comments: open any look → tap the comment bubble → scroll down. Turn on airplane mode and reopen comments to see the Try again screen.
+- Followers: Profile → tap your Followers or Following number → scroll.
+- The index alarm: on GitHub, Actions → tonight's run has a new "check:indexes" step with a green tick.
+
+**Fixed:**
+- Messages older than the last 100 in a chat could never be seen.
+- Comments that failed to load pretended there were none.
+
+**Skipped / blocked:**
+- **Search paging** (the last part of C5) — search loads up to 1,000 pieces onto the phone and searches them there. Paging it properly is a bigger change; next run.
+- The overnight machine still can't start the test database (Google's download site is blocked here). Type checks, lint, the shared tests (169) and the server tests that don't need the database (including 14 new ones for the index alarm) all passed here. GitHub runs the full set on tonight's push.
+
+**🚨 NEEDS ZACK:**
+- **One small visible change to OK:** Followers/Following lists are now newest-first instead of A–Z. Loading a list a page at a time can't stay alphabetical without loading everyone. Instagram does newest-first. If you'd rather keep A–Z, say so.
+- Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+**Next up:** finish C5 with search paging, then C6 — friendly errors and a retry on every screen.
+
+**Commits:**
+- Index check: fail tests and CI when a query is missing its production index
+- Chat: load older messages as she scrolls up
+- Comments: load a page at a time, with a retry when they fail
+- Followers and following: newest first, a page at a time
+- Autopilot log for run 10
 
 ---
 

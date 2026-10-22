@@ -6,6 +6,39 @@ much as the answer.
 
 ---
 
+## 2026-10-22 — An index checker reads the code; paged lists grow or append
+
+**Decision:** `npm run check:indexes` (backend/functions/scripts/
+indexCheck.ts) reads every Firestore query in the app, admin and
+functions and fails if `firestore.indexes.json` lacks the composite
+index production needs. It also runs inside `npm test` and in CI. A
+query it cannot read (a field name passed in as a parameter) must carry
+an `index-check:` comment saying why it needs none; otherwise the check
+fails. It deliberately treats a reversed index as missing — a false
+alarm a person double-checks is cheaper than a crash.
+
+**Why read the code instead of running queries:** the emulator never
+enforces indexes, which is how the booking sweep crashed for weeks.
+Reading the code needs no project and no network, so it can run
+anywhere, including the overnight runner.
+
+**Two paging shapes, chosen by which end changes:**
+- *Chats* (newest at the bottom, new messages arrive at the newest
+  end): the newest page is live; older pages are fetched once as she
+  scrolls up. Once she scrolls, the live listener is pinned down to
+  where the first page ended (`endAt`), so a new message never pushes
+  one into a gap between live and fetched.
+- *Comments and follower lists*: one listener whose limit grows a page
+  at a time. Comments read oldest first, so the end that changes is the
+  last page — a growing window keeps all of it live with no seams.
+  Follower lists are small and must drop a row the moment she
+  unfollows. Comments stop growing at 200, the old ceiling.
+
+**Follower lists are newest first now, not by name.** Alphabetical
+across pages would mean loading everybody. Instagram is newest first.
+
+---
+
 ## 2026-10-21 — Thumbnails are found by name, not stored on the listing
 
 **Decision:** A Cloud Function (`makeThumbnail`) writes a 480px WebP
