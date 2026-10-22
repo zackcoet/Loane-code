@@ -52,7 +52,19 @@ export default function Comments() {
     postAuthorUid?: string;
   }>();
   const { profile } = useAuth();
-  const { threaded, loading, busy, add, remove, canDelete } = useComments(postId);
+  const {
+    threaded,
+    loading,
+    busy,
+    add,
+    remove,
+    canDelete,
+    error,
+    retry,
+    hasMore,
+    loadMore,
+    loadingMore,
+  } = useComments(postId);
   const hidden = useHiddenUids();
   const [draft, setDraft] = useState('');
   const [reporting, setReporting] = useState<Comment | null>(null);
@@ -107,6 +119,13 @@ export default function Comments() {
           <View style={styles.loading}>
             <ActivityIndicator color={color.icon.default} />
           </View>
+        ) : error && visible.length === 0 ? (
+          <EmptyState
+            title="Couldn't load comments"
+            body="Check your connection and try again."
+            actionLabel="Try again"
+            onAction={retry}
+          />
         ) : visible.length === 0 ? (
           <EmptyState title="No comments yet" body="Say something nice about this look." />
         ) : (
@@ -115,6 +134,16 @@ export default function Comments() {
             keyExtractor={(row) => row.comment.id}
             contentContainerStyle={styles.list}
             keyboardDismissMode="on-drag"
+            // A page at a time: nearing the bottom brings in the next.
+            onEndReached={hasMore ? loadMore : undefined}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={
+              loadingMore ? (
+                <View style={styles.more} accessibilityLabel="Loading more comments">
+                  <ActivityIndicator color={color.icon.default} />
+                </View>
+              ) : null
+            }
             renderItem={({ item }) => (
               <Row
                 comment={item.comment}
@@ -273,6 +302,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { padding: spacing.md, gap: spacing.md },
+  more: { minHeight: controls.minTapTarget, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   rowText: { flex: 1 },
   rowAction: { paddingHorizontal: spacing.xs, paddingTop: 2 },

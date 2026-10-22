@@ -9,22 +9,50 @@
  * Removed and suspended comments are filtered here rather than in the
  * query, so a comment coming down does not need an index and does not
  * shift under anyone mid-scroll — the listener just stops returning it.
+ *
+ * PAGED BY GROWING THE LISTENER. Comments read oldest first, so the
+ * newest are at the bottom. The listener starts with one page and grows
+ * by a page each time she nears the end, rather than adding one-shot
+ * older pages the way the feed and chats do: here the page that changes
+ * (new comments) is the LAST one, and a growing window keeps every
+ * comment she can see live with no gap at the seams. A post with
+ * hundreds of comments is not a thing a campus app has yet; if one
+ * appears, this is the place to revisit.
+ *
+ * When she posts, the window jumps to the old ceiling (200) so her own
+ * comment is there when the list scrolls down to it.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
-import { COLLECTIONS, LIMITS, type Comment } from '@loane/shared';
+import { COLLECTIONS, LIMITS, PAGE_SIZES, type Comment } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { addComment, deleteComment } from '../firebase/callables';
 import { logEvent } from '../analytics/events';
 import { callableErrorMessage } from '../firebase/errors';
 
+/** The most a post's comments listener will ever hold. */
+const MAX_COMMENTS = 200;
+
 export function useComments(postId: string | undefined) {
   const { profile } = useAuth();
   const [all, setAll] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
+  /** How many comments the listener holds. Grows a page at a time. */
+  const [windowSize, setWindowSize] = useState<number>(PAGE_SIZES.comments);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  /** Bumped by retry, to listen again. */
+  const [attempt, setAttempt] = useState(0);
+
+  // A different post starts from one page again.
+  useEffect(() => {
+    setWindowSize(PAGE_SIZES.comments);
+    setLoading(true);
+  }, [postId]);
 
   useEffect(() => {
     if (!postId) {
@@ -32,21 +60,43 @@ export function useComments(postId: string | undefined) {
       setLoading(false);
       return;
     }
-    setLoading(true);
     return onSnapshot(
       query(
         collection(db, COLLECTIONS.comments),
         where('postId', '==', postId),
         orderBy('createdAt', 'asc'),
-        limit(200),
+        limit(windowSize),
       ),
       (snap) => {
         setAll(snap.docs.map((d) => ({ ...(d.data() as Comment), id: d.id })));
+        // Counted before removed comments are filtered out, so a page
+        // full of takedowns still knows there is more behind it.
+        setHasMore(snap.docs.length >= windowSize && windowSize < MAX_COMMENTS);
+        setError(false);
         setLoading(false);
+        setLoadingMore(false);
       },
-      () => setLoading(false),
+      () => {
+        setError(true);
+        setLoading(false);
+        setLoadingMore(false);
+      },
     );
-  }, [postId]);
+  }, [postId, windowSize, attempt]);
+
+  /** Near the bottom: hold one more page. */
+  const loadMore = useCallback(() => {
+    if (!hasMore || loadingMore || loading) return;
+    setLoadingMore(true);
+    setWindowSize((n) => Math.min(n + PAGE_SIZES.comments, MAX_COMMENTS));
+  }, [hasMore, loadingMore, loading]);
+
+  /** After an error: listen again from the same window. */
+  const retry = useCallback(() => {
+    setError(false);
+    setLoading(true);
+    setAttempt((n) => n + 1);
+  }, []);
 
   const comments = useMemo(() => all.filter((c) => c.status === 'active'), [all]);
 
@@ -98,6 +148,9 @@ export function useComments(postId: string | undefined) {
       setBusy(true);
       try {
         await addComment({ postId, body: text, parentCommentId });
+        // Her comment is the newest, so the last in the list: make sure
+        // the window reaches it.
+        setWindowSize(MAX_COMMENTS);
         logEvent('comment_created', {
           surface: 'feed',
           targetType: 'post',
@@ -142,7 +195,20 @@ export function useComments(postId: string | undefined) {
     [profile],
   );
 
-  return { comments, threaded, loading, busy, add, remove, canDelete };
+  return {
+    comments,
+    threaded,
+    loading,
+    busy,
+    add,
+    remove,
+    canDelete,
+    error,
+    retry,
+    hasMore,
+    loadMore,
+    loadingMore,
+  };
 }
 
 /** Sortable milliseconds out of whatever a Firestore timestamp is. */
