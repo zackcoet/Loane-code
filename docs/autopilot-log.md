@@ -10,6 +10,39 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 
 ---
 
+## 2026-10-22 (run 15, ~3 AM Central) — The "For You" score exists
+
+**Plan:** D2 — give every look a score for each student, made of five parts: who posted it, whether it's her kind of occasion, how new it is, how well it does for the number of people who saw it, and whether the tagged pieces can actually be had this week. Every number in one place. Decide where the score is worked out so nobody can cheat their own look up campus. Don't change the feed screen yet — that's D3/D4.
+
+**Built:**
+- **A score for every look, for every student.** Nothing changes on screen yet; next runs plug it into All Campus. What makes a look rank higher for her:
+  - **Who:** she follows the author (more if they follow each other back), or she's liked that girl's looks before — with a ceiling, so one best friend can't take over the feed.
+  - **What:** the look is tagged with occasions she likes (Gameday, Formal…), learned from looks she's liked.
+  - **Fresh:** new looks first; a look loses half its "newness" every day and a half.
+  - **Quality:** how much people do per person who saw it — not raw likes. A new look with 4 likes from 10 people beats an old one with 30 likes from 600. A tap through to a tagged piece counts most.
+  - **Available:** the pieces in the look can actually be rented or bought this week. A look full of pieces that are booked solid sinks a little.
+- **It can't be gamed from a phone.** The parts about her only reorder her own feed. The parts that could push a look up everyone else's feed use only numbers Loane's server keeps. Written up in `docs/decisions.md`.
+- **All the dials in one place** (`FEED_RANKING`), explained in plain words in `docs/feed-algorithm.md`.
+- **A "why did this rank there" printout** for your laptop: shows every look in order with its five scores.
+
+**What to tap to see it:** Nothing on the phone yet. On your laptop, with the emulators running and seeded: `cd backend/functions && npx tsx scripts/explainFeed.ts --user ellapetrickcloset` prints Ella's For You order and why.
+
+**Fixed:** Nothing this run.
+
+**Skipped / blocked:**
+- The "why" printout couldn't be run here — the overnight machine still can't start the test database (Google's download site is blocked). It type-checks, and it uses the exact same scoring that's tested.
+- Type checks, lint, the index check (74 searches, none missing), the shared tests (207, 19 new) and the server tests that don't need the database (62) all passed here.
+
+**🚨 NEEDS ZACK:** Nothing new. Older items are listed at the top. (If you ever want the feed to lean more on friends, or more on brand-new looks, it's one number each — just say.)
+
+**Next up:** D3 — no more than 2 looks in a row from the same girl, and a few looks from people she doesn't follow mixed in. Then D4 — switch All Campus to the ranked order (Following stays newest-first).
+
+**Commits:**
+- For You: a ranking score per look, with every weight in one place
+- Autopilot log for run 15
+
+---
+
 ## 2026-10-22 (run 14, ~2 AM Central) — The app now notices what she scrolls past
 
 **Plan:** D1 — before building the "For You" feed, make sure Loane records everything it will learn from. Most of it was already recorded (likes, saves, comments, shares, piece taps, requests). Two things were missing: which looks she scrolled past and how long she looked at each, and follows made from anywhere except a profile page. Add both, keep it to one record per look so it stays cheap, and write down the full list. Stop before D2 (the ranking itself) — it deserves a run of its own.
