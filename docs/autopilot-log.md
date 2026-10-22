@@ -3,8 +3,50 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
-- Nothing urgent. One small change to OK from run 10: Followers/Following lists are now newest-first instead of A–Z (needed for loading them a page at a time).
+- Nothing urgent. Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-22 (run 11, ~11 PM Central) — No more "nothing here" when it's really a bad signal
+
+**Plan:** Finish C5 (paging) with search, then start C6 (friendly errors). Discover's piece search stays on the phone — that was a deliberate decision written in the roadmap, and replacing it means a paid search service, so it isn't mine to change. People search was the real gap: it had no limit at all. Then go screen by screen and make a failed load say so, with a Try again, instead of pretending the list is empty.
+
+**Built:**
+- **People search is capped.** Typing two letters in Find friends or "Send to" used to download every student whose @handle started with them, just to show 20. Now it asks for 30 at most. If the search fails, she sees "Couldn't search right now" with **Try again** — before, it said "Nobody by that name", which was wrong.
+- **"Couldn't load … Try again" on the screens that matter most.** Before tonight, if the phone lost signal while loading, these screens just showed their empty message — "No rentals yet", "Nothing yet", "No messages yet" — which would make a girl think her booking or chats had vanished. Now they say what happened and give her a button that tries again:
+  - Discover
+  - Activity (both the Rentals and Updates tabs)
+  - My Rentals and Requests
+  - A single rental's page
+  - A piece's page (before, a failed load said "That piece is no longer listed")
+  - Messages and Message requests
+- A piece or rental she's not allowed to see still says "Not found", because trying again can't change that.
+
+**What to tap to see it:**
+- Turn on airplane mode, then open the app and go to Activity, Messages, or Discover → you'll see "Couldn't load …" with a **Try again** button. Turn airplane mode off and tap Try again → it loads.
+- People search: Profile → Find friends → type two letters of someone's @handle. Works as before, just lighter.
+
+**Fixed:**
+- Bad signal no longer looks like an empty account on eight screens.
+- Discover's error message told her to "pull to refresh", but there was no pull-to-refresh. It now has a real Try again button.
+
+**Skipped / blocked:**
+- **Discover piece search stays on the phone, on purpose** (see the roadmap: it switches to a search service at ~1,500 pieces on one campus — USC is nowhere near that).
+- **The rest of C6:** other lists (saved, liked, reviews, profile grids, a look's page) and making every server function return a friendly, specific message. Next run.
+- The overnight machine still can't start the test database (Google's download site is blocked here). Type checks, lint, the index check (73 searches, none missing), the shared tests (170) and the server tests that don't need the database all passed here. GitHub runs the full set on tonight's push.
+
+**🚨 NEEDS ZACK:**
+- Nothing new tonight. Still waiting on your OK from run 10 (Followers/Following newest-first instead of A–Z).
+- For later, not now: when one campus passes ~1,500 pieces, Discover search should move to a search service (Typesense, about $25/month). That's a spending decision, so it's yours.
+
+**Next up:** finish C6 — the remaining screens, then friendly errors from the server functions.
+
+**Commits:**
+- People search: one capped page, and a Try again when it fails
+- Activity, rentals and a piece's page: Try again instead of a false empty
+- Messages: Try again when the inbox can't load
+- Autopilot log for run 11
 
 ---
 
