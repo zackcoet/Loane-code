@@ -4,6 +4,11 @@
  * where it did — NORTH_STAR D2 / D6.
  *
  *   npx tsx scripts/explainFeed.ts --user ellapetrickcloset
+ *   npx tsx scripts/explainFeed.ts --user ellapetrickcloset --discover
+ *
+ * With --discover it prints Discover's "For you" grid of pieces instead,
+ * then the campus's "Trending this week" row as the hourly job last
+ * wrote it.
  *
  * EMULATOR ONLY. It refuses to run without FIRESTORE_EMULATOR_HOST
  * (which it defaults to the local emulator), so it cannot read the live
@@ -20,8 +25,15 @@ import {
   COLLECTIONS,
   buildOccasionAffinity,
   diversifyFeed,
+  explainListingScore,
+  occasionsOfSaved,
+  rankListings,
   rankPosts,
   toIsoDate,
+  TRENDING,
+  type RankingViewer,
+  type Save,
+  type TrendingDoc,
   type Like,
   type Listing,
   type Occasion,
@@ -99,11 +111,18 @@ async function main(): Promise<void> {
   }
 
   const following = new Set(followingSnap.docs.map((d) => d.get('followingUid') as string));
+  const followers = new Set(followersSnap.docs.map((d) => d.get('followerUid') as string));
+
+  if (process.argv.includes('--discover')) {
+    await explainDiscover(db, me, { uid: me.id, following, followers, interactions });
+    return;
+  }
+
   const scored = rankPosts(posts, (p) => millis(p.createdAt), {
     viewer: {
       uid: me.id,
       following,
-      followers: new Set(followersSnap.docs.map((d) => d.get('followerUid') as string)),
+      followers,
       interactions,
       occasionAffinity: buildOccasionAffinity(likedOccasions),
     },
@@ -129,6 +148,71 @@ async function main(): Promise<void> {
       `${String(i + 1).padEnd(3)}${scoreRank.get(post.id) === i + 1 ? '     ' : `(${scoreRank.get(post.id)})`.padEnd(5)} ${f(b.score)}   ${f(p.who)}  ${f(p.what)}  ${f(p.fresh)}  ${f(
         p.quality,
       )}  ${f(p.available)}   @${post.author?.username ?? '?'} — ${(post.caption ?? '').slice(0, 40)}`,
+    );
+  });
+}
+
+/** Discover's "For you" grid, then the campus's trending row. */
+async function explainDiscover(
+  db: ReturnType<typeof getFirestore>,
+  me: User & { id: string },
+  her: Omit<RankingViewer, 'occasionAffinity'>,
+): Promise<void> {
+  const [listingsSnap, savesSnap, trendingSnap] = await Promise.all([
+    db
+      .collection(COLLECTIONS.listings)
+      .where('campusId', '==', me.campusId)
+      .where('status', '==', 'active')
+      .orderBy('createdAt', 'desc')
+      .limit(1000)
+      .get(),
+    db
+      .collection(COLLECTIONS.saves)
+      .where('uid', '==', me.id)
+      .orderBy('createdAt', 'desc')
+      .limit(60)
+      .get(),
+    db.collection(COLLECTIONS.trending).doc(me.campusId).get(),
+  ]);
+
+  const listings = listingsSnap.docs.map((d) => ({ ...(d.data() as Listing), id: d.id }));
+  const byId = new Map(listings.map((l) => [l.id, l]));
+  const savedIds = savesSnap.docs.map((d) => (d.data() as Save).listingId);
+  const viewer: RankingViewer = {
+    ...her,
+    occasionAffinity: buildOccasionAffinity(occasionsOfSaved(savedIds, (id) => byId.get(id))),
+  };
+  const nowMs = Date.now();
+  const today = toIsoDate(new Date());
+  const order = rankListings(listings, (l) => millis(l.createdAt), viewer, nowMs, today);
+
+  const f = (n: number) => n.toFixed(2);
+  console.log(`Discover "For you" for @${me.username} — ${order.length} pieces\n`);
+  console.log('#   score  who   what  fresh qual  avail  owner / piece');
+  order.forEach((id, i) => {
+    const l = byId.get(id)!;
+    const b = explainListingScore(l, millis(l.createdAt), viewer, nowMs, today);
+    const p = b.parts;
+    console.log(
+      `${String(i + 1).padEnd(3)} ${f(b.score)}   ${f(p.who)}  ${f(p.what)}  ${f(p.fresh)}  ${f(
+        p.quality,
+      )}  ${f(p.available)}   @${l.owner?.username ?? '?'} — ${l.name.slice(0, 40)}`,
+    );
+  });
+
+  const trending = trendingSnap.exists ? (trendingSnap.data() as TrendingDoc) : null;
+  console.log(`\nTrending this week (${trending?.items.length ?? 0} pieces)`);
+  const w = TRENDING.weights;
+  console.log(
+    `Score = ${w.save} per saver + ${w.request} per requester + ${w.tap} per tag tapper, once each.`,
+  );
+  if (!trending) console.log('  Not worked out yet — run the seed, or runTrendingRefresh.');
+  trending?.items.forEach((item, i) => {
+    const l = byId.get(item.listingId);
+    console.log(
+      `${String(i + 1).padEnd(3)} ${String(item.score).padEnd(5)} ${item.people} people   ${
+        l ? `@${l.owner?.username ?? '?'} — ${l.name.slice(0, 40)}` : '(no longer active)'
+      }`,
     );
   });
 }

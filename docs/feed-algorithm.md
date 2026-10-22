@@ -136,7 +136,7 @@ place in brackets when the rules moved it.
   (no server job, no extra reads). Revisit with the "when to revisit"
   note in `docs/decisions.md` (run 15).
 
-## Step 5 — Discover, "For you" (half done, autopilot run 16)
+## Step 5 — Discover, "For you" and Trending (done, autopilot runs 16–17)
 
 Discover's grid of pieces now opens on a **For you** sort (Newest and the
 price sorts are still in the sort menu). `shared/src/discoverRanking.ts`
@@ -156,6 +156,44 @@ back to Discover — never because a count moved while she browses. A
 brand-new piece goes on top until then. Her side (likes, follows,
 followers) comes from `useRankingViewer`, shared with the feed.
 
-**Not done yet: "Trending at USC this week".** Lifetime counters can't
-say "this week". It needs a small scheduled server function that counts
-the week's saves, tag taps and requests per piece — next run.
+### Trending at USC this week (autopilot run 17)
+
+A sideways row at the top of Discover, shown only while she is browsing
+everything (no search, no filters, the Explore tab) and only when at
+least 2 pieces qualify.
+
+- **Worked out on the server, every hour** — `refreshTrending` in
+  `backend/functions/src/listings/trending.ts`. It reads the last 7 days
+  of three signals per campus and writes the top 10 to
+  `trending/{campusId}`. Only Cloud Functions can write that document
+  (rules + test), so nobody can put her own piece on the list.
+- **The score** (`rankTrending`, `shared/src/trending.ts`, dials in
+  `FEED_RANKING.trending`): per piece, **2 points per student who saved
+  it, 4 per student who asked to rent or buy it, 1 per student who
+  tapped it in a look**.
+- **Hard to game:** each student counts once per piece per kind, however
+  often she repeats it; the owner's own actions never count; a piece
+  needs 2 different students before it can trend; saves and requests
+  come from documents only the server writes, and tag taps (written by
+  phones) count least.
+- **The phone reads one small document** of ids and looks them up among
+  the pieces Discover already loaded — so a blocked closet or a sold
+  piece simply drops out, with no extra reads. If the read fails the row
+  just doesn't show.
+- The emulator never fires a scheduled job: the seed runs it once, and
+  an admin can call `runTrendingRefresh`.
+- Reads are capped at 5,000 newest rows per signal per campus per run; a
+  warning is logged if a campus ever hits it.
+
+## Step 6 — Explainable and tunable (done, autopilot run 17)
+
+- **Every dial is in one place:** `FEED_RANKING` in
+  `shared/src/feedRanking.ts` — the feed's weights, Discover's, the
+  variety rules and Trending's.
+- **"Why is this here?"** for both screens (emulator only):
+
+```bash
+cd backend/functions
+npx tsx scripts/explainFeed.ts --user ellapetrickcloset             # the feed
+npx tsx scripts/explainFeed.ts --user ellapetrickcloset --discover  # Discover + Trending
+```

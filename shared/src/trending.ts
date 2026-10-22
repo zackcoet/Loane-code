@@ -20,27 +20,11 @@
  */
 
 import type { ListingStatus } from './constants';
+import { FEED_RANKING } from './feedRanking';
 import type { Timestampish } from './types/common';
 
-export const TRENDING = {
-  /** How far back "this week" looks. */
-  windowDays: 7,
-  /** How many pieces the row shows at most. */
-  size: 10,
-  /** Different students needed before a piece can trend. */
-  minPeople: 2,
-  /** Points per distinct person, per kind of signal. */
-  weights: {
-    /** Saved the piece (server-written `saves`). */
-    save: 2,
-    /** Tapped it in a look (phone-written event — trusted least). */
-    tap: 1,
-    /** Asked to rent or buy it (server-written `bookings`). */
-    request: 4,
-  },
-  /** Rows the server reads per signal per campus, at most, per run. */
-  readCap: 5000,
-} as const;
+/** The dials live with every other ranking number, in FEED_RANKING. */
+export const TRENDING = FEED_RANKING.trending;
 
 export type TrendingSignalKind = keyof typeof TRENDING.weights;
 
