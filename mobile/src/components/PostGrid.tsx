@@ -3,7 +3,14 @@
  * the Posts tab on a profile.
  */
 
-import { FlatList, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import {
+  FlatList,
+  Pressable,
+  type RefreshControlProps,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 import { color, spacing, type Post } from '@loane/shared';
 import { Text } from './Text';
 import { ThumbImage } from './ThumbImage';
@@ -14,9 +21,11 @@ interface Props {
   posts: Post[];
   onPress: (postId: string) => void;
   header?: React.ReactElement | null;
+  /** Pull to refresh, from usePullToRefresh. */
+  refreshControl?: React.ReactElement<RefreshControlProps>;
 }
 
-export function PostGrid({ posts, onPress, header }: Props) {
+export function PostGrid({ posts, onPress, header, refreshControl }: Props) {
   const { width } = useWindowDimensions();
   const tileWidth = (width - spacing.md * (COLUMNS + 1)) / COLUMNS;
 
@@ -29,6 +38,7 @@ export function PostGrid({ posts, onPress, header }: Props) {
       contentContainerStyle={styles.grid}
       showsVerticalScrollIndicator={false}
       ListHeaderComponent={header}
+      refreshControl={refreshControl}
       renderItem={({ item }) => (
         <Pressable
           onPress={() => onPress(item.id)}

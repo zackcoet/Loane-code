@@ -29,9 +29,12 @@ import { useHiddenUids } from '../../src/hooks/useBlocks';
 import { useReportOrBlock } from '../../src/hooks/useReportOrBlock';
 import { IconButton } from '../../src/components/IconButton';
 import { ReportSheet } from '../../src/components/ReportSheet';
+import { usePullToRefresh } from '../../src/hooks/usePullToRefresh';
 
 export default function OtherProfile() {
   const router = useRouter();
+  // Live list: the pull is reassurance, see usePullToRefresh.
+  const { refreshControl } = usePullToRefresh();
   const { username, from } = useLocalSearchParams<{ username: string; from?: string }>();
   // Where she tapped through from, so the feed algorithm can tell "opened
   // her profile from a look" apart from a search. Only known values, so a
@@ -168,7 +171,11 @@ export default function OtherProfile() {
         }
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView
+        refreshControl={refreshControl}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
         <ProfileHeader
           user={user}
           onPressFollowers={() =>

@@ -18,9 +18,12 @@ import { Text } from '../src/components/Text';
 import { ThreadRow } from '../src/components/ThreadRow';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useInbox } from '../src/hooks/useMessaging';
+import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 
 export default function MessageRequests() {
   const router = useRouter();
+  // Live list: the pull is reassurance, see usePullToRefresh.
+  const { refreshControl } = usePullToRefresh();
   const { profile } = useAuth();
   const { requests, loading, failed, retry } = useInbox();
 
@@ -40,6 +43,7 @@ export default function MessageRequests() {
         />
       ) : (
         <FlatList
+          refreshControl={refreshControl}
           data={requests}
           keyExtractor={(c) => c.id}
           contentContainerStyle={styles.list}

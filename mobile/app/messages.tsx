@@ -25,9 +25,12 @@ import { Text } from '../src/components/Text';
 import { ThreadRow } from '../src/components/ThreadRow';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useInbox } from '../src/hooks/useMessaging';
+import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 
 export default function Messages() {
   const router = useRouter();
+  // Live list: the pull is reassurance, see usePullToRefresh.
+  const { refreshControl } = usePullToRefresh();
   const { profile } = useAuth();
   const { inbox: conversations, requests, loading, failed, retry } = useInbox();
   const [term, setTerm] = useState('');
@@ -106,6 +109,7 @@ export default function Messages() {
         <EmptyState title="Nobody by that name" body="Try her @username." />
       ) : (
         <FlatList
+          refreshControl={refreshControl}
           data={shown}
           keyExtractor={(c) => c.id}
           keyboardDismissMode="on-drag"

@@ -38,6 +38,7 @@ import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
 import { useMyBookings } from '../../src/hooks/useBookings';
 import { useNotifications } from '../../src/hooks/useNotifications';
+import { usePullToRefresh } from '../../src/hooks/usePullToRefresh';
 
 /** Turns a stored deep link into a route this app can push. */
 function target(
@@ -68,6 +69,8 @@ type Row =
 
 export default function Activity() {
   const router = useRouter();
+  // Live list: the pull is reassurance, see usePullToRefresh.
+  const { refreshControl } = usePullToRefresh();
   const [tab, setTab] = useState<'rentals' | 'updates'>('rentals');
 
   const lending = useMyBookings('lending');
@@ -205,6 +208,7 @@ export default function Activity() {
           />
         ) : (
           <FlatList
+            refreshControl={refreshControl}
             data={rows}
             keyExtractor={(row, i) => (row.kind === 'header' ? `h-${i}` : row.booking.id)}
             contentContainerStyle={styles.list}
@@ -240,6 +244,7 @@ export default function Activity() {
         <EmptyState title="Nothing yet" body="Answers, handoffs and reminders will show up here." />
       ) : (
         <FlatList
+          refreshControl={refreshControl}
           data={notifications}
           keyExtractor={(n) => n.id}
           contentContainerStyle={styles.list}

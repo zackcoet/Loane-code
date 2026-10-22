@@ -61,6 +61,7 @@ import {
   type Filters,
 } from '../../src/hooks/useDiscover';
 import { logEvent, logEventDebounced } from '../../src/analytics/events';
+import { usePullToRefresh } from '../../src/hooks/usePullToRefresh';
 
 const GRID_COLUMNS = 2;
 
@@ -75,6 +76,9 @@ export default function Discover() {
   const { uids: followingUids } = useFollowingUids();
   const hidden = useHiddenUids();
   const ranking = useRankingViewer();
+  // Pulling down works out the For you order again with her latest
+  // likes; the pieces themselves are live and already current.
+  const { refreshControl } = usePullToRefresh(ranking.reload);
 
   // Blocked either way: her closet is not in the marketplace.
   const campusListings = useMemo(
@@ -304,6 +308,7 @@ export default function Discover() {
         />
       ) : (
         <FlatList
+          refreshControl={refreshControl}
           data={visible}
           keyExtractor={(listing) => listing.id}
           numColumns={GRID_COLUMNS}

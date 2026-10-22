@@ -33,11 +33,14 @@ import { useSavedPosts } from '../src/hooks/usePostEngagement';
 import { useMyTryOns, useSaveTryOn, useTryOnEnabled, useTryOnImage } from '../src/hooks/useTryOn';
 import { useHiddenUids } from '../src/hooks/useBlocks';
 import { ThumbImage } from '../src/components/ThumbImage';
+import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 
 const GRID_COLUMNS = 2;
 
 export default function MyWishlist() {
   const router = useRouter();
+  // Live list: the pull is reassurance, see usePullToRefresh.
+  const { refreshControl } = usePullToRefresh();
   const { width } = useWindowDimensions();
   const [tab, setTab] = useState<'items' | 'looks' | 'tryons'>('items');
 
@@ -149,6 +152,7 @@ export default function MyWishlist() {
           />
         ) : (
           <FlatList
+            refreshControl={refreshControl}
             data={[...available, ...unavailable]}
             keyExtractor={(listing) => listing.id}
             numColumns={GRID_COLUMNS}
@@ -189,6 +193,7 @@ export default function MyWishlist() {
           />
         ) : (
           <FlatList
+            refreshControl={refreshControl}
             data={tryOns.items}
             keyExtractor={(t) => t.id}
             numColumns={GRID_COLUMNS}
@@ -211,6 +216,7 @@ export default function MyWishlist() {
         />
       ) : (
         <FlatList
+          refreshControl={refreshControl}
           data={looks.posts}
           keyExtractor={(post) => post.id}
           numColumns={GRID_COLUMNS}

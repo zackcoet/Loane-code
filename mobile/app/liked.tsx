@@ -11,9 +11,12 @@ import { Header } from '../src/components/Header';
 import { PostGrid } from '../src/components/PostGrid';
 import { Screen } from '../src/components/Screen';
 import { useLikedPosts } from '../src/hooks/useLikedPosts';
+import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 
 export default function Liked() {
   const router = useRouter();
+  // Live list: the pull is reassurance, see usePullToRefresh.
+  const { refreshControl } = usePullToRefresh();
   const { posts, loading, failed, retry } = useLikedPosts();
 
   return (
@@ -34,6 +37,7 @@ export default function Liked() {
         />
       ) : (
         <PostGrid
+          refreshControl={refreshControl}
           posts={posts}
           onPress={(id) => router.push({ pathname: '/post/[id]', params: { id } })}
         />

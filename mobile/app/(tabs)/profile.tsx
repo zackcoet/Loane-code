@@ -18,9 +18,12 @@ import { Screen } from '../../src/components/Screen';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useProfileChecklist } from '../../src/hooks/useProfileChecklist';
 import { useProfilePhoto } from '../../src/hooks/useProfilePhoto';
+import { usePullToRefresh } from '../../src/hooks/usePullToRefresh';
 
 export default function Profile() {
   const router = useRouter();
+  // Live list: the pull is reassurance, see usePullToRefresh.
+  const { refreshControl } = usePullToRefresh();
   const { profile } = useAuth();
   // Tapping your own avatar changes it there and then — no detour
   // through the edit form for the one thing people change most.
@@ -73,7 +76,11 @@ export default function Profile() {
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
+      <ScrollView
+        refreshControl={refreshControl}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
         <ProfileHeader
           user={profile}
           onPressPhoto={photo.change}

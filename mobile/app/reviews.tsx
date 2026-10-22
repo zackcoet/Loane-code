@@ -22,9 +22,12 @@ import { StarRating } from '../src/components/StarRating';
 import { Text } from '../src/components/Text';
 import { useReviews } from '../src/hooks/useReviews';
 import { useUserById } from '../src/hooks/useProfile';
+import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 
 export default function Reviews() {
   const router = useRouter();
+  // Live list: the pull is reassurance, see usePullToRefresh.
+  const { refreshControl } = usePullToRefresh();
   const { uid } = useLocalSearchParams<{ uid: string }>();
   const { reviews, loading, failed, retry } = useReviews(uid);
   const user = useUserById(uid);
@@ -47,6 +50,7 @@ export default function Reviews() {
         />
       ) : (
         <FlatList
+          refreshControl={refreshControl}
           data={reviews}
           keyExtractor={(r) => r.id}
           contentContainerStyle={styles.list}

@@ -19,9 +19,12 @@ import { Header } from '../src/components/Header';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useMyBookings } from '../src/hooks/useBookings';
+import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 
 export default function MyRentals() {
   const router = useRouter();
+  // Live list: the pull is reassurance, see usePullToRefresh.
+  const { refreshControl } = usePullToRefresh();
   const [tab, setTab] = useState<'renting' | 'lending'>('renting');
   const { bookings, loading, failed, retry } = useMyBookings(tab);
 
@@ -86,6 +89,7 @@ export default function MyRentals() {
         />
       ) : (
         <FlatList
+          refreshControl={refreshControl}
           data={rows}
           keyExtractor={(row, index) =>
             ('header' in row ? `h-${row.header}` : row.booking.id) + index

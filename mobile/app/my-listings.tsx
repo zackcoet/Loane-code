@@ -34,6 +34,7 @@ import { Text } from '../src/components/Text';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useUserListings } from '../src/hooks/useProfile';
 import { ThumbImage } from '../src/components/ThumbImage';
+import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 
 /** What each status means to her, in her words rather than ours. */
 const STATUS_LABEL: Record<ListingStatus, string | null> = {
@@ -47,6 +48,8 @@ const STATUS_LABEL: Record<ListingStatus, string | null> = {
 
 export default function MyListings() {
   const router = useRouter();
+  // Live list: the pull is reassurance, see usePullToRefresh.
+  const { refreshControl } = usePullToRefresh();
   const { profile } = useAuth();
   const { width } = useWindowDimensions();
   const { items, loading, failed, retry } = useUserListings(profile?.uid, true);
@@ -72,6 +75,7 @@ export default function MyListings() {
         />
       ) : (
         <FlatList
+          refreshControl={refreshControl}
           data={items}
           keyExtractor={(listing) => listing.id}
           contentContainerStyle={styles.list}
