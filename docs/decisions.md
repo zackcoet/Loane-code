@@ -1333,3 +1333,20 @@ because it can hold messages, emails or phone hashes.
 
 **Rule for new callables:** import `onCall` from `lib/callable`, never from
 `firebase-functions/v2/https`.
+
+## 2026-10-22 — Crash reporting is wired in and switched off (autopilot run 12)
+
+`mobile/src/monitoring/crashReporter.ts` is the one place crashes go.
+`CRASH_REPORTING_ENABLED` is `false`, so nothing is sent anywhere until Zack
+picks a provider (Sentry's free tier is the obvious first choice; it needs a
+development build, like push notifications). Turning it on touches that one
+file. A screen that crashes now shows "Something went wrong" with Try again
+and Back to the feed (`CrashScreen`, exported as the root layout's
+`ErrorBoundary`) instead of a white screen.
+
+Reports identify a student by uid only — never email, name, messages or
+photos — so the App Store privacy form doesn't grow.
+
+On the server, nothing extra is needed: Google Cloud Error Reporting already
+groups every `logger.error` that carries a stack, which the callable safety
+net (above) now writes for every unexpected failure.

@@ -29,6 +29,18 @@ import { WalkthroughTargetsProvider } from '../src/components/WalkthroughTargets
 import { logEvent } from '../src/analytics/events';
 import { FONTS_TO_LOAD } from '../src/theme/fonts';
 import { LoaneLoader } from '../src/components/LoaneLoader';
+import { CrashScreen } from '../src/components/CrashScreen';
+import { setReporterUser, startCrashReporter } from '../src/monitoring/crashReporter';
+
+startCrashReporter();
+
+/**
+ * Expo Router renders this instead of a white screen when anything under
+ * the root layout throws while rendering. See CrashScreen.
+ */
+export function ErrorBoundary(props: { error: Error; retry: () => Promise<void> }) {
+  return <CrashScreen {...props} />;
+}
 
 function RootNavigator() {
   const { loading, firebaseUser, profile, needsOnboarding } = useAuth();
@@ -81,6 +93,12 @@ function RootNavigator() {
   useEffect(() => {
     if (profile) logEvent('app_open', { surface: 'other' });
   }, [profile]);
+
+  // uid only — never her email or name (see crashReporter.ts).
+  const reporterUid = profile?.uid ?? null;
+  useEffect(() => {
+    setReporterUser(reporterUid);
+  }, [reporterUid]);
 
   if (loading) {
     return (
