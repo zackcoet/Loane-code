@@ -6,6 +6,25 @@ much as the answer.
 
 ---
 
+## 2026-10-22 — One impression per look per session, counted when it leaves (autopilot run 14)
+
+**Decision:** The feed writes one `post_impression` event per look per
+app session, when the look leaves the screen, carrying how long it was
+at least half visible (`dwellMs`, 300ms floor, 60s cap) and its position.
+
+**Why not one event on appear plus one on leave:** twice the writes for
+the same information, and a pair that loses its second half when the app
+is closed. **Why not every scroll past:** a girl scrolling up and down
+ten looks would write hundreds of rows saying nothing new. Revisits are
+lost, which the ranking can live without; likes, saves and taps already
+say "came back to it".
+
+**Why profile opens carry `from`:** the ranking's "who" signal needs to
+tell "tapped her name on a look" from "searched for her". Only known
+values are written, so a hand-typed link cannot put free text in an event.
+
+---
+
 ## 2026-10-22 — An index checker reads the code; paged lists grow or append
 
 **Decision:** `npm run check:indexes` (backend/functions/scripts/

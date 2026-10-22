@@ -10,6 +10,39 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 
 ---
 
+## 2026-10-22 (run 14, ~2 AM Central) — The app now notices what she scrolls past
+
+**Plan:** D1 — before building the "For You" feed, make sure Loane records everything it will learn from. Most of it was already recorded (likes, saves, comments, shares, piece taps, requests). Two things were missing: which looks she scrolled past and how long she looked at each, and follows made from anywhere except a profile page. Add both, keep it to one record per look so it stays cheap, and write down the full list. Stop before D2 (the ranking itself) — it deserves a run of its own.
+
+**Built:**
+- **Loane now knows which looks she actually looked at.** As she scrolls the feed, each look she sees is recorded once, with how long it stayed on screen. A look she stopped on for five seconds counts for a lot more than one she flicked past. Nothing changes on screen — this is the raw material for the "For You" feed.
+  - Under a third of a second is a flick and isn't counted.
+  - Capped at one minute, so a phone left open on one look doesn't make it the most-loved post on campus.
+  - Once per look per app session — scrolling up and down the same ten looks doesn't pile up hundreds of records.
+- **Follows that were never counted now are.** Following someone from the "Suggested closets" row in the feed or from Find Friends, and unfollowing from your Following list, used to leave no record. Now they do, and they say where they came from.
+- **Opening a profile now says where she tapped from** — her name on a look in the feed, the suggested closets row, or somewhere else. The algorithm needs that to tell "loved her look" apart from "looked her up".
+- **`docs/feed-algorithm.md`** — the start of the algorithm's handbook: a table of every signal Loane records, where it comes from, and the rules for counting a look.
+
+**What to tap to see it:** Nothing new on screen — this is all behind the scenes. To check it on your laptop: run the app with the emulators, scroll the feed slowly for a few looks, then open the emulator page (localhost:4000) → Firestore → `events` and you'll see `post_impression` rows with `dwellMs` (how long, in thousandths of a second).
+
+**Fixed:**
+- Follows from Suggested closets and Find Friends, and unfollows from the Following list, were invisible in the numbers. Counted now.
+
+**Skipped / blocked:**
+- **D2, the ranking itself** — next run. It needs a decision on where the scoring runs (on Loane's server, every few minutes, so one student's phone can't fake a post up the feed); that's a design job for a full hour.
+- The overnight machine still can't start the test database (Google's download site is blocked here). Type checks, lint, the index check (74 searches, none missing), the shared tests (188, 6 new), the server tests that don't need the database (62) and the iPhone app build all passed here. The one new database rule test (a feed impression is accepted) runs on GitHub with tonight's push.
+
+**🚨 NEEDS ZACK:** Nothing new. Older items are listed at the top.
+
+**Next up:** D2 — the ranking score per post (who posted it, what it is, how fresh, how good, whether the pieces are actually rentable), with the weights in one config file.
+
+**Commits:**
+- Feed: record which looks she scrolled past and how long she looked
+- Follows and profile opens say where they came from
+- Autopilot log for run 14
+
+---
+
 ## 2026-10-22 (run 13, ~1 AM Central) — One switchboard for risky features, and "Download my data"
 
 **Plan:** C8 — put every risky or unfinished feature (try-on, email codes, same-day, payments) behind one set of switches in one place, without changing what's on or off today. Then C9 — a way to download everything Loane holds about one student, for her and for privacy requests (deleting already exists as "Delete my account"). Stop before the feed algorithm (D1), because it changes the activity-tracking rules, which can't be tested on the overnight machine.
