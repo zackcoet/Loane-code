@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
 import { color, spacing } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
+import { LoadError } from '../src/components/LoadError';
 import { Header } from '../src/components/Header';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
@@ -21,7 +22,7 @@ import { useInbox } from '../src/hooks/useMessaging';
 export default function MessageRequests() {
   const router = useRouter();
   const { profile } = useAuth();
-  const { requests, loading } = useInbox();
+  const { requests, loading, failed, retry } = useInbox();
 
   return (
     <Screen flush>
@@ -30,6 +31,8 @@ export default function MessageRequests() {
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
+      ) : failed ? (
+        <LoadError what="your message requests" onRetry={retry} />
       ) : requests.length === 0 ? (
         <EmptyState
           title="No requests"

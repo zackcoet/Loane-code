@@ -17,6 +17,7 @@ import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { color, controls, fonts, radius, spacing, type } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
+import { LoadError } from '../src/components/LoadError';
 import { Header } from '../src/components/Header';
 import { Icon } from '../src/components/Icon';
 import { Screen } from '../src/components/Screen';
@@ -28,7 +29,7 @@ import { useInbox } from '../src/hooks/useMessaging';
 export default function Messages() {
   const router = useRouter();
   const { profile } = useAuth();
-  const { inbox: conversations, requests, loading } = useInbox();
+  const { inbox: conversations, requests, loading, failed, retry } = useInbox();
   const [term, setTerm] = useState('');
 
   const shown = useMemo(() => {
@@ -89,6 +90,8 @@ export default function Messages() {
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
+      ) : failed ? (
+        <LoadError what="your messages" onRetry={retry} />
       ) : conversations.length === 0 && requests.length === 0 ? (
         <EmptyState
           title="No messages yet"

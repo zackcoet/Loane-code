@@ -51,6 +51,7 @@ import { logEvent } from '../analytics/events';
 import { useHiddenUids } from './useBlocks';
 import { useFollowingUids } from './useFollowing';
 import { useUserSettings } from './useUserSettings';
+import { useRetry } from './useRetry';
 
 /** Thrown by send when she has hit the hourly ceiling. */
 export const MESSAGE_QUOTA_FULL = 'message-quota-full';
@@ -79,8 +80,11 @@ export function useConversations() {
   const uid = profile?.uid;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const { attempt, retry } = useRetry();
 
   useEffect(() => {
+    setFailed(false);
     if (!uid) {
       setConversations([]);
       setLoading(false);
@@ -98,11 +102,14 @@ export function useConversations() {
         setConversations(snap.docs.map((d) => ({ ...(d.data() as Conversation), id: d.id })));
         setLoading(false);
       },
-      () => setLoading(false),
+      () => {
+        setFailed(true);
+        setLoading(false);
+      },
     );
-  }, [uid]);
+  }, [uid, attempt]);
 
-  return { conversations, loading };
+  return { conversations, loading, failed, retry };
 }
 
 /**
@@ -113,7 +120,7 @@ export function useConversations() {
 export function useInbox() {
   const { profile } = useAuth();
   const uid = profile?.uid;
-  const { conversations, loading } = useConversations();
+  const { conversations, loading, failed, retry } = useConversations();
   const { uids: following, loading: followingLoading } = useFollowingUids();
   // Threads with anyone blocked either way leave the inbox entirely.
   const hidden = useHiddenUids();
@@ -123,7 +130,7 @@ export function useInbox() {
   );
   // Wait for who she follows too, or a friend's thread would flash in
   // Requests for a moment on every open.
-  return { ...split, loading: loading || followingLoading };
+  return { ...split, loading: loading || followingLoading, failed, retry };
 }
 
 /**
