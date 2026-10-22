@@ -30,3 +30,4 @@ export * from './thumbnails';
 export * from './pagination';
 export * from './featureFlags';
 export * from './impressions';
+export * from './feedRanking';

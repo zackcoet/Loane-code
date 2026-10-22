@@ -1437,3 +1437,28 @@ if anybody asks.
 **Not built:** an admin button that deletes a student's account for
 her. Today a privacy deletion is her own "Delete my account"; an admin
 version means reworking the deletion code, which has its own run.
+
+## 2026-10-22 — The "For You" score runs on her phone, from numbers she cannot fake (autopilot run 15)
+
+The ranking score (NORTH_STAR D2) is a pure function in
+`shared/src/feedRanking.ts`, run on the phone over a page of the newest
+campus looks, rather than a server job that writes a score onto every
+post every few minutes.
+
+- **Why not the server:** a stored score is one more server-written
+  number per look, recomputed on a timer, and it still could not be
+  personal — "who" and "what" are different for every student. A
+  per-student server feed is a real cost (a write per student per look)
+  for a campus that will have hundreds of looks, not millions.
+- **Why the phone is safe:** the personal parts (who she follows, what
+  she likes) only reorder her own feed. The parts that would let someone
+  push a look up other people's feeds — quality and availability — read
+  only server-written counters and listings the rules lock. Phone-written
+  events (impressions, dwell) are deliberately left out until they are
+  counted on the server with a per-person ceiling.
+- **When to revisit:** if a campus passes a few thousand active looks,
+  or once we want impressions in the quality score. Then a scheduled
+  function computes the look-side parts and the phone adds the personal
+  ones.
+- Every weight is in `FEED_RANKING`; `scripts/explainFeed.ts` prints why
+  each look ranked where it did, using the same function as the app.
