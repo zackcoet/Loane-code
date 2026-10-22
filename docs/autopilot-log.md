@@ -3,8 +3,62 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
-- Nothing urgent. Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
+- New from run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
+- Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-22 (run 12, ~midnight Central) — Bad signal never looks like an empty app, and crashes say so
+
+**Plan:** Finish C6 (friendly errors): the screens run 11 didn't reach, then the server side — every server function gives a clear message and leaves one findable note in the logs when something unexpected breaks. Then C7 (get the app ready for a crash reporter, switched off) and C10 (write the backup and alert steps for the live project — writing only, not doing). C8 (feature switches) and C9 (data export) are left for the next run because they deserve a full hour each.
+
+**Built:**
+- **"Couldn't load … Try again" on every remaining list.** These used to show their empty message on a bad signal, which reads as her stuff having disappeared:
+  - My Wishlist (pieces and looks), Liked, Reviews
+  - A profile's Closet and Looks grids, My Listings
+  - Opening someone's profile (it used to say "Closet not found")
+  - A single look (it used to say "That look is no longer up")
+  - A chat (it used to say "Say hello", as if there were no messages)
+  - Help → Past reports
+- **The feed keeps what she's already scrolled.** If the next page failed to load, the whole feed was swapped for an error screen and every look she'd scrolled through vanished. Now they stay, and the bottom says "Couldn't load more looks. Tap to try again."
+- **Clear messages from the server.** When something unexpected breaks behind the scenes, she used to get a vague message (the server literally sent the word "INTERNAL"). Now she sees either "Loane is busy right now. Try again in a moment." (when trying again will help) or "Something went wrong on our side… send us this code: 3f9a1c". That same six-letter code is written in the server logs next to which feature broke and for which student — so a screenshot from a girl is enough to find the exact problem. Every one of the 38 server features goes through this. 14 new tests.
+- If her phone can't reach Loane at all, buttons that talk to the server now say "Could not reach Loane. Check your connection" instead of a generic error.
+- **A crash screen instead of a white screen.** If a screen ever crashes, she sees "Something went wrong — That screen hit a snag" with **Try again** and **Back to the feed**.
+- **Crash reporting is wired in but switched off.** The day you pick a crash-reporting service, turning it on is one file. It will only ever identify a student by an anonymous id — never her name, email or messages.
+- **`docs/production-ops.md`:** a click-by-click checklist for the live project — a $25/month spending alert, daily database backups, photo recovery, and emails when errors start. Nothing switched on.
+
+**What to tap to see it:**
+- Turn on airplane mode, then open: Profile → your Closet or Looks; Menu → My Wishlist or Liked; anyone's reviews; any chat; a look from a profile. Each shows "Couldn't load …" with **Try again**. Turn airplane mode off, tap Try again → it loads.
+- Feed: scroll down a long way, turn on airplane mode, keep scrolling → your looks stay and the bottom says "Couldn't load more looks. Tap to try again."
+- The crash screen and the server messages only appear when something actually breaks, so there's nothing to tap for those.
+
+**Fixed:**
+- One failed page while scrolling the feed wiped out the whole feed.
+- Pulling down to refresh the feed after scrolling a long way skipped a page of older looks on the next scroll.
+- The feed's error said "pull to refresh" with nothing to pull — it now has a real Try again.
+- My Wishlist could quietly drop saved pieces when a load failed, making them look deleted.
+
+**Skipped / blocked:**
+- **C8 feature switches and C9 data export** — next run. Note for C8: try-on and email codes already have their own on/off switches; C8 will gather them into one place without changing what's on or off.
+- The overnight machine still can't start the test database (Google's download site is blocked here). Type checks, lint, the index check (73 searches, none missing), the shared tests (170) and the server tests that don't need the database (58, including the 14 new ones) passed here, and the app builds cleanly for iPhone. GitHub runs the full set on tonight's push.
+
+**🚨 NEEDS ZACK:**
+- **Pick a crash reporter** when you're ready (Sentry's free tier is the usual choice; needs a sign-up and a development build of the app). No rush before beta.
+- **The live-project checklist** in `docs/production-ops.md` — about 30 minutes in a browser. The spending alert is free and worth doing now; backups cost cents a month.
+- Still waiting on your OK from run 10 (Followers/Following newest-first instead of A–Z).
+
+**Next up:** C8 — one switchboard for risky features (try-on, email codes, same-day, payments), keeping all of them exactly as they are now. Then C9 — export or delete everything about one student.
+
+**Commits:**
+- Saved, liked and reviews: Try again instead of a false empty
+- Profiles, My Listings and a look's page: Try again instead of a false empty
+- Feed: one bad page no longer wipes the feed, and Try again works
+- Cloud Functions: friendly errors and one findable log line for surprises
+- Chat and Help: say when they couldn't load instead of looking empty
+- Crash reporting: ready but switched off, and a crash screen instead of white
+- Production ops: step-by-step backups, spending and error alerts (not run)
+- Autopilot log for run 12
 
 ---
 
