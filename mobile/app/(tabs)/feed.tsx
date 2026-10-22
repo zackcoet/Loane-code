@@ -50,6 +50,7 @@ import { setUserMuted, useMutedUids } from '../../src/hooks/useMuted';
 import { logEvent } from '../../src/analytics/events';
 import { usePostImpressions } from '../../src/hooks/usePostImpressions';
 import { useForYouOrder } from '../../src/hooks/useForYouOrder';
+import { useRankingViewer } from '../../src/hooks/useRankingViewer';
 
 /**
  * How far down the feed the suggestions row goes.
@@ -101,7 +102,8 @@ export default function Feed() {
     loadMore,
     retryMore,
   } = usePagedPosts();
-  const { uids: followingUids, loading: followingLoading } = useFollowingUids();
+  const { uids: followingUids } = useFollowingUids();
+  const ranking = useRankingViewer();
   const hidden = useHiddenUids();
   const { uids: mutedUids } = useMutedUids();
   const chat = useOpenChat();
@@ -121,7 +123,7 @@ export default function Feed() {
   );
   // All Campus: For You. Ranked from the same loaded pages, so paging,
   // blocking and muting work exactly as they did newest-first.
-  const forYou = useForYouOrder(shown, followingUids, followingLoading);
+  const forYou = useForYouOrder(shown, ranking.viewer);
   const visible = useMemo(
     () =>
       tab === 'following' ? shown.filter((p) => followingUids.has(p.authorUid)) : forYou.posts,
@@ -130,11 +132,12 @@ export default function Feed() {
   // While a fetched page's pieces are still being read its looks wait
   // off-screen; treat that like a page still loading.
   const rankingMore = tab === 'campus' && forYou.waiting && !forYou.pending;
-  const resetForYou = forYou.reset;
+  const reloadRanking = ranking.reload;
   const onRefresh = useCallback(() => {
     refresh();
-    resetForYou();
-  }, [refresh, resetForYou]);
+    // Fresh likes re-rank All Campus from scratch once they land.
+    reloadRanking();
+  }, [refresh, reloadRanking]);
 
   // What she scrolled past and how long she looked — for the For You
   // ranking. The tab rides along: a Following look is seen differently.
