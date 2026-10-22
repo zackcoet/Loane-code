@@ -5,7 +5,7 @@ import { getDateWindow } from '../data/adminData';
 import { makeFunnel, makeOverviewMetrics, makeRetention, scopeData } from '../data/analytics';
 import { ChartCard, Funnel } from '../components/charts';
 import { CampusSelect, EmptyState, MetricCard, Panel, Segmented, Toolbar } from '../components/ui';
-import { TryOnSwitch } from '../components/TryOnSwitch';
+import { FeatureSwitches } from '../components/FeatureSwitches';
 
 interface Props {
   data: AdminData;
@@ -52,7 +52,7 @@ export function OverviewPage({ data, dateRange, campusId, onDateRangeChange, onC
       </section>
 
       <section className="two-column">
-        <TryOnSwitch />
+        <FeatureSwitches />
         <Panel title="Activation Funnel" kicker="Signed up to rental completed">
           <Funnel rows={funnel} />
         </Panel>

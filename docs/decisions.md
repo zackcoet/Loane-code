@@ -1350,3 +1350,43 @@ photos — so the App Store privacy form doesn't grow.
 On the server, nothing extra is needed: Google Cloud Error Reporting already
 groups every `logger.error` that carries a stack, which the callable safety
 net (above) now writes for every unexpected failure.
+
+---
+
+## 2026-10-22 — One switchboard for risky features (autopilot run 13)
+
+**Decision:** every risky or unfinished feature has one on/off switch,
+all in one Firestore document, `config/features`, shown on one panel in
+the admin dashboard (Overview → Feature switches). The switches:
+try-on, try-on admin preview, email codes at sign-up, same-day pickup,
+payments. What each means and its default is in
+`shared/src/featureFlags.ts`.
+
+**Nothing changed state.** The defaults are exactly what was true
+before: try-on off (admins included), email codes off, same-day on,
+payments off. A missing or garbled document gives those defaults, and a
+value that isn't a real true/false (e.g. the text "true" typed in the
+console) is ignored.
+
+**Two switches are locked on purpose.** Email codes and payments can be
+turned OFF from the dashboard but not ON: turning on email codes with no
+email service locks every new student out, and turning on payments with
+no Stripe account helps nobody. Unlocking either is a one-line code
+change (`lockedReason: null`) made when the setup is real.
+
+**The old documents are no longer read.** `config/tryOn` and
+`config/verification` were replaced by fields on `config/features`
+(`tryOn`, `tryOnAdminPreview`, `emailVerification`). On the live
+project, after the next deploy, the dashboard will show the defaults
+above; if try-on admin preview had been switched on there, switch it on
+again from the new panel. The `setTryOnConfig` function still exists
+(it is deployed) and now writes the same document.
+
+**Same-day off means:** the "Available same day" toggle is hidden when
+listing a piece (her saved choice is kept), the request screen says
+same-day is paused if she picks today, and the server refuses a request
+for today.
+
+**Payments:** nothing calls Stripe yet. `assertPaymentsOn()` in
+`backend/functions/src/lib/stripe.ts` is the first line every money
+function must call.

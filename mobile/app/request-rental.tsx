@@ -50,6 +50,7 @@ import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useListing } from '../src/hooks/useListing';
+import { useFeatureFlags } from '../src/hooks/useFeatureFlags';
 import { useUnavailableDates } from '../src/hooks/useBookings';
 import { requestBooking } from '../src/firebase/callables';
 import { callableErrorMessage } from '../src/firebase/errors';
@@ -99,7 +100,10 @@ export default function RequestRental() {
     she wants it.
   */
   const isSameDay = startDate === toIsoDate(new Date());
-  const sameDayOffered = listing?.sameDay?.enabled ?? false;
+  // Both the owner's yes AND the switchboard: same-day can be paused for
+  // everyone without a new app build. The server checks both again.
+  const sameDayOn = useFeatureFlags().sameDay;
+  const sameDayOffered = sameDayOn && (listing?.sameDay?.enabled ?? false);
 
   const fees = useMemo(
     () =>
@@ -259,6 +263,13 @@ export default function RequestRental() {
               <Text variant="caption" tone="heading" uppercase={false} style={styles.sameDayNote}>
                 Same-day pickup. She has {SAME_DAY_RESPONSE_HOURS} hours to answer, or it is
                 declined automatically.
+              </Text>
+            ) : isSameDay ? (
+              // Said now, rather than as an error after she taps send.
+              <Text variant="caption" tone="heading" uppercase={false} style={styles.sameDayNote}>
+                {sameDayOn
+                  ? 'This piece isn’t available same day. Pick a later date.'
+                  : 'Same-day pickup is paused right now. Pick a later date.'}
               </Text>
             ) : null}
 

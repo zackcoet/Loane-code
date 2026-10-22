@@ -8,7 +8,7 @@
  */
 
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import type { LegalDocKind } from '@loane/shared';
+import type { FeatureFlagKey, LegalDocKind } from '@loane/shared';
 import { app } from '../firebase/config';
 
 const functions = getFunctions(app);
@@ -75,11 +75,11 @@ export const grantTryOns = call<{ uid: string; count: number; reason: string }, 
   'grantTryOns',
 );
 
-/** The master switch. Off by default; a missing config is not an open door. */
-export const setTryOnConfig = call<
-  { enabled?: boolean; enabledForAdmins?: boolean; reason: string },
+/** One switch on the switchboard (`config/features`). Audited server-side. */
+export const setFeatureFlag = call<
+  { flag: FeatureFlagKey; value: boolean; reason: string },
   { ok: true }
->('setTryOnConfig');
+>('setFeatureFlag');
 
 export function adminErrorMessage(error: unknown, fallback: string): string {
   const raw = error instanceof Error ? error.message : '';

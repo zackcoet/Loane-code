@@ -2183,6 +2183,36 @@ describe('the try-on switch', () => {
   });
 });
 
+describe('the switchboard (config/features)', () => {
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'config', 'features'), {
+        tryOn: false,
+        tryOnAdminPreview: false,
+        emailVerification: false,
+        sameDay: true,
+        payments: false,
+      });
+    });
+  });
+
+  it('is readable by a signed-in student, so the app can hide a feature', async () => {
+    await assertSucceeds(getDoc(doc(asElla(), 'config', 'features')));
+  });
+
+  it('is not readable signed out', async () => {
+    await assertFails(getDoc(doc(asStranger(), 'config', 'features')));
+  });
+
+  it('cannot be changed from any phone, admin included', async () => {
+    // Every flip goes through setFeatureFlag, which audits and refuses
+    // to turn on payments or email codes before they are set up.
+    await assertFails(updateDoc(doc(asElla(), 'config', 'features'), { payments: true }));
+    await assertFails(updateDoc(doc(asAdmin(), 'config', 'features'), { tryOn: true }));
+    await assertFails(setDoc(doc(asAdmin(), 'config', 'features'), { sameDay: false }));
+  });
+});
+
 describe('phone hashes', () => {
   /**
    * The fence around contact matching. A student holding a phone

@@ -28,3 +28,4 @@ export * from './accountDeletion';
 export * from './contentFilter';
 export * from './thumbnails';
 export * from './pagination';
+export * from './featureFlags';

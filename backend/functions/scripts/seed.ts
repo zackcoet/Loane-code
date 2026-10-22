@@ -55,6 +55,8 @@ import {
   newUserTryOn,
   TRYON_CATEGORY_MAP,
   isTryOnReady,
+  FEATURE_FLAG_DEFAULTS,
+  FEATURE_FLAGS_DOC,
 } from '@loane/shared';
 
 // ---------------------------------------------------------------------------
@@ -1201,41 +1203,31 @@ async function main(): Promise<void> {
   console.warn(`Created ${users.length} students (password: ${PASSWORD})`);
 
   /*
-    The try-on switch.
+    The switchboard, `config/features` (shared/src/featureFlags.ts).
 
-    IT LIVES IN FIRESTORE, so it died with every emulator restart and
-    every reseed — and try-on correctly defaults to OFF, which looked
-    exactly like a broken feature. It was set once by hand and never
-    written down anywhere a reseed would restore it.
+    IT LIVES IN FIRESTORE, so it dies with every emulator restart and
+    every reseed. Writing it here is what keeps a reseeded laptop
+    matching production instead of silently drifting.
 
-    OFF, because try-on is not in v1. Zack's call, 2026-10-13.
+    Try-on: OFF, admins included, because try-on is not in v1 (Zack's
+    call, 2026-10-13). "Hide it completely" includes us — an admin-only
+    feature nobody remembers is on is how a half-finished thing reaches a
+    student. docs/decisions.md has the steps to turn it back on.
 
-    Both flags are false so it is hidden from admins too — "hide it
-    completely" includes us, and an admin-only feature that nobody
-    remembers is on is how a half-finished thing reaches a student.
+    Email codes: OFF until a real email service is configured. A required
+    verification with nothing able to send a code is a locked front door.
 
-    Turning it back on is one admin action. docs/decisions.md has the
-    exact steps.
+    Same-day: ON, as it is live today. Payments: OFF until Stripe.
   */
-  /*
-    Email verification: OFF until a real email service is configured.
-    A required verification with nothing able to send a code is a
-    locked front door.
-  */
-  await db.collection(COLLECTIONS.config).doc('verification').set({
-    required: false,
-    updatedAt: FieldValue.serverTimestamp(),
-    updatedBy: null,
-  });
-  console.warn('Email verification is OFF (no email service yet).');
-
-  await db.collection(COLLECTIONS.config).doc('tryOn').set({
-    enabled: false,
-    enabledForAdmins: false,
-    updatedAt: FieldValue.serverTimestamp(),
-    updatedBy: null,
-  });
-  console.warn('Try-on is OFF (v1). See docs/decisions.md to turn it on.');
+  await db
+    .collection(COLLECTIONS.config)
+    .doc(FEATURE_FLAGS_DOC)
+    .set({
+      ...FEATURE_FLAG_DEFAULTS,
+      updatedAt: FieldValue.serverTimestamp(),
+      updatedBy: null,
+    });
+  console.warn('Feature switches set: try-on OFF, email codes OFF, same-day ON, payments OFF.');
 
   // --- Listings -----------------------------------------------------------
   const listings: Listing[] = [];

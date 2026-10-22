@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import { defineSecret } from 'firebase-functions/params';
 import { logger } from 'firebase-functions';
 import { failed, internal, invalidArgument } from './errors';
+import { assertFeatureOn } from './featureFlags';
 
 /**
  * The only place in Loane that talks to Stripe.
@@ -52,6 +53,16 @@ const API_VERSION = '2026-09-30.endive';
 
 let client: Stripe | null = null;
 let clientKey: string | null = null;
+
+/**
+ * The payments switch. EVERY function that moves money calls this first,
+ * before it touches Stripe, so payments stay off until the switchboard
+ * (`config/features.payments`) says otherwise — and the switchboard will
+ * not let an admin turn it on until Loane, Inc.'s Stripe account exists.
+ */
+export async function assertPaymentsOn(): Promise<void> {
+  await assertFeatureOn('payments', "Loane isn't taking payments yet.");
+}
 
 /**
  * The Stripe client, built on first use.

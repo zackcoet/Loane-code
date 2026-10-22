@@ -21,6 +21,7 @@ import { db, now, Timestamp } from '../lib/admin';
 import { alreadyTaken, failed, invalidArgument, notFound } from '../lib/errors';
 import { requireHandoffReady, requireVerifiedStudent } from '../lib/guards';
 import { rateLimit } from '../lib/rateLimit';
+import { getFeatureFlags } from '../lib/featureFlags';
 import { assertNotBlocked } from '../moderation/block';
 import { notify } from './transitions';
 
@@ -110,6 +111,9 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
 
     const listingRef = db().collection(COLLECTIONS.listings).doc(listingId);
     const bookingRef = db().collection(COLLECTIONS.bookings).doc();
+    // Read once, outside the transaction: a switch is not something two
+    // requests race over.
+    const flags = await getFeatureFlags();
 
     const status = await db().runTransaction(async (tx) => {
       // --- 1. The listing --------------------------------------------------
@@ -168,6 +172,9 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
       const isSameDay = startDate === toIsoDate(new Date());
       if (isSameDay && !listing.sameDay?.enabled) {
         throw failed('This piece is not available same day. Pick a later date.');
+      }
+      if (isSameDay && !flags.sameDay) {
+        throw failed('Same-day pickup is paused right now. Pick a later date.');
       }
 
       const amounts = calculateFees({
@@ -243,7 +250,7 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
         disputeWindowEndsAt: null,
         returnProblem: null,
         disputeResolution: null,
-      activeClaimId: null,
+        activeClaimId: null,
         reviews: { lenderReviewId: null, renterReviewId: null },
       };
 
@@ -271,7 +278,11 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
       return booking.status;
     });
 
-    logger.info('Booking requested', { bookingId: bookingRef.id, listingId, renterUid: renter.uid });
+    logger.info('Booking requested', {
+      bookingId: bookingRef.id,
+      listingId,
+      renterUid: renter.uid,
+    });
 
     // TODO-PHASE5: authorize the renter's card here, before confirming.
 

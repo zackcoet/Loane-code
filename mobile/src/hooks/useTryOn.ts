@@ -24,6 +24,7 @@ import {
   type Listing,
   type PresetId,
   type TryOn,
+  tryOnVisibleTo,
 } from '@loane/shared';
 import { db, storage } from '../firebase/config';
 import {
@@ -38,6 +39,7 @@ import { useSavedPosts } from './usePostEngagement';
 import { useListingsByIds } from './useListingsByIds';
 import { useUserSettings } from './useUserSettings';
 import { logEvent } from '../analytics/events';
+import { useFeatureFlags } from './useFeatureFlags';
 
 /**
  * Whether this listing can be tried on at all. The server checks again.
@@ -400,29 +402,6 @@ export function useSaveTryOn() {
 /** The on/off switch, so the app can hide the feature without a deploy. */
 export function useTryOnEnabled() {
   const { profile } = useAuth();
-  const [config, setConfig] = useState<{ enabled: boolean; enabledForAdmins: boolean } | null>(
-    null,
-  );
-
-  useEffect(() => {
-    if (!profile) return;
-    return onSnapshot(
-      doc(db, COLLECTIONS.config, 'tryOn'),
-      (snap) => {
-        const data = snap.data() as { enabled?: boolean; enabledForAdmins?: boolean } | undefined;
-        setConfig({
-          enabled: data?.enabled ?? false,
-          enabledForAdmins: data?.enabledForAdmins ?? true,
-        });
-      },
-      // A missing or unreadable config is not an open door.
-      () => setConfig({ enabled: false, enabledForAdmins: false }),
-    );
-  }, [profile?.uid]);
-
-  return useMemo(() => {
-    if (!config) return false;
-    if (config.enabled) return true;
-    return config.enabledForAdmins && profile?.role === 'admin';
-  }, [config, profile?.role]);
+  const flags = useFeatureFlags();
+  return tryOnVisibleTo(flags, profile?.role === 'admin');
 }

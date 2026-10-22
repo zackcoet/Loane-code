@@ -50,6 +50,7 @@ import { photoUri, type useListingForm } from '../hooks/useListingForm';
 import { useKeyboardPadding } from '../hooks/useKeyboardPadding';
 import { MakeTryOnReady } from './MakeTryOnReady';
 import { useTryOnEnabled } from '../hooks/useTryOn';
+import { useFeatureFlags } from '../hooks/useFeatureFlags';
 import { pickPhoto } from '../lib/photo';
 
 const CONDITION_LABELS: Record<Condition, string> = {
@@ -86,8 +87,8 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
   const needsSize = form.category != null && !UNSIZED.includes(form.category);
   // Try-on is off for v1: no flat-photo step, nothing to explain.
   const tryOnOn = useTryOnEnabled();
-  const tryOnEligible =
-    form.category != null && form.category in TRYON_CATEGORY_MAP;
+  const sameDayOn = useFeatureFlags().sameDay;
+  const tryOnEligible = form.category != null && form.category in TRYON_CATEGORY_MAP;
 
   const onAddPhoto = () => {
     const run = async (source: 'camera' | 'library') => {
@@ -216,8 +217,11 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
       {/*
         Per listing, not per account. A gown at her parents' house and
         a jacket in her wardrobe are not the same promise.
+
+        Hidden while same-day is switched off on the switchboard. Her
+        saved choice is left alone, so it comes back as she left it.
       */}
-      {rentable ? (
+      {rentable && sameDayOn ? (
         <View style={styles.section}>
           <Toggle
             label="Available same day"

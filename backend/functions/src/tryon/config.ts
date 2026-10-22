@@ -1,5 +1,5 @@
 /**
- * The on/off switch, at `config/tryOn`.
+ * The try-on on/off switch, now part of the switchboard at `config/features`.
  *
  * A switch rather than a deploy, because the first thing we will want
  * to do if a generation bill or a bad result shows up is turn it off in
@@ -11,19 +11,23 @@
  */
 
 import type { CallableRequest } from 'firebase-functions/v2/https';
-import { COLLECTIONS, type TryOnConfig } from '@loane/shared';
-import { db } from '../lib/admin';
+import type { TryOnConfig } from '@loane/shared';
 import { failed } from '../lib/errors';
+import { getFeatureFlags } from '../lib/featureFlags';
 
-/** Off unless the document says otherwise. A missing config is not an open door. */
+/**
+ * Off unless the switchboard says otherwise. A missing config is not an
+ * open door. Since autopilot run 13 the switches live in
+ * `config/features` (see shared/src/featureFlags.ts); the old
+ * `config/tryOn` document is no longer read.
+ */
 export async function readTryOnConfig(): Promise<TryOnConfig> {
-  const snap = await db().collection(COLLECTIONS.config).doc('tryOn').get();
-  const data = snap.data() as Partial<TryOnConfig> | undefined;
+  const flags = await getFeatureFlags();
   return {
-    enabled: data?.enabled ?? false,
-    enabledForAdmins: data?.enabledForAdmins ?? true,
-    updatedAt: data?.updatedAt ?? 0,
-    updatedBy: data?.updatedBy ?? null,
+    enabled: flags.tryOn,
+    enabledForAdmins: flags.tryOnAdminPreview,
+    updatedAt: 0,
+    updatedBy: null,
   };
 }
 
@@ -51,11 +55,10 @@ export async function assertTryOnEnabled(request: CallableRequest): Promise<void
  *
  * OFF UNTIL EMAIL WORKS. A required verification with no working email
  * service is a locked front door: nobody can sign up, and the failure
- * looks like the app being broken rather than a missing secret. Turn
- * it on from the admin dashboard once RESEND_API_KEY is set and a test
- * code has actually arrived.
+ * looks like the app being broken rather than a missing secret. The
+ * switchboard refuses to turn it on until that lock is lifted in
+ * shared/src/featureFlags.ts.
  */
 export async function verificationRequired(): Promise<boolean> {
-  const snap = await db().collection(COLLECTIONS.config).doc('verification').get();
-  return (snap.data() as { required?: boolean } | undefined)?.required ?? false;
+  return (await getFeatureFlags()).emailVerification;
 }

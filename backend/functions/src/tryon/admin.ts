@@ -24,6 +24,7 @@ import {
 import { db, now } from '../lib/admin';
 import { invalidArgument, notFound } from '../lib/errors';
 import { logAdminAction, requireAdminContext, requireReason } from '../admin/audit';
+import { writeFeatureFlags } from '../lib/featureFlags';
 
 /** One grant cannot be enormous. A typo should cost a conversation, not a bill. */
 const MAX_GRANT = 100;
@@ -91,6 +92,11 @@ interface ConfigInput {
   reason: string;
 }
 
+/**
+ * The older try-on switch. Kept because it is already deployed; it now
+ * writes the same switchboard (`config/features`) as `setFeatureFlag`,
+ * with the same audit row.
+ */
 export const setTryOnConfig = onCall<ConfigInput, Promise<{ ok: true }>>(
   { region: 'us-central1' },
   async (request) => {
@@ -102,36 +108,16 @@ export const setTryOnConfig = onCall<ConfigInput, Promise<{ ok: true }>>(
       throw invalidArgument('Nothing to change.');
     }
 
-    const ref = db().collection(COLLECTIONS.config).doc('tryOn');
-    const batch = db().batch();
-
-    batch.set(
-      ref,
-      {
-        ...(enabled === undefined ? {} : { enabled }),
-        ...(enabledForAdmins === undefined ? {} : { enabledForAdmins }),
-        updatedAt: now(),
-        updatedBy: admin.uid,
-      },
-      { merge: true },
-    );
-
-    logAdminAction(batch, {
+    // Only the flags actually being changed. Firestore rejects an
+    // undefined value outright.
+    await writeFeatureFlags(
       admin,
-      action: 'tryon_config_changed',
-      targetType: 'config',
-      targetId: 'tryOn',
-      notes: reason,
-      // Only the flags actually being changed. Firestore rejects an
-      // undefined value outright, so spreading both unconditionally
-      // fails the whole write whenever one flag is left alone.
-      after: {
-        ...(enabled === undefined ? {} : { enabled }),
-        ...(enabledForAdmins === undefined ? {} : { enabledForAdmins }),
+      {
+        ...(enabled === undefined ? {} : { tryOn: enabled }),
+        ...(enabledForAdmins === undefined ? {} : { tryOnAdminPreview: enabledForAdmins }),
       },
-    });
-
-    await batch.commit();
+      reason,
+    );
     logger.warn('Try-on config changed', { by: admin.uid, enabled, enabledForAdmins });
     return { ok: true };
   },
