@@ -100,6 +100,7 @@ async function rewrite(
   uid: string,
   patch: Record<string, unknown>,
 ): Promise<number> {
+  // index-check: one == filter and no sort, whatever the field — no index needed.
   const snap = await db().collection(collection).where(ownerField, '==', uid).get();
   if (snap.empty) return 0;
 

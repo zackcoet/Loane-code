@@ -221,6 +221,7 @@ async function deleteWhere(
   uid: string,
   counter?: (doc: QueryDocumentSnapshot) => CounterMove | null,
 ): Promise<number> {
+  // index-check: one == filter and no sort, whatever the field — no index needed.
   const snap = await db().collection(collection).where(field, '==', uid).get();
   return inBatches(snap.docs, (batch, doc) => {
     batch.delete(doc.ref);

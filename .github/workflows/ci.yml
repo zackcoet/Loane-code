@@ -47,6 +47,10 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
 
+      # The emulator never enforces indexes; production does. This reads
+      # every query in the code and fails if its index is missing.
+      - run: npm run check:indexes
+
       - name: Cache the emulator downloads
         uses: actions/cache@v4
         with:

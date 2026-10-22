@@ -24,6 +24,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "build:functions": "npm run build --workspace @loane/functions",
+    "check:indexes": "npm run check:indexes --workspace @loane/functions",
     "worktree": "bash scripts/worktree.sh",
     "worktree:remove": "bash scripts/worktree-remove.sh",
     "lan": "bash scripts/set-lan-ip.sh"

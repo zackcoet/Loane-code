@@ -58,6 +58,8 @@ function useCampusCollection<T>(
     setLoading(true);
     setError(null);
 
+    // index-check: called only for posts and listings, both with
+    // campusId == / status == / createdAt desc — indexed for both.
     const q = query(
       collection(db, collectionName),
       where(campusField, '==', campusId),

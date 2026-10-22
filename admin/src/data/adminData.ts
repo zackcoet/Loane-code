@@ -127,6 +127,7 @@ async function getCollection<T>(
 ): Promise<T[]> {
   const constraints: QueryConstraint[] = newestFirst ? [orderBy('createdAt', 'desc')] : [];
   constraints.push(limit(readLimit));
+  // index-check: at most one sort and no filter — single-field indexes do it.
   const snap = await getDocs(query(collection(db, name), ...constraints));
   return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as T);
 }
