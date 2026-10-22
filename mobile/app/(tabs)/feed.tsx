@@ -47,6 +47,7 @@ import { WalkthroughTarget } from '../../src/components/WalkthroughTargets';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
 import { setUserMuted, useMutedUids } from '../../src/hooks/useMuted';
 import { logEvent } from '../../src/analytics/events';
+import { usePostImpressions } from '../../src/hooks/usePostImpressions';
 
 /**
  * How far down the feed the suggestions row goes.
@@ -116,6 +117,10 @@ export default function Feed() {
     const shown = posts.filter((p) => !hidden.has(p.authorUid) && !mutedUids.has(p.authorUid));
     return tab === 'following' ? shown.filter((p) => followingUids.has(p.authorUid)) : shown;
   }, [posts, tab, followingUids, hidden, mutedUids]);
+
+  // What she scrolled past and how long she looked — for the For You
+  // ranking. The tab rides along: a Following look is seen differently.
+  const impressions = usePostImpressions('feed', { tab });
 
   /** The "…" on someone else's look: mute her, or report the look. */
   const onMore = useCallback(
@@ -272,6 +277,8 @@ export default function Feed() {
         <FlatList
           data={visible}
           keyExtractor={(post) => post.id}
+          onViewableItemsChanged={impressions.onViewableItemsChanged}
+          viewabilityConfig={impressions.viewabilityConfig}
           /*
             The suggestions row lives inside renderItem, which closes
             over `closets`. FlatList only re-renders a row when `data`
@@ -325,13 +332,13 @@ export default function Feed() {
                   closets={suggested.closets}
                   onFollow={(uid) => void suggested.follow(uid)}
                   onDismiss={(uid) => void suggested.dismiss(uid)}
-                  onOpen={(username) => router.push(`/u/${username}`)}
+                  onOpen={(username) => router.push(`/u/${username}?from=suggested`)}
                 />
               ) : null}
               <PostCard
                 post={item}
                 onPressTag={(listingId) => onPressTag(listingId, item.id)}
-                onPressAuthor={(username) => router.push(`/u/${username}`)}
+                onPressAuthor={(username) => router.push(`/u/${username}?from=feed`)}
                 onPressComments={() =>
                   router.push({
                     pathname: '/comments',

@@ -1728,6 +1728,21 @@ describe('events', () => {
     await assertSucceeds(setDoc(doc(asElla(), 'events', 'event-1'), goodEvent()));
   });
 
+  it('accepts a feed impression with its dwell time', async () => {
+    await assertSucceeds(
+      setDoc(
+        doc(asElla(), 'events', 'event-impression'),
+        goodEvent({
+          type: 'post_impression',
+          surface: 'feed',
+          targetType: 'post',
+          targetId: 'post-1',
+          meta: { dwellMs: 2400, position: 3, tab: 'campus' },
+        }),
+      ),
+    );
+  });
+
   it('stops her logging an event as someone else', async () => {
     await assertFails(setDoc(doc(asElla(), 'events', 'event-2'), goodEvent({ uid: MADDIE })));
   });

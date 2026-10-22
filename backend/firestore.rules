@@ -849,7 +849,7 @@ service cloud.firestore {
       function allowedType() {
         return request.resource.data.type in [
           'app_open', 'onboarding_step', 'signup_completed', 'profile_edit',
-          'post_view', 'post_like', 'post_unlike', 'post_save', 'post_unsave',
+          'post_view', 'post_impression', 'post_like', 'post_unlike', 'post_save', 'post_unsave',
           'post_create', 'post_edit', 'post_delete',
           'listing_view', 'listing_create', 'listing_edit', 'listing_remove',
           'save', 'unsave', 'tagged_item_tap',

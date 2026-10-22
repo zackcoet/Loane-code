@@ -447,6 +447,11 @@ export const EVENT_TYPES = [
   'signup_completed',
   'profile_edit',
   'post_view',
+  /**
+   * She scrolled past a post in the feed. One per post per session, with
+   * meta.dwellMs (time on screen) and meta.position. See impressions.ts.
+   */
+  'post_impression',
   'post_like',
   'post_unlike',
   'post_save',
