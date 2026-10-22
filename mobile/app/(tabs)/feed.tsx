@@ -21,8 +21,9 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { color, controls, spacing } from '@loane/shared';
+import { caughtUpIndex, color, controls, spacing, type Post } from '@loane/shared';
 import { CampusChip } from '../../src/components/CampusChip';
+import { CaughtUpMarker } from '../../src/components/CaughtUpMarker';
 import { EmptyState } from '../../src/components/EmptyState';
 import { LoadError } from '../../src/components/LoadError';
 import { IconButton } from '../../src/components/IconButton';
@@ -69,6 +70,12 @@ const SUGGESTIONS_AFTER = 8;
  * posts is a campus where following people is the whole job. So it
  * falls back to the last position the feed has.
  */
+/** A look's upload time, or null while the server time is still pending. */
+function postCreatedMs(post: Post): number | null {
+  const v = post.createdAt as { toMillis?: () => number } | null | undefined;
+  return v && typeof v.toMillis === 'function' ? v.toMillis() : null;
+}
+
 function suggestionsIndex(postCount: number): number {
   return Math.min(SUGGESTIONS_AFTER, Math.max(postCount - 1, 0));
 }
@@ -128,6 +135,16 @@ export default function Feed() {
     () =>
       tab === 'following' ? shown.filter((p) => followingUids.has(p.authorUid)) : forYou.posts,
     [shown, tab, followingUids, forYou.posts],
+  );
+  // Following only: the line between new looks and ones she has seen
+  // before (D7). All Campus is ranked, so "newer than here" means nothing.
+  const caughtUpAt = useMemo(
+    () => (tab === 'following' ? caughtUpIndex(visible, postCreatedMs, Date.now()) : -1),
+    [tab, visible],
+  );
+  const listExtra = useMemo(
+    () => ({ closets: suggested.closets, caughtUpAt }),
+    [suggested.closets, caughtUpAt],
   );
   // While a fetched page's pieces are still being read its looks wait
   // off-screen; treat that like a page still loading.
@@ -307,7 +324,7 @@ export default function Feed() {
             it rendered before the fetch came back — which is nothing,
             every time.
           */
-          extraData={suggested.closets}
+          extraData={listExtra}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={false} onRefresh={onRefresh} />}
@@ -356,6 +373,7 @@ export default function Feed() {
                   onOpen={(username) => router.push(`/u/${username}?from=suggested`)}
                 />
               ) : null}
+              {index === caughtUpAt ? <CaughtUpMarker /> : null}
               <PostCard
                 post={item}
                 onPressTag={(listingId) => onPressTag(listingId, item.id)}

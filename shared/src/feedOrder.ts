@@ -142,3 +142,31 @@ export function nextFeedOrder<P extends RankablePost>(
   const topRanked = rankAndDiversify(top, createdAtMs, input);
   return [...topRanked.map((p) => p.id), ...kept, ...bottomRanked.map((p) => p.id)];
 }
+
+/**
+ * Where Following's "You're all caught up" marker goes — NORTH_STAR D7.
+ *
+ * Following is newest first, so the marker sits just above the first look
+ * older than `FEED_RANKING.caughtUp.windowHours`: everything above it is
+ * new, everything below it she has (probably) seen before. Returns -1
+ * when there's nothing to mark — no new looks above (the whole list is
+ * old, and the empty state or end-of-feed line already says so), or no
+ * older looks below (the end-of-feed line does the job).
+ *
+ * Honest by design: it never invents new content to keep her scrolling,
+ * and it never hides that what follows is older.
+ */
+export function caughtUpIndex<P>(
+  posts: readonly P[],
+  createdAtMs: (post: P) => number | null,
+  nowMs: number,
+  windowHours: number = FEED_RANKING.caughtUp.windowHours,
+): number {
+  const cutoff = nowMs - windowHours * 3_600_000;
+  for (let i = 0; i < posts.length; i++) {
+    const created = createdAtMs(posts[i]!);
+    // No time yet = written a moment ago (server time still pending): new.
+    if (created !== null && created < cutoff) return i > 0 ? i : -1;
+  }
+  return -1;
+}

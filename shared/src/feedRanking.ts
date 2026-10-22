@@ -106,6 +106,15 @@ export const FEED_RANKING = {
     discoveryEvery: 4,
   },
   /**
+   * D7 — "You're all caught up" on Following. Once she has scrolled past
+   * every look from the people she follows posted in this many hours, a
+   * marker says so, and anything below it is plainly older. Instagram
+   * uses three days.
+   */
+  caughtUp: {
+    windowHours: 72,
+  },
+  /**
    * D5 — "Trending at USC this week" on Discover, worked out hourly on
    * the server (trending.ts, backend/functions/src/listings/trending.ts).
    */
