@@ -317,7 +317,20 @@ export default function Help() {
           Past reports
         </Text>
         <View style={styles.panel}>
-          {reports.reports.length === 0 && support.requests.length === 0 ? (
+          {reports.failed || support.failed ? (
+            <Pressable
+              onPress={() => {
+                if (reports.failed) reports.retry();
+                if (support.failed) support.retry();
+              }}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.retryRow, pressed && styles.pressed]}
+            >
+              <Text variant="bodySmall" tone="secondary">
+                Couldn&apos;t load your past reports. Tap to try again.
+              </Text>
+            </Pressable>
+          ) : reports.reports.length === 0 && support.requests.length === 0 ? (
             <Text variant="bodySmall" tone="secondary">
               Your submitted reports and support messages will appear here.
             </Text>
@@ -472,6 +485,7 @@ const styles = StyleSheet.create({
     borderBottomColor: color.border.default,
   },
   body: { marginTop: 4 },
+  retryRow: { minHeight: controls.minTapTarget, justifyContent: 'center' },
   statusRow: {
     minHeight: controls.minTapTarget,
     flexDirection: 'row',

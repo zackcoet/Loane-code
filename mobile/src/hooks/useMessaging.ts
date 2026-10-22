@@ -181,6 +181,9 @@ export function useConversation(conversationId: string | undefined) {
   const [loading, setLoading] = useState(true);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [olderError, setOlderError] = useState(false);
+  /** The live thread could not load: "Say hello" here would be a lie. */
+  const [failed, setFailed] = useState(false);
+  const { attempt, retry } = useRetry();
   const [exhausted, setExhausted] = useState(false);
   /**
    * The oldest message the live listener has to reach down to. Null
@@ -227,6 +230,7 @@ export function useConversation(conversationId: string | undefined) {
   const liveAnchor = anchor?.ref.parent.parent?.id === conversationId ? anchor : null;
   useEffect(() => {
     if (!conversationId) return;
+    setFailed(false);
     if (!liveAnchor) setLoading(true);
     const messagesRef = collection(db, COLLECTIONS.conversations, conversationId, 'messages');
     return onSnapshot(
@@ -242,9 +246,12 @@ export function useConversation(conversationId: string | undefined) {
         }
         setLoading(false);
       },
-      () => setLoading(false),
+      () => {
+        setFailed(true);
+        setLoading(false);
+      },
     );
-  }, [conversationId, liveAnchor]);
+  }, [conversationId, liveAnchor, attempt]);
 
   // --- Older messages, as she scrolls up ------------------------------------
   // Fetched once. Anything older than the live window is history, and a
@@ -397,6 +404,8 @@ export function useConversation(conversationId: string | undefined) {
     conversation,
     messages: visible,
     loading,
+    failed,
+    retry,
     send,
     markRead,
     setLiked,

@@ -3,14 +3,18 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { COLLECTIONS, type Report, type SupportRequest } from '@loane/shared';
 import { useAuth } from '../auth/AuthProvider';
 import { db } from '../firebase/config';
+import { useRetry } from './useRetry';
 
 export function useMyReports() {
   const { profile } = useAuth();
   const uid = profile?.uid;
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const { attempt, retry } = useRetry();
 
   useEffect(() => {
+    setFailed(false);
     if (!uid) {
       setLoading(false);
       return;
@@ -22,11 +26,14 @@ export function useMyReports() {
         setReports(snap.docs.map((d) => ({ ...(d.data() as Report), id: d.id })));
         setLoading(false);
       },
-      () => setLoading(false),
+      () => {
+        setFailed(true);
+        setLoading(false);
+      },
     );
-  }, [uid]);
+  }, [uid, attempt]);
 
-  return { reports: sortNewest(reports), loading };
+  return { reports: sortNewest(reports), loading, failed, retry };
 }
 
 export function useMySupportRequests() {
@@ -34,8 +41,11 @@ export function useMySupportRequests() {
   const uid = profile?.uid;
   const [requests, setRequests] = useState<SupportRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const { attempt, retry } = useRetry();
 
   useEffect(() => {
+    setFailed(false);
     if (!uid) {
       setLoading(false);
       return;
@@ -47,11 +57,14 @@ export function useMySupportRequests() {
         setRequests(snap.docs.map((d) => ({ ...(d.data() as SupportRequest), id: d.id })));
         setLoading(false);
       },
-      () => setLoading(false),
+      () => {
+        setFailed(true);
+        setLoading(false);
+      },
     );
-  }, [uid]);
+  }, [uid, attempt]);
 
-  return { requests: sortNewest(requests), loading };
+  return { requests: sortNewest(requests), loading, failed, retry };
 }
 
 function sortNewest<T extends { createdAt: unknown }>(rows: T[]): T[] {

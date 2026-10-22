@@ -42,6 +42,7 @@ import {
 } from '@loane/shared';
 import { Avatar } from '../../src/components/Avatar';
 import { EmptyState } from '../../src/components/EmptyState';
+import { LoadError } from '../../src/components/LoadError';
 import { Header } from '../../src/components/Header';
 import { Icon } from '../../src/components/Icon';
 import { Screen } from '../../src/components/Screen';
@@ -72,6 +73,8 @@ export default function Chat() {
     conversation,
     messages,
     loading,
+    failed,
+    retry,
     send,
     markRead,
     setLiked,
@@ -306,6 +309,8 @@ export default function Chat() {
           <View style={styles.loading}>
             <ActivityIndicator color={color.icon.default} />
           </View>
+        ) : failed && messages.length === 0 ? (
+          <LoadError what="this chat" onRetry={retry} />
         ) : messages.length === 0 ? (
           <EmptyState title="Say hello" body="Ask about fit, condition, or where to meet." />
         ) : (
