@@ -1,4 +1,4 @@
-import { onCall } from 'firebase-functions/v2/https';
+import { onCall } from '../lib/callable';
 import { COLLECTIONS, type LegalDoc, type LegalDocKind, type LegalDraft } from '@loane/shared';
 import { db, now } from '../lib/admin';
 import { failed, invalidArgument, notFound, unauthenticated } from '../lib/errors';

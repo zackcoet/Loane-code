@@ -1,4 +1,5 @@
-import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
+import { type CallableRequest } from 'firebase-functions/v2/https';
+import { onCall } from '../lib/callable';
 import { COLLECTIONS, LIMITS, type Comment, type Post, type UserSummary } from '@loane/shared';
 import { notify } from '../bookings/transitions';
 import { db, now, FieldValue } from '../lib/admin';

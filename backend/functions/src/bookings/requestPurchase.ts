@@ -21,7 +21,8 @@
  * which is the point of building it this way now.
  */
 
-import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
+import { type CallableRequest } from 'firebase-functions/v2/https';
+import { onCall } from '../lib/callable';
 import { logger } from 'firebase-functions';
 import {
   BLOCKING_BOOKING_STATUSES,

@@ -18,7 +18,8 @@
  * somebody else's file is the one thing this feature must never do.
  */
 
-import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
+import { type CallableRequest } from 'firebase-functions/v2/https';
+import { onCall } from '../lib/callable';
 import { logger } from 'firebase-functions';
 import { COLLECTIONS, SUBCOLLECTIONS, type UserPrivate } from '@loane/shared';
 import { db, now } from '../lib/admin';

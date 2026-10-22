@@ -26,7 +26,8 @@
  * the cost argument lands the other way.
  */
 
-import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
+import { type CallableRequest } from 'firebase-functions/v2/https';
+import { onCall } from '../lib/callable';
 import { logger } from 'firebase-functions';
 import { invalidArgument } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';

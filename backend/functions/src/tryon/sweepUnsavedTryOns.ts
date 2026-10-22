@@ -19,7 +19,7 @@
  */
 
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { onCall } from 'firebase-functions/v2/https';
+import { onCall } from '../lib/callable';
 import { logger } from 'firebase-functions';
 import { getStorage } from 'firebase-admin/storage';
 import { COLLECTIONS, type TryOn } from '@loane/shared';

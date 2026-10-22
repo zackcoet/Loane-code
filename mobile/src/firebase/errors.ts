@@ -13,6 +13,14 @@ export function callableErrorMessage(error: unknown, fallback: string): string {
   // Strip a trailing " [400]" / " [already-exists]" style suffix.
   const cleaned = raw.replace(/\s*\[[^\]]+\]\s*$/, '').trim();
 
+  // When the call never reached Loane (no signal, a timeout), Firebase
+  // hands back just the code word. Every server error carries a real
+  // sentence now (backend lib/callable.ts), so a bare code word means
+  // the connection, and saying so is more useful than the fallback.
+  if (/^(unavailable|deadline-exceeded)$/i.test(cleaned)) {
+    return 'Could not reach Loane. Check your connection and try again.';
+  }
+
   // Firebase sometimes yields "internal" or "INTERNAL" for an unhandled
   // server error, which tells the user nothing.
   if (!cleaned || /^internal$/i.test(cleaned)) return fallback;

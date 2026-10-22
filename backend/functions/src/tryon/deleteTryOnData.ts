@@ -14,7 +14,7 @@
  * hold and no longer have a record of.
  */
 
-import { onCall } from 'firebase-functions/v2/https';
+import { onCall } from '../lib/callable';
 import { logger } from 'firebase-functions';
 import { COLLECTIONS, SUBCOLLECTIONS } from '@loane/shared';
 import { db, now } from '../lib/admin';

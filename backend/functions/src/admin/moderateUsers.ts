@@ -1,4 +1,4 @@
-import { onCall } from 'firebase-functions/v2/https';
+import { onCall } from '../lib/callable';
 import { logger } from 'firebase-functions';
 import { brand, COLLECTIONS, type User } from '@loane/shared';
 import { db, now, Timestamp } from '../lib/admin';

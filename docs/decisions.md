@@ -1311,3 +1311,25 @@ renter.
 
 **Open:** the pale pink fill is `balletSoft`. If the pink in Zack's
 reference is deeper than that, it is one constant in one file.
+
+## 2026-10-22 — Every callable goes through one safety net (autopilot run 12)
+
+Every Cloud Function the app calls now imports `onCall` from
+`backend/functions/src/lib/callable.ts` instead of from firebase-functions.
+Same signature; the difference is what happens when a handler throws
+something that isn't a deliberate `HttpsError`.
+
+**Before:** Firebase turned it into the bare word "INTERNAL", the app showed
+a vague fallback, and the log had no idea which call or which student it
+came from.
+
+**Now:** retryable database errors (timeout, contention, unavailable) reach
+her as "Loane is busy right now. Try again in a moment." Anything else
+reads "Something went wrong on our side… send us this code: 3f9a1c", and
+the log gets one structured line (`fn`, `uid`, `ref`, the raw error) with
+the same code. A screenshot is enough to find the log line. Deliberate
+`HttpsError`s pass straight through, and the request data is never logged
+because it can hold messages, emails or phone hashes.
+
+**Rule for new callables:** import `onCall` from `lib/callable`, never from
+`firebase-functions/v2/https`.
