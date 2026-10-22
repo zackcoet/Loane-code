@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { COLLECTIONS, type Listing, type Post, type User, ids } from '@loane/shared';
 import { db } from '../firebase/config';
+import { useRetry } from './useRetry';
 import { useAuth } from '../auth/AuthProvider';
 
 const PAGE_SIZE = 40;
@@ -31,8 +32,11 @@ export function useProfileByUsername(username: string | undefined) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const { attempt, retry } = useRetry();
 
   useEffect(() => {
+    setFailed(false);
     if (!username) {
       setLoading(false);
       setNotFound(true);
@@ -59,18 +63,22 @@ export function useProfileByUsername(username: string | undefined) {
           setLoading(false);
         });
       })
-      .catch(() => {
+      .catch((err: { code?: string }) => {
         if (cancelled) return;
-        setNotFound(true);
+        // Refused by the rules really is "not there". Anything else (no
+        // signal, a timeout) is worth a retry — "closet not found" on a
+        // bad connection would be wrong.
+        if (err.code === 'permission-denied') setNotFound(true);
+        else setFailed(true);
         setLoading(false);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [username]);
+  }, [username, attempt]);
 
-  return { user, loading, notFound };
+  return { user, loading, notFound, failed, retry };
 }
 
 /**
@@ -104,8 +112,11 @@ export function useUserById(uid: string | undefined) {
 export function useUserPosts(uid: string | undefined) {
   const [items, setItems] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const { attempt, retry } = useRetry();
 
   useEffect(() => {
+    setFailed(false);
     if (!uid) {
       setItems([]);
       setLoading(false);
@@ -128,11 +139,14 @@ export function useUserPosts(uid: string | undefined) {
         );
         setLoading(false);
       },
-      () => setLoading(false),
+      () => {
+        setFailed(true);
+        setLoading(false);
+      },
     );
-  }, [uid]);
+  }, [uid, attempt]);
 
-  return { items, loading };
+  return { items, loading, failed, retry };
 }
 
 /**
@@ -145,8 +159,11 @@ export function useUserPosts(uid: string | undefined) {
 export function useUserListings(uid: string | undefined, includeHidden = false) {
   const [items, setItems] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const { attempt, retry } = useRetry();
 
   useEffect(() => {
+    setFailed(false);
     if (!uid) {
       setItems([]);
       setLoading(false);
@@ -167,11 +184,14 @@ export function useUserListings(uid: string | undefined, includeHidden = false) 
         setItems(snap.docs.map((d) => ({ ...(d.data() as Listing), id: d.id })));
         setLoading(false);
       },
-      () => setLoading(false),
+      () => {
+        setFailed(true);
+        setLoading(false);
+      },
     );
-  }, [uid, includeHidden]);
+  }, [uid, includeHidden, attempt]);
 
-  return { items, loading };
+  return { items, loading, failed, retry };
 }
 
 /**

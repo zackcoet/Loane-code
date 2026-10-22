@@ -18,6 +18,7 @@ import { ProfileHeader } from '../../src/components/ProfileHeader';
 import { ProfileTabs } from '../../src/components/ProfileTabs';
 import { Screen } from '../../src/components/Screen';
 import { Header } from '../../src/components/Header';
+import { LoadError } from '../../src/components/LoadError';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useIsFollowing, useProfileByUsername } from '../../src/hooks/useProfile';
 import { followUser, unfollowUser } from '../../src/firebase/callables';
@@ -34,7 +35,7 @@ export default function OtherProfile() {
   const { username } = useLocalSearchParams<{ username: string }>();
   const { profile: me } = useAuth();
 
-  const { user, loading, notFound } = useProfileByUsername(username);
+  const { user, loading, notFound, failed, retry } = useProfileByUsername(username);
   const { following } = useIsFollowing(user?.uid);
   const chat = useOpenChat();
   const [reporting, setReporting] = useState(false);
@@ -90,6 +91,15 @@ export default function OtherProfile() {
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
+      </Screen>
+    );
+  }
+
+  if (failed) {
+    return (
+      <Screen flush>
+        <Header title="" onBack={() => router.back()} />
+        <LoadError what="this closet" onRetry={retry} />
       </Screen>
     );
   }

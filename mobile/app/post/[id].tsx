@@ -14,6 +14,7 @@ import { COLLECTIONS, color, spacing, type Post } from '@loane/shared';
 import { useState } from 'react';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
+import { LoadError } from '../../src/components/LoadError';
 import { PostCard } from '../../src/components/PostCard';
 import { ReportSheet } from '../../src/components/ReportSheet';
 import { Screen } from '../../src/components/Screen';
@@ -21,6 +22,7 @@ import { useAuth } from '../../src/auth/AuthProvider';
 import { db } from '../../src/firebase/config';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
+import { useRetry } from '../../src/hooks/useRetry';
 import { logEvent } from '../../src/analytics/events';
 
 export default function PostScreen() {
@@ -33,9 +35,12 @@ export default function PostScreen() {
   const [post, setPost] = useState<Post | null>(null);
   const [reporting, setReporting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const { attempt, retry } = useRetry();
   const logged = useRef(false);
 
   useEffect(() => {
+    setFailed(false);
     if (!id) {
       setLoading(false);
       return;
@@ -46,9 +51,14 @@ export default function PostScreen() {
         setPost(snap.exists() ? { ...(snap.data() as Post), id: snap.id } : null);
         setLoading(false);
       },
-      () => setLoading(false),
+      (err) => {
+        // A removed or hidden look is refused by the rules: that really
+        // is "not found". No signal or a timeout deserves a retry.
+        if (err.code !== 'permission-denied') setFailed(true);
+        setLoading(false);
+      },
     );
-  }, [id]);
+  }, [id, attempt]);
 
   useEffect(() => {
     if (!post || logged.current) return;
@@ -64,6 +74,8 @@ export default function PostScreen() {
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
+      ) : failed ? (
+        <LoadError what="this look" onRetry={retry} />
       ) : !post || post.status !== 'active' || hidden.has(post.authorUid) ? (
         // Blocked either way reads the same as a deleted look.
         <EmptyState title="Not found" body="That look is no longer up." />

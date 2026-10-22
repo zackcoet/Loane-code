@@ -27,6 +27,7 @@ import {
 } from '@loane/shared';
 import { Button } from '../src/components/Button';
 import { EmptyState } from '../src/components/EmptyState';
+import { LoadError } from '../src/components/LoadError';
 import { Header } from '../src/components/Header';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
@@ -48,7 +49,7 @@ export default function MyListings() {
   const router = useRouter();
   const { profile } = useAuth();
   const { width } = useWindowDimensions();
-  const { items, loading } = useUserListings(profile?.uid, true);
+  const { items, loading, failed, retry } = useUserListings(profile?.uid, true);
 
   const thumb = Math.min(96, width * 0.24);
 
@@ -60,6 +61,8 @@ export default function MyListings() {
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
+      ) : failed ? (
+        <LoadError what="your listings" onRetry={retry} />
       ) : items.length === 0 ? (
         <EmptyState
           title="Nothing listed yet"

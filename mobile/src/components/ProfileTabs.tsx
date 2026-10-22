@@ -25,6 +25,7 @@ import { useProfileGate } from '../hooks/useProfileGate';
 import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { color, formatCentsShort, radius, spacing, type Listing, type Post } from '@loane/shared';
 import { EmptyState } from './EmptyState';
+import { LoadError } from './LoadError';
 import { Icon } from './Icon';
 import { Text } from './Text';
 import { useUserListings, useUserPosts } from '../hooks/useProfile';
@@ -78,6 +79,8 @@ export function ProfileTabs({ uid, isMe }: Props) {
       {tab === 'closet' ? (
         listings.loading ? (
           <Loading />
+        ) : listings.failed ? (
+          <LoadError what={isMe ? 'your closet' : 'her closet'} onRetry={listings.retry} />
         ) : listings.items.length === 0 ? (
           <EmptyState
             title="Nothing in the closet yet"
@@ -105,6 +108,8 @@ export function ProfileTabs({ uid, isMe }: Props) {
         )
       ) : posts.loading ? (
         <Loading />
+      ) : posts.failed ? (
+        <LoadError what={isMe ? 'your looks' : 'her looks'} onRetry={posts.retry} />
       ) : posts.items.length === 0 ? (
         <EmptyState
           title="No posts yet"
