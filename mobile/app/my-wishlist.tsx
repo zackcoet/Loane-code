@@ -22,6 +22,7 @@ import {
 } from 'react-native';
 import { color, controls, radius, spacing, type TryOn } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
+import { LoadError } from '../src/components/LoadError';
 import { Header } from '../src/components/Header';
 import { Icon } from '../src/components/Icon';
 import { ListingCard } from '../src/components/ListingCard';
@@ -137,6 +138,8 @@ export default function MyWishlist() {
       {tab === 'items' ? (
         items.loading ? (
           <Loading />
+        ) : items.failed ? (
+          <LoadError what="your saved pieces" onRetry={items.retry} />
         ) : items.listings.length === 0 ? (
           <EmptyState
             title="Nothing saved yet"
@@ -197,6 +200,8 @@ export default function MyWishlist() {
         )
       ) : looks.loading ? (
         <Loading />
+      ) : looks.failed ? (
+        <LoadError what="your saved looks" onRetry={looks.retry} />
       ) : looks.posts.length === 0 ? (
         <EmptyState
           title="No looks saved yet"

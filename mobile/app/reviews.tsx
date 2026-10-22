@@ -13,6 +13,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-
 import { color, spacing, timeAgo, type Review } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { EmptyState } from '../src/components/EmptyState';
+import { LoadError } from '../src/components/LoadError';
 import { Header } from '../src/components/Header';
 import { Icon } from '../src/components/Icon';
 import { ReportSheet } from '../src/components/ReportSheet';
@@ -25,7 +26,7 @@ import { useUserById } from '../src/hooks/useProfile';
 export default function Reviews() {
   const router = useRouter();
   const { uid } = useLocalSearchParams<{ uid: string }>();
-  const { reviews, loading } = useReviews(uid);
+  const { reviews, loading, failed, retry } = useReviews(uid);
   const user = useUserById(uid);
   const [reporting, setReporting] = useState<Review | null>(null);
 
@@ -37,6 +38,8 @@ export default function Reviews() {
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
+      ) : failed ? (
+        <LoadError what="reviews" onRetry={retry} />
       ) : reviews.length === 0 ? (
         <EmptyState
           title="No reviews yet"

@@ -15,6 +15,7 @@ import { likePost, savePost, unlikePost, unsavePost } from '../firebase/callable
 import { logEvent } from '../analytics/events';
 import { readPostsInOrder } from './readPostsInOrder';
 import { useHiddenUids } from './useBlocks';
+import { useRetry } from './useRetry';
 
 type Kind = 'like' | 'save';
 
@@ -79,8 +80,11 @@ export function useSavedPosts() {
   const uid = profile?.uid;
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const { attempt, retry } = useRetry();
 
   useEffect(() => {
+    setFailed(false);
     if (!uid) {
       setPosts([]);
       setLoading(false);
@@ -112,11 +116,15 @@ export function useSavedPosts() {
             setLoading(false);
           })
           .catch(() => {
-            if (live) setLoading(false);
+            if (!live) return;
+            setFailed(true);
+            setLoading(false);
           });
       },
       () => {
-        if (live) setLoading(false);
+        if (!live) return;
+        setFailed(true);
+        setLoading(false);
       },
     );
 
@@ -124,11 +132,11 @@ export function useSavedPosts() {
       live = false;
       unsubscribe();
     };
-  }, [uid]);
+  }, [uid, attempt]);
 
   // Looks by someone blocked either way drop out, like everywhere else.
   const hidden = useHiddenUids();
   const visible = useMemo(() => withoutBlocked(posts, (p) => p.authorUid, hidden), [posts, hidden]);
 
-  return { posts: visible, loading };
+  return { posts: visible, loading, failed, retry };
 }

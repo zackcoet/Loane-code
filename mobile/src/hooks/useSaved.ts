@@ -7,12 +7,22 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { collection, doc, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDocs,
+  limit,
+  onSnapshot,
+  orderBy,
+  query,
+  where,
+} from 'firebase/firestore';
 import { COLLECTIONS, ids, type Listing, type Save } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { saveListing, unsaveListing } from '../firebase/callables';
 import { logEvent } from '../analytics/events';
+import { useRetry } from './useRetry';
 
 export function useIsSaved(listingId: string | undefined) {
   const { profile } = useAuth();
@@ -72,15 +82,19 @@ export function useWishlist() {
   const uid = profile?.uid;
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const { attempt, retry } = useRetry();
 
   useEffect(() => {
+    setFailed(false);
     if (!uid) {
       setLoading(false);
       return;
     }
+    let live = true;
     setLoading(true);
 
-    return onSnapshot(
+    const unsubscribe = onSnapshot(
       query(
         collection(db, COLLECTIONS.saves),
         where('uid', '==', uid),
@@ -90,42 +104,52 @@ export function useWishlist() {
       (snap) => {
         const ids = snap.docs.map((d) => (d.data() as Save).listingId);
         if (ids.length === 0) {
+          if (!live) return;
           setListings([]);
           setLoading(false);
           return;
         }
 
         // `in` takes at most 30 values, so read in chunks and keep her
-        // original save order.
+        // original save order. Plain reads: the save listener above is
+        // what tells us the list changed.
         const chunks: string[][] = [];
         for (let i = 0; i < ids.length; i += 30) chunks.push(ids.slice(i, i + 30));
 
         Promise.all(
-          chunks.map(
-            (chunk) =>
-              new Promise<Listing[]>((resolve) => {
-                const unsub = onSnapshot(
-                  query(collection(db, COLLECTIONS.listings), where('id', 'in', chunk)),
-                  (listingSnap) => {
-                    resolve(listingSnap.docs.map((d) => ({ ...(d.data() as Listing), id: d.id })));
-                    unsub();
-                  },
-                  () => {
-                    resolve([]);
-                    unsub();
-                  },
-                );
-              }),
+          chunks.map((chunk) =>
+            getDocs(query(collection(db, COLLECTIONS.listings), where('id', 'in', chunk))).then(
+              (listingSnap) =>
+                listingSnap.docs.map((d) => ({ ...(d.data() as Listing), id: d.id })),
+            ),
           ),
-        ).then((groups) => {
-          const byId = new Map(groups.flat().map((l) => [l.id, l]));
-          setListings(ids.map((id) => byId.get(id)).filter((l): l is Listing => Boolean(l)));
-          setLoading(false);
-        });
+        )
+          .then((groups) => {
+            if (!live) return;
+            const byId = new Map(groups.flat().map((l) => [l.id, l]));
+            setListings(ids.map((id) => byId.get(id)).filter((l): l is Listing => Boolean(l)));
+            setLoading(false);
+          })
+          .catch(() => {
+            // A failed read used to resolve as "no pieces", which made
+            // her saves look deleted. Say it failed instead.
+            if (!live) return;
+            setFailed(true);
+            setLoading(false);
+          });
       },
-      () => setLoading(false),
+      () => {
+        if (!live) return;
+        setFailed(true);
+        setLoading(false);
+      },
     );
-  }, [uid]);
 
-  return { listings, loading };
+    return () => {
+      live = false;
+      unsubscribe();
+    };
+  }, [uid, attempt]);
+
+  return { listings, loading, failed, retry };
 }

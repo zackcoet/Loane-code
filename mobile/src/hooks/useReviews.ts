@@ -6,12 +6,16 @@ import { useEffect, useState } from 'react';
 import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { COLLECTIONS, type Review } from '@loane/shared';
 import { db } from '../firebase/config';
+import { useRetry } from './useRetry';
 
 export function useReviews(subjectUid: string | undefined) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const { attempt, retry } = useRetry();
 
   useEffect(() => {
+    setFailed(false);
     if (!subjectUid) {
       setLoading(false);
       return;
@@ -29,9 +33,12 @@ export function useReviews(subjectUid: string | undefined) {
         setReviews(snap.docs.map((d) => ({ ...(d.data() as Review), id: d.id })));
         setLoading(false);
       },
-      () => setLoading(false),
+      () => {
+        setFailed(true);
+        setLoading(false);
+      },
     );
-  }, [subjectUid]);
+  }, [subjectUid, attempt]);
 
-  return { reviews, loading };
+  return { reviews, loading, failed, retry };
 }
