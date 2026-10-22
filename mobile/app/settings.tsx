@@ -8,7 +8,8 @@
 
 import { useState } from 'react';
 import { useRouter, type Href } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import * as FileSystem from 'expo-file-system/legacy';
 import { signOut } from 'firebase/auth';
 import {
   fonts,
@@ -24,7 +25,8 @@ import { Screen } from '../src/components/Screen';
 import { Header } from '../src/components/Header';
 import { LegalDocumentModal } from '../src/components/LegalDocumentModal';
 import { useUserSettings } from '../src/hooks/useUserSettings';
-import { deleteTryOnData } from '../src/firebase/callables';
+import { deleteTryOnData, exportMyData } from '../src/firebase/callables';
+import { callableErrorMessage } from '../src/firebase/errors';
 import { useTryOnEnabled } from '../src/hooks/useTryOn';
 import { formatPhone } from '@loane/shared';
 import { auth } from '../src/firebase/config';
@@ -94,6 +96,43 @@ export default function Settings() {
     );
   };
 
+  /*
+    Download my data. The server gathers everything into one file; the
+    phone saves it and opens the share sheet, so she can keep it in
+    Files, AirDrop it or email it to herself. It is never stored
+    anywhere else.
+  */
+  const [exporting, setExporting] = useState(false);
+  const downloadData = async () => {
+    setExporting(true);
+    try {
+      const { data } = await exportMyData();
+      const day = new Date().toISOString().slice(0, 10);
+      const uri = `${FileSystem.cacheDirectory}loane-my-data-${day}.json`;
+      const json = JSON.stringify(data, null, 2);
+      await FileSystem.writeAsStringAsync(uri, json);
+      // iOS shares the file itself; Android's share sheet only takes text.
+      await Share.share(
+        Platform.OS === 'ios' ? { url: uri, title: 'My Loane data' } : { message: json },
+      );
+    } catch (err) {
+      Alert.alert('Loane', callableErrorMessage(err, 'Could not get your data. Try again.'));
+    } finally {
+      setExporting(false);
+    }
+  };
+  const onDownloadData = () => {
+    if (exporting) return;
+    Alert.alert(
+      'Download your data?',
+      'We’ll put everything Loane holds about you — profile, pieces, looks, rentals, chats and activity — in one file you can save or send.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Download', onPress: () => void downloadData() },
+      ],
+    );
+  };
+
   const rows: Row[] = [
     { label: 'Edit Profile', href: '/edit-profile' },
     { label: 'Notification Preferences', href: '/notification-preferences' },
@@ -137,6 +176,11 @@ export default function Settings() {
     { label: 'Help & Support', href: '/help' },
     { label: 'Terms & Conditions', onPress: () => setLegalOpen('terms') },
     { label: 'Privacy Policy', onPress: () => setLegalOpen('privacy') },
+    {
+      label: 'Download my data',
+      value: exporting ? 'Preparing…' : undefined,
+      onPress: onDownloadData,
+    },
     // Apple requires this to be findable in the app, not behind an email.
     { label: 'Delete my account', href: '/delete-account' },
   ];

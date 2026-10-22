@@ -10,6 +10,7 @@ import {
   addAdminNote,
   adminErrorMessage,
   grantTryOns,
+  adminExportUserData,
   suspendUser,
   unsuspendUser,
 } from '../data/adminActions';
@@ -22,7 +23,7 @@ interface Props {
   onBack: () => void;
 }
 
-type Dialog = 'suspend' | 'unsuspend' | 'note' | 'grantTryOns' | null;
+type Dialog = 'suspend' | 'unsuspend' | 'note' | 'grantTryOns' | 'exportData' | null;
 
 export function UserDetailPage({ user, data, onBack }: Props) {
   const listings = data.listings.filter((listing) => listing.ownerUid === user.uid);
@@ -66,6 +67,10 @@ export function UserDetailPage({ user, data, onBack }: Props) {
       if (dialog === 'unsuspend') await unsuspendUser({ uid: user.uid, reason });
       if (dialog === 'note') await addAdminNote({ uid: user.uid, note: reason });
       if (dialog === 'grantTryOns') await grantTryOns({ uid: user.uid, count: grantCount, reason });
+      if (dialog === 'exportData') {
+        const { data: exported } = await adminExportUserData({ uid: user.uid, reason });
+        downloadJson(`loane-data-${user.username}-${new Date().toISOString().slice(0, 10)}.json`, exported);
+      }
       setDialog(null);
     } catch (err) {
       setError(adminErrorMessage(err, 'Could not do that.'));
@@ -98,6 +103,9 @@ export function UserDetailPage({ user, data, onBack }: Props) {
             </button>
           )}
           <button onClick={() => setDialog('note')}>Add a private note</button>
+          {/* For a privacy request: everything we hold about her, as one
+              file. Audited. Deleting is her own "Delete my account". */}
+          <button onClick={() => setDialog('exportData')}>Export her data</button>
         </div>
         {user.stats.cancellations > 0 ? (
           <p className="cell-note" style={{ marginTop: 12 }}>
@@ -180,6 +188,8 @@ export function UserDetailPage({ user, data, onBack }: Props) {
             ? `Suspend @${user.username}?`
             : dialog === 'grantTryOns'
               ? `Give @${user.username} free try-ons?`
+            : dialog === 'exportData'
+              ? `Export everything about @${user.username}?`
             : dialog === 'unsuspend'
               ? `Lift the suspension on @${user.username}?`
               : 'Add a private note'
@@ -187,6 +197,8 @@ export function UserDetailPage({ user, data, onBack }: Props) {
         description={
           dialog === 'suspend'
             ? 'She can still browse Loane, but cannot post, list, rent or message. She is told why and given an address to appeal to.'
+            : dialog === 'exportData'
+              ? 'Downloads one file with her profile, pieces, looks, rentals, chats and activity. Only for a privacy request — say which one.'
             : dialog === 'grantTryOns'
               ? `Adds ${grantCount} try-ons on top of her free five. Each one costs us about $0.08 to generate, unless it comes from the cache.`
             : dialog === 'unsuspend'
@@ -200,6 +212,8 @@ export function UserDetailPage({ user, data, onBack }: Props) {
               ? 'Lift it'
               : dialog === 'grantTryOns'
                 ? `Give ${grantCount}`
+              : dialog === 'exportData'
+                ? 'Download'
                 : 'Save note'
         }
         danger={error ?? undefined}
@@ -225,6 +239,17 @@ export function UserDetailPage({ user, data, onBack }: Props) {
       </ActionDialog>
     </>
   );
+}
+
+/** Saves a JSON object as a file, from the browser. */
+function downloadJson(filename: string, data: unknown) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function recentUserEvents(events: AppEvent[], uid: string) {

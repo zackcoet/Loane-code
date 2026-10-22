@@ -1390,3 +1390,31 @@ for today.
 **Payments:** nothing calls Stripe yet. `assertPaymentsOn()` in
 `backend/functions/src/lib/stripe.ts` is the first line every money
 function must call.
+
+---
+
+## 2026-10-22 — "Download my data", and how a privacy request is answered (autopilot run 13)
+
+**Decision:** one server function gathers everything Loane holds about a
+student into one JSON file (`backend/functions/src/privacy/exportUserData.ts`).
+Two ways in: she taps **Settings → Download my data** (three a day), or
+an admin taps **Export her data** on a student's page in the dashboard
+(needs a reason, leaves an audit row). Deleting is the existing
+**Delete my account**, so a privacy request is now: export, then — if
+she asks — she deletes, or we walk her through it.
+
+**What's in it:** profile, private settings (email, phone), alerts,
+blocked and muted lists, pieces, looks, comments, likes, saves, follows
+both ways, rentals both sides, reviews by and about her, reports she
+filed, help requests, try-ons, every chat with its messages (both
+sides, like Instagram's export), and her activity events.
+
+**Left out on purpose:** the hashed sign-up code (a security secret),
+rate-limit counters, our private admin notes about her, and who handled
+her reports and their notes on them (she still sees what was done).
+Photos are listed as links, not bundled — a zip is a later improvement
+if anybody asks.
+
+**Not built:** an admin button that deletes a student's account for
+her. Today a privacy deletion is her own "Delete my account"; an admin
+version means reworking the deletion code, which has its own run.

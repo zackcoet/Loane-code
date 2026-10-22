@@ -82,6 +82,12 @@ export const LIMITS = {
    * and the last thing to do is stop her telling us.
    */
   report: { max: 20, windowMs: DAY, message: 'Thanks — we already have several from you today.' },
+  /** Downloading her data reads everything she has. Nobody needs it hourly. */
+  dataExport: {
+    max: 3,
+    windowMs: DAY,
+    message: 'You have downloaded your data a few times today. Try again tomorrow.',
+  },
 } as const satisfies Record<string, Limit>;
 
 export type LimitName = keyof typeof LIMITS;

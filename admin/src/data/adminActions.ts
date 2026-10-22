@@ -75,6 +75,11 @@ export const grantTryOns = call<{ uid: string; count: number; reason: string }, 
   'grantTryOns',
 );
 
+/** Everything about one student, for a privacy request. Audited. */
+export const adminExportUserData = call<{ uid: string; reason: string }, Record<string, unknown>>(
+  'adminExportUserData',
+);
+
 /** One switch on the switchboard (`config/features`). Audited server-side. */
 export const setFeatureFlag = call<
   { flag: FeatureFlagKey; value: boolean; reason: string },

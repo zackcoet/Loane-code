@@ -132,6 +132,7 @@ export { resolveReport } from './admin/resolveReport';
 export { resolveDispute } from './admin/resolveDispute';
 export { resolveSupportRequest } from './admin/resolveSupportRequest';
 export { setFeatureFlag } from './admin/featureFlags';
+export { exportMyData, adminExportUserData } from './privacy/exportUserData';
 export { suggestedClosets } from './social/suggestedClosets';
 export { matchContacts } from './social/matchContacts';
 

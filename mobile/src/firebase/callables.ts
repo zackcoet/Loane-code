@@ -298,6 +298,12 @@ export const clearTryOnBodyPhoto = httpsCallable<void, { ok: true }>(
  */
 export const deleteMyAccount = httpsCallable<void, { ok: true }>(functions, 'deleteMyAccount');
 
+/** Everything Loane holds about her, as one JSON object. See privacy/exportUserData.ts. */
+export const exportMyData = httpsCallable<void, Record<string, unknown>>(
+  functions,
+  'exportMyData',
+);
+
 export const deleteTryOnData = httpsCallable<void, { deleted: number }>(
   functions,
   'deleteTryOnData',
