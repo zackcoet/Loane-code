@@ -41,6 +41,7 @@ import { Text } from '../src/components/Text';
 import { useContactMatches } from '../src/hooks/useContactMatches';
 import { useProfileChecklist } from '../src/hooks/useProfileChecklist';
 import { followUser } from '../src/firebase/callables';
+import { logEvent } from '../src/analytics/events';
 
 export default function ContactsScreen() {
   const router = useRouter();
@@ -62,6 +63,12 @@ export default function ContactsScreen() {
     markFollowed(uid);
     try {
       await followUser({ uid });
+      logEvent('follow', {
+        surface: 'other',
+        targetType: 'user',
+        targetId: uid,
+        meta: { from: 'contacts' },
+      });
     } catch {
       // Deliberately quiet. See above.
     }
@@ -77,8 +84,8 @@ export default function ContactsScreen() {
             See who you already know
           </Text>
           <Text variant="body" tone="secondary" uppercase={false} style={styles.lede}>
-            We check your contacts against the students on your campus and show you who is
-            already here.
+            We check your contacts against the students on your campus and show you who is already
+            here.
           </Text>
 
           <Card style={styles.promises}>

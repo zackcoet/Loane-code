@@ -32,7 +32,11 @@ import { ReportSheet } from '../../src/components/ReportSheet';
 
 export default function OtherProfile() {
   const router = useRouter();
-  const { username } = useLocalSearchParams<{ username: string }>();
+  const { username, from } = useLocalSearchParams<{ username: string; from?: string }>();
+  // Where she tapped through from, so the feed algorithm can tell "opened
+  // her profile from a look" apart from a search. Only known values, so a
+  // hand-typed link cannot put arbitrary text in the event.
+  const cameFrom = from === 'feed' || from === 'suggested' ? from : 'other';
   const { profile: me } = useAuth();
 
   const { user, loading, notFound, failed, retry } = useProfileByUsername(username);
@@ -62,9 +66,10 @@ export default function OtherProfile() {
         surface: 'profile',
         targetType: 'user',
         targetId: user.uid,
+        meta: { from: cameFrom },
       });
     }
-  }, [user]);
+  }, [user, cameFrom]);
 
   const onToggleFollow = async () => {
     if (!user) return;
@@ -72,10 +77,20 @@ export default function OtherProfile() {
     try {
       if (following) {
         await unfollowUser({ uid: user.uid });
-        logEvent('unfollow', { surface: 'profile', targetType: 'user', targetId: user.uid });
+        logEvent('unfollow', {
+          surface: 'profile',
+          targetType: 'user',
+          targetId: user.uid,
+          meta: { from: cameFrom },
+        });
       } else {
         await followUser({ uid: user.uid });
-        logEvent('follow', { surface: 'profile', targetType: 'user', targetId: user.uid });
+        logEvent('follow', {
+          surface: 'profile',
+          targetType: 'user',
+          targetId: user.uid,
+          meta: { from: cameFrom },
+        });
       }
     } catch (err) {
       Alert.alert('Loane', callableErrorMessage(err, 'That did not work. Try again.'));

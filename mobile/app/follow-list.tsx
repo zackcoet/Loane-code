@@ -24,6 +24,7 @@ import { useAuth } from '../src/auth/AuthProvider';
 import { useFollowList } from '../src/hooks/useFollowing';
 import { useHiddenUids } from '../src/hooks/useBlocks';
 import { unfollowUser } from '../src/firebase/callables';
+import { logEvent } from '../src/analytics/events';
 import { callableErrorMessage } from '../src/firebase/errors';
 
 export default function FollowListScreen() {
@@ -54,6 +55,14 @@ export default function FollowListScreen() {
         onPress: () => {
           setWorking(targetUid);
           void unfollowUser({ uid: targetUid })
+            .then(() =>
+              logEvent('unfollow', {
+                surface: 'profile',
+                targetType: 'user',
+                targetId: targetUid,
+                meta: { from: 'following_list' },
+              }),
+            )
             .catch((err: unknown) =>
               Alert.alert('Loane', callableErrorMessage(err, 'Could not unfollow her.')),
             )

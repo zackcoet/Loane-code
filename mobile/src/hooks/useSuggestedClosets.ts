@@ -18,6 +18,7 @@ import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { COLLECTIONS, SUBCOLLECTIONS, type UserSummary } from '@loane/shared';
 import { db } from '../firebase/config';
 import { followUser, suggestedClosets } from '../firebase/callables';
+import { logEvent } from '../analytics/events';
 import { useAuth } from '../auth/AuthProvider';
 
 export interface SuggestedCloset extends UserSummary {
@@ -63,6 +64,12 @@ export function useSuggestedClosets(limit = 10) {
       remove(uid);
       try {
         await followUser({ uid });
+        logEvent('follow', {
+          surface: 'feed',
+          targetType: 'user',
+          targetId: uid,
+          meta: { from: 'suggested' },
+        });
       } catch {
         // The card is already gone. Putting it back after a failed
         // follow would be more confusing than leaving it hidden; she
