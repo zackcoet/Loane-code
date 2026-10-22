@@ -3,9 +3,50 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
-- New from run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
+- New from run 13 (only when you next deploy): after the next deploy to the live project, open the admin dashboard → Overview → **Feature switches** and check it reads: try-on Off, admin preview Off, email codes Off, same-day On, payments Off. Those are the defaults, so it should — but if you'd ever turned on try-on's admin preview on the live project, turn it on again there.
+- From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-22 (run 13, ~1 AM Central) — One switchboard for risky features, and "Download my data"
+
+**Plan:** C8 — put every risky or unfinished feature (try-on, email codes, same-day, payments) behind one set of switches in one place, without changing what's on or off today. Then C9 — a way to download everything Loane holds about one student, for her and for privacy requests (deleting already exists as "Delete my account"). Stop before the feed algorithm (D1), because it changes the activity-tracking rules, which can't be tested on the overnight machine.
+
+**Built:**
+- **Feature switches, all on one panel.** The admin dashboard's Overview now has a "Feature switches" panel with five rows: AI Try-On, Try-On admin preview, Email codes at sign-up, Same-day pickup, and Payments. Each says what it does, whether it's on, and has a Turn on / Turn off button that asks for a reason and leaves a line in the Activity Log. Flipping one takes effect in the app straight away — no new app build.
+  - **Nothing changed state:** try-on off, email codes off, same-day on, payments off — exactly as before.
+  - **Two are locked off on purpose.** Email codes and Payments show "Locked" with the reason (no email service yet; no Stripe account yet). They can't be switched on by accident; unlocking them is a deliberate one-line change once the setup is real.
+  - **Same-day now has an off switch** for a bad weekend: off hides "Available same day" when listing a piece (her own choice is kept for when it comes back), and the request screen says "Same-day pickup is paused right now."
+  - The old try-on-only panel is replaced by this one (its two switches are the first two rows).
+- **Download my data.** Settings → **Download my data** → Download. Loane gathers everything about her — profile, email and phone, pieces, looks, comments, likes, saves, follows, rentals, reviews, chats, reports, help requests and activity — into one file, and the phone's share sheet opens so she can save it to Files or send it to herself. Limited to three a day. Left out on purpose: security codes and our private admin notes.
+- **Export her data, for privacy requests.** In the dashboard, open a student → Moderation → **Export her data** → type the reason (e.g. "privacy request by email, Oct 22") → a file downloads. Logged in the Activity Log.
+
+**What to tap to see it:**
+- Admin dashboard → Overview → **Feature switches** panel. Tap **Turn off** on Same-day pickup, type a reason, confirm. Then on the phone: Profile → + → Add to My Closet → the "Available same day" switch is gone. Turn it back on in the dashboard and it reappears.
+- Phone: request to rent any piece and pick today's date → if the piece doesn't offer same-day you now see "This piece isn't available same day. Pick a later date." straight away, instead of only after tapping send.
+- Phone: Profile → Menu → Settings → **Download my data** → Download → the share sheet opens with "loane-my-data-2026-10-22.json". (Needs a fresh `npm run seed` first so the switchboard exists; without it, the defaults apply anyway.)
+- Admin dashboard → Users → any student → **Export her data**.
+
+**Fixed:**
+- Picking today on a piece that doesn't offer same-day used to give no warning until she tapped send. It now says so as soon as she picks the date.
+
+**Skipped / blocked:**
+- **An admin "delete this account" button** for privacy requests — deleting is still her own "Delete my account". Added to the backlog as a suggestion (C11).
+- **D1 (reliable activity tracking for the feed algorithm)** — next run. It needs new kinds of activity (what she scrolled past, how long she looked) and a change to the database rules that guard activity tracking; the overnight machine can't run the rules tests, so it deserves a run where GitHub's checks are watched closely.
+- The overnight machine still can't start the test database (Google's download site is blocked here). Type checks, lint, the index check (74 searches, none missing), the shared tests (182, 12 new), the server tests that don't need the database (62, 4 new), the admin dashboard build and the iPhone app build all passed here. New database tests for the switchboard (6), the switchboard's rules (3) and the data export (6) run on GitHub with tonight's push.
+
+**🚨 NEEDS ZACK:**
+- **After your next deploy:** glance at Overview → Feature switches on the live dashboard (details at the top of this log). Nothing to decide.
+- Nothing else new. Older items are listed at the top.
+
+**Next up:** D1 — make sure every kind of activity the feed algorithm needs is recorded reliably (what she scrolls past, how long she looks, likes, saves, comments, shares, piece taps, profile taps, follows, requests). Then D2 — the ranking score.
+
+**Commits:**
+- Feature switches: one switchboard for try-on, email codes, same-day and payments
+- Download my data: one file with everything Loane holds about her
+- Autopilot log for run 13
 
 ---
 
