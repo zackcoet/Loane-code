@@ -76,6 +76,17 @@ export const FEED_RANKING = {
     /** "Available" means at least one free start day in this many days. */
     lookaheadDays: 7,
   },
+  /** D3 — the rules applied AFTER scoring. See feedOrder.ts. */
+  diversity: {
+    /** Never more than this many looks in a row from the same girl. */
+    maxInARow: 2,
+    /**
+     * In every run of this many looks, at least one is from someone she
+     * does not follow (when there is one left to show), so the feed keeps
+     * introducing her to new closets instead of closing in on friends.
+     */
+    discoveryEvery: 4,
+  },
 } as const;
 
 /** What the phone knows about HER. All of it is her own data. */
