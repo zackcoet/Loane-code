@@ -6,6 +6,26 @@ much as the answer.
 
 ---
 
+## 2026-10-22 — For You never reshuffles under her thumb, and ranks page by page (autopilot run 16)
+
+**Decision:** All Campus is ranked on her phone from the pages already
+loaded. A look keeps its place once placed; new uploads go on top as a
+group, each older page is ranked on its own and added at the bottom, and
+only pull-to-refresh works the whole order out again. Variety (max 2 in a
+row from one girl) and discovery (1 in 4 from someone she doesn't follow)
+are applied after scoring, by moving looks, never dropping them.
+
+**Why not re-rank everything on every change:** the first page is a live
+listener, so every like on campus would change scores and move cards
+while she is reading — the worst feeling a feed can have. **Why page by
+page instead of across the campus:** ranking across everything means
+reading everything first, which is a server job and real cost; at a few
+hundred looks the newest page holds the looks worth seeing anyway.
+**Why a look waits for its pieces:** placing it first and scoring
+availability later would move it once the read lands.
+
+---
+
 ## 2026-10-22 — One impression per look per session, counted when it leaves (autopilot run 14)
 
 **Decision:** The feed writes one `post_impression` event per look per

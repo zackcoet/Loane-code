@@ -19,6 +19,7 @@ import { getFirestore, type Timestamp } from 'firebase-admin/firestore';
 import {
   COLLECTIONS,
   buildOccasionAffinity,
+  diversifyFeed,
   rankPosts,
   toIsoDate,
   type Like,
@@ -97,10 +98,11 @@ async function main(): Promise<void> {
     if (s.exists) listings.set(id, { ...(s.data() as Listing), id });
   }
 
-  const ranked = rankPosts(posts, (p) => millis(p.createdAt), {
+  const following = new Set(followingSnap.docs.map((d) => d.get('followingUid') as string));
+  const scored = rankPosts(posts, (p) => millis(p.createdAt), {
     viewer: {
       uid: me.id,
-      following: new Set(followingSnap.docs.map((d) => d.get('followingUid') as string)),
+      following,
       followers: new Set(followersSnap.docs.map((d) => d.get('followerUid') as string)),
       interactions,
       occasionAffinity: buildOccasionAffinity(likedOccasions),
@@ -110,13 +112,21 @@ async function main(): Promise<void> {
     today: toIsoDate(new Date()),
   });
 
+  // The same variety and discovery rules the app applies (D3). A look
+  // the rules moved shows its pure-score place in brackets.
+  const scoreRank = new Map(scored.map((r, i) => [r.post.id, i + 1]));
+  const ranked = diversifyFeed(
+    scored.map((r) => ({ ...r, authorUid: r.post.authorUid })),
+    { isFamiliar: (uid) => uid === me.id || following.has(uid) },
+  );
+
   const f = (n: number) => n.toFixed(2);
   console.log(`For You for @${username} — ${ranked.length} looks\n`);
-  console.log('#   score  who   what  fresh qual  avail  author / caption');
+  console.log('#   (was) score  who   what  fresh qual  avail  author / caption');
   ranked.forEach(({ post, breakdown: b }, i) => {
     const p = b.parts;
     console.log(
-      `${String(i + 1).padEnd(3)} ${f(b.score)}   ${f(p.who)}  ${f(p.what)}  ${f(p.fresh)}  ${f(
+      `${String(i + 1).padEnd(3)}${scoreRank.get(post.id) === i + 1 ? '     ' : `(${scoreRank.get(post.id)})`.padEnd(5)} ${f(b.score)}   ${f(p.who)}  ${f(p.what)}  ${f(p.fresh)}  ${f(
         p.quality,
       )}  ${f(p.available)}   @${post.author?.username ?? '?'} — ${(post.caption ?? '').slice(0, 40)}`,
     );

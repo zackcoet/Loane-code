@@ -87,3 +87,51 @@ cd backend/functions && npx tsx scripts/explainFeed.ts --user ellapetrickcloset
 
 It prints every look in order with its five parts. It only runs against
 the local emulator.
+
+## Step 3 — Variety and discovery (done, autopilot run 16)
+
+After scoring, `diversifyFeed` in `shared/src/feedOrder.ts` moves looks
+as little as possible to obey two rules (both numbers in
+`FEED_RANKING.diversity`):
+
+- **No more than 2 in a row from the same girl** (`maxInARow`). However
+  well one prolific poster scores, her third look waits a slot.
+- **At least 1 in every 4 from someone she doesn't follow**
+  (`discoveryEvery`), while any are left. Her own looks count as
+  "familiar", not discovery.
+
+At each slot it takes the best-scoring look that breaks neither rule;
+if none qualifies it relaxes discovery first, then variety. Nothing is
+ever dropped, only moved. The rules carry across the seam when the next
+page is added at the bottom.
+
+## Step 4 — All Campus uses it (done, autopilot run 16)
+
+`mobile/src/hooks/useForYouOrder.ts` ranks the pages the feed has
+already loaded. **Following stays newest-first.**
+
+- **Nothing jumps.** Once a look has a place it keeps it (`nextFeedOrder`).
+  A like landing while she reads would otherwise reshuffle the card under
+  her thumb. Brand-new uploads go on top as a group (where newest-first
+  put them); each older page is ranked on its own and goes at the bottom
+  as she scrolls. Pull to refresh works the whole order out again with
+  her latest likes.
+- **What it reads once per feed open:** her last 100 likes, who follows
+  her (up to 500), and each tagged piece once (30 per read). Who she
+  follows comes from the feed's existing live listener.
+- **A look waits off-screen until its pieces are read**, so it lands in
+  its proper place once. If a read fails it still appears, scored as if
+  its pieces were unavailable.
+- Her taste in occasions is learnt from the liked looks that are loaded
+  in the feed — enough to tell "she likes Gameday", and free.
+
+`scripts/explainFeed.ts` prints the same order, with a look's pure-score
+place in brackets when the rules moved it.
+
+### Known limits
+
+- Ranking is within each loaded page of 20 newest looks, not across the
+  whole campus — a great look from three days ago is not pulled up above
+  this morning's page. At a few hundred looks that is the right trade
+  (no server job, no extra reads). Revisit with the "when to revisit"
+  note in `docs/decisions.md` (run 15).

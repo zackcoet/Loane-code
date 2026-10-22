@@ -1,8 +1,9 @@
 /**
  * Feed — the social home.
  *
- * Posts from her campus, newest first, twenty at a time. All Campus shows
- * everyone; Following narrows to closets she follows.
+ * Posts from her campus, twenty at a time. All Campus is the "For You"
+ * order (useForYouOrder: scored, spread out, and never reshuffled under
+ * her thumb); Following narrows to closets she follows, newest first.
  */
 
 import { useCallback, useMemo, useState } from 'react';
@@ -48,6 +49,7 @@ import { useHiddenUids } from '../../src/hooks/useBlocks';
 import { setUserMuted, useMutedUids } from '../../src/hooks/useMuted';
 import { logEvent } from '../../src/analytics/events';
 import { usePostImpressions } from '../../src/hooks/usePostImpressions';
+import { useForYouOrder } from '../../src/hooks/useForYouOrder';
 
 /**
  * How far down the feed the suggestions row goes.
@@ -99,7 +101,7 @@ export default function Feed() {
     loadMore,
     retryMore,
   } = usePagedPosts();
-  const { uids: followingUids } = useFollowingUids();
+  const { uids: followingUids, loading: followingLoading } = useFollowingUids();
   const hidden = useHiddenUids();
   const { uids: mutedUids } = useMutedUids();
   const chat = useOpenChat();
@@ -109,14 +111,30 @@ export default function Feed() {
     null,
   );
 
-  const visible = useMemo(() => {
-    // Blocked either way: her looks simply are not in the feed. This is
-    // the on-device half of blocking — see docs/security.md.
-    // Muted: hidden from her feed on both tabs, like Instagram — even
-    // someone she follows. Their closet and profile still open.
-    const shown = posts.filter((p) => !hidden.has(p.authorUid) && !mutedUids.has(p.authorUid));
-    return tab === 'following' ? shown.filter((p) => followingUids.has(p.authorUid)) : shown;
-  }, [posts, tab, followingUids, hidden, mutedUids]);
+  // Blocked either way: her looks simply are not in the feed. This is
+  // the on-device half of blocking — see docs/security.md.
+  // Muted: hidden from her feed on both tabs, like Instagram — even
+  // someone she follows. Their closet and profile still open.
+  const shown = useMemo(
+    () => posts.filter((p) => !hidden.has(p.authorUid) && !mutedUids.has(p.authorUid)),
+    [posts, hidden, mutedUids],
+  );
+  // All Campus: For You. Ranked from the same loaded pages, so paging,
+  // blocking and muting work exactly as they did newest-first.
+  const forYou = useForYouOrder(shown, followingUids, followingLoading);
+  const visible = useMemo(
+    () =>
+      tab === 'following' ? shown.filter((p) => followingUids.has(p.authorUid)) : forYou.posts,
+    [shown, tab, followingUids, forYou.posts],
+  );
+  // While a fetched page's pieces are still being read its looks wait
+  // off-screen; treat that like a page still loading.
+  const rankingMore = tab === 'campus' && forYou.waiting && !forYou.pending;
+  const resetForYou = forYou.reset;
+  const onRefresh = useCallback(() => {
+    refresh();
+    resetForYou();
+  }, [refresh, resetForYou]);
 
   // What she scrolled past and how long she looked — for the For You
   // ranking. The tab rides along: a Following look is seen differently.
@@ -250,7 +268,7 @@ export default function Feed() {
         ))}
       </View>
 
-      {loading ? (
+      {loading || (tab === 'campus' && forYou.pending && shown.length > 0) ? (
         <View style={styles.loading}>
           <LoaneLoader size={34} />
         </View>
@@ -289,15 +307,15 @@ export default function Feed() {
           extraData={suggested.closets}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={false} onRefresh={refresh} />}
+          refreshControl={<RefreshControl refreshing={false} onRefresh={onRefresh} />}
           onScroll={tour.visible ? tourTargets.measureTargets : undefined}
-          onEndReached={loadMore}
+          onEndReached={rankingMore ? undefined : loadMore}
           onEndReachedThreshold={0.6}
           initialNumToRender={3}
           maxToRenderPerBatch={3}
           windowSize={5}
           ListFooterComponent={
-            loadingMore ? (
+            loadingMore || rankingMore ? (
               <ActivityIndicator color={color.icon.default} style={styles.footer} />
             ) : moreFailed ? (
               <Pressable
