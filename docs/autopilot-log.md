@@ -3,11 +3,49 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
-- New from run 16: OK the feel change — All Campus is ranked "For You" (not newest first), and Discover opens on "For you" instead of "Newest". Following is still newest first.
+- Nothing new from run 17. (When you next deploy: it adds an hourly "Trending" job and two database indexes — normal deploy, nothing to switch on.)
+- From run 16: OK the feel change — All Campus is ranked "For You" (not newest first), and Discover opens on "For you" instead of "Newest". Following is still newest first.
 - New from run 13 (only when you next deploy): after the next deploy to the live project, open the admin dashboard → Overview → **Feature switches** and check it reads: try-on Off, admin preview Off, email codes Off, same-day On, payments Off. Those are the defaults, so it should — but if you'd ever turned on try-on's admin preview on the live project, turn it on again there.
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-22 (run 17, ~5 AM Central) — "Trending at USC this week", and "You're all caught up"
+
+**Plan:** Finish the For You section (D5–D7). D5 — a "Trending at USC this week" row on Discover, worked out every hour on Loane's server so nobody can put her own piece on it. D6 — put every ranking dial in one place and let the "why" printout explain Discover too. D7 — an honest "You're all caught up" line in Following once she's seen everything new.
+
+**Built:**
+- **"Trending at USC this week" on Discover.** A sideways row of up to 10 pieces at the top of Discover — the ones the most girls saved, asked to rent or buy, or tapped in a look over the last 7 days.
+  - Worked out by Loane's server every hour, so it can't be faked from a phone.
+  - Each girl counts once per piece, however many times she taps. Your own saves on your own piece don't count. A piece needs at least 2 different girls before it can trend.
+  - Asking to rent counts most (4), saving next (2), tapping it in a look least (1).
+  - Only shows when she's browsing everything — it hides while she searches or filters, and hides completely until at least 2 pieces qualify (so at launch it may not appear for a while — that's on purpose).
+  - Blocked closets and sold pieces never show in it.
+- **"You're all caught up" in Following.** Once she's scrolled past every look from people she follows posted in the last 3 days, a line says "You're all caught up — you've seen every new look from the past 3 days", and everything below is labelled **Older looks**. Like Instagram. No filler, no streaks, no guilt.
+- **All the For You dials in one place**, and the laptop "why is this here?" printout now explains Discover and Trending as well as the feed.
+
+**What to tap to see it:**
+- Discover → (no search, no filters, **Explore** tab) → the **Trending at USC this week** row is above the grid. Swipe it sideways; tap a piece to open it. Type in the search box and the row disappears.
+- Feed → **Following** → scroll down. If the people you follow have looks both from this week and older, you'll hit the **You're all caught up** line, then **Older looks**.
+- On your laptop (emulators running, then `npm run seed` — the seed fills Trending once, since the test database never runs hourly jobs by itself): `cd backend/functions && npx tsx scripts/explainFeed.ts --user ellapetrickcloset --discover`
+
+**Fixed:** Nothing broken this run.
+
+**Skipped / blocked:**
+- Not yet counted: how often girls tap the Trending row itself (added to the backlog as a suggestion).
+- The overnight machine still can't start the test database (Google's download site is blocked here). Type checks, lint, the index check (81 searches, none missing), the shared tests (237, 12 new), the server tests that don't need the database, and the iPhone app build all passed here. Two new database tests (who can read and write the Trending list; the hourly count itself) run on GitHub with tonight's push.
+
+**🚨 NEEDS ZACK:** Nothing new. Older items are listed at the top.
+
+**Next up:** Section D is finished. Next is E1 — pull-to-refresh and smooth infinite scroll everywhere lists exist.
+
+**Commits:**
+- Discover: Trending at USC this week
+- Ranking: every dial in one place, and a Discover mode for the why printout
+- Following: a You're all caught up line between new looks and older ones
+- Autopilot log for run 17
 
 ---
 

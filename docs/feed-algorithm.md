@@ -197,3 +197,22 @@ cd backend/functions
 npx tsx scripts/explainFeed.ts --user ellapetrickcloset             # the feed
 npx tsx scripts/explainFeed.ts --user ellapetrickcloset --discover  # Discover + Trending
 ```
+
+## Step 7 — Healthy engagement (done, autopilot run 17)
+
+- **"You're all caught up" on Following.** Following is newest first.
+  Once she scrolls past every look from people she follows posted in the
+  last 3 days (`FEED_RANKING.caughtUp.windowHours`), a marker says so —
+  "You've seen every new look from the past 3 days" — and labels what
+  follows as **Older looks**. Placed by `caughtUpIndex` in
+  `shared/src/feedOrder.ts` (tested). It only appears when there are both
+  new looks above and older ones below; otherwise the empty state or the
+  end-of-feed "You're all caught up" line already says it.
+- **The end is the end.** When there's nothing left to load, both tabs
+  say "You're all caught up". Nothing is padded in to keep her scrolling.
+- **No pressure mechanics.** Checked in run 17: no streaks, no
+  "you'll lose…" copy, and every notification comes from something a real
+  student did (they are written by Cloud Functions from real likes,
+  follows, comments and bookings).
+- All Campus is ranked, so "newer than here" means nothing there; it
+  gets the end-of-feed line only.

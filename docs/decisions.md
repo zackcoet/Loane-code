@@ -1482,3 +1482,28 @@ post every few minutes.
   ones.
 - Every weight is in `FEED_RANKING`; `scripts/explainFeed.ts` prints why
   each look ranked where it did, using the same function as the app.
+
+## 2026-10-22 — "Trending this week" is worked out hourly on the server (autopilot run 17)
+
+**Decision:** Discover's "Trending at USC this week" row comes from one
+document per campus, `trending/{campusId}`, written every hour by the
+`refreshTrending` Cloud Function. The phone only reads it.
+
+**Why on the server, unlike the For You score:** trending is the same
+for everyone on a campus and pushes a piece in front of *every*
+student. If it were worked out on phones from phone-written events, one
+girl could put her own piece at the top of Discover. So: saves and
+rent/buy requests come from documents only Cloud Functions write; tag
+taps (phone-written events) count least; each student counts once per
+piece per kind; the owner never counts; and a piece needs two different
+students before it can trend.
+
+**Why hourly:** "this week" barely moves in an hour, and a live count
+would mean a write to one shared document on every save.
+
+**Cost:** three capped reads per campus per hour (at most 5,000 rows
+each) plus the pieces involved. Two new indexes (`saves` and `bookings`
+by campus and time).
+
+**When to revisit:** if a campus's week ever hits the 5,000-row cap (it
+logs a warning), move to counting as things happen.
