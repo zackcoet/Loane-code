@@ -3,10 +3,50 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- New from run 16: OK the feel change — All Campus is ranked "For You" (not newest first), and Discover opens on "For you" instead of "Newest". Following is still newest first.
 - New from run 13 (only when you next deploy): after the next deploy to the live project, open the admin dashboard → Overview → **Feature switches** and check it reads: try-on Off, admin preview Off, email codes Off, same-day On, payments Off. Those are the defaults, so it should — but if you'd ever turned on try-on's admin preview on the live project, turn it on again there.
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-22 (run 16, ~4 AM Central) — All Campus is now "For You", and Discover opens on "For you"
+
+**Plan:** D3 — spread the feed out (no girl three times in a row, and some closets she doesn't follow mixed in). D4 — switch All Campus to the ranked order without cards jumping around while she reads; Following stays newest-first. Then start D5 — the same idea for Discover's grid of pieces. Leave "Trending this week" for its own run because it needs a new server job.
+
+**Built:**
+- **All Campus is ranked for her.** Instead of strictly newest first, the looks she's most likely to love come first: from people she follows and likes, for occasions she cares about, recent, doing well for how many people saw them, with pieces she can actually get this week.
+- **Variety.** Never more than 2 looks in a row from the same girl, however popular she is.
+- **New closets keep showing up.** At least 1 in every 4 looks is from someone she doesn't follow (while there are any), so the feed doesn't shrink to the same friends.
+- **Nothing jumps while she's reading.** Once a look is on screen it stays in its place, even if it gets a pile of likes. Brand-new looks appear at the top, older ones load at the bottom as she scrolls, and pulling down to refresh works the order out again with her latest likes.
+- **Following is unchanged** — still newest first.
+- **Discover opens on "For you".** The grid of pieces is now ordered for her too: closets she follows, occasions she saves pieces for, newer pieces, pieces that get saved and rented a lot for how often they're viewed — and above all, pieces she can actually rent or buy this week. "Newest" and the price sorts are still in the sort menu. Tiles don't reshuffle while she browses.
+
+**What to tap to see it:**
+- Feed → **All Campus**: the order is no longer simply newest first. Scroll down and you won't see the same girl three times in a row. Tap **Following**: still newest first.
+- Like a few looks, then pull down on All Campus to refresh → the order updates once.
+- Discover → the sort button under the search bar now reads **For you**. Tap it to switch to Newest or price.
+- On your laptop (emulators running and seeded): `cd backend/functions && npx tsx scripts/explainFeed.ts --user ellapetrickcloset` — now shows the final order, with a look's pure-score place in brackets when the variety rules moved it.
+
+**Fixed:** Nothing broken this run.
+
+**Skipped / blocked:**
+- **"Trending at USC this week"** (the rest of D5). The numbers Loane keeps are all-time totals, so they can't say "this week". It needs a small server job every hour that counts the week's saves, piece taps and requests per piece — one per person, so nobody can fake a piece onto the list. Next run.
+- The overnight machine still can't start the test database (Google's download site is blocked here). Type checks, lint, the index check (78 searches, none missing), the shared tests (225, 18 new) and the iPhone app build all passed here. Nothing tonight changed the database rules or server functions; GitHub runs the full set on tonight's push.
+
+**🚨 NEEDS ZACK:**
+- **One visible change to OK:** All Campus is no longer newest first, and Discover now opens on "For you" instead of "Newest". This is what the backlog asked for (D4/D5), but it's the biggest change to how the app feels so far — if you'd rather Discover still open on Newest, it's a one-word change.
+- Nothing else new. Older items are listed at the top.
+
+**Next up:** finish D5 — "Trending at USC this week" on Discover. Then D6 (tidy the ranking dials — mostly done) and D7 ("You're all caught up" on Following, no filler).
+
+**Commits:**
+- For You: no more than two looks in a row from one girl, and new closets mixed in
+- For You: All Campus is ranked, and a look never moves while she reads
+- For You: one place reads what the ranking knows about her
+- Discover: a For you order for pieces, and it's the default sort
+- Autopilot log for run 16
 
 ---
 
