@@ -14,6 +14,14 @@ export const PAGE_SIZES = {
   comments: 30,
   /** Followers and following lists. */
   people: 30,
+  /**
+   * People search: how many matches to fetch for what she typed. A few
+   * more than we show, because suspended accounts and her own are
+   * dropped on the phone after the fetch.
+   */
+  peopleSearch: 30,
+  /** People search: how many matches to show. */
+  peopleSearchShown: 20,
 } as const;
 
 /**

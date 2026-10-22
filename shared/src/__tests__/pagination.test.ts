@@ -36,3 +36,10 @@ describe('isLastPage', () => {
     expect(isLastPage(0, PAGE_SIZES.messages)).toBe(true);
   });
 });
+
+describe('people search page', () => {
+  it('fetches more than it shows, so dropped accounts do not leave her short', () => {
+    expect(PAGE_SIZES.peopleSearch).toBeGreaterThan(PAGE_SIZES.peopleSearchShown);
+    expect(PAGE_SIZES.peopleSearchShown).toBeGreaterThan(0);
+  });
+});

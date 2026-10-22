@@ -31,7 +31,7 @@ export default function FindFriends() {
   const router = useRouter();
   const { profile } = useAuth();
   const [term, setTerm] = useState('');
-  const { results, searching } = useStudentSearch(term);
+  const { results, searching, failed, retry } = useStudentSearch(term);
   const { people: known, loading: loadingKnown } = useSuggestedRecipients();
   const hidden = useHiddenUids();
 
@@ -91,6 +91,13 @@ export default function FindFriends() {
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
+      ) : rows.length === 0 && typing && failed ? (
+        <EmptyState
+          title="Couldn't search right now"
+          body="Check your connection and try again."
+          actionLabel="Try again"
+          onAction={retry}
+        />
       ) : rows.length === 0 ? (
         <EmptyState
           title={typing ? 'Nobody by that name' : 'Nobody here yet'}

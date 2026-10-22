@@ -138,14 +138,26 @@ async function readUsers(uids: string[]): Promise<UserSummary[]> {
  * lowercase username — which is what people type when they are looking
  * for a specific person anyway. Anything cleverer needs a search index,
  * and that is not worth a service for MVP.
+ *
+ * Capped at one small page, in username order. Without a cap, typing two
+ * letters on a big campus would download every handle that starts with
+ * them just to show twenty. A prefix search that needs more than twenty
+ * rows wants another letter, not a second page.
+ *
+ * A failed search says so (with `retry`) rather than showing "Nobody by
+ * that name", which would be a lie on a bad signal.
  */
 export function useStudentSearch(term: string) {
   const { profile } = useAuth();
   const [results, setResults] = useState<UserSummary[]>([]);
   const [searching, setSearching] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
   useEffect(() => {
     const q = term.trim().toLowerCase().replace(/^@/, '');
+    setFailed(false);
     if (!profile || q.length < 2) {
       setResults([]);
       setSearching(false);
@@ -158,12 +170,15 @@ export function useStudentSearch(term: string) {
     const timer = setTimeout(() => {
       void (async () => {
         try {
+          // Uses the users (campusId, username) index.
           const snap = await getDocs(
             query(
               collection(db, COLLECTIONS.users),
               where('campusId', '==', profile.campusId),
               where('username', '>=', q),
               where('username', '<=', `${q}\uf8ff`),
+              orderBy('username'),
+              limit(PAGE_SIZES.peopleSearch),
             ),
           );
           if (!live) return;
@@ -171,7 +186,7 @@ export function useStudentSearch(term: string) {
             snap.docs
               .map((d) => d.data() as User)
               .filter((user) => user.status === 'active' && user.uid !== profile.uid)
-              .slice(0, 20)
+              .slice(0, PAGE_SIZES.peopleSearchShown)
               .map((user) => ({
                 uid: user.uid,
                 username: user.username,
@@ -182,7 +197,10 @@ export function useStudentSearch(term: string) {
               })),
           );
         } catch {
-          if (live) setResults([]);
+          if (live) {
+            setResults([]);
+            setFailed(true);
+          }
         } finally {
           if (live) setSearching(false);
         }
@@ -193,9 +211,9 @@ export function useStudentSearch(term: string) {
       live = false;
       clearTimeout(timer);
     };
-  }, [term, profile]);
+  }, [term, profile, attempt]);
 
-  return { results, searching };
+  return { results, searching, failed, retry };
 }
 
 /**

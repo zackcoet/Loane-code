@@ -65,7 +65,7 @@ export default function Discover() {
   // state the chips above the grid use, so the two cannot disagree.
   const { occasion: occasionParam } = useLocalSearchParams<{ occasion?: string }>();
   const { width } = useWindowDimensions();
-  const { items: listings, loading, error } = useListings();
+  const { items: listings, loading, error, retry } = useListings();
   const { uids: followingUids } = useFollowingUids();
   const hidden = useHiddenUids();
 
@@ -242,7 +242,12 @@ export default function Discover() {
           <LoaneLoader size={34} />
         </View>
       ) : error ? (
-        <EmptyState title="Couldn't load Discover" body={error} />
+        <EmptyState
+          title="Couldn't load Discover"
+          body={error}
+          actionLabel="Try again"
+          onAction={retry}
+        />
       ) : visible.length === 0 ? (
         <EmptyState
           title="Nothing here yet"

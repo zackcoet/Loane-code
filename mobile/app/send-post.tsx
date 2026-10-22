@@ -55,7 +55,7 @@ export default function SendPost() {
   const { postId, listingId } = useLocalSearchParams<{ postId?: string; listingId?: string }>();
   const { people, loading } = useSuggestedRecipients();
   const [term, setTerm] = useState('');
-  const { results, searching } = useStudentSearch(term);
+  const { results, searching, failed, retry } = useStudentSearch(term);
   const hidden = useHiddenUids();
 
   const [picked, setPicked] = useState<string[]>([]);
@@ -157,6 +157,13 @@ export default function SendPost() {
           <View style={styles.loading}>
             <ActivityIndicator color={color.icon.default} />
           </View>
+        ) : rows.length === 0 && term && failed ? (
+          <EmptyState
+            title="Couldn't search right now"
+            body="Check your connection and try again."
+            actionLabel="Try again"
+            onAction={retry}
+          />
         ) : rows.length === 0 ? (
           <EmptyState
             title={term ? 'Nobody by that name' : 'Nobody to send to yet'}

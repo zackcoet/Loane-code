@@ -6,7 +6,7 @@
  * suspended content never renders.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { COLLECTIONS, type Listing, type Post } from '@loane/shared';
 import { db } from '../firebase/config';
@@ -34,6 +34,11 @@ interface Result<T> {
   items: T[];
   loading: boolean;
   error: string | null;
+  /**
+   * Listen again from scratch. A Firestore listener that errors is dead —
+   * it never recovers on its own — so "Try again" has to open a new one.
+   */
+  retry: () => void;
 }
 
 function useCampusCollection<T>(
@@ -47,6 +52,8 @@ function useCampusCollection<T>(
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
   useEffect(() => {
     if (!campusId) {
@@ -75,13 +82,13 @@ function useCampusCollection<T>(
         setLoading(false);
       },
       () => {
-        setError('Could not load right now. Pull to refresh.');
+        setError('Check your connection and try again.');
         setLoading(false);
       },
     );
-  }, [campusId, collectionName, campusField, pageSize]);
+  }, [campusId, collectionName, campusField, pageSize, attempt]);
 
-  return { items, loading, error };
+  return { items, loading, error, retry };
 }
 
 export function usePosts(): Result<Post> {
