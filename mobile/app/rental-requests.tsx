@@ -29,6 +29,7 @@ import {
   type Booking,
 } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
+import { LoadError } from '../src/components/LoadError';
 import { Header } from '../src/components/Header';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
@@ -52,6 +53,11 @@ export default function RentalRequests() {
   );
 
   const loading = lending.loading || renting.loading;
+  const failed = lending.failed || renting.failed;
+  const retry = () => {
+    if (lending.failed) lending.retry();
+    if (renting.failed) renting.retry();
+  };
 
   const rows: Array<
     | { kind: 'header'; title: string; note: string }
@@ -84,6 +90,8 @@ export default function RentalRequests() {
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
+      ) : failed ? (
+        <LoadError what="your requests" onRetry={retry} />
       ) : incoming.length === 0 && outgoing.length === 0 ? (
         <EmptyState
           title="No requests right now"

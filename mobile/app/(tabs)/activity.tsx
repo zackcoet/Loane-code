@@ -31,6 +31,7 @@ import {
 import { Avatar } from '../../src/components/Avatar';
 import { BookingRow, needsMe } from '../../src/components/BookingRow';
 import { EmptyState } from '../../src/components/EmptyState';
+import { LoadError } from '../../src/components/LoadError';
 import { Header } from '../../src/components/Header';
 import { IconButton } from '../../src/components/IconButton';
 import { Screen } from '../../src/components/Screen';
@@ -71,7 +72,13 @@ export default function Activity() {
 
   const lending = useMyBookings('lending');
   const renting = useMyBookings('renting');
-  const { notifications, loading: loadingNotifications, markRead } = useNotifications();
+  const {
+    notifications,
+    loading: loadingNotifications,
+    failed: notificationsFailed,
+    retry: retryNotifications,
+    markRead,
+  } = useNotifications();
 
   const unreadUpdates = notifications.filter((n) => !n.readAt).length;
 
@@ -181,6 +188,14 @@ export default function Activity() {
       {tab === 'rentals' ? (
         lending.loading || renting.loading ? (
           <Loading />
+        ) : lending.failed || renting.failed ? (
+          <LoadError
+            what="your rentals"
+            onRetry={() => {
+              if (lending.failed) lending.retry();
+              if (renting.failed) renting.retry();
+            }}
+          />
         ) : nothingAtAll ? (
           <EmptyState
             title={`Nothing ${WORDS.out} yet`}
@@ -219,6 +234,8 @@ export default function Activity() {
         )
       ) : loadingNotifications ? (
         <Loading />
+      ) : notificationsFailed ? (
+        <LoadError what="your updates" onRetry={retryNotifications} />
       ) : notifications.length === 0 ? (
         <EmptyState title="Nothing yet" body="Answers, handoffs and reminders will show up here." />
       ) : (

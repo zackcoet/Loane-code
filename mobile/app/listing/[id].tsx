@@ -38,6 +38,7 @@ import { useProfileGate } from '../../src/hooks/useProfileGate';
 import { isTryOnEligible, useTryOnEnabled } from '../../src/hooks/useTryOn';
 import { Chip } from '../../src/components/Chip';
 import { EmptyState } from '../../src/components/EmptyState';
+import { LoadError } from '../../src/components/LoadError';
 import { Header } from '../../src/components/Header';
 import { IconButton } from '../../src/components/IconButton';
 import { Screen } from '../../src/components/Screen';
@@ -74,7 +75,7 @@ export default function ListingDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
   const { profile } = useAuth();
-  const { listing, loading, notFound } = useListing(id);
+  const { listing, loading, notFound, failed, retry } = useListing(id);
   const { saved, toggle } = useIsSaved(id);
   const seenIn = usePostsTagging(id);
   const chat = useOpenChat();
@@ -106,6 +107,15 @@ export default function ListingDetail() {
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
+      </Screen>
+    );
+  }
+
+  if (failed) {
+    return (
+      <Screen flush>
+        <Header title="" onBack={() => router.back()} />
+        <LoadError what="this piece" onRetry={retry} />
       </Screen>
     );
   }

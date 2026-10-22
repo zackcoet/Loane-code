@@ -10,6 +10,7 @@ import { collection, doc, onSnapshot, orderBy, query, where } from 'firebase/fir
 import { COLLECTIONS, type Booking, type IsoDate, type Listing } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
+import { useRetry } from './useRetry';
 
 /** Her rentals, on one side or the other. */
 export function useMyBookings(side: 'renting' | 'lending') {
@@ -17,8 +18,11 @@ export function useMyBookings(side: 'renting' | 'lending') {
   const uid = profile?.uid;
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const { attempt, retry } = useRetry();
 
   useEffect(() => {
+    setFailed(false);
     if (!uid) {
       setLoading(false);
       return;
@@ -34,33 +38,45 @@ export function useMyBookings(side: 'renting' | 'lending') {
         setBookings(snap.docs.map((d) => ({ ...(d.data() as Booking), id: d.id })));
         setLoading(false);
       },
-      () => setLoading(false),
+      () => {
+        setFailed(true);
+        setLoading(false);
+      },
     );
-  }, [uid, side]);
+  }, [uid, side, attempt]);
 
-  return { bookings, loading };
+  return { bookings, loading, failed, retry };
 }
 
 export function useBooking(bookingId: string | undefined) {
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const { attempt, retry } = useRetry();
 
   useEffect(() => {
+    setFailed(false);
     if (!bookingId) {
       setLoading(false);
       return;
     }
+    setLoading(true);
     return onSnapshot(
       doc(db, COLLECTIONS.bookings, bookingId),
       (snap) => {
         setBooking(snap.exists() ? { ...(snap.data() as Booking), id: snap.id } : null);
         setLoading(false);
       },
-      () => setLoading(false),
+      (err) => {
+        // Not hers to see (or gone) is "not found", not a retry — trying
+        // again cannot change the answer.
+        if (err.code !== 'permission-denied') setFailed(true);
+        setLoading(false);
+      },
     );
-  }, [bookingId]);
+  }, [bookingId, attempt]);
 
-  return { booking, loading };
+  return { booking, loading, failed, retry };
 }
 
 /**

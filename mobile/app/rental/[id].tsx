@@ -39,6 +39,7 @@ import { Avatar } from '../../src/components/Avatar';
 import { Button } from '../../src/components/Button';
 import { Card } from '../../src/components/Card';
 import { EmptyState } from '../../src/components/EmptyState';
+import { LoadError } from '../../src/components/LoadError';
 import { Header } from '../../src/components/Header';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
@@ -63,7 +64,7 @@ export default function RentalScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
-  const { booking, loading } = useBooking(id);
+  const { booking, loading, failed, retry } = useBooking(id);
   const [busy, setBusy] = useState(false);
   const chat = useOpenChat();
   const [reviewing, setReviewing] = useState(false);
@@ -76,6 +77,15 @@ export default function RentalScreen() {
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
+      </Screen>
+    );
+  }
+
+  if (failed) {
+    return (
+      <Screen flush>
+        <Header title="Rental" onBack={() => router.back()} />
+        <LoadError what="this rental" onRetry={retry} />
       </Screen>
     );
   }
@@ -476,11 +486,7 @@ export default function RentalScreen() {
             <Button label={`Review @${them.username}`} onPress={() => setReviewing(true)} />
           ) : null}
 
-          <Button
-            label="Report a problem"
-            variant="text"
-            onPress={() => setReporting(true)}
-          />
+          <Button label="Report a problem" variant="text" onPress={() => setReporting(true)} />
 
           {(booking.status === 'requested' || booking.status === 'confirmed') &&
           !(booking.status === 'requested' && isLender) ? (

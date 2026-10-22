@@ -14,6 +14,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-
 import { TERMINAL_BOOKING_STATUSES, color, controls, radius, spacing } from '@loane/shared';
 import { BookingRow, needsMe } from '../src/components/BookingRow';
 import { EmptyState } from '../src/components/EmptyState';
+import { LoadError } from '../src/components/LoadError';
 import { Header } from '../src/components/Header';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
@@ -22,7 +23,7 @@ import { useMyBookings } from '../src/hooks/useBookings';
 export default function MyRentals() {
   const router = useRouter();
   const [tab, setTab] = useState<'renting' | 'lending'>('renting');
-  const { bookings, loading } = useMyBookings(tab);
+  const { bookings, loading, failed, retry } = useMyBookings(tab);
 
   const isLender = tab === 'lending';
 
@@ -70,6 +71,8 @@ export default function MyRentals() {
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
+      ) : failed ? (
+        <LoadError what={tab === 'renting' ? 'your rentals' : 'your lending'} onRetry={retry} />
       ) : bookings.length === 0 ? (
         <EmptyState
           title={tab === 'renting' ? 'No rentals yet' : 'Nothing lent out yet'}

@@ -23,14 +23,18 @@ import { COLLECTIONS, isHiddenNotification, type Notification } from '@loane/sha
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { useHiddenUids } from './useBlocks';
+import { useRetry } from './useRetry';
 
 export function useNotifications() {
   const { profile } = useAuth();
   const uid = profile?.uid;
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const { attempt, retry } = useRetry();
 
   useEffect(() => {
+    setFailed(false);
     if (!uid) {
       setNotifications([]);
       setLoading(false);
@@ -47,9 +51,12 @@ export function useNotifications() {
         setNotifications(snap.docs.map((d) => ({ ...(d.data() as Notification), id: d.id })));
         setLoading(false);
       },
-      () => setLoading(false),
+      () => {
+        setFailed(true);
+        setLoading(false);
+      },
     );
-  }, [uid]);
+  }, [uid, attempt]);
 
   const markRead = useCallback(
     async (notificationId: string) => {
@@ -70,7 +77,7 @@ export function useNotifications() {
     [notifications, hidden],
   );
 
-  return { notifications: visible, loading, markRead };
+  return { notifications: visible, loading, failed, retry, markRead };
 }
 
 /**
