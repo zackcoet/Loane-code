@@ -76,6 +76,24 @@ export const FEED_RANKING = {
     /** "Available" means at least one free start day in this many days. */
     lookaheadDays: 7,
   },
+  /**
+   * D5 — Discover's "For you" order for PIECES (discoverRanking.ts).
+   * The same idea as looks, tuned for a closet: a piece stays relevant
+   * far longer than a post, and whether she can actually get it matters
+   * most of all.
+   */
+  discover: {
+    weights: { who: 0.8, what: 0.8, fresh: 0.6, quality: 0.8, available: 1.0 },
+    /** A piece loses half its newness every this many hours (a week). */
+    freshHalfLifeHours: 168,
+    quality: {
+      /** A finished rental is the strongest proof a piece is wanted. */
+      actionWeights: { save: 2, tag: 1, rental: 4 },
+      priorReach: 20,
+      priorRate: 0.1,
+      fullRate: 0.6,
+    },
+  },
   /** D3 — the rules applied AFTER scoring. See feedOrder.ts. */
   diversity: {
     /** Never more than this many looks in a row from the same girl. */

@@ -135,3 +135,27 @@ place in brackets when the rules moved it.
   this morning's page. At a few hundred looks that is the right trade
   (no server job, no extra reads). Revisit with the "when to revisit"
   note in `docs/decisions.md` (run 15).
+
+## Step 5 — Discover, "For you" (half done, autopilot run 16)
+
+Discover's grid of pieces now opens on a **For you** sort (Newest and the
+price sorts are still in the sort menu). `shared/src/discoverRanking.ts`
+scores each piece with the same five parts, tuned for a closet — weights
+in `FEED_RANKING.discover`:
+
+| Part | Weight | For a piece |
+|---|---|---|
+| who | 0.8 | Same as a look: she follows the owner, mutuals, liked her looks |
+| what | 0.8 | The piece's occasions vs. the occasions of pieces she has **saved** (last 60 saves) |
+| fresh | 0.6 | Halves every **week** — a piece stays relevant far longer than a post |
+| quality | 0.8 | (saves × 2 + tags in looks × 1 + finished rentals × 4) per view, smoothed — server counters only |
+| available | 1.0 | 1 if she can rent or buy it in the next 7 days, else 0 |
+
+The grid only re-ranks when a piece is added or removed or she comes
+back to Discover — never because a count moved while she browses. A
+brand-new piece goes on top until then. Her side (likes, follows,
+followers) comes from `useRankingViewer`, shared with the feed.
+
+**Not done yet: "Trending at USC this week".** Lifetime counters can't
+say "this week". It needs a small scheduled server function that counts
+the week's saves, tag taps and requests per piece — next run.

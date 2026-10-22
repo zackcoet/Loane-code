@@ -43,6 +43,8 @@ import { Screen } from '../../src/components/Screen';
 import { Icon } from '../../src/components/Icon';
 import { Text } from '../../src/components/Text';
 import { useListings } from '../../src/hooks/useFeed';
+import { useRankingViewer } from '../../src/hooks/useRankingViewer';
+import { useDiscoverForYou } from '../../src/hooks/useDiscoverForYou';
 import { useFollowingUids } from '../../src/hooks/useFollowing';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
 import {
@@ -68,6 +70,7 @@ export default function Discover() {
   const { items: listings, loading, error, retry } = useListings();
   const { uids: followingUids } = useFollowingUids();
   const hidden = useHiddenUids();
+  const ranking = useRankingViewer();
 
   // Blocked either way: her closet is not in the marketplace.
   const campusListings = useMemo(
@@ -76,6 +79,8 @@ export default function Discover() {
   );
 
   const { search, setSearch, filters, setFilters, sort, setSort } = useDiscoverState();
+  // "For you" is the default sort — see useDiscoverForYou.
+  const forYouRank = useDiscoverForYou(campusListings, ranking.viewer);
   const [tab, setTab] = useState<'explore' | 'following'>('explore');
   const [quickOccasion, setQuickOccasion] = useState<Occasion | null>(
     OCCASIONS.includes(occasionParam as Occasion) ? (occasionParam as Occasion) : null,
@@ -99,6 +104,7 @@ export default function Discover() {
     filters: effectiveFilters,
     sort,
     followingUids: tab === 'following' ? followingUids : null,
+    forYouRank,
   });
 
   // What the sheet's button should say while she is still adjusting it.

@@ -32,3 +32,4 @@ export * from './featureFlags';
 export * from './impressions';
 export * from './feedRanking';
 export * from './feedOrder';
+export * from './discoverRanking';

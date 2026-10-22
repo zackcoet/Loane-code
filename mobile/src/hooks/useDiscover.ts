@@ -25,10 +25,11 @@
 import { useMemo, useState } from 'react';
 import type { Category, Listing, Occasion, Size } from '@loane/shared';
 
-export const SORTS = ['newest', 'price_low', 'price_high'] as const;
+export const SORTS = ['for_you', 'newest', 'price_low', 'price_high'] as const;
 export type Sort = (typeof SORTS)[number];
 
 export const SORT_LABELS: Record<Sort, string> = {
+  for_you: 'For you',
   newest: 'Newest',
   price_low: 'Price: low to high',
   price_high: 'Price: high to low',
@@ -82,6 +83,12 @@ interface Options {
   sort: Sort;
   /** Explore shows everyone; Following narrows to these uids. */
   followingUids?: Set<string> | null;
+  /**
+   * Listing id → place in her "For you" order (useDiscoverForYou). Null
+   * while it is still being worked out: "For you" shows newest first
+   * until then.
+   */
+  forYouRank?: Map<string, number> | null;
 }
 
 export function useDiscoverResults({
@@ -90,6 +97,7 @@ export function useDiscoverResults({
   filters,
   sort,
   followingUids,
+  forYouRank,
 }: Options): Listing[] {
   return useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -128,6 +136,14 @@ export function useDiscoverResults({
 
     if (sort === 'newest') return matched;
 
+    if (sort === 'for_you') {
+      if (!forYouRank) return matched;
+      // A piece added since the order was worked out has no place yet:
+      // it goes on top, newest first, like a new look in the feed.
+      const place = (l: Listing) => forYouRank.get(l.id) ?? -1;
+      return [...matched].sort((a, b) => place(a) - place(b));
+    }
+
     // Pieces with no price sink to the bottom either way.
     return [...matched].sort((a, b) => {
       const pa = priceOf(a);
@@ -137,13 +153,13 @@ export function useDiscoverResults({
       if (pb == null) return -1;
       return sort === 'price_low' ? pa - pb : pb - pa;
     });
-  }, [listings, search, filters, sort, followingUids]);
+  }, [listings, search, filters, sort, followingUids, forYouRank]);
 }
 
 /** Small holder so the screen stays readable. */
 export function useDiscoverState() {
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const [sort, setSort] = useState<Sort>('newest');
+  const [sort, setSort] = useState<Sort>('for_you');
   return { search, setSearch, filters, setFilters, sort, setSort };
 }
