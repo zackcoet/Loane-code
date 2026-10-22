@@ -373,7 +373,18 @@ export function findQueries(
       // --- Modular: query(base, ...constraints) ---
       if (name === 'query' && ts.isIdentifier(node.expression) && node.arguments.length > 0) {
         const [first, ...rest] = node.arguments;
-        const base = first && ts.isCallExpression(first) ? readBase(first, ctx, false) : null;
+        // `const ref = collection(db, X); query(ref, ...)` — follow the const.
+        const resolved =
+          first && ts.isIdentifier(first) ? (ctx.locals.get(first.text) ?? undefined) : first;
+        const base =
+          resolved && ts.isCallExpression(resolved) ? readBase(resolved, ctx, false) : null;
+        if (!base && rest.length > 0) {
+          unchecked.push({
+            file,
+            line: lineOf(node, src),
+            reason: 'the query starts from a variable',
+          });
+        }
         if (base) {
           const constraints: (Constraint | typeof SPREAD)[] = [];
           const spreads: ts.CallExpression[][][] = [];

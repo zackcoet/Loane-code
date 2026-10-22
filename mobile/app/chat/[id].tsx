@@ -68,8 +68,19 @@ export default function Chat() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { profile } = useAuth();
-  const { conversation, messages, loading, send, markRead, setLiked, receiptsOn } =
-    useConversation(id);
+  const {
+    conversation,
+    messages,
+    loading,
+    send,
+    markRead,
+    setLiked,
+    receiptsOn,
+    loadOlder,
+    loadingOlder,
+    olderError,
+    hasOlder,
+  } = useConversation(id);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [attaching, setAttaching] = useState(false);
@@ -304,6 +315,28 @@ export default function Chat() {
             keyExtractor={(m) => m.id}
             inverted
             contentContainerStyle={styles.list}
+            // Inverted, so the "end" is the top: scrolling up fetches
+            // older messages a page at a time.
+            onEndReached={hasOlder ? () => void loadOlder() : undefined}
+            onEndReachedThreshold={0.5}
+            ListFooterComponent={
+              loadingOlder ? (
+                <View style={styles.older} accessibilityLabel="Loading earlier messages">
+                  <ActivityIndicator color={color.icon.default} />
+                </View>
+              ) : olderError ? (
+                <Pressable
+                  onPress={() => void loadOlder()}
+                  accessibilityRole="button"
+                  accessibilityLabel="Couldn't load earlier messages. Tap to try again."
+                  style={styles.older}
+                >
+                  <Text variant="caption" tone="muted" uppercase={false}>
+                    Couldn&apos;t load earlier messages. Tap to try again.
+                  </Text>
+                </Pressable>
+              ) : null
+            }
             // Rows are different heights, so a jump to a far-off quote
             // can miss on the first try. Scroll near it, then try again.
             onScrollToIndexFailed={({ index, averageItemLength }) => {
@@ -720,6 +753,12 @@ const styles = StyleSheet.create({
   },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.md, paddingVertical: spacing.md, gap: spacing.sm },
+  older: {
+    minHeight: controls.minTapTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+  },
   bubbleRow: { flexDirection: 'row' },
   rowMine: { justifyContent: 'flex-end' },
   rowTheirs: { justifyContent: 'flex-start' },

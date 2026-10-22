@@ -13,20 +13,27 @@ import {
   arrayUnion,
   collection,
   doc,
+  endAt,
+  getDocs,
   limit,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  startAfter,
   increment,
   updateDoc,
   where,
   writeBatch,
+  type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import {
   COLLECTIONS,
   LIMITS,
+  PAGE_SIZES,
   inboxUnreadTotal,
+  isLastPage,
+  mergePages,
   needsMarkRead,
   otherQuotaWrite,
   quotaWrite,
@@ -162,8 +169,35 @@ export function useConversation(conversationId: string | undefined) {
   const uid = profile?.uid;
 
   const [conversation, setConversation] = useState<Conversation | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [liveMessages, setLiveMessages] = useState<Message[]>([]);
+  const [olderMessages, setOlderMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const [olderError, setOlderError] = useState(false);
+  const [exhausted, setExhausted] = useState(false);
+  /**
+   * The oldest message the live listener has to reach down to. Null
+   * until she first scrolls up; after that the listener keeps
+   * everything from now back to here live, so a message arriving never
+   * pushes one out of the live window into a gap.
+   */
+  const [anchor, setAnchor] = useState<QueryDocumentSnapshot | null>(null);
+  /** The oldest message loaded at all, where the next older page starts. */
+  const cursor = useRef<QueryDocumentSnapshot | null>(null);
+  /** The live listener's oldest document, kept for when she scrolls up. */
+  const liveOldest = useRef<QueryDocumentSnapshot | null>(null);
+  const inFlight = useRef(false);
+
+  // A different chat starts from scratch.
+  useEffect(() => {
+    setLiveMessages([]);
+    setOlderMessages([]);
+    setExhausted(false);
+    setOlderError(false);
+    setAnchor(null);
+    cursor.current = null;
+    liveOldest.current = null;
+  }, [conversationId]);
 
   useEffect(() => {
     if (!conversationId) {
@@ -178,22 +212,71 @@ export function useConversation(conversationId: string | undefined) {
     );
   }, [conversationId]);
 
+  // --- The live part of the thread ----------------------------------------
+  // At first: the newest page. Once she has scrolled up: everything from
+  // now back to the anchor, so hearts, "Seen" and takedowns stay live on
+  // what she has on screen.
+  // An anchor from a chat she has just left is not this chat's.
+  const liveAnchor = anchor?.ref.parent.parent?.id === conversationId ? anchor : null;
   useEffect(() => {
     if (!conversationId) return;
-    setLoading(true);
+    if (!liveAnchor) setLoading(true);
+    const messagesRef = collection(db, COLLECTIONS.conversations, conversationId, 'messages');
     return onSnapshot(
-      query(
-        collection(db, COLLECTIONS.conversations, conversationId, 'messages'),
-        orderBy('createdAt', 'desc'),
-        limit(100),
-      ),
+      liveAnchor
+        ? query(messagesRef, orderBy('createdAt', 'desc'), endAt(liveAnchor))
+        : query(messagesRef, orderBy('createdAt', 'desc'), limit(PAGE_SIZES.messages)),
       (snap) => {
-        setMessages(snap.docs.map((d) => ({ ...(d.data() as Message), id: d.id })));
+        setLiveMessages(snap.docs.map((d) => ({ ...(d.data() as Message), id: d.id })));
+        if (!liveAnchor) {
+          liveOldest.current = snap.docs[snap.docs.length - 1] ?? null;
+          cursor.current = liveOldest.current;
+          setExhausted(isLastPage(snap.docs.length, PAGE_SIZES.messages));
+        }
         setLoading(false);
       },
       () => setLoading(false),
     );
-  }, [conversationId]);
+  }, [conversationId, liveAnchor]);
+
+  // --- Older messages, as she scrolls up ------------------------------------
+  // Fetched once. Anything older than the live window is history, and a
+  // listener per page would be a listener we keep paying for.
+  const loadOlder = useCallback(async () => {
+    if (!conversationId || inFlight.current || exhausted || loading || !cursor.current) return;
+    inFlight.current = true;
+    setLoadingOlder(true);
+    setOlderError(false);
+    try {
+      // The first time, pin the live window where it is now.
+      if (!anchor && liveOldest.current) setAnchor(liveOldest.current);
+      const snap = await getDocs(
+        query(
+          collection(db, COLLECTIONS.conversations, conversationId, 'messages'),
+          orderBy('createdAt', 'desc'),
+          startAfter(cursor.current),
+          limit(PAGE_SIZES.messages),
+        ),
+      );
+      const page = snap.docs.map((d) => ({ ...(d.data() as Message), id: d.id }));
+      cursor.current = snap.docs[snap.docs.length - 1] ?? cursor.current;
+      // If she deleted this chat once, nothing before that shows — so
+      // reaching it is as good as reaching the start.
+      const pastHerDelete = page.some((m) => !visibleAfterDelete(conversation, uid, m.createdAt));
+      setExhausted(isLastPage(snap.docs.length, PAGE_SIZES.messages) || pastHerDelete);
+      setOlderMessages((current) => mergePages(current, page));
+    } catch {
+      setOlderError(true);
+    } finally {
+      inFlight.current = false;
+      setLoadingOlder(false);
+    }
+  }, [conversationId, exhausted, loading, anchor, conversation, uid]);
+
+  const messages = useMemo(
+    () => mergePages(liveMessages, olderMessages),
+    [liveMessages, olderMessages],
+  );
 
   // Her "Show read receipts" switch. On until she turns it off.
   const { settings } = useUserSettings();
@@ -303,5 +386,17 @@ export function useConversation(conversationId: string | undefined) {
     [messages, conversation, uid],
   );
 
-  return { conversation, messages: visible, loading, send, markRead, setLiked, receiptsOn };
+  return {
+    conversation,
+    messages: visible,
+    loading,
+    send,
+    markRead,
+    setLiked,
+    receiptsOn,
+    loadOlder,
+    loadingOlder,
+    olderError,
+    hasOlder: !exhausted,
+  };
 }
