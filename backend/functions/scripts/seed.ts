@@ -27,6 +27,7 @@ import { getStorage } from 'firebase-admin/storage';
 import { getFirestore, FieldValue, Timestamp, type Firestore } from 'firebase-admin/firestore';
 import { demoGarment, garmentPhoto, peoplePhoto } from './seedPhotos';
 import { LEGAL_V1_EFFECTIVE_DATE, PRIVACY_V1, TERMS_V1 } from '../src/legal/v1';
+import { refreshTrendingForCampus } from '../src/listings/trending';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
@@ -2112,6 +2113,12 @@ async function main(): Promise<void> {
     updatedAt: FieldValue.serverTimestamp(),
   });
   console.warn(`Created ${auditSeeds.length} audit rows and 1 admin note`);
+
+  // --- Trending this week --------------------------------------------------
+  // The emulator never fires the hourly job, so run it once here to fill
+  // Discover's "Trending at USC this week" row from the saves above.
+  const trendingResult = await refreshTrendingForCampus(CAMPUS_ID);
+  console.warn(`Trending: ${trendingResult.items.length} pieces this week`);
 
   // --- Campus counters ----------------------------------------------------
   await db.collection(COLLECTIONS.campuses).doc(CAMPUS_ID).update({

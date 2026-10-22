@@ -68,6 +68,12 @@ export const COLLECTIONS = {
    * and the rules refuse it once the hour is full.
    */
   listingQuotas: 'listingQuotas',
+  /**
+   * trending/{campusId} — the week's most-wanted pieces on a campus.
+   * Written only by the hourly `refreshTrending` function; see
+   * shared/src/trending.ts.
+   */
+  trending: 'trending',
   legalDocs: 'legalDocs',
   legalDrafts: 'legalDrafts',
 } as const;

@@ -2228,6 +2228,35 @@ describe('the switchboard (config/features)', () => {
   });
 });
 
+describe("trending (the week's most-wanted pieces)", () => {
+  const CAMPUS = 'university-of-south-carolina';
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'trending', CAMPUS), {
+        campusId: CAMPUS,
+        items: [{ listingId: 'l1', score: 8, people: 2 }],
+        windowDays: 7,
+      });
+    });
+  });
+
+  it('is readable by a signed-in student', async () => {
+    await assertSucceeds(getDoc(doc(asElla(), 'trending', CAMPUS)));
+  });
+
+  it('is not readable signed out', async () => {
+    await assertFails(getDoc(doc(asStranger(), 'trending', CAMPUS)));
+  });
+
+  it('cannot be written from any phone, admin included', async () => {
+    // Otherwise she could put her own piece at the top of Discover.
+    const mine = { items: [{ listingId: 'mine', score: 999, people: 99 }] };
+    await assertFails(updateDoc(doc(asElla(), 'trending', CAMPUS), mine));
+    await assertFails(setDoc(doc(asElla(), 'trending', 'another-campus'), mine));
+    await assertFails(updateDoc(doc(asAdmin(), 'trending', CAMPUS), mine));
+  });
+});
+
 describe('phone hashes', () => {
   /**
    * The fence around contact matching. A student holding a phone

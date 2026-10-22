@@ -33,3 +33,4 @@ export * from './impressions';
 export * from './feedRanking';
 export * from './feedOrder';
 export * from './discoverRanking';
+export * from './trending';

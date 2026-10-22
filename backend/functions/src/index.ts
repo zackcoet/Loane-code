@@ -109,6 +109,7 @@ export {
   setBlockedDates,
 } from './bookings/lifecycle';
 export { sweepBookings, runBookingSweep } from './bookings/sweep';
+export { refreshTrending, runTrendingRefresh } from './listings/trending';
 export { openConversation } from './messaging/openConversation';
 export { sharePost } from './messaging/sharePost';
 export { shareListing } from './messaging/shareListing';

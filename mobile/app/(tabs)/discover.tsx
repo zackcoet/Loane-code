@@ -37,6 +37,7 @@ import { Chip } from '../../src/components/Chip';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FilterSheet } from '../../src/components/FilterSheet';
 import { ListingCard } from '../../src/components/ListingCard';
+import { TrendingRow } from '../../src/components/TrendingRow';
 import { Logo } from '../../src/components/Logo';
 import { LoaneLoader } from '../../src/components/LoaneLoader';
 import { Screen } from '../../src/components/Screen';
@@ -47,6 +48,8 @@ import { useRankingViewer } from '../../src/hooks/useRankingViewer';
 import { useDiscoverForYou } from '../../src/hooks/useDiscoverForYou';
 import { useFollowingUids } from '../../src/hooks/useFollowing';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
+import { useCampus } from '../../src/hooks/useCampus';
+import { useTrendingIds } from '../../src/hooks/useTrending';
 import {
   EMPTY_FILTERS,
   SORTS,
@@ -118,6 +121,23 @@ export default function Discover() {
 
   const cardWidth = (width - spacing.md * (GRID_COLUMNS + 1)) / GRID_COLUMNS;
   const activeCount = countActiveFilters(effectiveFilters);
+
+  // Trending this week: ids from the hourly server job, looked up among
+  // the pieces already loaded, so blocked closets and sold pieces drop
+  // out for free. Only while she is browsing everything.
+  const { campus } = useCampus();
+  const trendingIds = useTrendingIds();
+  const trending = useMemo(() => {
+    const byId = new Map(campusListings.map((l) => [l.id, l]));
+    return trendingIds.flatMap((id) => {
+      const listing = byId.get(id);
+      return listing ? [listing] : [];
+    });
+  }, [trendingIds, campusListings]);
+  const showTrending = tab === 'explore' && search.trim() === '' && activeCount === 0;
+  const openListing = (listingId: string) =>
+    router.push({ pathname: '/listing/[id]', params: { id: listingId } });
+  const openOwner = (username: string) => router.push(`/u/${username}`);
 
   const openSort = () => {
     const labels = SORTS.map((s) => SORT_LABELS[s]);
@@ -289,18 +309,27 @@ export default function Discover() {
           windowSize={7}
           removeClippedSubviews
           ListHeaderComponent={
-            <Text variant="caption" tone="muted" style={styles.count}>
-              {visible.length} {visible.length === 1 ? 'piece' : 'pieces'}
-            </Text>
+            <>
+              {showTrending ? (
+                <TrendingRow
+                  listings={trending}
+                  campusShortName={campus?.shortName ?? null}
+                  cardWidth={cardWidth * 0.8}
+                  onPress={openListing}
+                  onPressOwner={openOwner}
+                />
+              ) : null}
+              <Text variant="caption" tone="muted" style={styles.count}>
+                {visible.length} {visible.length === 1 ? 'piece' : 'pieces'}
+              </Text>
+            </>
           }
           renderItem={({ item }) => (
             <ListingCard
               listing={item}
               width={cardWidth}
-              onPressOwner={(username) => router.push(`/u/${username}`)}
-              onPress={(listingId) =>
-                router.push({ pathname: '/listing/[id]', params: { id: listingId } })
-              }
+              onPressOwner={openOwner}
+              onPress={openListing}
             />
           )}
         />

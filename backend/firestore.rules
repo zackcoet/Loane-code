@@ -406,6 +406,18 @@ service cloud.firestore {
     }
 
     // -----------------------------------------------------------------
+    // trending — the week's most-wanted pieces on a campus
+    //
+    // Written only by the hourly refreshTrending function. If a phone
+    // could write it, anyone could put her own piece at the top of
+    // Discover. Holds listing ids and counts, nothing personal.
+    // -----------------------------------------------------------------
+    match /trending/{campusId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // -----------------------------------------------------------------
     // listings — garments in closets
     //
     // These checks mirror `validateListingDraft` in shared/src/validation.ts.
