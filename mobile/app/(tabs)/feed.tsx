@@ -23,6 +23,7 @@ import {
 import { color, controls, spacing } from '@loane/shared';
 import { CampusChip } from '../../src/components/CampusChip';
 import { EmptyState } from '../../src/components/EmptyState';
+import { LoadError } from '../../src/components/LoadError';
 import { IconButton } from '../../src/components/IconButton';
 import { Logo } from '../../src/components/Logo';
 import { LoaneLoader } from '../../src/components/LoaneLoader';
@@ -86,7 +87,17 @@ export default function Feed() {
   const tour = useWalkthrough();
   const tourTargets = useWalkthroughTargets();
   const { profile } = useAuth();
-  const { posts, loading, loadingMore, error, exhausted, refresh, loadMore } = usePagedPosts();
+  const {
+    posts,
+    loading,
+    loadingMore,
+    failed,
+    moreFailed,
+    exhausted,
+    refresh,
+    loadMore,
+    retryMore,
+  } = usePagedPosts();
   const { uids: followingUids } = useFollowingUids();
   const hidden = useHiddenUids();
   const { uids: mutedUids } = useMutedUids();
@@ -238,8 +249,8 @@ export default function Feed() {
         <View style={styles.loading}>
           <LoaneLoader size={34} />
         </View>
-      ) : error ? (
-        <EmptyState title="Couldn't load your feed" body={error} />
+      ) : failed ? (
+        <LoadError what="your feed" onRetry={refresh} />
       ) : visible.length === 0 ? (
         <EmptyState
           title="No looks yet"
@@ -281,6 +292,17 @@ export default function Feed() {
           ListFooterComponent={
             loadingMore ? (
               <ActivityIndicator color={color.icon.default} style={styles.footer} />
+            ) : moreFailed ? (
+              <Pressable
+                onPress={retryMore}
+                accessibilityRole="button"
+                accessibilityLabel="Couldn't load more looks. Tap to try again."
+                style={styles.moreFailed}
+              >
+                <Text variant="caption" tone="muted">
+                  Couldn&apos;t load more looks. Tap to try again.
+                </Text>
+              </Pressable>
             ) : exhausted && visible.length > 0 ? (
               <Text variant="caption" tone="muted" style={styles.end}>
                 You&apos;re all caught up
@@ -405,4 +427,10 @@ const styles = StyleSheet.create({
   },
   footer: { paddingVertical: spacing.lg },
   end: { textAlign: 'center', paddingVertical: spacing.lg },
+  moreFailed: {
+    minHeight: controls.minTapTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.lg,
+  },
 });

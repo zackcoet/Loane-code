@@ -40,6 +40,7 @@ import {
 import { COLLECTIONS, type Post } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
+import { useRetry } from './useRetry';
 
 const PAGE_SIZE = 20;
 
@@ -51,11 +52,21 @@ export function usePagedPosts() {
   const [olderPages, setOlderPages] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  /** The live first page could not load: nothing to show but a retry. */
+  const [failed, setFailed] = useState(false);
+  /**
+   * An older page could not load. Kept apart from `failed` on purpose:
+   * one bad page while scrolling used to swap the whole feed for an
+   * error screen, throwing away every look she had already loaded.
+   */
+  const [moreFailed, setMoreFailed] = useState(false);
+  const { attempt, retry } = useRetry();
   const [exhausted, setExhausted] = useState(false);
 
   /** The last document of everything loaded, for the next page. */
   const cursor = useRef<QueryDocumentSnapshot | null>(null);
+  /** The last document of the live page, so a refresh can page from it again. */
+  const liveCursor = useRef<QueryDocumentSnapshot | null>(null);
   // Guards against onEndReached firing twice before a page lands.
   const inFlight = useRef(false);
   /** A ref, not state, so the live listener never has to re-subscribe. */
@@ -63,6 +74,7 @@ export function usePagedPosts() {
 
   // --- The live first page -------------------------------------------------
   useEffect(() => {
+    setFailed(false);
     if (!campusId) {
       setLoading(false);
       return;
@@ -78,6 +90,7 @@ export function usePagedPosts() {
       ),
       (snap) => {
         setLivePage(snap.docs.map((d) => ({ ...(d.data() as Post), id: d.id })));
+        liveCursor.current = snap.docs[snap.docs.length - 1] ?? null;
         // Only move the cursor while nothing older has been loaded yet;
         // once she has paged down, the cursor belongs to the last older
         // page and re-pointing it here would fetch the same posts again.
@@ -85,21 +98,22 @@ export function usePagedPosts() {
           cursor.current = snap.docs[snap.docs.length - 1] ?? null;
           if (snap.docs.length < PAGE_SIZE) setExhausted(true);
         }
-        setError(null);
+        setFailed(false);
         setLoading(false);
       },
       () => {
-        setError('Could not load the feed. Pull to refresh.');
+        setFailed(true);
         setLoading(false);
       },
     );
-  }, [campusId]);
+  }, [campusId, attempt]);
 
   // --- Older pages ---------------------------------------------------------
   const loadMore = useCallback(async () => {
     if (!campusId || inFlight.current || exhausted || loading) return;
     if (!cursor.current) return;
     inFlight.current = true;
+    setMoreFailed(false);
     setLoadingMore(true);
     try {
       const snap = await getDocs(
@@ -121,20 +135,32 @@ export function usePagedPosts() {
         return [...current, ...page.filter((p) => !seen.has(p.id))];
       });
     } catch {
-      setError('Could not load more. Pull to refresh.');
+      setMoreFailed(true);
     } finally {
       inFlight.current = false;
       setLoadingMore(false);
     }
   }, [campusId, exhausted, loading]);
+  // While an older page has failed, stop onEndReached from retrying in a
+  // loop on every scroll tick; the footer's Try again clears it.
+  const loadMoreIfOk = useCallback(() => {
+    if (!moreFailed) void loadMore();
+  }, [moreFailed, loadMore]);
 
   const refresh = useCallback(() => {
     // The live page refreshes itself; this just drops everything below it.
     setOlderPages([]);
     hasOlder.current = false;
+    // Page on from the live page again, not from the last older page
+    // that was just dropped — otherwise the next scroll skips a page.
+    cursor.current = liveCursor.current;
     setExhausted(false);
-    setError(null);
-  }, []);
+    setMoreFailed(false);
+    // A live listener that errored is finished; only then open a fresh
+    // one. A healthy one is already current, and re-opening it would
+    // flash the full-screen loader.
+    if (failed) retry();
+  }, [failed, retry]);
 
   const posts = useMemo(() => {
     const seen = new Set(livePage.map((p) => p.id));
@@ -145,9 +171,11 @@ export function usePagedPosts() {
     posts,
     loading,
     loadingMore,
-    error,
+    failed,
+    moreFailed,
     exhausted,
     refresh,
-    loadMore: () => void loadMore(),
+    loadMore: loadMoreIfOk,
+    retryMore: () => void loadMore(),
   };
 }
