@@ -184,6 +184,16 @@ least 2 pieces qualify.
   an admin can call `runTrendingRefresh`.
 - Reads are capped at 5,000 newest rows per signal per campus per run; a
   warning is logged if a campus ever hits it.
+- **Measuring the row itself** (autopilot run 18): a tap on a Trending
+  card opens the piece with `from: 'trending'`, and that rides along as
+  `meta.from` on its `listing_view` and on the `rental_requested` event
+  if she asks to rent or buy it from there. Compare
+  `rental_requested` rows with `meta.from == 'trending'` against
+  `listing_view` rows with the same tag to see whether Trending turns
+  into rentals. The allowed values are `LISTING_ENTRY_POINTS` in
+  `shared/src/constants.ts`; anything else is dropped, not logged. The
+  hourly score deliberately ignores views, so tapping the row cannot
+  feed itself.
 
 ## Step 6 — Explainable and tunable (done, autopilot run 17)
 

@@ -37,6 +37,7 @@ import {
   formatRange,
   spacing,
   type IsoDate,
+  listingEntryPoint,
 } from '@loane/shared';
 import { Button } from '../src/components/Button';
 import { Calendar } from '../src/components/Calendar';
@@ -58,7 +59,10 @@ import { logEvent } from '../src/analytics/events';
 
 export default function RequestRental() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; from?: string }>();
+  const { id } = params;
+  // Which row sent her here (e.g. Trending), carried onto the request.
+  const from = listingEntryPoint(params.from);
   const { profile } = useAuth();
   const { listing, loading } = useListing(id);
   const unavailable = useUnavailableDates(listing);
@@ -167,7 +171,7 @@ export default function RequestRental() {
         surface: 'listing',
         targetType: 'booking',
         targetId: result.data.bookingId,
-        meta: { days, listingId: listing.id },
+        meta: { days, listingId: listing.id, ...(from ? { from } : {}) },
       });
       Alert.alert(
         'Request sent',

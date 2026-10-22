@@ -525,6 +525,26 @@ export const EVENT_SURFACES = [
 ] as const;
 export type EventSurface = (typeof EVENT_SURFACES)[number];
 
+/**
+ * Which row of a screen sent her to a piece, when a surface alone is too
+ * coarse. Rides along as `meta.from` on the piece's `listing_view` and on
+ * any request she makes from it, so we can ask "do pieces in Trending
+ * get rented more?" without a new surface (which would mean a rules
+ * change and a new column in every report).
+ *
+ * Passed between screens as a route param, so anything else that arrives
+ * is dropped by `listingEntryPoint` rather than logged.
+ */
+export const LISTING_ENTRY_POINTS = ['trending'] as const;
+export type ListingEntryPoint = (typeof LISTING_ENTRY_POINTS)[number];
+
+/** A route param narrowed to a known entry point, or null. */
+export function listingEntryPoint(value: unknown): ListingEntryPoint | null {
+  return (LISTING_ENTRY_POINTS as readonly unknown[]).includes(value)
+    ? (value as ListingEntryPoint)
+    : null;
+}
+
 // ---------------------------------------------------------------------------
 // Limits and rules
 // ---------------------------------------------------------------------------

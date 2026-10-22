@@ -26,6 +26,7 @@ import {
   OCCASIONS,
   OCCASION_LABELS,
   type Occasion,
+  type ListingEntryPoint,
   color,
   controls,
   iconSize,
@@ -137,6 +138,13 @@ export default function Discover() {
   const showTrending = tab === 'explore' && search.trim() === '' && activeCount === 0;
   const openListing = (listingId: string) =>
     router.push({ pathname: '/listing/[id]', params: { id: listingId } });
+  // Tagged so the piece's view, and any request she makes from it, says
+  // it came from Trending. See LISTING_ENTRY_POINTS.
+  const openTrendingListing = (listingId: string) =>
+    router.push({
+      pathname: '/listing/[id]',
+      params: { id: listingId, from: 'trending' satisfies ListingEntryPoint },
+    });
   const openOwner = (username: string) => router.push(`/u/${username}`);
 
   const openSort = () => {
@@ -315,7 +323,7 @@ export default function Discover() {
                   listings={trending}
                   campusShortName={campus?.shortName ?? null}
                   cardWidth={cardWidth * 0.8}
-                  onPress={openListing}
+                  onPress={openTrendingListing}
                   onPressOwner={openOwner}
                 />
               ) : null}

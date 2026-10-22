@@ -18,7 +18,7 @@
 import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import { WORDS, formatCents, spacing } from '@loane/shared';
+import { WORDS, formatCents, listingEntryPoint, spacing } from '@loane/shared';
 import { Button } from '../src/components/Button';
 import { Card } from '../src/components/Card';
 import { EmptyState } from '../src/components/EmptyState';
@@ -34,7 +34,10 @@ import { logEvent } from '../src/analytics/events';
 
 export default function OwnIt() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; from?: string }>();
+  const { id } = params;
+  // Which row sent her here (e.g. Trending), carried onto the request.
+  const from = listingEntryPoint(params.from);
   const { listing, loading } = useListing(id);
 
   const [message, setMessage] = useState('');
@@ -73,7 +76,7 @@ export default function OwnIt() {
         surface: 'listing',
         targetType: 'listing',
         targetId: listing.id,
-        meta: { kind: 'purchase' },
+        meta: { kind: 'purchase', ...(from ? { from } : {}) },
       });
       router.replace({ pathname: '/rental/[id]', params: { id: result.data.bookingId } });
     } catch (err) {

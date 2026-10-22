@@ -29,6 +29,7 @@ import {
   formatCentsShort,
   spacing,
   type Condition,
+  listingEntryPoint,
 } from '@loane/shared';
 import { Avatar } from '../../src/components/Avatar';
 import { Button } from '../../src/components/Button';
@@ -72,7 +73,9 @@ export default function ListingDetail() {
   // is simply absent. See docs/decisions.md.
   const tryOnOn = useTryOnEnabled();
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; from?: string }>();
+  const { id } = params;
+  const from = listingEntryPoint(params.from);
   const { width } = useWindowDimensions();
   const { profile } = useAuth();
   const { listing, loading, notFound, failed, retry } = useListing(id);
@@ -96,9 +99,13 @@ export default function ListingDetail() {
       surface: 'listing',
       targetType: 'listing',
       targetId: listing.id,
-      meta: { category: listing.category, intent: listing.intent },
+      meta: {
+        category: listing.category,
+        intent: listing.intent,
+        ...(from ? { from } : {}),
+      },
     });
-  }, [listing]);
+  }, [listing, from]);
 
   if (loading) {
     return (
@@ -389,11 +396,19 @@ export default function ListingDetail() {
           isMine={isMine}
           onLoaneIt={() =>
             gate.run('rent', () =>
-              router.push({ pathname: '/request-rental', params: { id: listing.id } }),
+              router.push({
+                pathname: '/request-rental',
+                params: { id: listing.id, ...(from ? { from } : {}) },
+              }),
             )
           }
           onOwnIt={() =>
-            gate.run('buy', () => router.push({ pathname: '/own-it', params: { id: listing.id } }))
+            gate.run('buy', () =>
+              router.push({
+                pathname: '/own-it',
+                params: { id: listing.id, ...(from ? { from } : {}) },
+              }),
+            )
           }
         />
         {/* Try it on sits between the two buying actions and messaging:
