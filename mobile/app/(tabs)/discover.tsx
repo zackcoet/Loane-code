@@ -49,6 +49,7 @@ import { Icon } from '../../src/components/Icon';
 import { Text } from '../../src/components/Text';
 import { useListings } from '../../src/hooks/useFeed';
 import { useRankingViewer } from '../../src/hooks/useRankingViewer';
+import { useAuth } from '../../src/auth/AuthProvider';
 import { useDiscoverForYou } from '../../src/hooks/useDiscoverForYou';
 import { useFollowingUids, useStudentSearch } from '../../src/hooks/useFollowing';
 import { useRecentSearches } from '../../src/hooks/useRecentSearches';
@@ -80,6 +81,8 @@ export default function Discover() {
   const { uids: followingUids } = useFollowingUids();
   const hidden = useHiddenUids();
   const ranking = useRankingViewer();
+  // Her profile sizes, for the "My size" filter.
+  const mySizes = useAuth().profile?.sizes ?? null;
   // Pulling down works out the For you order again with her latest
   // likes; the pieces themselves are live and already current.
   const { refreshControl } = usePullToRefresh(ranking.reload);
@@ -117,6 +120,7 @@ export default function Discover() {
     sort,
     followingUids: tab === 'following' ? followingUids : null,
     forYouRank,
+    mySizes,
   });
 
   // What the sheet's button should say while she is still adjusting it.
@@ -126,6 +130,7 @@ export default function Discover() {
     filters: draftFilters,
     sort,
     followingUids: tab === 'following' ? followingUids : null,
+    mySizes,
   }).length;
 
   const cardWidth = (width - spacing.md * (GRID_COLUMNS + 1)) / GRID_COLUMNS;
@@ -426,6 +431,7 @@ export default function Discover() {
                 categories: next.categories.length,
                 occasions: next.occasions.length,
                 priced: Boolean(next.minPrice || next.maxPrice),
+                mySize: next.mySize,
               },
             });
           }

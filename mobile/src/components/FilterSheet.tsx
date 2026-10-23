@@ -6,6 +6,7 @@
  */
 
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -14,6 +15,9 @@ import {
   OCCASIONS,
   OCCASION_LABELS,
   SIZES,
+  SIZE_FIELD_LABELS,
+  SIZE_FIELDS,
+  hasAnySize,
   color,
   controls,
   spacing,
@@ -29,6 +33,7 @@ import { Text } from './Text';
 import { Toggle } from './Toggle';
 import { EMPTY_FILTERS, countActiveFilters, type Filters } from '../hooks/useDiscover';
 import { useKeyboardPadding } from '../hooks/useKeyboardPadding';
+import { useAuth } from '../auth/AuthProvider';
 
 interface Props {
   visible: boolean;
@@ -43,6 +48,15 @@ interface Props {
 export function FilterSheet({ visible, filters, resultCount, onPreview, onApply, onClose }: Props) {
   const [draft, setDraft] = useState<Filters>(filters);
   const keyboardPadding = useKeyboardPadding();
+  const router = useRouter();
+  const mySizes = useAuth().profile?.sizes ?? null;
+  const canUseMySize = hasAnySize(mySizes);
+  // "Dresses S · Shoes 8" — so she can see what "My size" means.
+  const mySizeSummary = mySizes
+    ? SIZE_FIELDS.filter((f) => mySizes[f] != null)
+        .map((f) => `${SIZE_FIELD_LABELS[f]} ${mySizes[f]}`)
+        .join(' · ')
+    : '';
 
   const update = (next: Filters) => {
     setDraft(next);
@@ -85,7 +99,34 @@ export function FilterSheet({ visible, filters, resultCount, onPreview, onApply,
           keyboardDismissMode="interactive"
           keyboardShouldPersistTaps="handled"
         >
-          <Text variant="label">Size</Text>
+          <Toggle
+            label="My size"
+            help={
+              canUseMySize
+                ? `${mySizeSummary}. Pieces with no size listed still show.`
+                : 'Add your sizes to your profile to use this.'
+            }
+            value={canUseMySize && draft.mySize}
+            onValueChange={(v) => update({ ...draft, mySize: v })}
+            disabled={!canUseMySize}
+          />
+          {!canUseMySize ? (
+            <Text
+              variant="bodySmall"
+              onPress={() => {
+                onClose();
+                router.push('/edit-profile');
+              }}
+              accessibilityRole="link"
+              style={styles.addSizes}
+            >
+              Add my sizes
+            </Text>
+          ) : null}
+
+          <Text variant="label" style={styles.section}>
+            Size
+          </Text>
           <View style={styles.row}>
             {SIZES.map((value) => (
               <Chip
@@ -182,6 +223,11 @@ const styles = StyleSheet.create({
   priceRow: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
   priceInput: { minWidth: 0 },
   clear: { textDecorationLine: 'underline' },
+  addSizes: {
+    textDecorationLine: 'underline',
+    minHeight: controls.minTapTarget,
+    paddingVertical: spacing.sm,
+  },
   footer: {
     padding: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,

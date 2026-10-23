@@ -23,7 +23,14 @@
  */
 
 import { useMemo, useState } from 'react';
-import type { Category, Listing, Occasion, Size } from '@loane/shared';
+import {
+  fitsMySizes,
+  type Category,
+  type Listing,
+  type MySizes,
+  type Occasion,
+  type Size,
+} from '@loane/shared';
 
 export const SORTS = ['for_you', 'newest', 'price_low', 'price_high'] as const;
 export type Sort = (typeof SORTS)[number];
@@ -44,6 +51,8 @@ export interface Filters {
   maxPrice: string;
   /** Hide pieces the owner has paused. */
   availableOnly: boolean;
+  /** Only pieces in the sizes on her profile. See shared/src/mySize.ts. */
+  mySize: boolean;
 }
 
 export const EMPTY_FILTERS: Filters = {
@@ -53,6 +62,7 @@ export const EMPTY_FILTERS: Filters = {
   minPrice: '',
   maxPrice: '',
   availableOnly: false,
+  mySize: false,
 };
 
 /** The price we sort and filter on: rental first, else the sale price. */
@@ -67,7 +77,8 @@ export function countActiveFilters(filters: Filters): number {
     filters.occasions.length +
     (filters.minPrice.trim() ? 1 : 0) +
     (filters.maxPrice.trim() ? 1 : 0) +
-    (filters.availableOnly ? 1 : 0)
+    (filters.availableOnly ? 1 : 0) +
+    (filters.mySize ? 1 : 0)
   );
 }
 
@@ -89,6 +100,8 @@ interface Options {
    * until then.
    */
   forYouRank?: Map<string, number> | null;
+  /** Her profile sizes, for the "My size" filter. */
+  mySizes?: MySizes | null;
 }
 
 export function useDiscoverResults({
@@ -98,6 +111,7 @@ export function useDiscoverResults({
   sort,
   followingUids,
   forYouRank,
+  mySizes,
 }: Options): Listing[] {
   return useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -108,6 +122,7 @@ export function useDiscoverResults({
       if (followingUids && !followingUids.has(listing.ownerUid)) return false;
       if (filters.availableOnly && listing.status !== 'active') return false;
 
+      if (filters.mySize && !fitsMySizes(listing, mySizes)) return false;
       if (filters.sizes.length > 0) {
         if (!listing.size || !filters.sizes.includes(listing.size)) return false;
       }
@@ -153,7 +168,7 @@ export function useDiscoverResults({
       if (pb == null) return -1;
       return sort === 'price_low' ? pa - pb : pb - pa;
     });
-  }, [listings, search, filters, sort, followingUids, forYouRank]);
+  }, [listings, search, filters, sort, followingUids, forYouRank, mySizes]);
 }
 
 /** Small holder so the screen stays readable. */
