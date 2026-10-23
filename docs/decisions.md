@@ -1706,3 +1706,32 @@ alone don't count, because Quick add fills those in for her. After a
 look is shared, the flow closes without asking: the draft keeps a
 counter that goes up on every reset, and Arrange checks it the moment
 it is closed.
+
+## 2026-10-23 — The Messages inbox pages; the badge keeps its own window (autopilot run 26)
+
+**Decision:** the inbox is now the same growing live window as Activity
+and comments — one listener holding 50 chats, widened by 50 as she nears
+the bottom. The Messages badge has its own fixed listener on her 50 most
+recently active chats (`INBOX_BADGE_WINDOW`), so scrolling never changes
+the number.
+
+**Why a fixed 50 is enough for the badge:** everything that makes a chat
+unread (a message, a heart on her message) also moves it to the top. A
+chat can only be unread and outside the 50 if fifty other chats have had
+something newer since. A server-kept "total unread" would cover even that,
+but it would need new database fields, a rules change and a backfill on
+the live project — not worth it for that case.
+
+**Search and requests:** search still filters the chats already on the
+phone (instant on every keystroke). When it finds nobody and there are
+older chats, it offers "Search older chats"; an empty Message requests
+offers "Look further back".
+
+## 2026-10-23 — A check that every native Text keeps the size cap (autopilot run 26)
+
+`npm run lint` now also runs `scripts/check-text-cap.mjs`: any `Text` or
+`TextInput` imported from React Native must set `maxFontSizeMultiplier`
+(or `allowFontScaling={false}` for the logo and avatar initials, on
+purpose). ESLint alone cannot tell React Native's `Text` from our shared
+one — they have the same name — so the script reads each file's imports.
+GitHub runs it with the rest of lint.
