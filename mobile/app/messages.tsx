@@ -7,14 +7,15 @@
  * mute or delete it.
  *
  * The search box narrows by name or @username. It filters the threads
- * already loaded rather than querying, because at campus scale her
- * whole inbox is already on the phone and a search that answers on
- * every keystroke beats one that waits for the network.
+ * already loaded rather than querying, because a search that answers on
+ * every keystroke beats one that waits for the network. The inbox loads
+ * 50 chats at a time as she scrolls; when a search finds nothing and
+ * there are older chats, she is offered "Search older chats".
  */
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { color, controls, fonts, radius, spacing, type } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
 import { LoadError } from '../src/components/LoadError';
@@ -33,7 +34,16 @@ export default function Messages() {
   // Live list: the pull is reassurance, see usePullToRefresh.
   const { refreshControl } = usePullToRefresh();
   const { profile } = useAuth();
-  const { inbox: conversations, requests, loading, failed, retry } = useInbox();
+  const {
+    inbox: conversations,
+    requests,
+    loading,
+    failed,
+    retry,
+    hasMore,
+    loadMore,
+    loadingMore,
+  } = useInbox();
   const [term, setTerm] = useState('');
 
   const shown = useMemo(() => {
@@ -108,7 +118,18 @@ export default function Messages() {
           body="Chats with people you follow show up here. New people are waiting in Message requests."
         />
       ) : shown.length === 0 ? (
-        <EmptyState title="Nobody by that name" body="Try her @username." />
+        // Search looks through the chats already loaded. If there are
+        // older ones, offer to fetch them rather than say "nobody".
+        <EmptyState
+          title="Nobody by that name"
+          body={
+            hasMore
+              ? 'Not in your recent chats. Try her @username, or look further back.'
+              : 'Try her @username.'
+          }
+          actionLabel={hasMore ? 'Search older chats' : undefined}
+          onAction={hasMore ? loadMore : undefined}
+        />
       ) : (
         <FlatList
           refreshControl={refreshControl}
@@ -117,6 +138,15 @@ export default function Messages() {
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.list}
+          onEndReached={hasMore ? loadMore : undefined}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.more} accessibilityLabel="Loading more">
+                <ActivityIndicator color={color.icon.default} />
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
             <ThreadRow
               conversation={item}
@@ -177,6 +207,7 @@ const styles = StyleSheet.create({
   // An unread request: cherry, because it is asking to be answered.
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.button.primary.background },
   list: { paddingBottom: spacing.xxl },
+  more: { paddingVertical: spacing.lg },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',

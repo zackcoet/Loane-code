@@ -24,7 +24,25 @@ export const PAGE_SIZES = {
   peopleSearch: 30,
   /** People search: how many matches to show. */
   peopleSearchShown: 20,
+  /**
+   * The Messages inbox: how many chats it holds at first, and how many
+   * more each time she nears the bottom. The first window is the same
+   * size as the badge's (INBOX_BADGE_WINDOW) so the two read the same
+   * chats and the phone answers both from one copy.
+   */
+  inbox: 50,
 } as const;
+
+/**
+ * How many of her most recently active chats the Messages badge reads.
+ * Fixed, so scrolling the inbox never changes what the badge listens to.
+ *
+ * Why a fixed window is enough: anything that makes a chat unread (a
+ * message, a heart on her message) also moves it to the top. A chat can
+ * only be unread and outside the window if 50 other chats have had
+ * something newer since — and then those are what she will open first.
+ */
+export const INBOX_BADGE_WINDOW = 50;
 
 /**
  * The live page and the older pages as one list, newest first, each

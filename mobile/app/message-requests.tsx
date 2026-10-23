@@ -8,8 +8,8 @@
  */
 
 import { useRouter } from 'expo-router';
-import { FlatList, StyleSheet } from 'react-native';
-import { spacing } from '@loane/shared';
+import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
+import { color, spacing } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
 import { LoadError } from '../src/components/LoadError';
 import { Header } from '../src/components/Header';
@@ -26,7 +26,7 @@ export default function MessageRequests() {
   // Live list: the pull is reassurance, see usePullToRefresh.
   const { refreshControl } = usePullToRefresh();
   const { profile } = useAuth();
-  const { requests, loading, failed, retry } = useInbox();
+  const { requests, loading, failed, retry, hasMore, loadMore, loadingMore } = useInbox();
 
   return (
     <Screen flush>
@@ -39,6 +39,10 @@ export default function MessageRequests() {
         <EmptyState
           title="No requests"
           body="When someone you don't follow messages you, it waits here until you reply."
+          // Requests are picked out of the chats loaded so far, so an old
+          // one can sit further back. Offer to look rather than say none.
+          actionLabel={hasMore ? 'Look further back' : undefined}
+          onAction={hasMore ? loadMore : undefined}
         />
       ) : (
         <FlatList
@@ -46,6 +50,15 @@ export default function MessageRequests() {
           data={requests}
           keyExtractor={(c) => c.id}
           contentContainerStyle={styles.list}
+          onEndReached={hasMore ? loadMore : undefined}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.more} accessibilityLabel="Loading more">
+                <ActivityIndicator color={color.icon.default} />
+              </View>
+            ) : null
+          }
           ListHeaderComponent={
             <Text variant="bodySmall" tone="secondary" style={styles.note}>
               These are from people you don&apos;t follow. Reply to move a chat to your messages.
@@ -67,5 +80,6 @@ export default function MessageRequests() {
 
 const styles = StyleSheet.create({
   list: { paddingBottom: spacing.xxl },
+  more: { paddingVertical: spacing.lg },
   note: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
 });

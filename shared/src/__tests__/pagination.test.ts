@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isLastPage, mergePages, PAGE_SIZES } from '../pagination';
+import { INBOX_BADGE_WINDOW, isLastPage, mergePages, PAGE_SIZES } from '../pagination';
 
 describe('mergePages', () => {
   it('puts the live page first, then older pages', () => {
@@ -41,5 +41,11 @@ describe('people search page', () => {
   it('fetches more than it shows, so dropped accounts do not leave her short', () => {
     expect(PAGE_SIZES.peopleSearch).toBeGreaterThan(PAGE_SIZES.peopleSearchShown);
     expect(PAGE_SIZES.peopleSearchShown).toBeGreaterThan(0);
+  });
+});
+
+describe('the Messages inbox window', () => {
+  it('starts the same size as the badge window, so both read the same chats', () => {
+    expect(PAGE_SIZES.inbox).toBe(INBOX_BADGE_WINDOW);
   });
 });

@@ -29,6 +29,7 @@ import {
 } from 'firebase/firestore';
 import {
   COLLECTIONS,
+  INBOX_BADGE_WINDOW,
   LIMITS,
   PAGE_SIZES,
   docPresence,
@@ -77,13 +78,19 @@ async function sendCounted(
   await batch.commit();
 }
 
-/** Her inbox, most recent first. */
-export function useConversations() {
+/**
+ * Her most recently active chats, newest first, as one live listener of
+ * `windowSize` chats. The badge holds a fixed window; the inbox screen
+ * widens hers a page at a time as she scrolls (useInbox).
+ */
+function useConversationWindow(windowSize: number) {
   const { profile } = useAuth();
   const uid = profile?.uid;
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const { attempt, retry } = useRetry();
 
   useEffect(() => {
@@ -93,13 +100,15 @@ export function useConversations() {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    // Only the first window shows the full-screen loader; a wider one
+    // keeps the list she is reading and shows the footer spinner.
+    if (windowSize === PAGE_SIZES.inbox) setLoading(true);
     return onSnapshot(
       query(
         collection(db, COLLECTIONS.conversations),
         where('participantUids', 'array-contains', uid),
         orderBy('updatedAt', 'desc'),
-        limit(50),
+        limit(windowSize),
       ),
       (snap) => {
         // No signal and nothing cached: an empty answer here is a guess,
@@ -107,31 +116,46 @@ export function useConversations() {
         if (isCachedEmpty(snap)) {
           setFailed(true);
           setLoading(false);
+          setLoadingMore(false);
           return;
         }
         setFailed(false);
         setConversations(snap.docs.map((d) => ({ ...(d.data() as Conversation), id: d.id })));
+        setHasMore(snap.docs.length >= windowSize);
         setLoading(false);
+        setLoadingMore(false);
       },
       () => {
         setFailed(true);
         setLoading(false);
+        setLoadingMore(false);
       },
     );
-  }, [uid, attempt]);
+  }, [uid, windowSize, attempt]);
 
-  return { conversations, loading, failed, retry };
+  return { conversations, loading, failed, retry, hasMore, loadingMore, setLoadingMore };
 }
 
 /**
  * Her inbox split the way the screen shows it: the threads she reads,
  * and the message requests from people she does not follow. Deleted
  * threads are in neither until something new arrives.
+ *
+ * A page at a time: the same growing live window as Activity and
+ * comments. One listener holds the first 50 chats and is widened by 50
+ * as she nears the bottom, so every row on screen stays live (a new
+ * message moves its chat to the top, a read clears its dot) and an
+ * older chat is still there if she scrolls for it. It used to stop at
+ * 50 — see docs/decisions.md.
  */
 export function useInbox() {
   const { profile } = useAuth();
   const uid = profile?.uid;
-  const { conversations, loading, failed, retry } = useConversations();
+  const [windowSize, setWindowSize] = useState<number>(PAGE_SIZES.inbox);
+  // Someone else signing in on this phone starts from one page again.
+  useEffect(() => setWindowSize(PAGE_SIZES.inbox), [uid]);
+  const { conversations, loading, failed, retry, hasMore, loadingMore, setLoadingMore } =
+    useConversationWindow(windowSize);
   const { uids: following, loading: followingLoading } = useFollowingUids();
   // Threads with anyone blocked either way leave the inbox entirely.
   const hidden = useHiddenUids();
@@ -139,18 +163,39 @@ export function useInbox() {
     () => (uid ? splitInbox(conversations, uid, following, hidden) : { inbox: [], requests: [] }),
     [conversations, uid, following, hidden],
   );
+
+  /** Near the bottom: hold one more page of chats. */
+  const loadMore = useCallback(() => {
+    if (!hasMore || loadingMore || loading) return;
+    setLoadingMore(true);
+    setWindowSize((n) => n + PAGE_SIZES.inbox);
+  }, [hasMore, loadingMore, loading, setLoadingMore]);
+
   // Wait for who she follows too, or a friend's thread would flash in
   // Requests for a moment on every open.
-  return { ...split, loading: loading || followingLoading, failed, retry };
+  return {
+    ...split,
+    loading: loading || followingLoading,
+    failed,
+    retry,
+    hasMore,
+    loadMore,
+    loadingMore,
+  };
 }
 
 /**
  * Total unread for the Messages badge. Muted threads, deleted threads
  * and requests do not count — see inboxUnreadTotal.
+ *
+ * Reads its own fixed window of her most recent chats, not the inbox
+ * screen's, so scrolling Messages never changes the number and the
+ * badge never waits on a list she may never open. Why 50 recent chats
+ * is enough: INBOX_BADGE_WINDOW.
  */
 export function useUnreadMessageCount(): number {
   const { profile } = useAuth();
-  const { conversations } = useConversations();
+  const { conversations } = useConversationWindow(INBOX_BADGE_WINDOW);
   const { uids: following } = useFollowingUids();
   const hidden = useHiddenUids();
   const uid = profile?.uid;
