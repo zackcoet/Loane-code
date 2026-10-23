@@ -111,15 +111,17 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 14. *(suggested)* "Discard changes?" on the new-look and new-piece flows too (only the edit screens have it).
 
 ### F. Onboarding (from the founder's improvement list)
-1. Rent / lend / both step.
-2. "What's coming up?" occasions step (feeds the algorithm).
-3. Optional size step + "My size" filter in Discover.
-4. "Follow 3 closets" step.
-5. Welcome screen social proof (hidden under 50 users).
-6. Invite-your-roommates share step.
-7. Non-USC email → friendly waitlist screen (saved, visible in admin).
-8. Onboarding steps tracked in the admin funnel.
-9. Walkthrough tour max 3 steps.
+✅ 1. Rent / lend / both step. *(Run 22: `app/get-started.tsx`, straight after Create account, new accounts only. Every step skippable.)*
+✅ 2. "What's coming up?" occasions step (feeds the algorithm). *(Run 22: each pick counts as 3 liked looks in For You and Discover — see `docs/feed-algorithm.md`.)*
+✅ 3. Optional size step + "My size" filter in Discover. *(Run 22: sizes go to her profile, still hidden unless she turns them on; "My size" in Discover's Filter hides a piece only when both sizes are known and differ.)*
+✅ 4. "Follow 3 closets" step. *(Run 22: friends-of-friends first, then the most-followed at USC.)*
+✅ 5. Welcome screen social proof (hidden under 50 users). *(Run 22: "Join 120+ girls at USC", rounded down. Deleting an account now lowers the count.)*
+✅ 6. Invite-your-roommates share step. *(Run 22: last step of Get started, same message as Invite Friends.)*
+7. Non-USC email → friendly waitlist screen (saved, visible in admin). *(Run 22: NOT built — today ANY .edu email can sign up and gets its own school made on the fly, which was set up on 2026-10-12. A waitlist means turning those students away. Waiting on Zack — see the log.)*
+✅ 8. Onboarding steps tracked in the admin funnel. *(Run 22: Overview → Get Started Funnel.)*
+✅ 9. Walkthrough tour max 3 steps. *(Run 22: feed, the +, Activity.)*
+10. *(suggested)* A "My size" quick chip on Discover's top row, next to the occasions, so it is one tap instead of inside Filter.
+11. *(suggested)* Count signups on other schools' .edu addresses in the dashboard, to see demand for the next campus (pairs with F7).
 
 ### G. App Store readiness
 ✅ 1. Account deletion (see B4).

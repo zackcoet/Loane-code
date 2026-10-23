@@ -3,6 +3,8 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- **From run 22 — one decision:** right now ANY .edu email can sign up (a student at Clemson gets her own little "school" made for her automatically — that was set up on Oct 12). Backlog item F7 says non-USC emails should go to a waitlist instead. Doing that means turning those students away, so I didn't build it. Reply "USC only + waitlist" or "keep any .edu" and the next run will do it.
+- From run 22 (only when you next deploy): the database rules gained one small allowed field (her Get started answers) and account deletion now lowers the campus student count — normal deploy, nothing to switch on.
 - From run 21 (only when you next deploy): it adds new server functions for hearting comments — normal deploy, nothing to switch on.
 - Nothing new from run 20.
 - Nothing new from run 19.
@@ -13,6 +15,52 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-23 (run 22, ~1 AM Central) — "Get started" after signup, a "My size" filter, social proof, a shorter tour
+
+**Plan:** Section F, onboarding, top to bottom. F1–F4 as one new "Get started" screen right after Create account (rent/lend/both → what's coming up → your size → follow 3 closets), then F5 the welcome-screen number, F6 the invite step, F8 the dashboard funnel and F9 the shorter tour. F7 (waitlist) needs a decision first — see NEEDS ZACK.
+
+**Built:**
+- **"Get started" — five quick screens after she creates her account,** each with Skip in the corner and Back to change an answer:
+  1. *How will you use Loane?* — Find something to wear / Earn from my closet / Both.
+  2. *What's coming up?* — tap any of the 8 occasions. Her feed and Discover then lean toward those looks from her very first scroll (before she has liked anything). Once she starts liking looks, her real taste takes over.
+  3. *Your size* — tops, bottoms, dresses, shoes, all optional. Saved to her profile but still hidden from other girls unless she turns "Show my sizes" on.
+  4. *Follow 3 closets* — a list of girls to follow (friends-of-friends first, then the most-followed closets at USC). Next unlocks at 3. On a brand-new campus with fewer closets, following what's there is enough.
+  5. *Invite your roommates* — opens the share sheet with the same message as Invite Friends.
+  If she said "lend" or "both", the last screen also has **Put a piece on Loane**, which takes her straight to listing her first piece.
+  Only brand-new accounts see this. Everyone already signed up is never asked.
+- **"My size" filter on Discover.** Filter → a "My size" switch at the top, showing which sizes it uses ("Dresses S · Shoes 8"). It hides a piece only when we know it won't fit; bags, jewelry and pieces listed without a size still show. If she has no sizes yet, it offers "Add my sizes".
+- **Welcome screen social proof.** Under "STYLE. SHARED." on the very first screen: "Join 120+ girls at USC" — but only once USC has 50+ students, and always rounded DOWN so it's never an exaggeration. Deleting an account now takes her out of that count, so it stays true.
+- **Dashboard: Get Started Funnel** (Overview page). How many started, answered each step, followed 3, invited, and reached the feed — plus how many said rent vs lend vs both. That last line is an early answer to "will girls lend?".
+- **The walkthrough is 3 steps, not 6:** the feed, the + button, and Activity.
+
+**What to tap to see it:**
+- Sign out → Find your campus closet → make a new account with any @email.sc.edu address → after "Create account" you land on *How will you use Loane?*. Pick one → Next → pick Formal → Next → pick a dress size → Next → follow 3 girls → Next → Invite roommates (or Start exploring).
+- Discover → Filter → turn on **My size** → Show results.
+- Admin dashboard → Overview → **Get Started Funnel** (empty until someone signs up on the new version).
+- The welcome-screen number won't show on the test data — it only has a handful of fake students, under the 50 needed.
+
+**Fixed:**
+- Nothing broken was found this run. One honesty fix: the campus student count used to only ever go up (deleted accounts still counted). Now deleting lowers it.
+
+**Skipped / blocked:**
+- **F7 (waitlist for non-USC emails)** — needs your call first, see NEEDS ZACK.
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed: type checks, lint, the index check (84 searches, none missing), all 283 shared tests (16 new), the server tests that don't need the database, the iPhone app build and the dashboard build. This run DID change the database rules (her Get started answers) and account deletion, with new tests written for both — GitHub runs those on tonight's push, so check for the green tick before merging.
+
+**🚨 NEEDS ZACK:** One decision — USC-only with a waitlist, or keep letting any .edu in (details at the top of this file).
+
+**Next up:** F7 once you decide; otherwise G2 — large text sizes and VoiceOver labels on every button.
+
+**Commits:**
+- Get started after signup: rent/lend/both, what's coming up, and your size
+- Discover: a 'My size' filter that uses the sizes on her profile
+- Get started: a 'Follow 3 closets' step at the end
+- Welcome screen: 'Join 120+ girls at USC' once the campus has 50+ students
+- Get started: an 'Invite your roommates' step, sharing the same invite as Invite Friends
+- Dashboard: a Get Started funnel — each step answered vs skipped, and rent/lend/both
+- Walkthrough: three steps instead of six — feed, the +, and Activity
 
 ---
 
