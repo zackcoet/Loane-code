@@ -105,7 +105,7 @@ export function useSuggestedRecipients() {
 }
 
 /** Profiles by uid, in chunks of thirty — the most an `in` query takes. */
-async function readUsers(uids: string[]): Promise<UserSummary[]> {
+export async function readUsers(uids: string[]): Promise<UserSummary[]> {
   const out: UserSummary[] = [];
   for (let i = 0; i < uids.length; i += 30) {
     const chunk = uids.slice(i, i + 30);

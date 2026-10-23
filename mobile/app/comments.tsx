@@ -44,6 +44,7 @@ import { Text } from '../src/components/Text';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useComments } from '../src/hooks/useComments';
 import { useHiddenUids } from '../src/hooks/useBlocks';
+import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 
 export default function Comments() {
   const router = useRouter();
@@ -66,6 +67,8 @@ export default function Comments() {
     loadingMore,
   } = useComments(postId);
   const hidden = useHiddenUids();
+  // Live list: the pull is reassurance, see usePullToRefresh.
+  const { refreshControl } = usePullToRefresh();
   const [draft, setDraft] = useState('');
   const [reporting, setReporting] = useState<Comment | null>(null);
   /** Who she is answering, if anyone. */
@@ -130,6 +133,7 @@ export default function Comments() {
           <EmptyState title="No comments yet" body="Say something nice about this look." />
         ) : (
           <FlatList
+            refreshControl={refreshControl}
             data={visible}
             keyExtractor={(row) => row.comment.id}
             contentContainerStyle={styles.list}

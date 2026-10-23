@@ -23,6 +23,7 @@ import { Text } from '../src/components/Text';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useFollowList } from '../src/hooks/useFollowing';
 import { useHiddenUids } from '../src/hooks/useBlocks';
+import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 import { unfollowUser } from '../src/firebase/callables';
 import { logEvent } from '../src/analytics/events';
 import { callableErrorMessage } from '../src/firebase/errors';
@@ -40,6 +41,8 @@ export default function FollowListScreen() {
     side === 'followers' ? 'followers' : 'following',
   );
   const hidden = useHiddenUids();
+  // Live list: the pull is reassurance, see usePullToRefresh.
+  const { refreshControl } = usePullToRefresh();
   const [working, setWorking] = useState<string | null>(null);
 
   const isMine = profile?.uid === uid;
@@ -104,6 +107,7 @@ export default function FollowListScreen() {
         />
       ) : (
         <FlatList
+          refreshControl={refreshControl}
           data={visible}
           keyExtractor={(p) => p.uid}
           contentContainerStyle={styles.list}
