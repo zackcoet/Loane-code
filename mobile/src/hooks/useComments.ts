@@ -170,6 +170,14 @@ export function useComments(postId: string | undefined) {
       setPendingLikes((m) => new Map(m).set(comment.id, next));
       try {
         await (next ? likeComment : unlikeComment)({ commentId: comment.id });
+        // Logged after the server agreed, like post_like, so a refused
+        // heart never counts.
+        logEvent(next ? 'comment_like' : 'comment_unlike', {
+          surface: 'feed',
+          targetType: 'post',
+          targetId: postId ?? null,
+          meta: { commentId: comment.id },
+        });
       } catch (err) {
         throw new Error(callableErrorMessage(err, 'Could not do that just now.'));
       } finally {
@@ -181,7 +189,7 @@ export function useComments(postId: string | undefined) {
         });
       }
     },
-    [isLiked],
+    [isLiked, postId],
   );
 
   /**

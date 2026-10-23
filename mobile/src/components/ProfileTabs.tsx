@@ -141,6 +141,7 @@ export function ProfileTabs({ uid, isMe }: Props) {
       <ProfileGateSheet gate={gate} />
       <PeekPreview
         item={peek}
+        surface={peek?.kind === 'listing' ? 'closet' : 'profile'}
         onClose={() => setPeek(null)}
         onOpen={(item) => {
           setPeek(null);

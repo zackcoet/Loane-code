@@ -469,6 +469,12 @@ export const EVENT_TYPES = [
   'save',
   'unsave',
   'tagged_item_tap',
+  /**
+   * She pressed and held a grid tile to see it big (PeekPreview). Its own
+   * type, never a view: the feed ranking reads views, and a peek is a
+   * glance, not a visit. targetType says whether it was a look or a piece.
+   */
+  'grid_preview',
   // --- AI try-on ---
   'tryon_open',
   /**
@@ -498,6 +504,9 @@ export const EVENT_TYPES = [
   'message_sent',
   'comment_created',
   'comment_deleted',
+  /** Heart on a comment. targetId is the look; meta.commentId the comment. */
+  'comment_like',
+  'comment_unlike',
   'post_shared',
   'listing_shared',
   'invite_shared',

@@ -43,6 +43,7 @@ import { RecentSearches, SearchSuggestions } from '../../src/components/Discover
 import { EmptyState } from '../../src/components/EmptyState';
 import { FilterSheet } from '../../src/components/FilterSheet';
 import { ListingCard } from '../../src/components/ListingCard';
+import { PeekPreview, type PeekItem } from '../../src/components/PeekPreview';
 import { TrendingRow } from '../../src/components/TrendingRow';
 import { Logo } from '../../src/components/Logo';
 import { Screen } from '../../src/components/Screen';
@@ -172,6 +173,9 @@ export default function Discover() {
   const rememberSearch = () => {
     if (term) remember(term);
   };
+
+  // Press and hold a piece to see it big — see PeekPreview.
+  const [peek, setPeek] = useState<PeekItem | null>(null);
 
   const openListing = (listingId: string) => {
     rememberSearch();
@@ -432,10 +436,21 @@ export default function Discover() {
               width={cardWidth}
               onPressOwner={openOwner}
               onPress={openListing}
+              onLongPress={(listing) => setPeek({ kind: 'listing', listing })}
             />
           )}
         />
       )}
+
+      <PeekPreview
+        item={peek}
+        surface="discover"
+        onClose={() => setPeek(null)}
+        onOpen={(open) => {
+          setPeek(null);
+          if (open.kind === 'listing') openListing(open.listing.id);
+        }}
+      />
 
       <FilterSheet
         visible={sheetOpen}

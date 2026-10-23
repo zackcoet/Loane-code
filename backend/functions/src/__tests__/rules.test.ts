@@ -1850,6 +1850,29 @@ describe('events', () => {
     );
   });
 
+  it('accepts a press-and-hold preview of a piece on Discover', async () => {
+    await assertSucceeds(
+      setDoc(doc(asElla(), 'events', 'event-peek'), goodEvent({ type: 'grid_preview' })),
+    );
+  });
+
+  it('accepts a heart on a comment, with the comment in meta', async () => {
+    for (const type of ['comment_like', 'comment_unlike']) {
+      await assertSucceeds(
+        setDoc(
+          doc(asElla(), 'events', `event-${type}`),
+          goodEvent({
+            type,
+            surface: 'feed',
+            targetType: 'post',
+            targetId: 'post-1',
+            meta: { commentId: 'comment-1' },
+          }),
+        ),
+      );
+    }
+  });
+
   it('stops her logging an event as someone else', async () => {
     await assertFails(setDoc(doc(asElla(), 'events', 'event-2'), goodEvent({ uid: MADDIE })));
   });

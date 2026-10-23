@@ -68,6 +68,8 @@ export function PostGrid({ posts, onPress, header, refreshControl }: Props) {
       />
       <PeekPreview
         item={peek}
+        // Liked and Saved looks, both reached from her profile.
+        surface="profile"
         onClose={() => setPeek(null)}
         onOpen={(open) => {
           setPeek(null);

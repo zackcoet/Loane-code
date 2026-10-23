@@ -15,6 +15,8 @@ event and where it is written:
 | Liked / unliked | `post_like` / `post_unlike` | `usePostEngagement` (button and double-tap) |
 | Saved a look / a piece | `post_save`, `save` (and the un- versions) | `usePostEngagement`, `useSaved` |
 | Commented | `comment_created` | `useComments` |
+| Hearted / un-hearted a comment | `comment_like` / `comment_unlike` — `targetId` is the look, `meta.commentId` the comment | `useComments` |
+| Pressed and held a grid tile for a preview | `grid_preview` — `targetType` `post` or `listing`; `surface` `discover`, `closet` or `profile`. Recorded only; the ranking does not read it yet (a glance is not a visit) | `PeekPreview` |
 | Shared into a DM | `post_shared`, `listing_shared` | Send sheet |
 | Tapped a tagged piece | `tagged_item_tap` (the headline metric) | Feed, look page |
 | Opened a profile | `profile_view` — `meta.from`: `feed`, `suggested` or `other` | Profile |

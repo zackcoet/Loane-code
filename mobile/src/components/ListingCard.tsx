@@ -34,9 +34,19 @@ interface Props {
    * grid of browse results with a button on every tile is noise.
    */
   onTryOn?: (listingId: string) => void;
+  /** Press and hold: a big preview (PeekPreview). Off unless passed. */
+  onLongPress?: (listing: Listing) => void;
 }
 
-export function ListingCard({ listing, width, onPress, onPressOwner, hideSave, onTryOn }: Props) {
+export function ListingCard({
+  listing,
+  width,
+  onPress,
+  onPressOwner,
+  hideSave,
+  onTryOn,
+  onLongPress,
+}: Props) {
   const { saved, toggle } = useIsSaved(listing.id);
   const price =
     listing.pricing.threeDayCents != null
@@ -50,7 +60,9 @@ export function ListingCard({ listing, width, onPress, onPressOwner, hideSave, o
       style={[styles.card, { width }]}
       accessibilityRole="button"
       accessibilityLabel={listing.name}
+      accessibilityHint={onLongPress ? 'Press and hold to preview' : undefined}
       onPress={() => onPress?.(listing.id)}
+      onLongPress={onLongPress ? () => onLongPress(listing) : undefined}
     >
       <View>
         {listing.coverUrl ? (

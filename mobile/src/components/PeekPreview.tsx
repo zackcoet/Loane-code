@@ -11,12 +11,24 @@
  * preview the instant it opened. Tap-to-close works the same whether or
  * not that happens. Tap the photo to open it; tap anywhere else to close.
  *
- * Opening a preview logs nothing: it is not a view of the page, and
- * counting it as one would inflate the numbers the feed ranking reads.
+ * Opening a preview logs `grid_preview`, its own event — never a view of
+ * the page, because counting a glance as a visit would inflate the
+ * numbers the feed ranking reads. Tapping through to the page logs the
+ * view there as usual.
  */
 
+import { useEffect } from 'react';
 import { Image, Modal, Pressable, StyleSheet, View } from 'react-native';
-import { color, radius, spacing, type Listing, type Post, formatCentsShort } from '@loane/shared';
+import {
+  color,
+  radius,
+  spacing,
+  type EventSurface,
+  type Listing,
+  type Post,
+  formatCentsShort,
+} from '@loane/shared';
+import { logEvent } from '../analytics/events';
 import { Avatar } from './Avatar';
 import { Text } from './Text';
 
@@ -24,6 +36,8 @@ export type PeekItem = { kind: 'post'; post: Post } | { kind: 'listing'; listing
 
 interface Props {
   item: PeekItem | null;
+  /** Which screen's grid it was held on, for the event. */
+  surface: EventSurface;
   onClose: () => void;
   /** Tap on the preview: open the look or piece properly. */
   onOpen: (item: PeekItem) => void;
@@ -37,7 +51,16 @@ function priceLine(listing: Listing): string | null {
   return null;
 }
 
-export function PeekPreview({ item, onClose, onOpen }: Props) {
+export function PeekPreview({ item, surface, onClose, onOpen }: Props) {
+  const targetType = item?.kind ?? null;
+  const targetId = item ? (item.kind === 'post' ? item.post.id : item.listing.id) : null;
+  // Once per opening. Keyed on the id, not the item object, so a live
+  // update to the same look while it is open does not log it twice.
+  useEffect(() => {
+    if (!targetType || !targetId) return;
+    logEvent('grid_preview', { surface, targetType, targetId });
+  }, [targetType, targetId, surface]);
+
   if (!item) return null;
 
   const isPost = item.kind === 'post';
