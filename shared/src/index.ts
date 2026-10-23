@@ -35,3 +35,4 @@ export * from './feedOrder';
 export * from './discoverRanking';
 export * from './trending';
 export * from './mentions';
+export * from './recentSearches';

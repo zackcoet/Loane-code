@@ -13,6 +13,7 @@ import {
   ActionSheetIOS,
   Alert,
   FlatList,
+  Keyboard,
   Platform,
   Pressable,
   ScrollView,
@@ -24,6 +25,7 @@ import {
 import { SkeletonGrid } from '../../src/components/Skeleton';
 import {
   fonts,
+  matchingOccasions,
   OCCASIONS,
   OCCASION_LABELS,
   type Occasion,
@@ -36,6 +38,7 @@ import {
   type,
 } from '@loane/shared';
 import { Chip } from '../../src/components/Chip';
+import { RecentSearches, SearchSuggestions } from '../../src/components/DiscoverSearchExtras';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FilterSheet } from '../../src/components/FilterSheet';
 import { ListingCard } from '../../src/components/ListingCard';
@@ -47,7 +50,8 @@ import { Text } from '../../src/components/Text';
 import { useListings } from '../../src/hooks/useFeed';
 import { useRankingViewer } from '../../src/hooks/useRankingViewer';
 import { useDiscoverForYou } from '../../src/hooks/useDiscoverForYou';
-import { useFollowingUids } from '../../src/hooks/useFollowing';
+import { useFollowingUids, useStudentSearch } from '../../src/hooks/useFollowing';
+import { useRecentSearches } from '../../src/hooks/useRecentSearches';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
 import { useCampus } from '../../src/hooks/useCampus';
 import { useTrendingIds } from '../../src/hooks/useTrending';
@@ -140,8 +144,33 @@ export default function Discover() {
     });
   }, [trendingIds, campusListings]);
   const showTrending = tab === 'explore' && search.trim() === '' && activeCount === 0;
-  const openListing = (listingId: string) =>
+  /*
+    Search, Instagram-style: recent searches while the box is focused and
+    empty; matching students and occasions above the pieces while she
+    types. A search is remembered when she submits it or opens something
+    from its results — not on every keystroke.
+  */
+  const [searchFocused, setSearchFocused] = useState(false);
+  const { recent, remember, forget, clear } = useRecentSearches();
+  const term = search.trim();
+  const { results: people } = useStudentSearch(term);
+  const visiblePeople = useMemo(
+    () => people.filter((p) => !hidden.has(p.uid)).slice(0, 5),
+    [people, hidden],
+  );
+  const occasionMatches = useMemo(
+    () => matchingOccasions(term).filter((o) => o !== quickOccasion),
+    [term, quickOccasion],
+  );
+  const showRecent = searchFocused && term === '' && recent.length > 0;
+  const rememberSearch = () => {
+    if (term) remember(term);
+  };
+
+  const openListing = (listingId: string) => {
+    rememberSearch();
     router.push({ pathname: '/listing/[id]', params: { id: listingId } });
+  };
   // Tagged so the piece's view, and any request she makes from it, says
   // it came from Trending. See LISTING_ENTRY_POINTS.
   const openTrendingListing = (listingId: string) =>
@@ -149,7 +178,10 @@ export default function Discover() {
       pathname: '/listing/[id]',
       params: { id: listingId, from: 'trending' satisfies ListingEntryPoint },
     });
-  const openOwner = (username: string) => router.push(`/u/${username}`);
+  const openOwner = (username: string) => {
+    rememberSearch();
+    router.push(`/u/${username}`);
+  };
 
   const openSort = () => {
     const labels = SORTS.map((s) => SORT_LABELS[s]);
@@ -204,6 +236,9 @@ export default function Discover() {
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
+          onFocus={() => setSearchFocused(true)}
+          onBlur={() => setSearchFocused(false)}
+          onSubmitEditing={rememberSearch}
           style={styles.searchInput}
         />
         {search.length > 0 ? (
@@ -275,7 +310,36 @@ export default function Discover() {
         ))}
       </View>
 
-      {loading ? (
+      {term.length >= 2 ? (
+        <SearchSuggestions
+          people={visiblePeople}
+          occasions={occasionMatches}
+          onPickPerson={(person) => openOwner(person.username)}
+          onPickOccasion={(occasion) => {
+            // "formal" typed in the box means the Formal occasion: switch
+            // to the chip and clear the words, so pieces tagged Formal
+            // show even when "formal" is not in their name.
+            rememberSearch();
+            setQuickOccasion(occasion);
+            setSearch('');
+            Keyboard.dismiss();
+            logEvent('filter_used', { surface: 'discover', meta: { occasion, from: 'search' } });
+          }}
+        />
+      ) : null}
+
+      {showRecent ? (
+        <RecentSearches
+          recent={recent}
+          onPick={(picked) => {
+            setSearch(picked);
+            remember(picked);
+            Keyboard.dismiss();
+          }}
+          onRemove={forget}
+          onClear={clear}
+        />
+      ) : loading ? (
         <SkeletonGrid aspectRatio={0.75} captions />
       ) : error ? (
         <EmptyState
