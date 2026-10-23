@@ -80,7 +80,7 @@ Follow `CLAUDE.md`'s rule: **never trust the phone.** Anything involving money, 
 ✅ 9. **Data export and deletion:** a Cloud Function that exports or deletes everything about one user (needed for account deletion and privacy requests). *(Run 13: export is built — Settings → Download my data, and Export her data in the dashboard. Deletion was already "Delete my account" (B4). An admin-side delete is left as a suggestion below.)*
 ✅ 10. **Backups and monitoring for the live project:** write the setup steps in `docs/production-ops.md` (scheduled Firestore backups, budget alerts, error alerts). Don't run them; that's **NEEDS ZACK**. *(Run 12 wrote it; nothing switched on.)*
 
-11. *(suggested)* An admin "Delete this account" button for privacy requests where she can't do it herself — reuses `deleteMyAccount`'s steps.
+✅ 11. *(suggested)* An admin "Delete this account" button for privacy requests where she can't do it herself — reuses `deleteMyAccount`'s steps. *(Run 25: built — Users → a student → Delete this account. Type her @username to confirm; audited.)*
 
 ### D. The feed algorithm ("For You")
 Goal: show each student what she's most likely to love **right now**, so the feed feels personal and fresh. Use the engagement events already tracked.
@@ -108,7 +108,7 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 11. *(suggested)* Press-and-hold preview on Discover's piece grid too, and count previews as their own event (needs a new event type in the database rules, so do it on a run where the rules tests can run).
 12. *(suggested)* Count comment hearts as an event (`comment_like`) — needs a new event type in the database rules, same as 11.
 13. *(suggested)* "Share profile" — send a closet into a DM like a look (needs a new message card type and a rules change).
-14. *(suggested)* "Discard changes?" on the new-look and new-piece flows too (only the edit screens have it).
+✅ 14. *(suggested)* "Discard changes?" on the new-look and new-piece flows too (only the edit screens have it). *(Run 25: "Discard this look?" on Arrange, "Discard this piece?" on Add to Closet and Quick add.)*
 
 ### F. Onboarding (from the founder's improvement list)
 ✅ 1. Rent / lend / both step. *(Run 22: `app/get-started.tsx`, straight after Create account, new accounts only. Every step skippable.)*
@@ -120,7 +120,7 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 7. Non-USC email → friendly waitlist screen (saved, visible in admin). *(Run 22: NOT built — today ANY .edu email can sign up and gets its own school made on the fly, which was set up on 2026-10-12. A waitlist means turning those students away. Waiting on Zack — see the log.)*
 ✅ 8. Onboarding steps tracked in the admin funnel. *(Run 22: Overview → Get Started Funnel.)*
 ✅ 9. Walkthrough tour max 3 steps. *(Run 22: feed, the +, Activity.)*
-10. *(suggested)* A "My size" quick chip on Discover's top row, next to the occasions, so it is one tap instead of inside Filter.
+✅ 10. *(suggested)* A "My size" quick chip on Discover's top row, next to the occasions, so it is one tap instead of inside Filter. *(Run 25: first chip in the row, shown once she has a size on her profile.)*
 11. *(suggested)* Count signups on other schools' .edu addresses in the dashboard, to see demand for the next campus (pairs with F7).
 
 ### G. App Store readiness

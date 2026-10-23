@@ -1681,3 +1681,28 @@ server may say something is gone (`shared/src/connection.ts`).
 **Photo uploads give up after one minute** instead of Firebase's ten.
 **Uses `@react-native-community/netinfo` 12.0.1**, the version Expo SDK
 57 ships in Expo Go, so no development build is needed.
+
+---
+
+## 2026-10-23 — Admins can delete an account, the same way she can (autopilot run 25)
+
+**Decision:** Dashboard → a student → **Delete this account** runs the
+exact steps of her own "Delete my account" (`eraseAccount` in
+`auth/deleteAccount.ts`, shared by both doors). It is for a privacy
+request from someone who can't do it herself.
+
+**Safeguards:** admins only; a reason; the admin must type her
+@username (a reason alone is too easy to fill in on the wrong page);
+never an admin account and never yourself; refused while she has a
+rental going. The audit row commits in the same write that turns her
+into "Deleted account". Safe to run again if it stopped halfway.
+
+## 2026-10-23 — "Discard this look?" / "Discard this piece?" (autopilot run 25)
+
+**Decision:** leaving a new look from Arrange (its first screen), or
+leaving a new piece's form once she has typed or picked something,
+asks first — the same as the edit screens. Occasions and rent-or-sell
+alone don't count, because Quick add fills those in for her. After a
+look is shared, the flow closes without asking: the draft keeps a
+counter that goes up on every reset, and Arrange checks it the moment
+it is closed.

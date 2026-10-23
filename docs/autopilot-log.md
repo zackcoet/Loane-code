@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 25 (only when you next deploy): one new dashboard function for deleting an account on a student's behalf — normal deploy, nothing to switch on.
 - From run 24 (2 minutes, whenever you next have the app open): turn on **Airplane Mode** and poke around — open the app, open a chat and try sending, open a look. You should see a dark "No internet connection" bar and clear messages, never a frozen spinner or the sign-up screen. The overnight machine can't run a phone, so this is the one thing it couldn't check by hand.
 - From run 23 (when you submit to the App Store): Apple needs a public web link to the Privacy Policy, and the privacy form answers are in `docs/app-store-privacy.md`.
 - **From run 22 — one decision:** right now ANY .edu email can sign up (a student at Clemson gets her own little "school" made for her automatically — that was set up on Oct 12). Backlog item F7 says non-USC emails should go to a waitlist instead. Doing that means turning those students away, so I didn't build it. Reply "USC only + waitlist" or "keep any .edu" and the next run will do it.
@@ -17,6 +18,42 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-23 (run 25, ~4 AM Central) — Delete an account from the dashboard, "Discard this look?", a "My size" chip
+
+**Plan:** Section H's tests and tidy-ups have no single next task, so I took the highest finished-in-one-sitting suggestions instead, top to bottom: C11 (admin "Delete this account"), then E14 ("Discard?" on the new look and new piece screens), then F10 (a "My size" chip on Discover). B8 still waits on payments, E10 needs a bigger change to the unread badge first, and F7 waits on your decision.
+
+**Built:**
+- **Dashboard: "Delete this account".** For when a girl emails asking to be deleted but can't do it in the app (lost phone, can't sign in). It does exactly what her own "Delete my account" does — same steps, shared — so the two can never promise different things. To stop a slip on the wrong page you must give a reason AND type her @username. It won't delete an admin or yourself, and it refuses while she has a rental going. Every deletion is written in the audit log.
+- **"Discard this look?"** If she has picked photos for a new look and backs out, she's asked first instead of losing her photos, crops, tags and caption. Once she taps Share, nothing asks.
+- **"Discard this piece?"** Same on Add to Closet and on "Add a piece" from tagging — but only once she has actually typed or added something.
+- **A "My size" chip on Discover** — first in the row before Gameday, Going Out and the rest. One tap shows only pieces that fit her. It only appears once she has a size on her profile.
+
+**What to tap to see it:**
+- Dashboard → Users → pick a student → **Delete this account** → type a reason and her @username → Delete for good. (Try it on the emulator, not on a real student.)
+- App → + → Post a Look → pick a photo → tap back → "Discard this look?"
+- App → + → Add to My Closet → type a name → tap back → "Discard this piece?"
+- App → Discover → the **My size** chip at the front of the row (add a size first in Edit Profile if you don't see it).
+
+**Fixed:**
+- On a student's page in the dashboard, every pop-up (Suspend, Add a note, Export her data) showed a stray line of code and a "How many" box that only belonged to Give free try-ons. Now that box only shows for try-ons.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (84 searches, none missing), all 290 shared tests, the server tests that don't need the database, and the dashboard build. **GitHub ran the full set on the "Delete this account" push, database tests included (6 new): all green ✅.**
+- No database rules changed tonight.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: one new server function (`adminDeleteAccount`) — normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** E10 (page the Messages inbox past 50 chats — first move the unread badge off that list), G6 (a lint check for text that ignores the size cap), G7 (the offline rule for the remaining lists).
+
+**Commits:**
+- Dashboard: 'Delete this account' for privacy requests, using the same steps as her own button
+- New look and new piece: ask 'Discard this look?' / 'Discard this piece?' before throwing her work away
+- Discover: a 'My size' chip at the front of the occasions row, one tap instead of opening Filter
 
 ---
 
