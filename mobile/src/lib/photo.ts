@@ -11,6 +11,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { assertOnline } from '../network/connection';
 import { storagePaths, type ImageRef } from '@loane/shared';
 import { storage } from '../firebase/config';
 
@@ -174,6 +175,8 @@ export async function uploadProfilePhoto(uid: string, photo: PickedPhoto): Promi
   const fileName = `avatar-${Date.now()}.jpg`;
   const target = ref(storage, storagePaths.profilePhoto(uid, fileName));
 
+  assertOnline();
+
   await uploadBytes(target, blob, { contentType: 'image/jpeg' });
   return getDownloadURL(target);
 }
@@ -198,6 +201,8 @@ export async function uploadPostPhoto(
   const fileName = `${index}-${Date.now()}.jpg`;
   const path = storagePaths.postPhoto(uid, postDraftId, fileName);
   const target = ref(storage, path);
+
+  assertOnline();
 
   await uploadBytes(target, blob, { contentType: 'image/jpeg' });
   const url = await getDownloadURL(target);
@@ -226,6 +231,8 @@ export async function uploadListingPhoto(
   const fileName = `${index}-${Date.now()}.jpg`;
   const path = storagePaths.listingPhoto(uid, listingId, fileName);
   const target = ref(storage, path);
+
+  assertOnline();
 
   await uploadBytes(target, blob, { contentType: 'image/jpeg' });
   const url = await getDownloadURL(target);
@@ -256,6 +263,8 @@ export async function uploadBookingPhoto(
   const path = storagePaths.bookingPhoto(uid, bookingId, fileName);
   const target = ref(storage, path);
 
+  assertOnline();
+
   await uploadBytes(target, blob, { contentType: 'image/jpeg' });
   const url = await getDownloadURL(target);
 
@@ -276,6 +285,8 @@ export async function uploadMessagePhoto(uid: string, photo: PickedPhoto): Promi
 
   const path = storagePaths.messagePhoto(uid, `${Date.now()}.jpg`);
   const target = ref(storage, path);
+
+  assertOnline();
 
   await uploadBytes(target, blob, { contentType: 'image/jpeg' });
   const url = await getDownloadURL(target);
@@ -336,6 +347,7 @@ export async function uploadTryOnBodyPhoto(uid: string, photo: PickedPhoto): Pro
   const blob = await response.blob();
 
   const path = storagePaths.tryOnBodyPhoto(uid, `body-${Date.now()}.jpg`);
+  assertOnline();
   await uploadBytes(ref(storage, path), blob, { contentType: 'image/jpeg' });
   return path;
 }
@@ -361,6 +373,7 @@ export async function uploadFlatPhotoPng(
 
   const path = storagePaths.listingPhoto(uid, listingId, `flat-${Date.now()}.png`);
   const target = ref(storage, path);
+  assertOnline();
   await uploadBytes(target, blob, { contentType: 'image/png' });
 
   return {

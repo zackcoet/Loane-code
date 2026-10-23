@@ -31,6 +31,7 @@ import { logEvent } from '../src/analytics/events';
 import { FONTS_TO_LOAD } from '../src/theme/fonts';
 import { LoaneLoader } from '../src/components/LoaneLoader';
 import { CrashScreen } from '../src/components/CrashScreen';
+import { OfflineBanner } from '../src/components/OfflineBanner';
 import { setReporterUser, startCrashReporter } from '../src/monitoring/crashReporter';
 
 startCrashReporter();
@@ -214,6 +215,7 @@ export default function RootLayout() {
                   <WalkthroughTargetsProvider>
                     <StatusBar style="dark" />
                     <RootNavigator />
+                    <OfflineBanner />
                   </WalkthroughTargetsProvider>
                 </SuccessBannerProvider>
               </PostDraftProvider>

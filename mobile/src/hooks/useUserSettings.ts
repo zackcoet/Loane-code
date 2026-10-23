@@ -9,6 +9,7 @@ import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
 import { COLLECTIONS, type UserPrivate } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
+import { assertOnline } from '../network/connection';
 
 export function useUserSettings() {
   const { profile } = useAuth();
@@ -33,6 +34,7 @@ export function useUserSettings() {
 
   const save = async (patch: Partial<UserPrivate>) => {
     if (!uid) return;
+    assertOnline();
     await setDoc(
       doc(db, COLLECTIONS.users, uid, 'private', 'settings'),
       { ...patch, uid, updatedAt: serverTimestamp() },

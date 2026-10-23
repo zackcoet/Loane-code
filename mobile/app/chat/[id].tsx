@@ -62,6 +62,7 @@ import { ReportSheet } from '../../src/components/ReportSheet';
 import { pickPhoto, uploadMessagePhoto } from '../../src/lib/photo';
 import { SharedListingCard } from '../../src/components/SharedListingCard';
 import { SwipeToReply } from '../../src/components/SwipeToReply';
+import { OfflineError } from '../../src/network/connection';
 
 export default function Chat() {
   const [reporting, setReporting] = useState(false);
@@ -201,8 +202,11 @@ export default function Chat() {
       await send(draft, uploaded, replyingTo ? replyFor(replyingTo) : null);
       setDraft('');
       setReplyingTo(null);
-    } catch {
-      Alert.alert('Loane', 'Could not send that photo. Try again.');
+    } catch (err) {
+      Alert.alert(
+        'Loane',
+        err instanceof OfflineError ? err.message : 'Could not send that photo. Try again.',
+      );
     } finally {
       setAttaching(false);
     }
@@ -223,6 +227,8 @@ export default function Chat() {
           'Loane',
           'You are sending a lot of messages. Take a short break, then try again.',
         );
+      } else if (err instanceof OfflineError) {
+        Alert.alert('Loane', `${err.message} Your message is still in the box.`);
       }
       // Put the reply back too, so the retry still answers the same thing.
       setReplyingTo(reply);

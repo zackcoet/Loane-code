@@ -62,6 +62,7 @@ import { useKeyboardPadding } from '../src/hooks/useKeyboardPadding';
 import { useProfilePhoto } from '../src/hooks/useProfilePhoto';
 import { useUserSettings } from '../src/hooks/useUserSettings';
 import { text } from '../src/theme';
+import { assertOnline } from '../src/network/connection';
 
 export default function EditProfile() {
   const router = useRouter();
@@ -173,6 +174,7 @@ export default function EditProfile() {
     setSaving(true);
     setError(null);
     try {
+      assertOnline();
       // The handle first: if it is taken, nothing else should have changed.
       if (usernameChanged) {
         await changeUsername({ username: normalizeUsername(username) });

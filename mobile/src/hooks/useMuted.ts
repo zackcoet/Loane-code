@@ -23,6 +23,7 @@ import { COLLECTIONS, SUBCOLLECTIONS } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { logEvent } from '../analytics/events';
+import { assertOnline } from '../network/connection';
 
 /** Everyone she has muted, live. */
 export function useMutedUids(): { uids: Set<string>; list: string[]; loading: boolean } {
@@ -56,6 +57,7 @@ export function useMutedUids(): { uids: Set<string>; list: string[]; loading: bo
 }
 
 export async function setUserMuted(myUid: string, otherUid: string, muted: boolean): Promise<void> {
+  assertOnline();
   const ref = doc(db, COLLECTIONS.users, myUid, SUBCOLLECTIONS.userMuted, otherUid);
   if (muted) await setDoc(ref, { mutedUid: otherUid, createdAt: serverTimestamp() });
   else await deleteDoc(ref);

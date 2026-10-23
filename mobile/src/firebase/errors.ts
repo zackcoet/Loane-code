@@ -6,6 +6,8 @@
  */
 
 import { FunctionsError } from 'firebase/functions';
+import { OFFLINE_MESSAGE } from '@loane/shared';
+import { isOffline } from '../network/connection';
 
 export function callableErrorMessage(error: unknown, fallback: string): string {
   const raw = error instanceof FunctionsError || error instanceof Error ? error.message : '';
@@ -20,6 +22,12 @@ export function callableErrorMessage(error: unknown, fallback: string): string {
   if (/^(unavailable|deadline-exceeded)$/i.test(cleaned)) {
     return 'Could not reach Loane. Check your connection and try again.';
   }
+
+  // With no signal at all, the request fails before it leaves the
+  // phone and Firebase calls that "internal" — which would otherwise
+  // fall through to the fallback ("Could not save…") and send her
+  // retrying something only a signal will fix.
+  if (isOffline() && (!cleaned || /^internal$/i.test(cleaned))) return OFFLINE_MESSAGE;
 
   // Firebase sometimes yields "internal" or "INTERNAL" for an unhandled
   // server error, which tells the user nothing.
@@ -50,7 +58,14 @@ export function saveErrorMessage(error: unknown): string {
   if (text.includes('unauthenticated')) {
     return 'You have been signed out. Sign in again and your draft will still be here.';
   }
-  if (text.includes('unavailable') || text.includes('network') || text.includes('deadline')) {
+  if (isOffline()) return OFFLINE_MESSAGE;
+  if (
+    text.includes('unavailable') ||
+    text.includes('network') ||
+    text.includes('deadline') ||
+    // A photo upload that kept failing for a minute (see config.ts).
+    text.includes('retry-limit-exceeded')
+  ) {
     return 'Could not reach Loane. Check your connection and try again.';
   }
   return 'Could not save that. Try again, and tell us if it keeps happening.';

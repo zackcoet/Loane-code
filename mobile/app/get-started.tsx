@@ -59,6 +59,7 @@ import { logEvent } from '../src/analytics/events';
 import { useUserSettings } from '../src/hooks/useUserSettings';
 import { useInviteShare } from '../src/hooks/useInviteShare';
 import { text } from '../src/theme';
+import { OfflineError, assertOnline } from '../src/network/connection';
 
 // One list, shared with the dashboard's funnel that reads these steps back.
 const STEPS = ONBOARDING_STEPS;
@@ -103,6 +104,7 @@ export default function GetStarted() {
     setSaving(true);
     setError(null);
     try {
+      assertOnline();
       await settings.save({
         onboarding: {
           intent,
@@ -121,8 +123,12 @@ export default function GetStarted() {
       // Listing her first piece sits on top of the Feed, so Back from it
       // lands somewhere real.
       if (then === 'list') router.push('/add-to-closet');
-    } catch {
-      setError('Could not save that. Try again, or skip for now.');
+    } catch (err) {
+      setError(
+        err instanceof OfflineError
+          ? 'No internet connection. Try again when you have signal, or skip for now.'
+          : 'Could not save that. Try again, or skip for now.',
+      );
       setSaving(false);
     }
   };

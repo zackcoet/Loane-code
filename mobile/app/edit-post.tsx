@@ -43,10 +43,11 @@ import { Text } from '../src/components/Text';
 import { useAuth } from '../src/auth/AuthProvider';
 import { db } from '../src/firebase/config';
 import { deletePost } from '../src/firebase/callables';
-import { callableErrorMessage } from '../src/firebase/errors';
+import { callableErrorMessage, saveErrorMessage } from '../src/firebase/errors';
 import { logEvent } from '../src/analytics/events';
 import { useConfirmDiscard } from '../src/hooks/useConfirmDiscard';
 import { useKeyboardPadding } from '../src/hooks/useKeyboardPadding';
+import { assertOnline } from '../src/network/connection';
 
 export default function EditPost() {
   const router = useRouter();
@@ -98,6 +99,7 @@ export default function EditPost() {
     setSaving(true);
     setError(null);
     try {
+      assertOnline();
       await updateDoc(doc(db, COLLECTIONS.posts, post.id), {
         caption: caption.trim(),
         occasions,
@@ -106,8 +108,8 @@ export default function EditPost() {
       logEvent('post_edit', { surface: 'feed', targetType: 'post', targetId: post.id });
       allowLeave();
       router.back();
-    } catch {
-      setError('Could not save that. Try again.');
+    } catch (err) {
+      setError(saveErrorMessage(err));
     } finally {
       setSaving(false);
     }

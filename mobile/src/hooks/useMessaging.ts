@@ -31,6 +31,7 @@ import {
   COLLECTIONS,
   LIMITS,
   PAGE_SIZES,
+  docPresence,
   inboxUnreadTotal,
   isLastPage,
   mergePages,
@@ -53,6 +54,7 @@ import { useHiddenUids } from './useBlocks';
 import { useFollowingUids } from './useFollowing';
 import { useUserSettings } from './useUserSettings';
 import { useRetry } from './useRetry';
+import { assertOnline } from '../network/connection';
 
 /** Thrown by send when she has hit the hourly ceiling. */
 export const MESSAGE_QUOTA_FULL = 'message-quota-full';
@@ -154,6 +156,7 @@ export function useUnreadMessageCount(): number {
  * badge too — a deleted thread should not leave a number behind.
  */
 export async function deleteThreadForMe(conversationId: string, uid: string): Promise<void> {
+  assertOnline();
   await updateDoc(doc(db, COLLECTIONS.conversations, conversationId), {
     [`hiddenAt.${uid}`]: serverTimestamp(),
     [`unreadCounts.${uid}`]: 0,
@@ -166,6 +169,7 @@ export async function setThreadMuted(
   uid: string,
   muted: boolean,
 ): Promise<void> {
+  assertOnline();
   await updateDoc(doc(db, COLLECTIONS.conversations, conversationId), {
     mutedUids: muted ? arrayUnion(uid) : arrayRemove(uid),
   });
@@ -217,8 +221,12 @@ export function useConversation(conversationId: string | undefined) {
     }
     return onSnapshot(
       doc(db, COLLECTIONS.conversations, conversationId),
-      (snap) =>
-        setConversation(snap.exists() ? { ...(snap.data() as Conversation), id: snap.id } : null),
+      (snap) => {
+        // No signal: a cached "missing" is not an answer. Keep what we
+        // have; the listener fills in when the signal returns.
+        if (docPresence(snap.exists(), snap.metadata.fromCache) === 'unknown') return;
+        setConversation(snap.exists() ? { ...(snap.data() as Conversation), id: snap.id } : null);
+      },
       () => setConversation(null),
     );
   }, [conversationId]);
@@ -337,6 +345,10 @@ export function useConversation(conversationId: string | undefined) {
       // A photo on its own is a perfectly good message.
       if (!conversationId || !uid || (!text && !photo)) return;
       if (text.length > LIMITS.messageBody.max) return;
+      // With no signal the write would sit queued and the send button
+      // stay greyed out with her words gone. Refuse now; the chat
+      // screen puts her draft back and says why.
+      assertOnline();
       // Felt the moment she taps send, as on Instagram.
       hapticSend();
 

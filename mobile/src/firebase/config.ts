@@ -117,6 +117,14 @@ export const db: Firestore = getFirestore(app);
 export const storage: FirebaseStorage = getStorage(app);
 export const functions: Functions = getFunctions(app);
 
+/**
+ * How long a photo upload keeps retrying a bad signal before it gives
+ * up. Firebase's default is TEN MINUTES of a spinner — she would close
+ * the app long before. A minute covers a slow connection; after that
+ * she is told it failed and can try again.
+ */
+storage.maxUploadRetryTime = 60_000;
+
 let emulatorsConnected = false;
 
 export function connectEmulators(): void {

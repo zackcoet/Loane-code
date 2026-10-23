@@ -43,6 +43,7 @@ import {
   uploadListingPhoto,
   type PickedPhoto,
 } from '../lib/photo';
+import { assertOnline } from '../network/connection';
 
 /** Shown when she has hit the hourly ceiling on new pieces. */
 export const LISTING_QUOTA_FULL_MESSAGE =
@@ -273,6 +274,7 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
       setSaving(true);
       setError(null);
       try {
+        assertOnline();
         const ref = existingId
           ? doc(db, COLLECTIONS.listings, existingId)
           : doc(db, COLLECTIONS.listings);

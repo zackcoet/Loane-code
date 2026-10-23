@@ -14,6 +14,7 @@ import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { pickPhoto, uploadProfilePhoto, type PhotoSource } from '../lib/photo';
 import { logEvent } from '../analytics/events';
+import { OfflineError } from '../network/connection';
 
 interface Options {
   /**
@@ -54,8 +55,11 @@ export function useProfilePhoto({ onPicked }: Options = {}) {
             meta: { field: 'photo' },
           });
         }
-      } catch {
-        Alert.alert('Loane', 'Could not upload that photo. Try again.');
+      } catch (err) {
+        Alert.alert(
+          'Loane',
+          err instanceof OfflineError ? err.message : 'Could not upload that photo. Try again.',
+        );
       } finally {
         setUploading(false);
       }
