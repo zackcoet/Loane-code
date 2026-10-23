@@ -81,6 +81,9 @@ export default function Activity() {
     failed: notificationsFailed,
     retry: retryNotifications,
     markRead,
+    hasMore: moreNotifications,
+    loadMore: loadMoreNotifications,
+    loadingMore: loadingMoreNotifications,
   } = useNotifications();
 
   const unreadUpdates = notifications.filter((n) => !n.readAt).length;
@@ -248,6 +251,16 @@ export default function Activity() {
           data={notifications}
           keyExtractor={(n) => n.id}
           contentContainerStyle={styles.list}
+          // A page at a time: nearing the bottom brings in the next.
+          onEndReached={moreNotifications ? loadMoreNotifications : undefined}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMoreNotifications ? (
+              <View style={styles.more} accessibilityLabel="Loading more">
+                <ActivityIndicator color={color.icon.default} />
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => {
             const unread = !item.readAt;
             return (
@@ -296,6 +309,7 @@ function Loading() {
 }
 
 const styles = StyleSheet.create({
+  more: { minHeight: controls.minTapTarget, alignItems: 'center', justifyContent: 'center' },
   tabRow: {
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,

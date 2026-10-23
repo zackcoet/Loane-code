@@ -19,19 +19,34 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { COLLECTIONS, isHiddenNotification, type Notification } from '@loane/shared';
+import { COLLECTIONS, PAGE_SIZES, isHiddenNotification, type Notification } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { useHiddenUids } from './useBlocks';
 import { useRetry } from './useRetry';
 
+/**
+ * Her updates, newest first, a page at a time.
+ *
+ * This used to stop at the latest 50, so anything older simply
+ * vanished. Now it is the same growing window as comments: one live
+ * listener holding a page, widened by a page as she nears the bottom, so
+ * everything on screen stays live (a read mark lands at once) and older
+ * updates are still there if she scrolls for them.
+ */
 export function useNotifications() {
   const { profile } = useAuth();
   const uid = profile?.uid;
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+  const [windowSize, setWindowSize] = useState<number>(PAGE_SIZES.updates);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const { attempt, retry } = useRetry();
+
+  // Someone else signing in on this phone starts from one page again.
+  useEffect(() => setWindowSize(PAGE_SIZES.updates), [uid]);
 
   useEffect(() => {
     setFailed(false);
@@ -40,23 +55,35 @@ export function useNotifications() {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    // Only the first page shows the full-screen loader; a wider window
+    // keeps the list she is reading and shows the footer spinner.
+    if (windowSize === PAGE_SIZES.updates) setLoading(true);
     return onSnapshot(
       query(
         collection(db, COLLECTIONS.users, uid, 'notifications'),
         orderBy('createdAt', 'desc'),
-        limit(50),
+        limit(windowSize),
       ),
       (snap) => {
         setNotifications(snap.docs.map((d) => ({ ...(d.data() as Notification), id: d.id })));
+        setHasMore(snap.docs.length >= windowSize);
         setLoading(false);
+        setLoadingMore(false);
       },
       () => {
         setFailed(true);
         setLoading(false);
+        setLoadingMore(false);
       },
     );
-  }, [uid, attempt]);
+  }, [uid, windowSize, attempt]);
+
+  /** Near the bottom: hold one more page. */
+  const loadMore = useCallback(() => {
+    if (!hasMore || loadingMore || loading) return;
+    setLoadingMore(true);
+    setWindowSize((n) => n + PAGE_SIZES.updates);
+  }, [hasMore, loadingMore, loading]);
 
   const markRead = useCallback(
     async (notificationId: string) => {
@@ -77,7 +104,7 @@ export function useNotifications() {
     [notifications, hidden],
   );
 
-  return { notifications: visible, loading, failed, retry, markRead };
+  return { notifications: visible, loading, failed, retry, markRead, hasMore, loadMore, loadingMore };
 }
 
 /**

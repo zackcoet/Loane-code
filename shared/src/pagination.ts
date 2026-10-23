@@ -12,8 +12,10 @@ export const PAGE_SIZES = {
   messages: 40,
   /** A post's comments. */
   comments: 30,
-  /** Followers and following lists. */
+  /** Followers and following lists, and who liked a look. */
   people: 30,
+  /** Activity → Updates. */
+  updates: 30,
   /**
    * People search: how many matches to fetch for what she typed. A few
    * more than we show, because suspended accounts and her own are
