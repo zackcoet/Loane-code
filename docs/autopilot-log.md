@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 27 (only when you next deploy): one new server function (`shareProfile`) and a database rules update (new tracked actions, and the rules that guard profile cards in chats). Deploy the rules **at the same time as or before** the app update goes out — normal deploy, nothing to switch on.
 - Nothing new from run 26 (no server or database changes — nothing to deploy).
 - From run 25 (only when you next deploy): one new dashboard function for deleting an account on a student's behalf — normal deploy, nothing to switch on.
 - From run 24 (2 minutes, whenever you next have the app open): turn on **Airplane Mode** and poke around — open the app, open a chat and try sending, open a look. You should see a dark "No internet connection" bar and clear messages, never a frozen spinner or the sign-up screen. The overnight machine can't run a phone, so this is the one thing it couldn't check by hand.
@@ -19,6 +20,46 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-23 (run 27, ~6 AM Central) — Share a profile in a DM, hold-to-preview on Discover
+
+**Plan:** H2 (small fixes) first — but there were no warnings and every leftover note in the code is a future-phase job (payments, email confirmation), so nothing to do there. Then E11 and E12 (both need a new tracked action added to the database rules), then E13 ("Share profile"). B8 still waits on payments; F7 still waits on your decision.
+
+**Built:**
+- **Share a profile in a DM.** Like sharing a look: pick friends, add a note, send. It lands in the chat as a card — her photo, name, @username and how many pieces are in her closet — and tapping it opens her profile. Great for "you HAVE to see her closet", and for a lender sending her own closet to her friends.
+  - The card is made by the server, so nobody can fake one (a card that says @ella always opens Ella).
+  - Suspended, deleted or blocked accounts can't be shared, and it never gives away that someone blocked you.
+  - Inbox preview says "Sent a profile"; replying to one quotes "A profile".
+- **Press and hold a piece on Discover** to see it big — the same preview card profiles already had. Tap it to open, tap outside to close.
+- **Two new things we now count** (nothing she sees): every press-and-hold preview, and every heart on a comment. Useful for seeing what catches eyes before girls commit to opening something.
+
+**What to tap to see it:**
+- Someone's profile → **…** (top right) → **Share profile** → pick a friend → Send. Open that chat → the profile card → tap it.
+- Your own profile → **☰** (top left) → **Share My Profile**.
+- Discover → **press and hold** any piece → big preview → tap it to open.
+
+**Fixed:**
+- Nothing broken found tonight.
+- One thing I caught before it shipped: the reply quote's new "was this a profile?" note would have made **every reply fail** if the app update reached phones before the database rules were deployed. Now that note is only added when it's actually a profile, so old rules accept replies as before.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (84 searches, none missing), all 295 shared tests (4 new), the server tests that don't need the database. **GitHub ran the full set, database tests included (4 new), on both of tonight's pushes: all green ✅.**
+- Didn't put a share button in your own profile's top bar: with three icons on the right, your @name in the middle would get cut off. It's in the ☰ menu instead.
+- Small known limit, added to the backlog (E15): a profile card opens by @username, so an old card breaks if she changes her username.
+- B8 (Venmo words) still waits on payments; F7 still waits on your decision.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: the new `shareProfile` function and the database rules go out together with (or before) the app update. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** E15 (open a shared profile card by account, not @username), then F11 (count other schools' sign-ups in the dashboard — pairs with your F7 decision), then H3 (speed checks).
+
+**Commits:**
+- Discover: press and hold a piece to preview it; previews and comment hearts are now counted
+- Share profile: send someone's closet (or your own) into a DM as a card
+- Autopilot log for run 27
 
 ---
 

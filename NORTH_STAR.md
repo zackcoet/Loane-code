@@ -105,10 +105,11 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 ✅ 8. Empty states with a clear next action on every screen. *(Run 21: "not found" screens, empty Activity updates and an empty inbox now offer a next step. Lists where the next step is already on screen — comments, a new chat — or that are just information — blocked, muted, reviews — were left as they are.)*
 ✅ 9. Haptics on key taps (like, follow, send). *(Run 21: like, save, comment heart, follow, sending a message or comment.)*
 ✅ 10. *(suggested)* Page the Messages inbox past 50 chats — needs the unread badge to stop reading the same list first. *(Run 26: the inbox loads 50 more as she scrolls; the badge keeps its own window of her 50 most recent chats — see `docs/decisions.md`.)*
-11. *(suggested)* Press-and-hold preview on Discover's piece grid too, and count previews as their own event (needs a new event type in the database rules, so do it on a run where the rules tests can run).
-12. *(suggested)* Count comment hearts as an event (`comment_like`) — needs a new event type in the database rules, same as 11.
-13. *(suggested)* "Share profile" — send a closet into a DM like a look (needs a new message card type and a rules change).
+✅ 11. *(suggested)* Press-and-hold preview on Discover's piece grid too, and count previews as their own event (needs a new event type in the database rules, so do it on a run where the rules tests can run). *(Run 27: hold a piece on Discover → the same preview card as profiles. Every preview, anywhere, logs `grid_preview` — recorded only; the ranking doesn't read it.)*
+✅ 12. *(suggested)* Count comment hearts as an event (`comment_like`) — needs a new event type in the database rules, same as 11. *(Run 27: `comment_like` / `comment_unlike`, logged after the server accepts the heart.)*
+✅ 13. *(suggested)* "Share profile" — send a closet into a DM like a look (needs a new message card type and a rules change). *(Run 27: "…" on a profile → Share profile; ☰ → Share My Profile. Card stamped by a new server function, `shareProfile`; the rules refuse a phone-written one. See `docs/decisions.md`.)*
 ✅ 14. *(suggested)* "Discard changes?" on the new-look and new-piece flows too (only the edit screens have it). *(Run 25: "Discard this look?" on Arrange, "Discard this piece?" on Add to Closet and Quick add.)*
+15. *(suggested)* A shared profile card opens by @username, so it breaks if she later renames herself. Open it by account id instead (needs a small "profile by id" route).
 
 ### F. Onboarding (from the founder's improvement list)
 ✅ 1. Rent / lend / both step. *(Run 22: `app/get-started.tsx`, straight after Create account, new accounts only. Every step skippable.)*
