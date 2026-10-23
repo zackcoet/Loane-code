@@ -1,9 +1,10 @@
 /**
- * Get started — three short questions straight after signup.
+ * Get started — four short steps straight after signup.
  *
  *   1. How will you use Loane?   rent / lend / both
  *   2. What's coming up?         occasions — seeds her For You feed
  *   3. Your size (optional)      the same sizes as Edit Profile
+ *   4. Follow 3 closets          so Following and the feed are not empty
  *
  * Every step has Skip, and skipping the lot is fine: the answers make
  * the feed better on day one, they gate nothing. Only a brand-new
@@ -16,7 +17,7 @@
  * her profile unless she turns them on, exactly as in Edit Profile.
  */
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
@@ -45,6 +46,7 @@ import {
 } from '@loane/shared';
 import { Button } from '../src/components/Button';
 import { Chip } from '../src/components/Chip';
+import { FOLLOW_TARGET, FollowClosetsStep } from '../src/components/FollowClosetsStep';
 import { Screen } from '../src/components/Screen';
 import { SizePicker } from '../src/components/SizePicker';
 import { useAuth } from '../src/auth/AuthProvider';
@@ -54,7 +56,7 @@ import { logEvent } from '../src/analytics/events';
 import { useUserSettings } from '../src/hooks/useUserSettings';
 import { text } from '../src/theme';
 
-const STEPS = ['intent', 'occasions', 'size'] as const;
+const STEPS = ['intent', 'occasions', 'size', 'follow'] as const;
 type Step = (typeof STEPS)[number];
 
 type Sizes = User['sizes'];
@@ -72,7 +74,14 @@ export default function GetStarted() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const step: Step = STEPS[stepIndex] ?? 'size';
+  const [followed, setFollowedState] = useState<Set<string>>(new Set());
+  const setFollowed = useCallback(
+    (update: (current: Set<string>) => Set<string>) => setFollowedState((s) => update(new Set(s))),
+    [],
+  );
+  const [closetsAvailable, setClosetsAvailable] = useState<number>(FOLLOW_TARGET);
+
+  const step: Step = STEPS[stepIndex] ?? 'follow';
   const isLast = stepIndex === STEPS.length - 1;
 
   // She is here now; a later sign-in on this phone goes to the Feed.
@@ -119,6 +128,8 @@ export default function GetStarted() {
       if (step === 'occasions') meta.occasionCount = occasions.length;
       if (step === 'size') meta.gaveSize = Object.values(sizes).some((s) => s !== null);
     }
+    // Follows happen as she taps, so even a skip reports how many.
+    if (step === 'follow') meta.followed = followed.size;
     logEvent('onboarding_step', { surface: 'onboarding', meta });
 
     if (action === 'skip') {
@@ -134,7 +145,9 @@ export default function GetStarted() {
   const canContinue =
     (step === 'intent' && intent !== null) ||
     (step === 'occasions' && occasions.length > 0) ||
-    (step === 'size' && Object.values(sizes).some((s) => s !== null));
+    (step === 'size' && Object.values(sizes).some((s) => s !== null)) ||
+    // Three, or every closet there is to suggest on a brand-new campus.
+    (step === 'follow' && followed.size >= Math.min(FOLLOW_TARGET, closetsAvailable));
 
   const wantsToLend = intent === 'lend' || intent === 'both';
 
@@ -253,6 +266,23 @@ export default function GetStarted() {
               options={SHOE_SIZES}
               value={sizes.shoe}
               onChange={(v) => setSizes((s) => ({ ...s, shoe: v as ShoeSize | null }))}
+            />
+          </>
+        ) : null}
+
+        {step === 'follow' ? (
+          <>
+            <Text style={text.display}>Follow {FOLLOW_TARGET} closets</Text>
+            <Text style={[text.bodyMuted, styles.sub]}>
+              Their looks fill your feed, and you'll see when their pieces are free.
+              {followed.size > 0
+                ? ` ${Math.min(followed.size, FOLLOW_TARGET)} of ${FOLLOW_TARGET}.`
+                : ''}
+            </Text>
+            <FollowClosetsStep
+              followed={followed}
+              setFollowed={setFollowed}
+              onAvailable={setClosetsAvailable}
             />
           </>
         ) : null}
