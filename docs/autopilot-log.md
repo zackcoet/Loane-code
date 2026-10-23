@@ -42,7 +42,7 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - The small piece photo on a rental page now loads the small copy of the photo, not the full-size one (faster, less data).
 
 **Skipped / blocked:**
-- The overnight machine still can't start the test database (Google's download is blocked here). Passed: type checks, lint, formatting, the index check (84 searches, none missing), all 290 shared tests (7 new), the server tests that don't need the database, and the iPhone app build. **No server code or database rules changed tonight**, so the database tests have nothing new to catch — GitHub runs them anyway on this push.
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed: type checks, lint, formatting, the index check (84 searches, none missing), all 290 shared tests (7 new), the server tests that don't need the database, and the iPhone app build. **No server code or database rules changed tonight**, so the database tests have nothing new to catch. **GitHub ran the full set, database tests included, on tonight's push: all green ✅.**
 - Nobody can turn on Airplane Mode on a phone from here, so the offline behaviour is checked by reading the code, not by hand — see NEEDS ZACK.
 - One new free building block was added to the app (the standard Expo tool for "is the phone online?"). It already works in Expo Go — no new app build needed.
 
