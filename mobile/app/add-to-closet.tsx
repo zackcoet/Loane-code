@@ -8,13 +8,18 @@ import { Header } from '../src/components/Header';
 import { ListingForm } from '../src/components/ListingForm';
 import { Screen } from '../src/components/Screen';
 import { useAuth } from '../src/auth/AuthProvider';
-import { useListingForm } from '../src/hooks/useListingForm';
+import { listingFormStarted, useListingForm } from '../src/hooks/useListingForm';
+import { useConfirmDiscard } from '../src/hooks/useConfirmDiscard';
 import { logEvent } from '../src/analytics/events';
 
 export default function AddToCloset() {
   const router = useRouter();
   const { profile } = useAuth();
   const controller = useListingForm();
+  const { allowLeave } = useConfirmDiscard(listingFormStarted(controller.form), {
+    title: 'Discard this piece?',
+    message: "If you go back now, what you've added won't be saved.",
+  });
   /**
    * Gated at SUBMIT rather than on the way in.
    *
@@ -35,6 +40,7 @@ export default function AddToCloset() {
       meta: { intent: controller.form.intent ?? 'rent', photos: controller.form.photos.length },
     });
 
+    allowLeave();
     Alert.alert('Added to your closet', 'Your piece is live on your campus.');
     router.replace({ pathname: '/listing/[id]', params: { id: listingId } });
   };
@@ -52,7 +58,6 @@ export default function AddToCloset() {
           onSubmit={() => void doSubmit()}
         />
       </KeyboardAvoidingView>
-
     </Screen>
   );
 }

@@ -151,6 +151,34 @@ export function photoUri(photo: FormPhoto): string {
   return photo.kind === 'local' ? photo.picked.uri : photo.ref.url;
 }
 
+/**
+ * Has she put anything of her own into a new piece's form? Occasions and
+ * rent-or-sell are left out on purpose: Quick add fills those in for her
+ * from the look, and leaving a form she never touched must not ask
+ * "Discard this piece?".
+ */
+export function listingFormStarted(form: ListingFormState): boolean {
+  const typed = [
+    form.name,
+    form.description,
+    form.brand,
+    form.oneDay,
+    form.threeDay,
+    form.sevenDay,
+    form.salePrice,
+    form.garmentValue,
+    form.cleaningFee,
+  ].some((text) => text.trim() !== '');
+  return (
+    typed ||
+    form.photos.length > 0 ||
+    form.flatPhoto !== null ||
+    form.category !== null ||
+    form.size !== null ||
+    form.shoeSize !== null
+  );
+}
+
 export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
   const [form, setForm] = useState<ListingFormState>(initial);
   const [error, setError] = useState<string | null>(null);

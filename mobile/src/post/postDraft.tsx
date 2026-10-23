@@ -16,7 +16,7 @@
  * Cleared on share, and on abandoning the flow.
  */
 
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import type { Occasion, PostSettings } from '@loane/shared';
 import type { PickedPhoto } from '../lib/photo';
 
@@ -63,6 +63,13 @@ interface PostDraftState {
   /** Total tags across every photo — what the Details row counts. */
   tagCount: number;
   reset: () => void;
+  /**
+   * Goes up by one on every reset. A screen that notes it on arrival can
+   * tell, the instant she leaves, whether its look was already shared
+   * (the draft was reset) — React state would still show the old photos
+   * for one more render.
+   */
+  generation: () => number;
 }
 
 const PostDraftContext = createContext<PostDraftState | null>(null);
@@ -134,7 +141,11 @@ export function PostDraftProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const generationRef = useRef(0);
+  const generation = useCallback(() => generationRef.current, []);
+
   const reset = useCallback(() => {
+    generationRef.current += 1;
     setPhotos([]);
     setCaption('');
     setOccasions([]);
@@ -167,6 +178,7 @@ export function PostDraftProvider({ children }: { children: React.ReactNode }) {
       setScheduledAt,
       tagCount: photos.reduce((sum, p) => sum + p.tags.length, 0),
       reset,
+      generation,
     }),
     [
       photos,
@@ -182,6 +194,7 @@ export function PostDraftProvider({ children }: { children: React.ReactNode }) {
       removeTag,
       moveTag,
       reset,
+      generation,
       setSetting,
     ],
   );

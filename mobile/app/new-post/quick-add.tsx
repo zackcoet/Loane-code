@@ -25,7 +25,8 @@ import { Header } from '../../src/components/Header';
 import { ListingForm } from '../../src/components/ListingForm';
 import { Screen } from '../../src/components/Screen';
 import { useAuth } from '../../src/auth/AuthProvider';
-import { useListingForm } from '../../src/hooks/useListingForm';
+import { listingFormStarted, useListingForm } from '../../src/hooks/useListingForm';
+import { useConfirmDiscard } from '../../src/hooks/useConfirmDiscard';
 import { usePostDraft } from '../../src/post/postDraft';
 import { logEvent } from '../../src/analytics/events';
 
@@ -35,6 +36,10 @@ export default function QuickAddPiece() {
   const draft = usePostDraft();
   const { photoId } = useLocalSearchParams<{ photoId?: string }>();
   const controller = useListingForm();
+  const { allowLeave } = useConfirmDiscard(listingFormStarted(controller.form), {
+    title: 'Discard this piece?',
+    message: "If you go back now, what you've added won't be saved.",
+  });
   /**
    * Gated at SUBMIT rather than on the way in.
    *
@@ -63,6 +68,9 @@ export default function QuickAddPiece() {
       targetId: listingId,
       meta: { intent: controller.form.intent ?? 'rent', photos: controller.form.photos.length },
     });
+
+    // Saved: leaving now loses nothing.
+    allowLeave();
 
     if (!photoId) {
       // Reached somehow without knowing which photo to tag. The piece is
@@ -98,7 +106,6 @@ export default function QuickAddPiece() {
           onSubmit={() => void doSubmit()}
         />
       </KeyboardAvoidingView>
-
     </Screen>
   );
 }

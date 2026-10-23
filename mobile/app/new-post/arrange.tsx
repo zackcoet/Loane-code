@@ -34,6 +34,7 @@ import { Icon } from '../../src/components/Icon';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
 import { usePostDraft, type DraftPhoto } from '../../src/post/postDraft';
+import { useConfirmDiscard } from '../../src/hooks/useConfirmDiscard';
 import { cropPhoto, pickPhotos } from '../../src/lib/photo';
 
 const THUMB = 56;
@@ -49,6 +50,17 @@ export default function ArrangePhotos() {
 
   const photos = draft.photos;
   const current = photos[Math.min(index, photos.length - 1)];
+
+  // Arrange is the first screen of the flow, so leaving it backwards
+  // throws the whole look away — photos, crops, tags, caption. Instagram
+  // asks first, and so do we. Once the look is shared, Preview resets the
+  // draft and clears the flow away, and that must not ask.
+  const startedAt = useRef(draft.generation());
+  useConfirmDiscard(photos.length > 0, {
+    title: 'Discard this look?',
+    message: "If you go back now, your photos and edits won't be saved.",
+    canLeave: () => draft.generation() !== startedAt.current,
+  });
 
   // She removed the last photo, or arrived here with none.
   if (photos.length === 0) {
