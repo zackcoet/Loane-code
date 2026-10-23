@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- Nothing new from run 19.
 - Nothing new from run 18.
 - Nothing new from run 17. (When you next deploy: it adds an hourly "Trending" job and two database indexes — normal deploy, nothing to switch on.)
 - From run 16: OK the feel change — All Campus is ranked "For You" (not newest first), and Discover opens on "For you" instead of "Newest". Following is still newest first.
@@ -10,6 +11,42 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-23 (run 19, ~10 PM Central) — Pull to refresh finished, long lists keep going, grey placeholders while lists load
+
+**Plan:** Finish E1 — pull to refresh on the last lists (comments, followers/following, who liked a look), and find any list that quietly stops instead of loading more. Then start E2 — grey placeholder rows and tiles while a list loads, instead of a small spinner on a blank screen.
+
+**Built:**
+- **Pull down to refresh** now also works on comments, Followers / Following lists, and "who liked this look". That finishes it — every list in the app has it.
+- **"Who liked this" no longer stops at 200 people.** It loads 30 at a time and keeps going as she scrolls. If it can't load, it says "Couldn't load likes — Try again" instead of wrongly saying "No likes yet". Pulling down really reloads it.
+- **Activity → Updates no longer stops at 50.** Older updates keep loading as she scrolls down.
+- **Grey placeholders while lists load** (like Instagram): instead of a lone spinner on a blank white screen, she sees soft grey rows shaped like what's coming, gently pulsing. On Messages, message requests, Activity (both tabs), comments, Followers / Following, who liked, My Rentals and Rental requests — and a grid of grey tiles on Liked. If her phone is set to Reduce Motion, they hold still.
+
+**What to tap to see it:**
+- Open any look → tap the comments → drag the list down → spinner.
+- A profile → tap Followers (or Following) → drag down. Same on a look's "Liked by…" line.
+- Messages, Activity, or Menu → My Rentals: as the screen opens you'll see grey rows for a moment before the real ones. (On fast wifi it's a blink — on slow signal it's what she sees instead of a blank screen.)
+- Menu → Liked: grey tiles, then the looks.
+
+**Fixed:**
+- Older updates in Activity and likers past the first 200 used to just be missing. Now they load.
+
+**Skipped / blocked:**
+- On purpose, two lists still load in one go: the Messages inbox (latest 50 chats) and her rentals. The unread badge and the "Needs you" count read those same lists, so splitting them into pages would make the counts wrong. A girl will rarely have 50+ chats at launch. Added to the backlog as a later suggestion.
+- Grey placeholders aren't on Discover, profiles, My Listings, Saved, Reviews, a look, a piece, or a chat yet (Discover and the feed already show the Loane logo loader). Next run.
+- The overnight machine still can't start the test database (Google's download site is blocked here). Type checks, lint, the index check (81 searches, none missing), the shared tests (239) and the server tests that don't need the database passed, and the iPhone app builds. Nothing tonight changed the database rules or server functions; GitHub runs the full set on tonight's push.
+
+**🚨 NEEDS ZACK:** Nothing new. Older items are listed at the top.
+
+**Next up:** finish E2 — grey placeholders on Discover, profiles, My Listings, Saved, Reviews, a look, a piece and a chat. Then E3 — double-tap to like with a heart, and press-and-hold preview on grid tiles.
+
+**Commits:**
+- Pull to refresh on comments, followers/following and who liked; who liked loads a page at a time
+- Activity updates load a page at a time instead of stopping at 50
+- Skeleton loaders: grey rows and tiles while lists load, instead of a lone spinner
+- Autopilot log for run 19
 
 ---
 

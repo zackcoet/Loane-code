@@ -1523,3 +1523,21 @@ Trending taps are measured with `meta.from: 'trending'` on the piece's
 view and on requests made from it, not with a new event surface: a
 surface would mean a rules change and a new column in every report for
 one row of one screen.
+
+## 2026-10-23 — Which lists page, and which deliberately do not (autopilot run 19)
+
+Who liked a look and Activity → Updates used to stop silently (at 200
+and 50). Both now load a page at a time. Activity uses the same growing
+live window as comments and follow lists; who-liked is a one-off read,
+so it pages by cursor and a pull to refresh really reads it again.
+
+Two lists stay whole on purpose. Bookings: Activity's "Needs you" count,
+the Menu and Help all read her full booking list, a girl has a handful,
+and paging it would make "is anybody waiting on me?" wrong. The Messages
+inbox keeps its latest 50 chats, because the unread badge reads the same
+listener; paging it first needs the badge to count on its own (logged as
+a suggestion).
+
+Skeletons are for lists, the Loane loader is for full-screen waits that
+are not a list. A skeleton says what is coming and stops the screen
+jumping when it arrives.
