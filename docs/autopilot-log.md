@@ -47,7 +47,7 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 
 **Skipped / blocked:**
 - **F7 (waitlist for non-USC emails)** — needs your call first, see NEEDS ZACK.
-- The overnight machine still can't start the test database (Google's download is blocked here). Passed: type checks, lint, the index check (84 searches, none missing), all 283 shared tests (17 new), the server tests that don't need the database, the iPhone app build and the dashboard build. This run DID change the database rules (her Get started answers) and account deletion, with new tests written for both — GitHub runs those on tonight's push, so check for the green tick before merging.
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed: type checks, lint, the index check (84 searches, none missing), all 283 shared tests (17 new), the server tests that don't need the database, the iPhone app build and the dashboard build. This run DID change the database rules (her Get started answers) and account deletion, with new tests written for both. **GitHub ran the full set, database tests included, on tonight's push: all green ✅.**
 
 **🚨 NEEDS ZACK:** One decision — USC-only with a waitlist, or keep letting any .edu in (details at the top of this file).
 
