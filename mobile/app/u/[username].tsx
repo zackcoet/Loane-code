@@ -59,6 +59,9 @@ export default function OtherProfile() {
     // Her content is already hidden from her, so there is nothing
     // left on this screen to look at.
     onBlocked: () => router.back(),
+    onShare: () => {
+      if (user) router.push({ pathname: '/send-post', params: { uid: user.uid } });
+    },
   });
   const hidden = useHiddenUids();
   const [busy, setBusy] = useState(false);
@@ -167,7 +170,7 @@ export default function OtherProfile() {
           isMe ? null : (
             <IconButton
               name="ellipsis-horizontal"
-              accessibilityLabel="Report or block"
+              accessibilityLabel="More: share, report or block"
               onPress={reportOrBlock.open}
             />
           )

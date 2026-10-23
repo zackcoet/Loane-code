@@ -61,6 +61,7 @@ import { IconButton } from '../../src/components/IconButton';
 import { ReportSheet } from '../../src/components/ReportSheet';
 import { pickPhoto, uploadMessagePhoto } from '../../src/lib/photo';
 import { SharedListingCard } from '../../src/components/SharedListingCard';
+import { SharedProfileCard } from '../../src/components/SharedProfileCard';
 import { SwipeToReply } from '../../src/components/SwipeToReply';
 import { OfflineError } from '../../src/network/connection';
 
@@ -591,8 +592,8 @@ function Bubble({
         onLongPress={onLongPress}
         delayLongPress={350}
         // One VoiceOver element with a Reply action — except a shared
-        // look or piece, whose card must stay its own button to be openable.
-        accessible={!message.sharedPost && !message.sharedListing}
+        // look, piece or profile, whose card must stay its own button to be openable.
+        accessible={!message.sharedPost && !message.sharedListing && !message.sharedProfile}
         accessibilityLabel={message.body || (message.photo ? 'Photo' : 'Message')}
         accessibilityValue={
           hearts > 0 ? { text: hearts === 1 ? '1 heart' : '2 hearts' } : undefined
@@ -677,6 +678,12 @@ function Bubble({
               }
             />
           ) : null}
+          {message.sharedProfile ? (
+            <SharedProfileCard
+              item={message.sharedProfile}
+              onPress={() => router.push(`/u/${message.sharedProfile!.username}`)}
+            />
+          ) : null}
           {message.photo ? (
             <Image
               source={{ uri: message.photo.url }}
@@ -689,7 +696,10 @@ function Bubble({
               variant="bodySmall"
               tone={mine ? 'inverse' : 'primary'}
               style={
-                message.photo || message.sharedPost || message.sharedListing
+                message.photo ||
+                message.sharedPost ||
+                message.sharedListing ||
+                message.sharedProfile
                   ? styles.captionUnderPhoto
                   : undefined
               }

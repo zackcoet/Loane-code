@@ -1739,3 +1739,30 @@ offers "Look further back".
 purpose). ESLint alone cannot tell React Native's `Text` from our shared
 one — they have the same name — so the script reads each file's imports.
 GitHub runs it with the rest of lint.
+
+---
+
+## 2026-10-23 — "Share profile" sends a closet into a DM (autopilot run 27)
+
+**Decision:** A profile can be sent into chats the same way as a look or
+a piece: "…" on someone's profile → Share profile, or ☰ → Share My
+Profile for her own. The card (photo, name, @username, how many pieces)
+is stamped by a server function, `shareProfile`; the database rules
+refuse a profile card written by the phone, so a card saying @ella
+always opens Ella.
+
+**Her own profile is allowed** — that is how a lender brings her friends
+in. **The person shared is not told**, like Instagram. **A suspended,
+deleted or blocked-either-way account can't be shared**, and the error
+is the same "not available" for all three so a share never reveals a
+block.
+
+**Why the reply quote only carries `hasSharedProfile` when it is true:**
+the live database rules from before this change refuse a quote with an
+unknown field. If the app update reached phones before the rules were
+deployed, every reply would fail. Leaving it out when false keeps old
+rules happy; absent means "no".
+
+**Known limit:** the card opens the profile by @username as it was when
+sent. If she later changes her username, an old card shows "not found".
+Rare, and the same as an old link.

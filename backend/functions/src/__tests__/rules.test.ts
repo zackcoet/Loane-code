@@ -1194,6 +1194,29 @@ describe('conversations', () => {
     );
   });
 
+  it('refuses a shared profile written by the app', async () => {
+    // shareProfile writes these, so a card saying @ella really opens
+    // Ella and shows her real name and photo.
+    await assertFails(
+      sendAs(asElla(), 'chat-1', 'm-share-profile', {
+        conversationId: 'chat-1',
+        senderUid: ELLA,
+        body: 'look at her closet',
+        readBy: [ELLA],
+        isDeleted: false,
+        sharedPost: null,
+        sharedListing: null,
+        sharedProfile: {
+          uid: MADDIE,
+          username: 'forged',
+          displayName: 'Not Maddie',
+          photoUrl: null,
+          listingCount: 99,
+        },
+      }),
+    );
+  });
+
   it('still allows an ordinary message that says sharedListing is null', async () => {
     await assertSucceeds(
       sendAs(asElla(), 'chat-1', 'm-plain-2', {
@@ -1417,6 +1440,26 @@ describe('conversations', () => {
       await assertSucceeds(
         reply({ ...honest, messageId: 'm-piece', body: '', hasSharedListing: true }),
       );
+    });
+
+    it('lets her quote a profile someone sent, and refuses a false claim of one', async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), 'conversations', 'chat-1', 'messages', 'm-profile'), {
+          conversationId: 'chat-1',
+          senderUid: MADDIE,
+          body: '',
+          readBy: [MADDIE],
+          isDeleted: false,
+          photo: null,
+          sharedPost: null,
+          sharedListing: null,
+          sharedProfile: { uid: 'someone', username: 'someone' },
+        });
+      });
+      await assertSucceeds(
+        reply({ ...honest, messageId: 'm-profile', body: '', hasSharedProfile: true }),
+      );
+      await assertFails(reply({ ...honest, hasSharedProfile: true }));
     });
 
     it('refuses extra fields smuggled into the quote', async () => {

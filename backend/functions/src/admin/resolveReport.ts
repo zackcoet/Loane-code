@@ -281,6 +281,7 @@ async function takeDownMessage(
     photo: null,
     sharedPost: null,
     sharedListing: null,
+    sharedProfile: null,
     likedBy: [],
     updatedAt: now(),
   });
@@ -304,6 +305,7 @@ async function takeDownMessage(
       photoPath: message.photo?.path ?? null,
       sharedPostId: message.sharedPost?.postId ?? null,
       sharedListingId: message.sharedListing?.listingId ?? null,
+      sharedProfileUid: message.sharedProfile?.uid ?? null,
     },
     after: { isDeleted: true },
   });

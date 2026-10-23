@@ -22,6 +22,7 @@ import { IconButton } from '../src/components/IconButton';
 import { Logo } from '../src/components/Logo';
 import { Text } from '../src/components/Text';
 import { auth } from '../src/firebase/config';
+import { useAuth } from '../src/auth/AuthProvider';
 import { useMyBookings } from '../src/hooks/useBookings';
 
 const WIDTH = Math.min(320, Dimensions.get('window').width * 0.84);
@@ -53,6 +54,9 @@ const ITEMS: Item[] = [
   { label: 'Find Friends', icon: 'person-add-outline', href: '/contacts' },
   { label: 'Search Students', icon: 'search-outline', href: '/find-friends' },
   { label: 'Invite Friends', icon: 'share-outline', href: '/invite-friends' },
+  // Placeholder href: filled in with her uid below, since this list is
+  // built before anyone is signed in.
+  { label: 'Share My Profile', icon: 'paper-plane-outline', href: '/send-post' },
   /*
     Payouts is hidden until Stripe exists. The screen is a placeholder
     that says "payments are coming soon", and a menu row leading to a
@@ -68,6 +72,7 @@ const ITEMS: Item[] = [
 
 export default function Menu() {
   const router = useRouter();
+  const { profile } = useAuth();
   // The badge moved with the row. What needs an answer is no longer
   // unread messages — that count lives on the Messages tab — but the
   // requests sitting on her pieces waiting for a yes or no.
@@ -131,7 +136,13 @@ export default function Menu() {
           </View>
 
           {ITEMS.map((raw) => {
-            const item = raw.href === '/rental-requests' ? { ...raw, badge: waitingOnMe } : raw;
+            if (raw.href === '/send-post' && !profile) return null;
+            const item: Item =
+              raw.href === '/rental-requests'
+                ? { ...raw, badge: waitingOnMe }
+                : raw.href === '/send-post' && profile
+                  ? { ...raw, href: { pathname: '/send-post', params: { uid: profile.uid } } }
+                  : raw;
             return (
               <Pressable
                 key={item.label}

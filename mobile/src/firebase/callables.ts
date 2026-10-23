@@ -262,6 +262,12 @@ export const shareListing = httpsCallable<
   { sentTo: number; conversationId: string | null }
 >(functions, 'shareListing');
 
+/** Sends someone's profile into one or more chats. */
+export const shareProfile = httpsCallable<
+  { uid: string; toUids: string[]; note?: string },
+  { sentTo: number; conversationId: string | null }
+>(functions, 'shareProfile');
+
 export const acceptLegalDocs = httpsCallable<
   { termsVersion: number; privacyVersion: number },
   { ok: true }

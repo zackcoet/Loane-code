@@ -17,6 +17,10 @@ export function replyFor(original: Message): MessageReply {
     hasPhoto: original.photo != null,
     hasSharedPost: original.sharedPost != null,
     hasSharedListing: original.sharedListing != null,
+    // Only when true: the live database rules before profile sharing
+    // refuse a quote carrying this field, and an app update can reach
+    // phones before the rules are deployed. Absent reads as "no".
+    ...(original.sharedProfile != null ? { hasSharedProfile: true } : {}),
   };
 }
 
@@ -24,6 +28,7 @@ export function replyFor(original: Message): MessageReply {
 export function replyPreview(reply: MessageReply): string {
   const words = reply.body.trim();
   if (words) return words;
+  if (reply.hasSharedProfile) return 'A profile';
   if (reply.hasSharedListing) return 'A piece';
   if (reply.hasSharedPost) return 'A look';
   if (reply.hasPhoto) return 'Photo';

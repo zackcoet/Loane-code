@@ -106,6 +106,14 @@ export interface Message extends BaseDoc {
    */
   sharedListing?: SharedListing | null;
   /**
+   * Someone's profile sent into the chat — "you have to see her
+   * closet". A snapshot for the same reasons as sharedPost. Tapping it
+   * opens the live profile. Written only by the shareProfile function,
+   * so the name and photo on the card are really hers. Older messages
+   * have no field at all.
+   */
+  sharedProfile?: SharedProfile | null;
+  /**
    * The message this one answers, when she swiped to reply.
    *
    * A copy of the original rather than just its id, for the same reason
@@ -141,6 +149,21 @@ export interface MessageReply {
    * because replies written before pieces could be shared do not have it.
    */
   hasSharedListing?: boolean;
+  /**
+   * So the quote can say "A profile" when there were no words. Optional
+   * for the same reason as hasSharedListing.
+   */
+  hasSharedProfile?: boolean;
+}
+
+/** The snapshot of a profile inside a message. See Message.sharedProfile. */
+export interface SharedProfile {
+  uid: string;
+  username: string;
+  displayName: string;
+  photoUrl: string | null;
+  /** Pieces in her closet when it was sent — "12 pieces". */
+  listingCount: number;
 }
 
 /** The snapshot of a piece inside a message. See Message.sharedListing. */

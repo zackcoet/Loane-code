@@ -1,8 +1,10 @@
 /**
- * Sending a look — or a piece from someone's closet — to someone.
+ * Sending a look — or a piece from someone's closet, or someone's whole
+ * profile — to someone.
  *
- * Opened with `postId` for a look or `listingId` for a piece. Same
- * people, same screen; only the function at the end differs.
+ * Opened with `postId` for a look, `listingId` for a piece or `uid` for
+ * a profile. Same people, same screen; only the function at the end
+ * differs.
  *
  * The people offered first are the ones she follows and the ones who
  * follow her, because that is almost always who she means. Anyone else
@@ -46,13 +48,17 @@ import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useSuggestedRecipients, useStudentSearch } from '../src/hooks/useFollowing';
 import { useHiddenUids } from '../src/hooks/useBlocks';
-import { shareListing, sharePost } from '../src/firebase/callables';
+import { shareListing, sharePost, shareProfile } from '../src/firebase/callables';
 import { callableErrorMessage } from '../src/firebase/errors';
 import { logEvent } from '../src/analytics/events';
 
 export default function SendPost() {
   const router = useRouter();
-  const { postId, listingId } = useLocalSearchParams<{ postId?: string; listingId?: string }>();
+  const {
+    postId,
+    listingId,
+    uid: profileUid,
+  } = useLocalSearchParams<{ postId?: string; listingId?: string; uid?: string }>();
   const { people, loading } = useSuggestedRecipients();
   const [term, setTerm] = useState('');
   const { results, searching, failed, retry } = useStudentSearch(term);
@@ -86,14 +92,23 @@ export default function SendPost() {
     );
 
   const onSend = async () => {
-    if ((!postId && !listingId) || picked.length === 0 || sending) return;
+    if ((!postId && !listingId && !profileUid) || picked.length === 0 || sending) return;
     setSending(true);
     try {
       const extra = { toUids: picked, note: note.trim() || undefined };
-      const result = listingId
-        ? await shareListing({ listingId, ...extra })
-        : await sharePost({ postId: postId!, ...extra });
-      if (listingId) {
+      const result = profileUid
+        ? await shareProfile({ uid: profileUid, ...extra })
+        : listingId
+          ? await shareListing({ listingId, ...extra })
+          : await sharePost({ postId: postId!, ...extra });
+      if (profileUid) {
+        logEvent('profile_shared', {
+          surface: 'profile',
+          targetType: 'user',
+          targetId: profileUid,
+          meta: { recipients: result.data.sentTo },
+        });
+      } else if (listingId) {
         logEvent('listing_shared', {
           surface: 'listing',
           targetType: 'listing',

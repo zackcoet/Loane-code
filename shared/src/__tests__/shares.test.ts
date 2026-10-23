@@ -4,8 +4,10 @@ import {
   likeInboxUpdate,
   listingShareSnapshot,
   messagePreview,
+  profileShareSnapshot,
 } from '../shares';
-import type { Listing } from '../types';
+import { replyFor, replyPreview } from '../replies';
+import type { Listing, Message, User } from '../types';
 
 function listing(overrides: Partial<Listing> = {}): Listing {
   return {
@@ -61,6 +63,66 @@ describe('listingShareSnapshot', () => {
 
   it('trims a very long name', () => {
     expect(listingShareSnapshot(listing({ name: 'x'.repeat(500) })).name).toHaveLength(140);
+  });
+});
+
+function user(overrides: Partial<User> = {}): User {
+  return {
+    uid: 'uid-ella',
+    username: 'ellapetrick',
+    displayName: 'Ella Petrick',
+    photoUrl: 'https://img/ella',
+    email: 'private@email.sc.edu',
+    stats: { listingCount: 12 },
+    ...overrides,
+  } as User;
+}
+
+describe('profileShareSnapshot', () => {
+  it('keeps what the chat card needs and nothing private', () => {
+    expect(profileShareSnapshot(user())).toEqual({
+      uid: 'uid-ella',
+      username: 'ellapetrick',
+      displayName: 'Ella Petrick',
+      photoUrl: 'https://img/ella',
+      listingCount: 12,
+    });
+  });
+
+  it('copes with no photo and no counters yet', () => {
+    const snap = profileShareSnapshot(user({ photoUrl: null, stats: undefined }));
+    expect(snap.photoUrl).toBeNull();
+    expect(snap.listingCount).toBe(0);
+  });
+
+  it('never shows a negative closet size', () => {
+    expect(
+      profileShareSnapshot(user({ stats: { listingCount: -2 } } as Partial<User>)).listingCount,
+    ).toBe(0);
+  });
+
+  it('is what the inbox and a reply call it', () => {
+    const sharedProfile = profileShareSnapshot(user());
+    expect(
+      messagePreview({
+        body: '',
+        photo: null,
+        sharedPost: null,
+        sharedListing: null,
+        sharedProfile,
+      }),
+    ).toBe('Sent a profile');
+    const quote = replyFor({
+      id: 'm1',
+      senderUid: 'uid-maddie',
+      body: '',
+      photo: null,
+      sharedPost: null,
+      sharedListing: null,
+      sharedProfile,
+    } as Message);
+    expect(quote.hasSharedProfile).toBe(true);
+    expect(replyPreview(quote)).toBe('A profile');
   });
 });
 

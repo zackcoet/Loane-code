@@ -6,7 +6,7 @@
  * what the inbox says about it.
  */
 
-import type { Listing, Message, SharedListing } from './types';
+import type { Listing, Message, SharedListing, SharedProfile, User } from './types';
 
 /** How much of a caption or name the snapshot keeps. */
 const SNAPSHOT_TEXT_MAX = 140;
@@ -38,6 +38,17 @@ export function listingShareSnapshot(listing: Listing): SharedListing {
   };
 }
 
+/** The snapshot of a profile that goes inside the chat bubble. */
+export function profileShareSnapshot(user: User): SharedProfile {
+  return {
+    uid: user.uid,
+    username: user.username,
+    displayName: (user.displayName ?? '').slice(0, SNAPSHOT_TEXT_MAX),
+    photoUrl: user.photoUrl ?? null,
+    listingCount: Math.max(0, user.stats?.listingCount ?? 0),
+  };
+}
+
 /**
  * The one line the inbox shows for a message.
  *
@@ -45,9 +56,10 @@ export function listingShareSnapshot(listing: Listing): SharedListing {
  * or the inbox row reads as an empty message.
  */
 export function messagePreview(
-  message: Pick<Message, 'body' | 'photo' | 'sharedPost' | 'sharedListing'>,
+  message: Pick<Message, 'body' | 'photo' | 'sharedPost' | 'sharedListing' | 'sharedProfile'>,
 ): string {
   if (message.body) return message.body.slice(0, SNAPSHOT_TEXT_MAX);
+  if (message.sharedProfile) return 'Sent a profile';
   if (message.sharedListing) return 'Sent a piece';
   if (message.sharedPost) return 'Sent a look';
   if (message.photo) return 'Sent a photo';
@@ -72,7 +84,10 @@ export const REMOVED_MESSAGE_TEXT = 'Message removed by Loane';
  */
 export function previewShowsMessage(
   preview: { body: string; senderUid: string } | null | undefined,
-  message: Pick<Message, 'body' | 'photo' | 'sharedPost' | 'sharedListing' | 'senderUid'>,
+  message: Pick<
+    Message,
+    'body' | 'photo' | 'sharedPost' | 'sharedListing' | 'sharedProfile' | 'senderUid'
+  >,
 ): boolean {
   if (!preview) return false;
   return preview.senderUid === message.senderUid && preview.body === messagePreview(message);

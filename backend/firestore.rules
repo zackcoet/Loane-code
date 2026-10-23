@@ -759,7 +759,7 @@ service cloud.firestore {
           let path = /databases/$(database)/documents/conversations/$(conversationId)/messages/$(r.messageId);
           return r is map
             && r.keys().hasOnly(['messageId', 'senderUid', 'body', 'hasPhoto', 'hasSharedPost',
-                                 'hasSharedListing'])
+                                 'hasSharedListing', 'hasSharedProfile'])
             && r.messageId is string
             && exists(path)
             && get(path).data.isDeleted == false
@@ -769,7 +769,10 @@ service cloud.firestore {
             && r.hasSharedPost == (get(path).data.get('sharedPost', null) != null)
             // Optional: replies from before pieces could be shared lack it.
             && (!('hasSharedListing' in r)
-                || r.hasSharedListing == (get(path).data.get('sharedListing', null) != null));
+                || r.hasSharedListing == (get(path).data.get('sharedListing', null) != null))
+            // Same, for replies from before profiles could be shared.
+            && (!('hasSharedProfile' in r)
+                || r.hasSharedProfile == (get(path).data.get('sharedProfile', null) != null));
         }
 
         // Every message must move her hourly counter by exactly one in
@@ -797,10 +800,10 @@ service cloud.firestore {
             && !exists(/databases/$(database)/documents/users/$(p[1])/blocked/$(p[0]));
         }
 
-        // A shared look or piece is written by the sharePost or
-        // shareListing function, never by the app: the snapshot in the
-        // bubble has to be the real thing. So an app-written message
-        // must carry sharedPost == null and sharedListing == null.
+        // A shared look, piece or profile is written by the sharePost,
+        // shareListing or shareProfile function, never by the app: the
+        // snapshot in the bubble has to be the real thing. So an
+        // app-written message must carry all three as null (or absent).
         allow create: if inThread()
           && isVerifiedStudent()
           && notBlockedInThread()
@@ -811,6 +814,8 @@ service cloud.firestore {
               || request.resource.data.sharedPost == null)
           && (!('sharedListing' in request.resource.data)
               || request.resource.data.sharedListing == null)
+          && (!('sharedProfile' in request.resource.data)
+              || request.resource.data.sharedProfile == null)
           && (!('replyTo' in request.resource.data)
               || request.resource.data.replyTo == null
               || validReply());
@@ -898,7 +903,7 @@ service cloud.firestore {
           'rental_cancelled', 'rental_handoff', 'rental_received',
           'rental_returned', 'rental_disputed',
           'message_sent', 'comment_created', 'comment_deleted', 'comment_like', 'comment_unlike',
-          'post_shared', 'listing_shared', 'invite_shared', 'review_written',
+          'post_shared', 'listing_shared', 'profile_shared', 'invite_shared', 'review_written',
           'report_submitted', 'user_blocked', 'user_unblocked', 'user_muted', 'user_unmuted',
           'tryon_open', 'tryon_generate', 'tryon_save',
           'tryon_body_photo_set', 'tryon_body_photo_delete'

@@ -32,6 +32,7 @@
  *   - openConversation   the one thread between two students
  *   - sharePost          sends a look into one or more chats
  *   - shareListing       sends a piece into one or more chats
+ *   - shareProfile       sends someone's profile into one or more chats
  *   - addComment / deleteComment   comments on a look, and taking one down
  *   - writeReview        only from someone who actually rented with you
  *   - submitReport       flags a user, listing, post or rental for admins
@@ -115,6 +116,7 @@ export { refreshTrending, runTrendingRefresh } from './listings/trending';
 export { openConversation } from './messaging/openConversation';
 export { sharePost } from './messaging/sharePost';
 export { shareListing } from './messaging/shareListing';
+export { shareProfile } from './messaging/shareProfile';
 export { addComment, deleteComment } from './posts/comments';
 export { likeComment, unlikeComment } from './social/commentLikes';
 export { writeReview, editReview } from './reviews/writeReview';

@@ -33,9 +33,14 @@ interface Options {
   onReport: () => void;
   /** Called after a successful block, usually to leave the screen. */
   onBlocked?: () => void;
+  /**
+   * Offers "Share profile" first, like Instagram's profile menu. Only
+   * the profile screen passes it; a chat's "…" is about the chat.
+   */
+  onShare?: () => void;
 }
 
-export function useReportOrBlock({ uid, username, onReport, onBlocked }: Options) {
+export function useReportOrBlock({ uid, username, onReport, onBlocked, onShare }: Options) {
   const [busy, setBusy] = useState(false);
   const { profile } = useAuth();
   const { uids: mutedUids } = useMutedUids();
@@ -86,27 +91,34 @@ export function useReportOrBlock({ uid, username, onReport, onBlocked }: Options
 
     const muteLabel = isMuted ? `Unmute @${username}` : `Mute @${username}`;
     if (Platform.OS === 'ios') {
-      const options = canMute
-        ? ['Cancel', muteLabel, `Report @${username}`, `Block @${username}`]
-        : ['Cancel', `Report @${username}`, `Block @${username}`];
+      const shareLabel = 'Share profile';
+      const options = [
+        'Cancel',
+        ...(onShare ? [shareLabel] : []),
+        ...(canMute ? [muteLabel] : []),
+        `Report @${username}`,
+        `Block @${username}`,
+      ];
       ActionSheetIOS.showActionSheetWithOptions(
         { options, cancelButtonIndex: 0, destructiveButtonIndex: options.length - 1 },
         (index) => {
           const picked = options[index];
-          if (picked === muteLabel) toggleMute();
+          if (picked === shareLabel) onShare?.();
+          else if (picked === muteLabel) toggleMute();
           else if (picked === `Report @${username}`) onReport();
           else if (picked === `Block @${username}`) confirmBlock();
         },
       );
     } else {
       Alert.alert(`@${username}`, undefined, [
+        ...(onShare ? [{ text: 'Share profile', onPress: onShare }] : []),
         ...(canMute ? [{ text: isMuted ? 'Unmute' : 'Mute', onPress: toggleMute }] : []),
         { text: 'Report', onPress: onReport },
         { text: 'Block', style: 'destructive' as const, onPress: confirmBlock },
         { text: 'Cancel', style: 'cancel' as const },
       ]);
     }
-  }, [busy, username, onReport, confirmBlock, canMute, isMuted, toggleMute]);
+  }, [busy, username, onReport, onShare, confirmBlock, canMute, isMuted, toggleMute]);
 
   return { open, busy };
 }

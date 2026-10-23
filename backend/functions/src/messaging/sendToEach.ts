@@ -7,8 +7,8 @@ import { ensureConversation } from './openConversation';
  * Drops one message into the thread with each of several people,
  * starting the thread where there is none yet.
  *
- * Shared by `sharePost` and `shareListing`, which differ only in what
- * goes in the bubble.
+ * Shared by `sharePost`, `shareListing` and `shareProfile`, which differ
+ * only in what goes in the bubble.
  *
  * Anyone she cannot message is SKIPPED rather than failing the whole
  * send. Sending to five friends and getting an error because one of
@@ -18,7 +18,7 @@ import { ensureConversation } from './openConversation';
 export async function sendToEach(
   me: User,
   toUids: string[],
-  content: Pick<Message, 'body' | 'sharedPost' | 'sharedListing'>,
+  content: Pick<Message, 'body' | 'sharedPost' | 'sharedListing' | 'sharedProfile'>,
 ): Promise<{ sentTo: number; lastConversationId: string | null }> {
   let sentTo = 0;
   let lastConversationId: string | null = null;
@@ -39,6 +39,7 @@ export async function sendToEach(
       photo: null,
       sharedPost: content.sharedPost,
       sharedListing: content.sharedListing ?? null,
+      sharedProfile: content.sharedProfile ?? null,
       replyTo: null,
       readBy: [me.uid],
       isDeleted: false,

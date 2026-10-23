@@ -509,6 +509,8 @@ export const EVENT_TYPES = [
   'comment_unlike',
   'post_shared',
   'listing_shared',
+  /** Sent someone's profile into a DM. targetType 'user'. */
+  'profile_shared',
   'invite_shared',
   'review_written',
   'report_submitted',
