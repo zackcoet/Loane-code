@@ -11,6 +11,7 @@ import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/f
 import { COLLECTIONS, type Listing, type Post } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
+import { isCachedEmpty } from '../network/connection';
 
 /**
  * Posts load a page at a time — a feed is scrolled, so there is no reason
@@ -78,6 +79,14 @@ function useCampusCollection<T>(
     return onSnapshot(
       q,
       (snap) => {
+        // No signal and nothing cached: an empty answer here is a guess,
+        // not "you have none". Say it could not load (shared/connection.ts).
+        if (isCachedEmpty(snap)) {
+          setError('Check your connection and try again.');
+          setLoading(false);
+          return;
+        }
+        setError(null);
         setItems(snap.docs.map((d) => ({ ...(d.data() as T), id: d.id })));
         setLoading(false);
       },

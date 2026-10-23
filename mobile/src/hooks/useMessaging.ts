@@ -54,7 +54,7 @@ import { useHiddenUids } from './useBlocks';
 import { useFollowingUids } from './useFollowing';
 import { useUserSettings } from './useUserSettings';
 import { useRetry } from './useRetry';
-import { assertOnline } from '../network/connection';
+import { assertOnline, isCachedEmpty } from '../network/connection';
 
 /** Thrown by send when she has hit the hourly ceiling. */
 export const MESSAGE_QUOTA_FULL = 'message-quota-full';
@@ -102,6 +102,14 @@ export function useConversations() {
         limit(50),
       ),
       (snap) => {
+        // No signal and nothing cached: an empty answer here is a guess,
+        // not "you have none". Say it could not load (shared/connection.ts).
+        if (isCachedEmpty(snap)) {
+          setFailed(true);
+          setLoading(false);
+          return;
+        }
+        setFailed(false);
         setConversations(snap.docs.map((d) => ({ ...(d.data() as Conversation), id: d.id })));
         setLoading(false);
       },

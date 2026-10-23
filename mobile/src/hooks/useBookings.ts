@@ -11,6 +11,7 @@ import { COLLECTIONS, docPresence, type Booking, type IsoDate, type Listing } fr
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { useRetry } from './useRetry';
+import { isCachedEmpty } from '../network/connection';
 
 /** Her rentals, on one side or the other. */
 export function useMyBookings(side: 'renting' | 'lending') {
@@ -35,6 +36,14 @@ export function useMyBookings(side: 'renting' | 'lending') {
         orderBy('createdAt', 'desc'),
       ),
       (snap) => {
+        // No signal and nothing cached: an empty answer here is a guess,
+        // not "you have none". Say it could not load (shared/connection.ts).
+        if (isCachedEmpty(snap)) {
+          setFailed(true);
+          setLoading(false);
+          return;
+        }
+        setFailed(false);
         setBookings(snap.docs.map((d) => ({ ...(d.data() as Booking), id: d.id })));
         setLoading(false);
       },

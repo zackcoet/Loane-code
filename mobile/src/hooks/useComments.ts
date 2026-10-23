@@ -32,6 +32,7 @@ import { addComment, deleteComment, likeComment, unlikeComment } from '../fireba
 import { logEvent } from '../analytics/events';
 import { hapticLike, hapticSend } from '../haptics';
 import { callableErrorMessage } from '../firebase/errors';
+import { isCachedEmpty } from '../network/connection';
 
 /** The most a post's comments listener will ever hold. */
 const MAX_COMMENTS = 200;
@@ -69,6 +70,14 @@ export function useComments(postId: string | undefined) {
         limit(windowSize),
       ),
       (snap) => {
+        // No signal and nothing cached: an empty answer here is a guess,
+        // not "you have none". Say it could not load (shared/connection.ts).
+        if (isCachedEmpty(snap)) {
+          setError(true);
+          setLoading(false);
+          setLoadingMore(false);
+          return;
+        }
         setAll(snap.docs.map((d) => ({ ...(d.data() as Comment), id: d.id })));
         // Counted before removed comments are filtered out, so a page
         // full of takedowns still knows there is more behind it.

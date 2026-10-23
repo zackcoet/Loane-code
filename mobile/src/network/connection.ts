@@ -13,7 +13,7 @@
 
 import { useSyncExternalStore } from 'react';
 import NetInfo from '@react-native-community/netinfo';
-import { OFFLINE_MESSAGE, isOfflineState } from '@loane/shared';
+import { OFFLINE_MESSAGE, docPresence, isOfflineState } from '@loane/shared';
 
 let offline = false;
 const listeners = new Set<() => void>();
@@ -56,4 +56,14 @@ export class OfflineError extends Error {
 /** Throws straight away when offline, instead of letting a save hang. */
 export function assertOnline(): void {
   if (offline) throw new OfflineError();
+}
+
+/**
+ * A live list that came back empty from the phone's cache — which,
+ * since the cache starts empty every launch, means "no signal", not
+ * "nothing there". Lists treat it as a failed load, never as an empty
+ * state. A list that HAS cached items is shown as normal.
+ */
+export function isCachedEmpty(snap: { empty: boolean; metadata: { fromCache: boolean } }): boolean {
+  return docPresence(!snap.empty, snap.metadata.fromCache) === 'unknown';
 }

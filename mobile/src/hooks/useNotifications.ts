@@ -25,6 +25,7 @@ import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { useHiddenUids } from './useBlocks';
 import { useRetry } from './useRetry';
+import { isCachedEmpty } from '../network/connection';
 
 /**
  * Her updates, newest first, a page at a time.
@@ -66,6 +67,15 @@ export function useNotifications() {
         limit(windowSize),
       ),
       (snap) => {
+        // No signal and nothing cached: an empty answer here is a guess,
+        // not "you have none". Say it could not load (shared/connection.ts).
+        if (isCachedEmpty(snap)) {
+          setFailed(true);
+          setLoading(false);
+          setLoadingMore(false);
+          return;
+        }
+        setFailed(false);
         setNotifications(snap.docs.map((d) => ({ ...(d.data() as Notification), id: d.id })));
         setHasMore(snap.docs.length >= windowSize);
         setLoading(false);
