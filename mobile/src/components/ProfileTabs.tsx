@@ -32,6 +32,7 @@ import { useUserListings, useUserPosts } from '../hooks/useProfile';
 import { useIsSaved } from '../hooks/useSaved';
 import { ThumbImage } from './ThumbImage';
 import { SkeletonGrid } from './Skeleton';
+import { PeekPreview, type PeekItem } from './PeekPreview';
 
 const TABS = ['closet', 'posts'] as const;
 type ProfileTab = (typeof TABS)[number];
@@ -50,6 +51,8 @@ export function ProfileTabs({ uid, isMe }: Props) {
   const router = useRouter();
   const draft = usePostDraft();
   const [tab, setTab] = useState<ProfileTab>('closet');
+  // Press and hold a tile to see it big — see PeekPreview.
+  const [peek, setPeek] = useState<PeekItem | null>(null);
   // Posting a look needs a profile photo — see useProfileGate.
   const gate = useProfileGate();
   const { width } = useWindowDimensions();
@@ -103,6 +106,7 @@ export function ProfileTabs({ uid, isMe }: Props) {
                 onPress={() =>
                   router.push({ pathname: '/listing/[id]', params: { id: listing.id } })
                 }
+                onLongPress={() => setPeek({ kind: 'listing', listing })}
               />
             ))}
           </View>
@@ -128,12 +132,25 @@ export function ProfileTabs({ uid, isMe }: Props) {
               post={post}
               size={tileWidth}
               onPress={() => router.push({ pathname: '/post/[id]', params: { id: post.id } })}
+              onLongPress={() => setPeek({ kind: 'post', post })}
             />
           ))}
         </View>
       )}
 
       <ProfileGateSheet gate={gate} />
+      <PeekPreview
+        item={peek}
+        onClose={() => setPeek(null)}
+        onOpen={(item) => {
+          setPeek(null);
+          if (item.kind === 'post') {
+            router.push({ pathname: '/post/[id]', params: { id: item.post.id } });
+          } else {
+            router.push({ pathname: '/listing/[id]', params: { id: item.listing.id } });
+          }
+        }}
+      />
     </View>
   );
 }
@@ -143,10 +160,12 @@ function ClosetTile({
   listing,
   size,
   onPress,
+  onLongPress,
 }: {
   listing: Listing;
   size: number;
   onPress: () => void;
+  onLongPress: () => void;
 }) {
   /*
     A heart on every closet tile.
@@ -164,7 +183,9 @@ function ClosetTile({
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
       accessibilityRole="button"
+      accessibilityHint="Press and hold to preview"
       accessibilityLabel={
         price
           ? `${listing.name}, ${price}${rent != null ? ' for three days' : ' to own'}`
@@ -202,11 +223,23 @@ function ClosetTile({
 }
 
 /** A look, with how many pieces it tags. */
-function PostTile({ post, size, onPress }: { post: Post; size: number; onPress: () => void }) {
+function PostTile({
+  post,
+  size,
+  onPress,
+  onLongPress,
+}: {
+  post: Post;
+  size: number;
+  onPress: () => void;
+  onLongPress: () => void;
+}) {
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
       accessibilityRole="button"
+      accessibilityHint="Press and hold to preview"
       accessibilityLabel={post.caption || `Look by @${post.author.username}`}
       style={({ pressed }) => [
         styles.tile,

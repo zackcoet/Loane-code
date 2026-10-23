@@ -3,6 +3,7 @@
  * the Posts tab on a profile.
  */
 
+import { useState } from 'react';
 import {
   FlatList,
   Pressable,
@@ -14,6 +15,7 @@ import {
 import { color, spacing, type Post } from '@loane/shared';
 import { Text } from './Text';
 import { ThumbImage } from './ThumbImage';
+import { PeekPreview, type PeekItem } from './PeekPreview';
 
 const COLUMNS = 2;
 
@@ -28,37 +30,51 @@ interface Props {
 export function PostGrid({ posts, onPress, header, refreshControl }: Props) {
   const { width } = useWindowDimensions();
   const tileWidth = (width - spacing.md * (COLUMNS + 1)) / COLUMNS;
+  // Press and hold a tile to see it big — see PeekPreview.
+  const [peek, setPeek] = useState<PeekItem | null>(null);
 
   return (
-    <FlatList
-      data={posts}
-      keyExtractor={(post) => post.id}
-      numColumns={COLUMNS}
-      columnWrapperStyle={styles.row}
-      contentContainerStyle={styles.grid}
-      showsVerticalScrollIndicator={false}
-      ListHeaderComponent={header}
-      refreshControl={refreshControl}
-      renderItem={({ item }) => (
-        <Pressable
-          onPress={() => onPress(item.id)}
-          accessibilityRole="button"
-          accessibilityLabel={item.caption || `Look by @${item.author.username}`}
-          style={[styles.tile, { width: tileWidth }]}
-        >
-          {item.photos[0] ? (
-            <ThumbImage uri={item.photos[0].url} style={styles.image} resizeMode="cover" />
-          ) : null}
-          {item.taggedListings.length > 0 ? (
-            <View style={styles.badge}>
-              <Text variant="caption" tone="inverse">
-                {item.taggedListings.length} tagged
-              </Text>
-            </View>
-          ) : null}
-        </Pressable>
-      )}
-    />
+    <>
+      <FlatList
+        data={posts}
+        keyExtractor={(post) => post.id}
+        numColumns={COLUMNS}
+        columnWrapperStyle={styles.row}
+        contentContainerStyle={styles.grid}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={header}
+        refreshControl={refreshControl}
+        renderItem={({ item }) => (
+          <Pressable
+            onPress={() => onPress(item.id)}
+            onLongPress={() => setPeek({ kind: 'post', post: item })}
+            accessibilityRole="button"
+            accessibilityHint="Press and hold to preview"
+            accessibilityLabel={item.caption || `Look by @${item.author.username}`}
+            style={[styles.tile, { width: tileWidth }]}
+          >
+            {item.photos[0] ? (
+              <ThumbImage uri={item.photos[0].url} style={styles.image} resizeMode="cover" />
+            ) : null}
+            {item.taggedListings.length > 0 ? (
+              <View style={styles.badge}>
+                <Text variant="caption" tone="inverse">
+                  {item.taggedListings.length} tagged
+                </Text>
+              </View>
+            ) : null}
+          </Pressable>
+        )}
+      />
+      <PeekPreview
+        item={peek}
+        onClose={() => setPeek(null)}
+        onOpen={(open) => {
+          setPeek(null);
+          if (open.kind === 'post') onPress(open.post.id);
+        }}
+      />
+    </>
   );
 }
 
