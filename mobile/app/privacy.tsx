@@ -42,8 +42,10 @@ export default function Privacy() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.switchRow}>
           <View style={styles.switchText}>
-            <Text style={styles.cardTitle}>Show read receipts</Text>
-            <Text style={styles.cardBody}>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.cardTitle}>
+              Show read receipts
+            </Text>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.cardBody}>
               When this is off, people won&apos;t see when you&apos;ve read their messages — and you
               won&apos;t see theirs.
             </Text>
@@ -63,12 +65,17 @@ export default function Privacy() {
 
         {FACTS.map((fact) => (
           <View key={fact.title} style={styles.card}>
-            <Text style={styles.cardTitle}>{fact.title}</Text>
-            <Text style={styles.cardBody}>{fact.body}</Text>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.cardTitle}>
+              {fact.title}
+            </Text>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.cardBody}>
+              {fact.body}
+            </Text>
           </View>
         ))}
 
         <Text
+          maxFontSizeMultiplier={controls.maxFontScale}
           style={styles.link}
           accessibilityRole="link"
           onPress={() => void Linking.openURL(`${brand.website}/privacy`)}

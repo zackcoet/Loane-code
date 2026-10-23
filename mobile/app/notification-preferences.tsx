@@ -35,7 +35,7 @@ export default function NotificationPreferences() {
     <Screen flush>
       <Header title="Notifications" onBack={() => router.back()} />
 
-      <Text style={[text.small, styles.note]}>
+      <Text maxFontSizeMultiplier={controls.maxFontScale} style={[text.small, styles.note]}>
         Push notifications arrive in a later release. Your choices are saved now.
       </Text>
 
@@ -46,10 +46,19 @@ export default function NotificationPreferences() {
         return (
           <View key={key} style={styles.row}>
             <View style={styles.rowText}>
-              <Text style={[styles.label, disabled && styles.labelDisabled]}>{label}</Text>
-              <Text style={styles.help}>{help}</Text>
+              <Text
+                maxFontSizeMultiplier={controls.maxFontScale}
+                style={[styles.label, disabled && styles.labelDisabled]}
+              >
+                {label}
+              </Text>
+              <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.help}>
+                {help}
+              </Text>
             </View>
             <Switch
+              accessibilityLabel={label}
+              accessibilityHint={help}
               value={value}
               disabled={disabled}
               onValueChange={(next) =>

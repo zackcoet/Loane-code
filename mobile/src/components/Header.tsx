@@ -27,7 +27,12 @@ export function Header({ title, onBack, right }: Props) {
           />
         ) : null}
       </View>
-      <Text style={styles.title} numberOfLines={1}>
+      <Text
+        maxFontSizeMultiplier={controls.maxFontScale}
+        accessibilityRole="header"
+        style={styles.title}
+        numberOfLines={1}
+      >
         {title}
       </Text>
       <View style={[styles.side, styles.right]}>{right}</View>

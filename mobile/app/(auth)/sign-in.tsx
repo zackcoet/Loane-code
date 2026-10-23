@@ -7,7 +7,15 @@ import { Link, useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { fonts, color, normalizeEmail, spacing, type, validateEmail } from '@loane/shared';
+import {
+  controls,
+  fonts,
+  color,
+  normalizeEmail,
+  spacing,
+  type,
+  validateEmail,
+} from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { Input } from '../../src/components/Input';
 import { Screen } from '../../src/components/Screen';
@@ -73,8 +81,12 @@ export default function SignIn() {
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={text.h2}>Welcome back.</Text>
-          <Text style={[text.label, styles.caption]}>Sign in to your closet</Text>
+          <Text maxFontSizeMultiplier={controls.maxFontScale} style={text.h2}>
+            Welcome back.
+          </Text>
+          <Text maxFontSizeMultiplier={controls.maxFontScale} style={[text.label, styles.caption]}>
+            Sign in to your closet
+          </Text>
 
           <Input
             value={email}
@@ -105,7 +117,7 @@ export default function SignIn() {
           />
 
           <View style={styles.footer}>
-            <Text style={styles.altRow}>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.altRow}>
               Don&apos;t have an account?{' '}
               <Link href="/(onboarding)/create-account" style={text.link}>
                 Create one

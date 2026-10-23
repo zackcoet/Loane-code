@@ -59,6 +59,7 @@ export default function Messages() {
         <View style={styles.searchRow}>
           <Icon name="search" size={18} tint={color.icon.muted} />
           <TextInput
+            maxFontSizeMultiplier={controls.maxFontScale}
             value={term}
             onChangeText={setTerm}
             placeholder="Search messages by name"

@@ -25,7 +25,7 @@ import {
 } from 'react-native';
 import { EmailAuthProvider, reauthenticateWithCredential, signOut } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { color, spacing } from '@loane/shared';
+import { controls, color, spacing } from '@loane/shared';
 import { Button } from '../src/components/Button';
 import { Input } from '../src/components/Input';
 import { Screen } from '../src/components/Screen';
@@ -127,25 +127,45 @@ export default function DeleteAccount() {
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={[text.h3, styles.title]}>Deleting your account is permanent.</Text>
+          <Text maxFontSizeMultiplier={controls.maxFontScale} style={[text.h3, styles.title]}>
+            Deleting your account is permanent.
+          </Text>
 
           <View style={styles.band}>
-            <Text style={[text.label, styles.groupLabel]}>What gets deleted</Text>
+            <Text
+              maxFontSizeMultiplier={controls.maxFontScale}
+              style={[text.label, styles.groupLabel]}
+            >
+              What gets deleted
+            </Text>
             {GOES.map((line) => (
-              <Text key={line} style={[text.body, styles.line]}>
+              <Text
+                maxFontSizeMultiplier={controls.maxFontScale}
+                key={line}
+                style={[text.body, styles.line]}
+              >
                 {`•  ${line}`}
               </Text>
             ))}
           </View>
 
-          <Text style={[text.label, styles.groupLabel]}>What stays, without your name</Text>
+          <Text
+            maxFontSizeMultiplier={controls.maxFontScale}
+            style={[text.label, styles.groupLabel]}
+          >
+            What stays, without your name
+          </Text>
           {STAYS.map((line) => (
-            <Text key={line} style={[text.bodyMuted, styles.line]}>
+            <Text
+              maxFontSizeMultiplier={controls.maxFontScale}
+              key={line}
+              style={[text.bodyMuted, styles.line]}
+            >
               {`•  ${line}`}
             </Text>
           ))}
 
-          <Text style={[text.small, styles.note]}>
+          <Text maxFontSizeMultiplier={controls.maxFontScale} style={[text.small, styles.note]}>
             If you have a rental still going, finish or cancel it in My Rentals first.
           </Text>
 

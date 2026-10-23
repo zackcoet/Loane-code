@@ -17,16 +17,30 @@ interface Props extends TextInputProps {
 export function Input({ error, label, hint, style, ...inputProps }: Props) {
   return (
     <View style={styles.wrapper}>
-      {label ? <Text style={styles.label}>{label}</Text> : null}
+      {label ? (
+        <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.label}>
+          {label}
+        </Text>
+      ) : null}
       <TextInput
+        maxFontSizeMultiplier={controls.maxFontScale}
         placeholderTextColor={color.text.muted}
+        // The label above is a separate Text, so VoiceOver would read only
+        // the placeholder. Name the field after its label, and read the
+        // error (or the hint) after it.
+        accessibilityLabel={label}
+        accessibilityHint={error ?? hint}
         {...inputProps}
         style={[styles.input, error ? styles.inputError : null, style]}
       />
       {error ? (
-        <Text style={styles.error}>{error}</Text>
+        <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.error}>
+          {error}
+        </Text>
       ) : hint ? (
-        <Text style={styles.hint}>{hint}</Text>
+        <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.hint}>
+          {hint}
+        </Text>
       ) : null}
     </View>
   );
@@ -44,7 +58,8 @@ const styles = StyleSheet.create({
   },
   input: {
     fontFamily: fonts.body,
-    height: controls.inputHeight,
+    // minHeight so a larger text size grows the field instead of clipping.
+    minHeight: controls.inputHeight,
     fontSize: type.body.size,
     color: color.text.primary,
     borderBottomWidth: 1,

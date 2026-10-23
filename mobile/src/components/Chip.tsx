@@ -25,7 +25,11 @@ export function Chip({ label, active = false, onPress }: Props) {
       accessibilityState={{ selected: active }}
       style={[styles.chip, active && styles.chipActive]}
     >
-      <Text style={[styles.text, active && styles.textActive]} numberOfLines={1}>
+      <Text
+        maxFontSizeMultiplier={controls.maxFontScale}
+        style={[styles.text, active && styles.textActive]}
+        numberOfLines={1}
+      >
         {label}
       </Text>
     </Pressable>

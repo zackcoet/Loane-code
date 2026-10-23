@@ -174,7 +174,9 @@ export default function GetStarted() {
               style={styles.topTap}
               hitSlop={spacing.sm}
             >
-              <Text style={styles.topLink}>Back</Text>
+              <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.topLink}>
+                Back
+              </Text>
             </Pressable>
           ) : null}
         </View>
@@ -196,7 +198,9 @@ export default function GetStarted() {
             style={styles.topTap}
             hitSlop={spacing.sm}
           >
-            <Text style={styles.topLink}>Skip</Text>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.topLink}>
+              Skip
+            </Text>
           </Pressable>
         </View>
       </View>
@@ -204,8 +208,13 @@ export default function GetStarted() {
       <ScrollView style={styles.flex} contentContainerStyle={styles.body}>
         {step === 'intent' ? (
           <>
-            <Text style={text.display}>How will you use Loane?</Text>
-            <Text style={[text.bodyMuted, styles.sub]}>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={text.display}>
+              How will you use Loane?
+            </Text>
+            <Text
+              maxFontSizeMultiplier={controls.maxFontScale}
+              style={[text.bodyMuted, styles.sub]}
+            >
               Pick one. You can always do both later.
             </Text>
             {ONBOARDING_INTENTS.map((option) => {
@@ -220,8 +229,12 @@ export default function GetStarted() {
                   accessibilityLabel={`${copy.title}. ${copy.detail}`}
                   style={[styles.option, selected && styles.optionOn]}
                 >
-                  <Text style={styles.optionTitle}>{copy.title}</Text>
-                  <Text style={text.small}>{copy.detail}</Text>
+                  <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.optionTitle}>
+                    {copy.title}
+                  </Text>
+                  <Text maxFontSizeMultiplier={controls.maxFontScale} style={text.small}>
+                    {copy.detail}
+                  </Text>
                 </Pressable>
               );
             })}
@@ -230,8 +243,13 @@ export default function GetStarted() {
 
         {step === 'occasions' ? (
           <>
-            <Text style={text.display}>What's coming up?</Text>
-            <Text style={[text.bodyMuted, styles.sub]}>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={text.display}>
+              What's coming up?
+            </Text>
+            <Text
+              maxFontSizeMultiplier={controls.maxFontScale}
+              style={[text.bodyMuted, styles.sub]}
+            >
               Pick as many as you like. We'll show you looks for them first.
             </Text>
             <View style={styles.chips}>
@@ -249,8 +267,13 @@ export default function GetStarted() {
 
         {step === 'size' ? (
           <>
-            <Text style={text.display}>Your size</Text>
-            <Text style={[text.bodyMuted, styles.sub]}>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={text.display}>
+              Your size
+            </Text>
+            <Text
+              maxFontSizeMultiplier={controls.maxFontScale}
+              style={[text.bodyMuted, styles.sub]}
+            >
               Optional. It helps you spot pieces that will fit. Only you can see it unless you turn
               it on in Edit profile.
             </Text>
@@ -283,8 +306,13 @@ export default function GetStarted() {
 
         {step === 'follow' ? (
           <>
-            <Text style={text.display}>Follow {FOLLOW_TARGET} closets</Text>
-            <Text style={[text.bodyMuted, styles.sub]}>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={text.display}>
+              Follow {FOLLOW_TARGET} closets
+            </Text>
+            <Text
+              maxFontSizeMultiplier={controls.maxFontScale}
+              style={[text.bodyMuted, styles.sub]}
+            >
               Their looks fill your feed, and you'll see when their pieces are free.
               {followed.size > 0
                 ? ` ${Math.min(followed.size, FOLLOW_TARGET)} of ${FOLLOW_TARGET}.`
@@ -300,8 +328,13 @@ export default function GetStarted() {
 
         {step === 'invite' ? (
           <>
-            <Text style={text.display}>Invite your roommates</Text>
-            <Text style={[text.bodyMuted, styles.sub]}>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={text.display}>
+              Invite your roommates
+            </Text>
+            <Text
+              maxFontSizeMultiplier={controls.maxFontScale}
+              style={[text.bodyMuted, styles.sub]}
+            >
               Loane is better when the girls down the hall are on it — their closets become yours,
               and yours theirs. Send it to your group chat.
             </Text>
@@ -314,13 +347,21 @@ export default function GetStarted() {
                 });
               }}
             />
-            {invited ? <Text style={[text.small, styles.sent]}>Sent — thank you.</Text> : null}
+            {invited ? (
+              <Text maxFontSizeMultiplier={controls.maxFontScale} style={[text.small, styles.sent]}>
+                Sent — thank you.
+              </Text>
+            ) : null}
           </>
         ) : null}
       </ScrollView>
 
       <View style={styles.footer}>
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? (
+          <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.error}>
+            {error}
+          </Text>
+        ) : null}
         <Button
           label={isLast ? 'Start exploring' : 'Next'}
           onPress={() => advance('next')}

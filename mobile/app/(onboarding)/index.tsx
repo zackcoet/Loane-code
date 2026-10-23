@@ -11,6 +11,7 @@
 import { Link, useRouter } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import {
+  controls,
   fonts,
   brand,
   color,
@@ -35,10 +36,14 @@ export default function Splash() {
       <View style={styles.hero}>
         <View style={styles.center}>
           <Logo size={104} lockup="below" />
-          <Text style={styles.tagline}>
+          <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.tagline}>
             {brand.taglines.primary.toUpperCase().replace('.', ' .')}
           </Text>
-          {proof ? <Text style={styles.proof}>{proof}</Text> : null}
+          {proof ? (
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.proof}>
+              {proof}
+            </Text>
+          ) : null}
         </View>
 
         <View style={styles.footer}>

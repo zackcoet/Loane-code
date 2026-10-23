@@ -7,7 +7,7 @@
  */
 
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { fonts, color, spacing, type } from '@loane/shared';
+import { controls, fonts, color, spacing, type } from '@loane/shared';
 import { Chip } from './Chip';
 
 interface Props {
@@ -20,7 +20,9 @@ interface Props {
 export function SizePicker({ label, options, value, onChange }: Props) {
   return (
     <View style={styles.group}>
-      <Text style={styles.label}>{label}</Text>
+      <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.label}>
+        {label}
+      </Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

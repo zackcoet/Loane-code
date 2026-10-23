@@ -26,6 +26,10 @@ export function Toggle({ label, help, value, onValueChange, disabled }: Props) {
         ) : null}
       </View>
       <Switch
+        // The words beside a switch are not attached to it, so without
+        // these VoiceOver says only "switch, off" — off what?
+        accessibilityLabel={label}
+        accessibilityHint={help}
         value={value}
         onValueChange={onValueChange}
         disabled={disabled}

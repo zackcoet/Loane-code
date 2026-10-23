@@ -133,9 +133,11 @@ export default function SendPost() {
         <View style={styles.searchRow}>
           <Icon name="search" size={18} tint={color.icon.muted} />
           <TextInput
+            maxFontSizeMultiplier={controls.maxFontScale}
             value={term}
             onChangeText={setTerm}
             placeholder="Search by name or @username"
+            accessibilityLabel="Search by name or @username"
             placeholderTextColor={color.text.muted}
             autoCapitalize="none"
             autoCorrect={false}
@@ -193,9 +195,11 @@ export default function SendPost() {
 
         <View style={styles.footer}>
           <TextInput
+            maxFontSizeMultiplier={controls.maxFontScale}
             value={note}
             onChangeText={setNote}
             placeholder="Add a message (optional)"
+            accessibilityLabel="Add a message, optional"
             placeholderTextColor={color.text.muted}
             maxLength={LIMITS.messageBody.max}
             style={styles.note}

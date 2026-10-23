@@ -226,7 +226,7 @@ export default function EditProfile() {
             accessibilityLabel="Change profile photo"
           >
             <Avatar url={photoUrl} name={displayName} size={96} />
-            <Text style={styles.photoAction}>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.photoAction}>
               {uploading ? 'Uploading…' : 'Change profile photo'}
             </Text>
           </Pressable>
@@ -280,8 +280,13 @@ export default function EditProfile() {
             hint="Private. Shared with the other student only once a rental is agreed."
           />
 
-          <Text style={[text.label, styles.sizeHeading]}>My sizes</Text>
-          <Text style={[text.small, styles.sizeHelp]}>
+          <Text
+            maxFontSizeMultiplier={controls.maxFontScale}
+            style={[text.label, styles.sizeHeading]}
+          >
+            My sizes
+          </Text>
+          <Text maxFontSizeMultiplier={controls.maxFontScale} style={[text.small, styles.sizeHelp]}>
             Worth filling in either way — this is what &quot;will it fit me?&quot; is answered from
             when you are the one renting.
           </Text>
@@ -322,7 +327,11 @@ export default function EditProfile() {
             onChange={(value) => setSizes((s) => ({ ...s, shoe: value as ShoeSize | null }))}
           />
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? (
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.error}>
+              {error}
+            </Text>
+          ) : null}
 
           <Button label="Save" onPress={onSave} loading={saving} style={styles.save} />
         </ScrollView>

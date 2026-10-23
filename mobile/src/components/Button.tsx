@@ -90,9 +90,19 @@ export function Button({
         <ActivityIndicator color={labelColor} />
       ) : (
         <>
-          <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
+          <Text
+            maxFontSizeMultiplier={controls.maxFontScale}
+            style={[styles.label, { color: labelColor }]}
+          >
+            {label}
+          </Text>
           {sublabel ? (
-            <Text style={[styles.sublabel, { color: labelColor }]}>{sublabel}</Text>
+            <Text
+              maxFontSizeMultiplier={controls.maxFontScale}
+              style={[styles.sublabel, { color: labelColor }]}
+            >
+              {sublabel}
+            </Text>
           ) : null}
         </>
       )}

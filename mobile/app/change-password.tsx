@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { LIMITS, spacing, validatePassword } from '@loane/shared';
+import { controls, LIMITS, spacing, validatePassword } from '@loane/shared';
 import { Button } from '../src/components/Button';
 import { Input } from '../src/components/Input';
 import { Screen } from '../src/components/Screen';
@@ -87,7 +87,10 @@ export default function ChangePassword() {
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={[text.small, styles.explainer]}>
+          <Text
+            maxFontSizeMultiplier={controls.maxFontScale}
+            style={[text.small, styles.explainer]}
+          >
             For your security, confirm your current password first.
           </Text>
 

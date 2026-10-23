@@ -145,9 +145,16 @@ export default function CreateAccount() {
           keyboardDismissMode="interactive"
           showsVerticalScrollIndicator={false}
         >
-          <Text style={text.h2}>Every great closet has{'\n'}a name behind it.</Text>
-          <Text style={[text.label, styles.caption]}>Create your account</Text>
-          <Text style={[text.small, styles.explainer]}>
+          <Text maxFontSizeMultiplier={controls.maxFontScale} style={text.h2}>
+            Every great closet has{'\n'}a name behind it.
+          </Text>
+          <Text maxFontSizeMultiplier={controls.maxFontScale} style={[text.label, styles.caption]}>
+            Create your account
+          </Text>
+          <Text
+            maxFontSizeMultiplier={controls.maxFontScale}
+            style={[text.small, styles.explainer]}
+          >
             Use your school email — it&apos;s how we keep Loane to students on your campus.
           </Text>
 
@@ -191,7 +198,7 @@ export default function CreateAccount() {
           />
 
           <View style={styles.footer}>
-            <Text style={styles.altRow}>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.altRow}>
               Already have an account?{' '}
               <Link href="/(auth)/sign-in" style={text.link}>
                 Sign in

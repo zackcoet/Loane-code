@@ -10,7 +10,7 @@
  */
 
 import { Text as RNText, StyleSheet, type TextProps } from 'react-native';
-import { color, fontFamilyFor, fonts, type } from '@loane/shared';
+import { controls, color, fontFamilyFor, fonts, type } from '@loane/shared';
 
 export type TextVariant = keyof typeof type;
 export type TextTone =
@@ -31,6 +31,12 @@ interface Props extends TextProps {
   uppercase?: boolean;
   children?: React.ReactNode;
 }
+
+/**
+ * Variants VoiceOver announces as headings, so she can swipe from
+ * heading to heading with the rotor instead of through every line.
+ */
+const HEADINGS = new Set<TextVariant>(['display', 'h1', 'h2', 'h3']);
 
 const TONE: Record<TextTone, string> = {
   primary: color.text.primary,
@@ -60,6 +66,10 @@ export function Text({
 
   return (
     <RNText
+      // Grows with her iPhone's Text Size setting, up to the cap — see
+      // controls.maxFontScale. A caller can still pass its own.
+      maxFontSizeMultiplier={controls.maxFontScale}
+      accessibilityRole={HEADINGS.has(variant) ? 'header' : undefined}
       {...rest}
       style={[
         {

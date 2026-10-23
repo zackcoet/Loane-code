@@ -296,6 +296,7 @@ export default function Comments() {
         <View style={styles.composer}>
           <Avatar url={profile?.photoUrl} name={profile?.displayName} size={32} />
           <TextInput
+            maxFontSizeMultiplier={controls.maxFontScale}
             value={draft}
             onChangeText={setDraft}
             selection={forcedSelection}
@@ -305,6 +306,7 @@ export default function Comments() {
               if (forcedSelection) setForcedSelection(undefined);
             }}
             placeholder={replyTo ? `Reply to @${replyTo.author.username}` : 'Add a comment'}
+            accessibilityLabel={replyTo ? `Reply to @${replyTo.author.username}` : 'Add a comment'}
             placeholderTextColor={color.text.muted}
             maxLength={LIMITS.commentBody.max}
             multiline

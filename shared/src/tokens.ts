@@ -436,6 +436,16 @@ export const controls = {
   chipHeight: 34,
   /** Square thumbnail in a photo grid. */
   thumbnail: 88,
+  /**
+   * The most a phone's text-size setting may enlarge our type.
+   *
+   * Text follows her iPhone's Text Size setting (Apple asks for this), so
+   * every standard size, up to the largest, applies in full. Beyond 1.5x —
+   * the Accessibility sizes, which reach about 3x — fixed-shape pieces
+   * like the price tag, a chip or the header would break apart, so
+   * the type stops growing there. Instagram caps the same way.
+   */
+  maxFontScale: 1.5,
 } as const;
 
 // ---------------------------------------------------------------------------

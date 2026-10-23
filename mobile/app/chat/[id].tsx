@@ -451,10 +451,12 @@ export default function Chat() {
               )}
             </Pressable>
             <TextInput
+              maxFontSizeMultiplier={controls.maxFontScale}
               ref={inputRef}
               value={draft}
               onChangeText={setDraft}
               placeholder="Message"
+              accessibilityLabel="Message"
               placeholderTextColor={color.text.muted}
               maxLength={LIMITS.messageBody.max}
               multiline

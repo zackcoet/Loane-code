@@ -27,7 +27,7 @@ export function CampusChip({ onPress }: { onPress?: () => void }) {
       onPress={onPress}
     >
       <View style={[styles.dot, { backgroundColor: dotColor }]} />
-      <Text style={styles.text} numberOfLines={1}>
+      <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.text} numberOfLines={1}>
         {name}
       </Text>
     </Pressable>

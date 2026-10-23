@@ -51,7 +51,11 @@ export default function Profile() {
             pointerEvents none so it never eats a tap meant for the
             hamburger underneath it. */}
         <View style={styles.titleLayer} pointerEvents="none">
-          <Text style={styles.handle} numberOfLines={1}>
+          <Text
+            maxFontSizeMultiplier={controls.maxFontScale}
+            style={styles.handle}
+            numberOfLines={1}
+          >
             @{profile.username}
           </Text>
         </View>

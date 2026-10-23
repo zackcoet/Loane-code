@@ -67,9 +67,11 @@ export default function FindFriends() {
       <View style={styles.searchRow}>
         <Icon name="search" size={18} tint={color.icon.muted} />
         <TextInput
+          maxFontSizeMultiplier={controls.maxFontScale}
           value={term}
           onChangeText={setTerm}
           placeholder="Search by name or @username"
+          accessibilityLabel="Search by name or @username"
           placeholderTextColor={color.text.muted}
           autoCapitalize="none"
           autoCorrect={false}

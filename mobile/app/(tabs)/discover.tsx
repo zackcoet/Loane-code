@@ -225,6 +225,7 @@ export default function Discover() {
       <View style={styles.searchWrap}>
         <Icon name="search" size={iconSize.sm} tint={color.text.muted} />
         <TextInput
+          maxFontSizeMultiplier={controls.maxFontScale}
           value={search}
           onChangeText={(value) => {
             setSearch(value);
@@ -237,6 +238,7 @@ export default function Discover() {
             }
           }}
           placeholder="Search closets and pieces"
+          accessibilityLabel="Search closets and pieces"
           placeholderTextColor={color.text.muted}
           autoCapitalize="none"
           autoCorrect={false}

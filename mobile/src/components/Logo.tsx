@@ -151,6 +151,8 @@ export function Logo({ size = 96, lockup = 'auto', wordmarkTint = color.logo.wor
     <View style={styles.stack}>
       {mark}
       <Text
+        // The letters are part of the mark, spaced across fixed circles — a logo does not resize with text settings.
+        allowFontScaling={false}
         style={[
           styles.wordmark,
           // Size only; styles.wordmark carries the family. The wordmark

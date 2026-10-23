@@ -7,7 +7,7 @@
  */
 
 import { StyleSheet, Text, View } from 'react-native';
-import { color, fonts, spacing, type } from '@loane/shared';
+import { controls, color, fonts, spacing, type } from '@loane/shared';
 import { Button } from './Button';
 
 interface Props {
@@ -20,8 +20,14 @@ interface Props {
 export function EmptyState({ title, body, actionLabel, onAction }: Props) {
   return (
     <View style={styles.wrapper}>
-      <Text style={styles.title}>{title}</Text>
-      {body ? <Text style={styles.body}>{body}</Text> : null}
+      <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.title}>
+        {title}
+      </Text>
+      {body ? (
+        <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.body}>
+          {body}
+        </Text>
+      ) : null}
       {actionLabel && onAction ? (
         <Button label={actionLabel} variant="outline" onPress={onAction} style={styles.action} />
       ) : null}

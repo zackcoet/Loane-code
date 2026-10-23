@@ -24,6 +24,8 @@ export function Avatar({ url, name, size = 48 }: Props) {
   return (
     <View style={[styles.base, styles.fallback, shape]}>
       <Text
+        // The initials sit inside a fixed circle, so they stay the size the circle was drawn for.
+        allowFontScaling={false}
         style={[
           styles.initial,
           // Size only; styles.initial carries the family. An avatar's

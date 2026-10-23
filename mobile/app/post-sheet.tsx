@@ -5,7 +5,16 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { fonts, fontFamilyFor, color, iconSize, radius, spacing, type } from '@loane/shared';
+import {
+  controls,
+  fonts,
+  fontFamilyFor,
+  color,
+  iconSize,
+  radius,
+  spacing,
+  type,
+} from '@loane/shared';
 import { Icon, type IconName } from '../src/components/Icon';
 import { Logo } from '../src/components/Logo';
 import { usePostDraft } from '../src/post/postDraft';
@@ -87,7 +96,9 @@ export default function PostSheet() {
         <View style={styles.spacer} />
         <View style={styles.center}>
           <Logo size={30} lockup="mark" />
-          <Text style={styles.kicker}>Share</Text>
+          <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.kicker}>
+            Share
+          </Text>
         </View>
         <Pressable
           onPress={() => router.back()}
@@ -112,8 +123,12 @@ export default function PostSheet() {
             <Icon name={option.icon} size={iconSize.md} tint={color.role.lender.label} />
           </View>
           <View style={styles.optionText}>
-            <Text style={styles.optionTitle}>{option.title}</Text>
-            <Text style={styles.optionBody}>{option.body}</Text>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.optionTitle}>
+              {option.title}
+            </Text>
+            <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.optionBody}>
+              {option.body}
+            </Text>
           </View>
           <Icon name="chevron-forward" size={20} tint={color.text.muted} />
         </Pressable>

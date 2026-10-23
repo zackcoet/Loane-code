@@ -8,7 +8,16 @@
 
 import { useState } from 'react';
 import { useRouter, type Href } from 'expo-router';
-import { Alert, Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import { signOut } from 'firebase/auth';
 import {
@@ -206,8 +215,14 @@ export default function Settings() {
         {rows.map((row) =>
           row.readOnly ? (
             <View key={row.label} style={styles.row}>
-              <Text style={styles.label}>{row.label}</Text>
-              <Text style={styles.value} numberOfLines={1}>
+              <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.label}>
+                {row.label}
+              </Text>
+              <Text
+                maxFontSizeMultiplier={controls.maxFontScale}
+                style={styles.value}
+                numberOfLines={1}
+              >
                 {row.value}
               </Text>
             </View>
@@ -221,10 +236,16 @@ export default function Settings() {
                 else if (row.href) router.push(row.href);
               }}
             >
-              <Text style={styles.label}>{row.label}</Text>
+              <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.label}>
+                {row.label}
+              </Text>
               <View style={styles.rowRight}>
                 {row.value ? (
-                  <Text style={styles.value} numberOfLines={1}>
+                  <Text
+                    maxFontSizeMultiplier={controls.maxFontScale}
+                    style={styles.value}
+                    numberOfLines={1}
+                  >
                     {row.value}
                   </Text>
                 ) : null}
@@ -239,7 +260,9 @@ export default function Settings() {
           style={({ pressed }) => [styles.row, styles.logOut, pressed && styles.rowPressed]}
           onPress={onLogOut}
         >
-          <Text style={styles.label}>Log Out</Text>
+          <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.label}>
+            Log Out
+          </Text>
         </Pressable>
       </ScrollView>
       <LegalDocumentModal kind={legalOpen} onClose={() => setLegalOpen(null)} />

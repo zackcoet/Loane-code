@@ -1632,3 +1632,30 @@ asked. Saved once at the end, so there is no half-finished state.
 **Analytics:** each step logs the existing `onboarding_step` event with
 the step and whether she answered or skipped — never her size, which is
 about her body.
+
+## 2026-10-23 — Text follows her iPhone's Text Size, up to 1.5x (autopilot run 23)
+
+**Decision:** all text in the app grows with the iPhone's Text Size
+setting, capped at 1.5x (`controls.maxFontScale` in `tokens.ts`). The
+shared `Text` sets the cap itself; every raw React Native `Text` and
+`TextInput` in a screen passes `maxFontSizeMultiplier={controls.maxFontScale}`.
+
+**Why a cap:** every standard Text Size, up to the largest, fits inside
+1.5x, so for most girls it is no cap at all. The Accessibility sizes go
+to about 3x, where a chip (34pt), the header and the price on a button
+break apart. 1.5x is the point where all of them still fit — checked
+against each fixed height: a chip label at 1.5x is ~24pt tall, a button
+label ~30pt, the header label ~24pt. Text fields were the one tight fit,
+so `Input` now uses `minHeight` and grows instead of clipping.
+
+**Two things never scale:** the letters in the logo and the initials
+in an avatar, because both are drawn inside fixed circles.
+
+**VoiceOver:** `display`, `h1`, `h2` and `h3` text, and every screen
+header title, are announced as headings so she can jump between them.
+Switches and text fields carry the label printed beside them — without
+it VoiceOver said only "switch, off" or read the placeholder.
+
+**A new screen must keep this:** using the shared `Text`, `Input`,
+`Toggle` and `Header` gets all of it for free. A raw `Text` needs the
+`maxFontSizeMultiplier` line by hand.

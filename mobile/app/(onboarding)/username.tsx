@@ -23,6 +23,7 @@ import { useRouter } from 'expo-router';
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
 import { signInWithCustomToken } from 'firebase/auth';
 import {
+  controls,
   fonts,
   color,
   normalizeUsername,
@@ -176,9 +177,16 @@ export default function ClaimUsername() {
       >
         <View style={styles.body}>
           <Logo size={44} lockup="mark" />
-          <Text style={[text.h2, styles.heading]}>Hi {firstName || 'there'},</Text>
-          <Text style={text.label}>Claim your username</Text>
-          <Text style={[text.small, styles.explainer]}>
+          <Text maxFontSizeMultiplier={controls.maxFontScale} style={[text.h2, styles.heading]}>
+            Hi {firstName || 'there'},
+          </Text>
+          <Text maxFontSizeMultiplier={controls.maxFontScale} style={text.label}>
+            Claim your username
+          </Text>
+          <Text
+            maxFontSizeMultiplier={controls.maxFontScale}
+            style={[text.small, styles.explainer]}
+          >
             This is how the campus will know you. You can always change it later.
           </Text>
 
@@ -206,9 +214,10 @@ export default function ClaimUsername() {
         </View>
 
         <View style={styles.footer}>
-          <Text style={styles.finePrint}>
+          <Text maxFontSizeMultiplier={controls.maxFontScale} style={styles.finePrint}>
             By tapping Create account, you agree to our{' '}
             <Text
+              maxFontSizeMultiplier={controls.maxFontScale}
               style={styles.link}
               accessibilityRole="link"
               onPress={() => setLegalOpen('terms')}
@@ -217,6 +226,7 @@ export default function ClaimUsername() {
             </Text>{' '}
             and{' '}
             <Text
+              maxFontSizeMultiplier={controls.maxFontScale}
               style={styles.link}
               accessibilityRole="link"
               onPress={() => setLegalOpen('privacy')}
