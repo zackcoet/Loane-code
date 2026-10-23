@@ -407,8 +407,9 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
         value={form.availableNow}
         onValueChange={(v) => set('availableNow', v)}
       />
-      {/* TODO-PHASE4: blocking out specific dates needs the booking
-          calendar, so the picker lands with it. The field already exists. */}
+      {/* Blocking out dates is its own screen (blocked-dates), reached
+          from Edit Listing once the piece exists — a new piece has no
+          id to block dates against yet. */}
 
       {error ? (
         <Text variant="bodySmall" tone="error" style={styles.error}>
