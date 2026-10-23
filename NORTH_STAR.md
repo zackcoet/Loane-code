@@ -104,7 +104,7 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 ✅ 7. Notifications/Activity: grouped ("Ella and 4 others liked your look"), tappable to the right place, mark all read. *(Run 21: likes on one look, comment hearts on one look, and new followers group; rental alerts never do. Every alert now opens its look, comments, profile or rental. Grouping covers the updates already loaded.)*
 ✅ 8. Empty states with a clear next action on every screen. *(Run 21: "not found" screens, empty Activity updates and an empty inbox now offer a next step. Lists where the next step is already on screen — comments, a new chat — or that are just information — blocked, muted, reviews — were left as they are.)*
 ✅ 9. Haptics on key taps (like, follow, send). *(Run 21: like, save, comment heart, follow, sending a message or comment.)*
-10. *(suggested)* Page the Messages inbox past 50 chats — needs the unread badge to stop reading the same list first.
+✅ 10. *(suggested)* Page the Messages inbox past 50 chats — needs the unread badge to stop reading the same list first. *(Run 26: the inbox loads 50 more as she scrolls; the badge keeps its own window of her 50 most recent chats — see `docs/decisions.md`.)*
 11. *(suggested)* Press-and-hold preview on Discover's piece grid too, and count previews as their own event (needs a new event type in the database rules, so do it on a run where the rules tests can run).
 12. *(suggested)* Count comment hearts as an event (`comment_like`) — needs a new event type in the database rules, same as 11.
 13. *(suggested)* "Share profile" — send a closet into a DM like a look (needs a new message card type and a rules change).
@@ -130,8 +130,8 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 ✅ 4. Privacy: list every type of data collected in `docs/app-store-privacy.md` (for the App Store privacy form). *(Run 23: written from the code. No tracking, no ads, no outside analytics. Filling in Apple's form is Zack's.)*
 ✅ 5. Remove any dev-only text, test buttons, or placeholder copy from user-facing screens. *(Run 23: swept every screen — none found. "Payments are coming soon" on Payouts is deliberate while payments are off; Try-On's "soon" only shows if Try-On is switched on.)*
 
-6. *(suggested)* A lint check that fails when a screen uses React Native's own `Text` without the text-size cap, so new screens can't miss it.
-7. *(suggested)* The same offline rule for the remaining live lists (followers, saved, liked, reviews, help requests) — run 24 covered the main ones.
+✅ 6. *(suggested)* A lint check that fails when a screen uses React Native's own `Text` without the text-size cap, so new screens can't miss it. *(Run 26: `scripts/check-text-cap.mjs`, part of `npm run lint`.)*
+✅ 7. *(suggested)* The same offline rule for the remaining live lists (followers, saved, liked, reviews, help requests) — run 24 covered the main ones. *(Run 26: done.)*
 8. *(suggested)* Test the offline behaviour on a real phone: Airplane Mode → open Loane, open a chat and send, open a look. Overnight runs can't run the phone.
 
 ### H. Quality

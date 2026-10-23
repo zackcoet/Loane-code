@@ -1707,6 +1707,8 @@ look is shared, the flow closes without asking: the draft keeps a
 counter that goes up on every reset, and Arrange checks it the moment
 it is closed.
 
+---
+
 ## 2026-10-23 — The Messages inbox pages; the badge keeps its own window (autopilot run 26)
 
 **Decision:** the inbox is now the same growing live window as Activity
@@ -1726,6 +1728,8 @@ the live project — not worth it for that case.
 phone (instant on every keystroke). When it finds nobody and there are
 older chats, it offers "Search older chats"; an empty Message requests
 offers "Look further back".
+
+---
 
 ## 2026-10-23 — A check that every native Text keeps the size cap (autopilot run 26)
 

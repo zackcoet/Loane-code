@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- Nothing new from run 26 (no server or database changes — nothing to deploy).
 - From run 25 (only when you next deploy): one new dashboard function for deleting an account on a student's behalf — normal deploy, nothing to switch on.
 - From run 24 (2 minutes, whenever you next have the app open): turn on **Airplane Mode** and poke around — open the app, open a chat and try sending, open a look. You should see a dark "No internet connection" bar and clear messages, never a frozen spinner or the sign-up screen. The overnight machine can't run a phone, so this is the one thing it couldn't check by hand.
 - From run 23 (when you submit to the App Store): Apple needs a public web link to the Privacy Policy, and the privacy form answers are in `docs/app-store-privacy.md`.
@@ -18,6 +19,40 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-23 (run 26, ~5 AM Central) — Messages scrolls past 50 chats, a size check, offline lists finished
+
+**Plan:** Next up from run 25 was E10, G6, G7, in that order. E10: page the Messages inbox, giving the unread badge its own list first so scrolling can't change it. G6: an automatic check so no new screen forgets the text-size cap. G7: the "Couldn't load" offline rule for the lists run 24 didn't reach.
+
+**Built:**
+- **Messages no longer stops at 50 chats.** Scroll to the bottom and the next 50 load (small spinner at the bottom). Everything on screen stays live — a new message still jumps its chat to the top.
+- **The red Messages badge has its own list** (her 50 most recently active chats), so scrolling the inbox never changes the number. Anything that makes a chat unread also moves it to the top, so 50 is plenty.
+- **Search in Messages:** if it finds nobody in the chats loaded so far and there are older ones, it offers **"Search older chats"** instead of just saying "nobody". Message requests offers **"Look further back"** the same way.
+- **An automatic size check** (nothing a student sees): the checks now fail if any screen draws text that ignores the iPhone Text Size cap. GitHub runs it on every push.
+
+**What to tap to see it:**
+- Messages → scroll to the bottom (you need more than 50 chats to see more load — the seeded accounts have fewer, so it looks the same as before).
+- Messages → search a name that isn't there → "Nobody by that name" (with "Search older chats" if you have over 50 chats).
+- Airplane Mode → Profile → Followers, Saved, Liked, Reviews, or Help → past reports → "Couldn't load… Try again" instead of "nothing here yet".
+
+**Fixed:**
+- With no signal, Followers/Following, Saved, Liked, Reviews and Help's past reports said "nothing yet" — as if she had none. They now say they couldn't load, with Try again.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint (with the new size check), the index check (84 searches, none missing), all 291 shared tests (1 new). No server code or database rules changed tonight. GitHub runs the full set on push.
+- B8 (Venmo words) still waits on payments; F7 still waits on your decision.
+
+**🚨 NEEDS ZACK:**
+- Nothing new. Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** H — tests and tidy-ups (H2: small TODOs and warnings), then E11/E12 (they need a database rules change, so best on a run where GitHub's database tests can check them).
+
+**Commits:**
+- Messages: the inbox loads 50 chats at a time as she scrolls instead of stopping at 50
+- Lint: fail when a screen uses React Native's own Text or TextInput without the text-size cap
+- Offline: followers, saved, liked, reviews and Help's past reports say 'Couldn't load' instead of a false 'nothing yet'
 
 ---
 
