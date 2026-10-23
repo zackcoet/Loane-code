@@ -13,39 +13,21 @@
  * her somewhere that makes sense rather than on a blank page.
  */
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert, Share, StyleSheet, View } from 'react-native';
-import { brand, color, radius, spacing } from '@loane/shared';
+import { StyleSheet, View } from 'react-native';
+import { color, radius, spacing } from '@loane/shared';
 import { Button } from '../src/components/Button';
 import { Header } from '../src/components/Header';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
-import { useAuth } from '../src/auth/AuthProvider';
-import { useCampusName } from '../src/hooks/useCampus';
-import { logEvent } from '../src/analytics/events';
+import { useInviteShare } from '../src/hooks/useInviteShare';
 
 export default function InviteFriends() {
   const router = useRouter();
-  const { profile } = useAuth();
-  const { name: campusName } = useCampusName(profile?.campusId);
   // The sheet opens once on arrival, not on every re-render.
   const opened = useRef(false);
-
-  const message = `Come share closets with me on Loane — it's rentals from girls at ${
-    campusName ?? 'our school'
-  }. Rent something for gameday instead of buying it.\n\n${brand.website}`;
-
-  const share = useCallback(async () => {
-    try {
-      const result = await Share.share({ message });
-      if (result.action === Share.sharedAction) {
-        logEvent('invite_shared', { surface: 'other', targetType: null, targetId: null });
-      }
-    } catch {
-      Alert.alert('Loane', 'Could not open the share sheet.');
-    }
-  }, [message]);
+  const { message, share } = useInviteShare('other');
 
   useEffect(() => {
     if (opened.current) return;

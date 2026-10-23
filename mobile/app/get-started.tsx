@@ -1,10 +1,11 @@
 /**
- * Get started — four short steps straight after signup.
+ * Get started — five short steps straight after signup.
  *
  *   1. How will you use Loane?   rent / lend / both
  *   2. What's coming up?         occasions — seeds her For You feed
  *   3. Your size (optional)      the same sizes as Edit Profile
  *   4. Follow 3 closets          so Following and the feed are not empty
+ *   5. Invite your roommates     the share sheet, like Invite Friends
  *
  * Every step has Skip, and skipping the lot is fine: the answers make
  * the feed better on day one, they gate nothing. Only a brand-new
@@ -54,9 +55,10 @@ import { clearJustSignedUp } from '../src/auth/justSignedUp';
 import { db } from '../src/firebase/config';
 import { logEvent } from '../src/analytics/events';
 import { useUserSettings } from '../src/hooks/useUserSettings';
+import { useInviteShare } from '../src/hooks/useInviteShare';
 import { text } from '../src/theme';
 
-const STEPS = ['intent', 'occasions', 'size', 'follow'] as const;
+const STEPS = ['intent', 'occasions', 'size', 'follow', 'invite'] as const;
 type Step = (typeof STEPS)[number];
 
 type Sizes = User['sizes'];
@@ -81,7 +83,10 @@ export default function GetStarted() {
   );
   const [closetsAvailable, setClosetsAvailable] = useState<number>(FOLLOW_TARGET);
 
-  const step: Step = STEPS[stepIndex] ?? 'follow';
+  const { share: shareInvite } = useInviteShare('onboarding', 'get_started');
+  const [invited, setInvited] = useState(false);
+
+  const step: Step = STEPS[stepIndex] ?? 'invite';
   const isLast = stepIndex === STEPS.length - 1;
 
   // She is here now; a later sign-in on this phone goes to the Feed.
@@ -130,6 +135,7 @@ export default function GetStarted() {
     }
     // Follows happen as she taps, so even a skip reports how many.
     if (step === 'follow') meta.followed = followed.size;
+    if (step === 'invite') meta.invited = invited;
     logEvent('onboarding_step', { surface: 'onboarding', meta });
 
     if (action === 'skip') {
@@ -147,7 +153,9 @@ export default function GetStarted() {
     (step === 'occasions' && occasions.length > 0) ||
     (step === 'size' && Object.values(sizes).some((s) => s !== null)) ||
     // Three, or every closet there is to suggest on a brand-new campus.
-    (step === 'follow' && followed.size >= Math.min(FOLLOW_TARGET, closetsAvailable));
+    (step === 'follow' && followed.size >= Math.min(FOLLOW_TARGET, closetsAvailable)) ||
+    // Inviting is a nice-to-have. The button to send it is in the step.
+    step === 'invite';
 
   const wantsToLend = intent === 'lend' || intent === 'both';
 
@@ -286,6 +294,26 @@ export default function GetStarted() {
             />
           </>
         ) : null}
+
+        {step === 'invite' ? (
+          <>
+            <Text style={text.display}>Invite your roommates</Text>
+            <Text style={[text.bodyMuted, styles.sub]}>
+              Loane is better when the girls down the hall are on it — their closets become yours,
+              and yours theirs. Send it to your group chat.
+            </Text>
+            <Button
+              label={invited ? 'Invite more' : 'Invite roommates'}
+              variant="outline"
+              onPress={() => {
+                void shareInvite().then((sent) => {
+                  if (sent) setInvited(true);
+                });
+              }}
+            />
+            {invited ? <Text style={[text.small, styles.sent]}>Sent — thank you.</Text> : null}
+          </>
+        ) : null}
       </ScrollView>
 
       <View style={styles.footer}>
@@ -366,6 +394,7 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   footer: { paddingBottom: spacing.xxl },
   second: { marginTop: spacing.sm },
+  sent: { marginTop: spacing.sm, textAlign: 'center' },
   error: {
     fontFamily: fonts.body,
     color: color.status.error,
