@@ -39,3 +39,4 @@ export * from './recentSearches';
 export * from './notificationGroups';
 export * from './onboarding';
 export * from './mySize';
+export * from './socialProof';

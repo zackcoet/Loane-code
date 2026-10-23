@@ -176,6 +176,16 @@ describe('deleteMyAccount', () => {
     await expect(getAuth(app).getUser(ELLA)).rejects.toBeTruthy();
   });
 
+  it('takes her out of her campus student count', async () => {
+    await db
+      .doc('campuses/university-of-south-carolina')
+      .set({ name: 'University of South Carolina', stats: { userCount: 5 } });
+    expect(await attempt(request(ELLA))).toBe('ok');
+    const campus = (await db.doc('campuses/university-of-south-carolina').get()).data();
+    expect(campus?.stats.userCount).toBe(4);
+    await db.doc('campuses/university-of-south-carolina').delete();
+  });
+
   it('refuses an admin', async () => {
     await db.doc(`users/${ELLA}`).update({ role: 'admin' });
     expect(await attempt(request(ELLA))).toMatch(/Admin accounts/);

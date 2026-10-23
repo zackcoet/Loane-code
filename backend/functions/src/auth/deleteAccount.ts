@@ -142,6 +142,18 @@ export const deleteMyAccount = onCall<void, Promise<{ ok: true }>>(
       updatedAt: now(),
     });
 
+    // She no longer counts as a student here. The welcome screen's
+    // "girls at your school" number reads this, and a count that only
+    // ever goes up would slowly turn into a claim we cannot back.
+    // Best-effort: a missing campus document must not stop a deletion.
+    if (user.status !== 'deactivated') {
+      await db()
+        .collection(COLLECTIONS.campuses)
+        .doc(user.campusId)
+        .update({ 'stats.userCount': FieldValue.increment(-1) })
+        .catch((err) => logger.warn('Campus count not lowered', { uid, err: String(err) }));
+    }
+
     /*
       The username lock is KEPT, still pointing at her uid. Releasing it
       would let somebody else register "@ellapetrick" the next day and be
