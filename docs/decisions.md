@@ -1583,3 +1583,19 @@ level, which the server enforces) and starts the box with that girl's
 @name, as Instagram does. Before this, tapping Reply on a reply sent a
 request the server refused, so she saw an error.
 
+## 2026-10-23 — Recent searches stay on her phone; Activity groups only social alerts (autopilot run 21)
+
+**Recent searches** on Discover are kept on her phone (per account, up to
+10), never on our servers. Like Instagram's, they are a convenience, and
+a list of what a girl searched for is not data worth holding. A
+search is remembered when she presses search or opens something from
+its results, not on every keystroke.
+
+**Activity grouping** folds likes on one look, comment hearts on one
+look, and new followers into one row ("@ella and 4 others liked your
+look"), counting people rather than alerts. Comments, replies, mentions
+and every rental alert stay one row each — each is something she may
+need to answer. Grouping works over the updates already loaded (a page
+at a time), so a very old like can appear as its own row further down.
+Tapping a grouped row marks every alert in it read.
+

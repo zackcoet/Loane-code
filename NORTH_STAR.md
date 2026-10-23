@@ -98,14 +98,17 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 ✅ 1. Pull-to-refresh and smooth infinite scroll everywhere lists exist. *(Run 18: Discover, Activity, both profiles, Messages, requests, My Listings, My Rentals, Rental requests, Saved, Liked, Reviews. Run 19: comments, followers/following and who-liked; who-liked now pages (was cut off at 200) and Activity → Updates pages (was cut off at 50). Left as they are on purpose: the inbox keeps its latest 50 chats and bookings load whole, because the unread badge and the "Needs you" counts read the same list — see `docs/decisions.md`.)*
 ✅ 2. Skeleton loaders (no blank screens), branded Loane loader for full-screen waits. *(Run 19: `Skeleton.tsx` — grey rows on Messages, requests, Activity, comments, followers, who-liked, My Rentals, Rental requests; a grid on Liked. Run 20 finished it: Discover, both profiles, My Listings, Saved, Reviews, Recently Rented, a look, a piece and a chat. The feed keeps the branded Loane loader.)*
 ✅ 3. Double-tap to like with a heart animation; long-press preview on grid items. *(Double-tap heart was already built. Run 20: press and hold a tile on a profile's Closet/Posts grid or the Liked/Saved looks grid → a big preview card; tap it to open, tap outside to close — see `docs/decisions.md`.)*
-4. Comment threads: reply to a comment, like comments, @mention autocomplete.
-5. Profile: grid of looks, closet tab, follower/following lists, edit profile polish.
-6. Search: people, pieces, and occasions with recent searches.
-7. Notifications/Activity: grouped ("Ella and 4 others liked your look"), tappable to the right place, mark all read.
-8. Empty states with a clear next action on every screen.
-9. Haptics on key taps (like, follow, send).
+✅ 4. Comment threads: reply to a comment, like comments, @mention autocomplete. *(Run 21: replies were already built — fixed Reply on a reply, which the server refused. Added hearts on comments (server-side, own collection), @mention suggestions while typing, tappable @names, and alerts for replies, mentions and hearts — one alert per person. See `docs/decisions.md`.)*
+✅ 5. Profile: grid of looks, closet tab, follower/following lists, edit profile polish. *(Grid, closet tab and follower lists were already built. Run 21: "Discard changes?" when leaving Edit Profile, Edit Look or Edit Listing with unsaved edits.)*
+✅ 6. Search: people, pieces, and occasions with recent searches. *(Run 21: on Discover — recent searches (on her phone only, up to 10, removable), matching students and occasions as she types, above the pieces.)*
+✅ 7. Notifications/Activity: grouped ("Ella and 4 others liked your look"), tappable to the right place, mark all read. *(Run 21: likes on one look, comment hearts on one look, and new followers group; rental alerts never do. Every alert now opens its look, comments, profile or rental. Grouping covers the updates already loaded.)*
+✅ 8. Empty states with a clear next action on every screen. *(Run 21: "not found" screens, empty Activity updates and an empty inbox now offer a next step. Lists where the next step is already on screen — comments, a new chat — or that are just information — blocked, muted, reviews — were left as they are.)*
+✅ 9. Haptics on key taps (like, follow, send). *(Run 21: like, save, comment heart, follow, sending a message or comment.)*
 10. *(suggested)* Page the Messages inbox past 50 chats — needs the unread badge to stop reading the same list first.
 11. *(suggested)* Press-and-hold preview on Discover's piece grid too, and count previews as their own event (needs a new event type in the database rules, so do it on a run where the rules tests can run).
+12. *(suggested)* Count comment hearts as an event (`comment_like`) — needs a new event type in the database rules, same as 11.
+13. *(suggested)* "Share profile" — send a closet into a DM like a look (needs a new message card type and a rules change).
+14. *(suggested)* "Discard changes?" on the new-look and new-piece flows too (only the edit screens have it).
 
 ### F. Onboarding (from the founder's improvement list)
 1. Rent / lend / both step.

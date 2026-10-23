@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 21 (only when you next deploy): it adds new server functions for hearting comments — normal deploy, nothing to switch on.
 - Nothing new from run 20.
 - Nothing new from run 19.
 - Nothing new from run 18.
@@ -12,6 +13,52 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-23 (run 21, ~midnight Central) — Comment hearts and @mentions, better search, grouped Activity, haptics
+
+**Plan:** E4 — finish comment threads (heart a comment, @mention someone with suggestions, alerts for replies and mentions). Then the rest of section E in order: profile polish, search with recent searches, grouped Activity with "Mark all as read", empty states with a next step, and haptics.
+
+**Built:**
+- **Heart a comment.** A small heart on every comment; tap it and the count under the comment goes up ("3 likes"). The girl who wrote it gets "@you liked your comment".
+- **@mentions in comments.** Type @ and a couple of letters and names pop up above the keyboard — girls already in that conversation first, then anyone on campus. Tap one to fill it in. @names in comments show in bold and open that closet when tapped. The girl you mention gets "@you mentioned you in a comment" (up to 5 people per comment, never anyone who blocked you or you blocked).
+- **Reply alerts.** Replying to a comment now tells that girl "@you replied to your comment". Nobody gets two alerts for one comment.
+- **"Discard changes?"** If she edits her profile, a look or a piece and goes back without saving, Loane asks first instead of quietly throwing her work away.
+- **Discover search, Instagram-style.** Tap the search box: her recent searches show (remove one with the x, or Clear all). Start typing: matching girls show as a row of names above the pieces, and typing an occasion ("formal", "date", "gameday") offers "Formal · see all".
+- **Activity → Updates, grouped.** "@ella and 4 others liked your look" instead of five rows; same for new followers. Tapping any update now takes her to the right place — the look, the comments, the girl's profile, or the rental (before, only rental updates went anywhere). A **Mark all as read** link at the top.
+- **Empty screens point somewhere.** "Not found" pages, an empty Updates tab and an empty inbox now have a button for what to do next (Find something else / Back to the feed / See my rentals / Find closets to follow).
+- **Haptics.** A light tap you can feel when she likes, saves, hearts a comment, follows, or sends a message or comment.
+
+**What to tap to see it:**
+- Open any look → comments → tap the heart next to a comment. Type "@" then two letters of a name → tap a name in the list → Post.
+- On a reply, tap Reply → the box starts with her @name.
+- Profile → Edit profile → change your bio → tap back → "Discard changes?"
+- Discover → tap the search box → search "dress" and press search → clear it and tap the box again → "dress" is under Recent. Type "form" → tap "Formal · see all".
+- Activity → Updates → tap "Mark all as read". Tap a like or follow update → it opens the look or profile.
+- On a real iPhone: like a look — you'll feel a small tap.
+
+**Fixed:**
+- Tapping Reply on a reply (not the top comment) used to fail with an error, because threads only go one level deep. It now posts under the top comment with her @name in front, like Instagram.
+- Updates about likes, comments and follows did nothing when tapped. They now open the right screen.
+
+**Skipped / blocked:**
+- Comment hearts aren't counted in our data yet — that needs a new event type in the database rules; added to the backlog.
+- The overnight machine still can't start the test database. Type checks, lint, the index check (82 searches, none missing), the shared tests (266, 27 new), the server tests that don't need the database, and the iPhone app build all passed. This run DID change the database rules (one new, locked-down list for comment hearts) and server functions, with new rules tests written for it — GitHub runs those on tonight's push, so check the green tick there before merging.
+- Onboarding (section F) not started — next run.
+
+**🚨 NEEDS ZACK:** Nothing to decide. When you next deploy, it adds the comment-heart functions — normal deploy.
+
+**Next up:** F1 — onboarding "Rent / lend / both" step (then F2 occasions, F3 sizes).
+
+**Commits:**
+- Comments: heart a comment, @mention autocomplete, reply and mention alerts
+- Ask 'Discard changes?' before leaving Edit Profile, Edit Look or Edit Listing with unsaved edits
+- Discover search: recent searches, matching students and occasions while typing
+- Activity updates: group likes and follows, open the right place, mark all as read
+- Haptics: a light tap on like, comment heart, follow and send
+- Empty states: a next step on 'not found' screens, empty Activity and an empty inbox
+- Autopilot log for run 21
 
 ---
 
