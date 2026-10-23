@@ -59,6 +59,7 @@ import { logEvent } from '../../src/analytics/events';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
 import { ReviewSheet } from '../../src/components/ReviewSheet';
 import { ReportSheet } from '../../src/components/ReportSheet';
+import { ThumbImage } from '../../src/components/ThumbImage';
 
 export default function RentalScreen() {
   const router = useRouter();
@@ -245,11 +246,7 @@ export default function RentalScreen() {
           accessibilityLabel={`Open ${booking.listing.name}`}
         >
           {booking.listing.coverUrl ? (
-            <Image
-              source={{ uri: booking.listing.coverUrl }}
-              style={styles.cover}
-              resizeMode="cover"
-            />
+            <ThumbImage uri={booking.listing.coverUrl} style={styles.cover} resizeMode="cover" />
           ) : null}
           <View style={styles.pieceText}>
             <Text numberOfLines={1}>{booking.listing.name}</Text>
