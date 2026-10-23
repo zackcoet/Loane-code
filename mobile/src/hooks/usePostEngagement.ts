@@ -13,6 +13,7 @@ import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { likePost, savePost, unlikePost, unsavePost } from '../firebase/callables';
 import { logEvent } from '../analytics/events';
+import { hapticLike } from '../haptics';
 import { readPostsInOrder } from './readPostsInOrder';
 import { useHiddenUids } from './useBlocks';
 import { useRetry } from './useRetry';
@@ -45,6 +46,8 @@ function useEdge(kind: Kind, postId: string | undefined) {
     // Flip straight away; the snapshot corrects it if the call fails.
     const next = !on;
     setOn(next);
+    // Felt on the way on, not the way off — like Instagram.
+    if (next) hapticLike();
     try {
       if (kind === 'like') {
         await (next ? likePost : unlikePost)({ postId });

@@ -23,6 +23,7 @@ import { LoadError } from '../../src/components/LoadError';
 import { useAuth } from '../../src/auth/AuthProvider';
 import { useIsFollowing, useProfileByUsername } from '../../src/hooks/useProfile';
 import { followUser, unfollowUser } from '../../src/firebase/callables';
+import { hapticFollow } from '../../src/haptics';
 import { callableErrorMessage } from '../../src/firebase/errors';
 import { logEvent } from '../../src/analytics/events';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
@@ -88,6 +89,7 @@ export default function OtherProfile() {
           meta: { from: cameFrom },
         });
       } else {
+        hapticFollow();
         await followUser({ uid: user.uid });
         logEvent('follow', {
           surface: 'profile',

@@ -48,6 +48,7 @@ import {
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { logEvent } from '../analytics/events';
+import { hapticSend } from '../haptics';
 import { useHiddenUids } from './useBlocks';
 import { useFollowingUids } from './useFollowing';
 import { useUserSettings } from './useUserSettings';
@@ -336,6 +337,8 @@ export function useConversation(conversationId: string | undefined) {
       // A photo on its own is a perfectly good message.
       if (!conversationId || !uid || (!text && !photo)) return;
       if (text.length > LIMITS.messageBody.max) return;
+      // Felt the moment she taps send, as on Instagram.
+      hapticSend();
 
       const message = {
         conversationId,

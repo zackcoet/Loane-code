@@ -30,6 +30,7 @@ import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { addComment, deleteComment, likeComment, unlikeComment } from '../firebase/callables';
 import { logEvent } from '../analytics/events';
+import { hapticLike, hapticSend } from '../haptics';
 import { callableErrorMessage } from '../firebase/errors';
 
 /** The most a post's comments listener will ever hold. */
@@ -156,6 +157,7 @@ export function useComments(postId: string | undefined) {
   const toggleLike = useCallback(
     async (comment: Comment) => {
       const next = !isLiked(comment.id);
+      if (next) hapticLike();
       setPendingLikes((m) => new Map(m).set(comment.id, next));
       try {
         await (next ? likeComment : unlikeComment)({ commentId: comment.id });
@@ -221,6 +223,7 @@ export function useComments(postId: string | undefined) {
       setBusy(true);
       try {
         await addComment({ postId, body: text, parentCommentId });
+        hapticSend();
         // Her comment is the newest, so the last in the list: make sure
         // the window reaches it.
         setWindowSize(MAX_COMMENTS);
