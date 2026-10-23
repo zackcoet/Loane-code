@@ -41,7 +41,7 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - With no signal, Followers/Following, Saved, Liked, Reviews and Help's past reports said "nothing yet" — as if she had none. They now say they couldn't load, with Try again.
 
 **Skipped / blocked:**
-- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint (with the new size check), the index check (84 searches, none missing), all 291 shared tests (1 new). No server code or database rules changed tonight. GitHub runs the full set on push.
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint (with the new size check), the index check (84 searches, none missing), all 291 shared tests (1 new). No server code or database rules changed tonight. **GitHub ran the full set on tonight's final push, database tests included: all green ✅.**
 - B8 (Venmo words) still waits on payments; F7 still waits on your decision.
 
 **🚨 NEEDS ZACK:**
