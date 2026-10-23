@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { collection, doc, onSnapshot, orderBy, query, where } from 'firebase/firestore';
-import { COLLECTIONS, type Booking, type IsoDate, type Listing } from '@loane/shared';
+import { COLLECTIONS, docPresence, type Booking, type IsoDate, type Listing } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { useRetry } from './useRetry';
@@ -64,6 +64,15 @@ export function useBooking(bookingId: string | undefined) {
     return onSnapshot(
       doc(db, COLLECTIONS.bookings, bookingId),
       (snap) => {
+        // No signal: an empty cache says "missing", which only the
+        // server can know. Offer a retry instead (shared/connection.ts);
+        // the listener stays open and fills in when the signal returns.
+        if (docPresence(snap.exists(), snap.metadata.fromCache) === 'unknown') {
+          setFailed(true);
+          setLoading(false);
+          return;
+        }
+        setFailed(false);
         setBooking(snap.exists() ? { ...(snap.data() as Booking), id: snap.id } : null);
         setLoading(false);
       },

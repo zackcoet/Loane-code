@@ -12,7 +12,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { COLLECTIONS, type User } from '@loane/shared';
+import { COLLECTIONS, docPresence, type User } from '@loane/shared';
 import { auth, db } from '../firebase/config';
 import { setAnalyticsCampus } from '../analytics/events';
 import { LegalGate } from '../components/LegalGate';
@@ -63,6 +63,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return onSnapshot(
       doc(db, COLLECTIONS.users, firebaseUser.uid),
       (snap) => {
+        // No signal: Firestore answers "no such profile" from an empty
+        // cache. Believing it sent signed-in students to the
+        // create-account screen. Keep waiting for the server instead —
+        // the loading screen says she is offline. See shared/connection.ts.
+        if (docPresence(snap.exists(), snap.metadata.fromCache) === 'unknown') return;
         const next = snap.exists() ? (snap.data() as User) : null;
         setProfile(next);
         setAnalyticsCampus(next?.campusId ?? null);

@@ -11,7 +11,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SkeletonDetail } from '../../src/components/Skeleton';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { COLLECTIONS, spacing, type Post } from '@loane/shared';
+import { COLLECTIONS, docPresence, spacing, type Post } from '@loane/shared';
 import { useState } from 'react';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
@@ -49,6 +49,15 @@ export default function PostScreen() {
     return onSnapshot(
       doc(db, COLLECTIONS.posts, id),
       (snap) => {
+        // No signal: an empty cache says "missing", which only the
+        // server can know. Offer a retry instead (shared/connection.ts);
+        // the listener stays open and fills in when the signal returns.
+        if (docPresence(snap.exists(), snap.metadata.fromCache) === 'unknown') {
+          setFailed(true);
+          setLoading(false);
+          return;
+        }
+        setFailed(false);
         setPost(snap.exists() ? { ...(snap.data() as Post), id: snap.id } : null);
         setLoading(false);
       },

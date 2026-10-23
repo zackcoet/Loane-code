@@ -4,7 +4,7 @@
 
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { COLLECTIONS, type Listing } from '@loane/shared';
+import { COLLECTIONS, docPresence, type Listing } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useRetry } from './useRetry';
 
@@ -28,6 +28,15 @@ export function useListing(listingId: string | undefined) {
     return onSnapshot(
       doc(db, COLLECTIONS.listings, listingId),
       (snap) => {
+        // No signal: an empty cache says "missing", which only the
+        // server can know. Offer a retry instead (shared/connection.ts);
+        // the listener stays open and fills in when the signal returns.
+        if (docPresence(snap.exists(), snap.metadata.fromCache) === 'unknown') {
+          setFailed(true);
+          setLoading(false);
+          return;
+        }
+        setFailed(false);
         if (!snap.exists()) setNotFound(true);
         else setListing({ ...(snap.data() as Listing), id: snap.id });
         setLoading(false);
