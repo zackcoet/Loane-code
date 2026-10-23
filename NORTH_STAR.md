@@ -96,8 +96,8 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 
 ### E. Instagram-level polish
 ✅ 1. Pull-to-refresh and smooth infinite scroll everywhere lists exist. *(Run 18: Discover, Activity, both profiles, Messages, requests, My Listings, My Rentals, Rental requests, Saved, Liked, Reviews. Run 19: comments, followers/following and who-liked; who-liked now pages (was cut off at 200) and Activity → Updates pages (was cut off at 50). Left as they are on purpose: the inbox keeps its latest 50 chats and bookings load whole, because the unread badge and the "Needs you" counts read the same list — see `docs/decisions.md`.)*
-2. Skeleton loaders (no blank screens), branded Loane loader for full-screen waits. *(Run 19: `Skeleton.tsx` — grey rows on Messages, requests, Activity, comments, followers, who-liked, My Rentals, Rental requests; a grid on Liked. The branded loader already existed. Still to do: Discover, both profiles, My Listings, Saved, Reviews, a look, a piece, a chat.)*
-3. Double-tap to like with a heart animation; long-press preview on grid items.
+✅ 2. Skeleton loaders (no blank screens), branded Loane loader for full-screen waits. *(Run 19: `Skeleton.tsx` — grey rows on Messages, requests, Activity, comments, followers, who-liked, My Rentals, Rental requests; a grid on Liked. Run 20 finished it: Discover, both profiles, My Listings, Saved, Reviews, Recently Rented, a look, a piece and a chat. The feed keeps the branded Loane loader.)*
+✅ 3. Double-tap to like with a heart animation; long-press preview on grid items. *(Double-tap heart was already built. Run 20: press and hold a tile on a profile's Closet/Posts grid or the Liked/Saved looks grid → a big preview card; tap it to open, tap outside to close — see `docs/decisions.md`.)*
 4. Comment threads: reply to a comment, like comments, @mention autocomplete.
 5. Profile: grid of looks, closet tab, follower/following lists, edit profile polish.
 6. Search: people, pieces, and occasions with recent searches.
@@ -105,6 +105,7 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 8. Empty states with a clear next action on every screen.
 9. Haptics on key taps (like, follow, send).
 10. *(suggested)* Page the Messages inbox past 50 chats — needs the unread badge to stop reading the same list first.
+11. *(suggested)* Press-and-hold preview on Discover's piece grid too, and count previews as their own event (needs a new event type in the database rules, so do it on a run where the rules tests can run).
 
 ### F. Onboarding (from the founder's improvement list)
 1. Rent / lend / both step.

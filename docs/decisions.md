@@ -1541,3 +1541,17 @@ a suggestion).
 Skeletons are for lists, the Loane loader is for full-screen waits that
 are not a list. A skeleton says what is coming and stops the screen
 jumping when it arrives.
+
+## 2026-10-23 — Grid preview stays open until a tap (autopilot run 20)
+
+Pressing and holding a grid tile opens a big preview card. Instagram's
+closes when the finger lifts; ours stays until she taps. On iOS a Modal
+that appears under a finger still on the screen can cancel that touch,
+which would close the preview the moment it opened — tap-to-close
+behaves the same either way. Tap the card to open the look or piece,
+tap outside to close.
+
+A preview logs nothing. It is not a view of the page, and counting it as
+`post_view` / `listing_view` would inflate numbers the For You ranking
+reads. If we want to measure previews, they get their own event type,
+which means a rules change (see the suggestion under E in NORTH_STAR.md).

@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- Nothing new from run 20.
 - Nothing new from run 19.
 - Nothing new from run 18.
 - Nothing new from run 17. (When you next deploy: it adds an hourly "Trending" job and two database indexes — normal deploy, nothing to switch on.)
@@ -11,6 +12,45 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-23 (run 20, ~11 PM Central) — Grey placeholders everywhere, and press-and-hold to preview
+
+**Plan:** Finish E2 — grey placeholders on the last screens that still showed a small spinner on a blank page (Discover, profiles, My Listings, Saved, Reviews, a look, a piece, a chat). Then E3 — double-tap to like (check it) and press-and-hold a grid tile to see it big.
+
+**Built:**
+- **Grey placeholders are now on every screen that loads a list or a page.** Shaped like what's coming, so nothing jumps when it arrives:
+  - Discover: a grid of grey piece cards with two little lines under each (name and price).
+  - Profiles (yours and other girls'): a grey round photo and name, then three-across grey squares where the closet goes.
+  - A look or a piece: a big grey photo, the owner row, a few lines of text.
+  - A chat: grey message bubbles on both sides.
+  - My Listings, Reviews, Recently Rented: grey rows. Saved: grey grids on each tab.
+  - The home feed keeps the Loane logo loader, as before.
+- **Press and hold to preview** (like Instagram). On a profile's Closet or Posts grid, and on Liked and Saved → Looks, holding a tile pops up a big card: the full photo, whose it is, and the price (pieces) or how many pieces are tagged (looks). Tap the card to open it; tap outside to close.
+- **Double-tap to like with the heart** was already built — nothing to add.
+
+**What to tap to see it:**
+- Profile → press and hold any square in your closet → the preview pops up → tap it to open the piece, or tap the dark area to close. Same on Posts, and on another girl's profile.
+- Menu → Liked → press and hold a look.
+- Placeholders: open Discover, any profile, a look, a piece or a chat — you'll see grey shapes for a moment before the real thing. (On fast wifi it's a blink; on slow signal it's what she sees instead of a blank screen.)
+
+**Fixed:** Nothing broken this run.
+
+**Skipped / blocked:**
+- The preview stays open until she taps, instead of closing when she lets go like Instagram's. On iPhone, a pop-up that appears under a finger can cancel the touch and close itself instantly; tap-to-close always works. Written up in `docs/decisions.md`.
+- Previews aren't counted in the data yet, on purpose — counting them as a "view" would skew the For You ranking. Counting them properly needs a database rules change, so it's on the backlog for a run where those tests can run.
+- Press-and-hold isn't on Discover's grid yet (those cards already show name and price). Added to the backlog.
+- The overnight machine still can't start the test database (Google's download site is blocked here). Type checks, lint, the index check (81 searches, none missing), the shared tests (239), the server tests that don't need the database, and the iPhone app build all passed. Nothing tonight changed the database rules or server functions; GitHub runs the full set on tonight's push.
+
+**🚨 NEEDS ZACK:** Nothing new. Older items are listed at the top.
+
+**Next up:** E4 — comment threads: reply to a comment, like comments, @mention autocomplete.
+
+**Commits:**
+- Skeleton loaders on Discover, profiles, My Listings, Saved, Reviews, a look, a piece and a chat
+- Press and hold a grid tile to preview it
+- Autopilot log for run 20
 
 ---
 
