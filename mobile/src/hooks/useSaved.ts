@@ -23,6 +23,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { saveListing, unsaveListing } from '../firebase/callables';
 import { logEvent } from '../analytics/events';
 import { useRetry } from './useRetry';
+import { isCachedEmpty } from '../network/connection';
 
 export function useIsSaved(listingId: string | undefined) {
   const { profile } = useAuth();
@@ -102,6 +103,14 @@ export function useWishlist() {
         limit(60),
       ),
       (snap) => {
+        // No signal and nothing cached: an empty answer here is a guess,
+        // not "nothing saved yet". Say it could not load (shared/connection.ts).
+        if (isCachedEmpty(snap)) {
+          if (!live) return;
+          setFailed(true);
+          setLoading(false);
+          return;
+        }
         const ids = snap.docs.map((d) => (d.data() as Save).listingId);
         if (ids.length === 0) {
           if (!live) return;

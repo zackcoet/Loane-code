@@ -4,6 +4,7 @@ import { COLLECTIONS, type Report, type SupportRequest } from '@loane/shared';
 import { useAuth } from '../auth/AuthProvider';
 import { db } from '../firebase/config';
 import { useRetry } from './useRetry';
+import { isCachedEmpty } from '../network/connection';
 
 export function useMyReports() {
   const { profile } = useAuth();
@@ -23,6 +24,13 @@ export function useMyReports() {
     return onSnapshot(
       query(collection(db, COLLECTIONS.reports), where('reporterUid', '==', uid)),
       (snap) => {
+        // No signal and nothing cached: an empty answer here is a guess,
+        // not "there are none". Say it could not load (shared/connection.ts).
+        if (isCachedEmpty(snap)) {
+          setFailed(true);
+          setLoading(false);
+          return;
+        }
         setReports(snap.docs.map((d) => ({ ...(d.data() as Report), id: d.id })));
         setLoading(false);
       },
@@ -54,6 +62,13 @@ export function useMySupportRequests() {
     return onSnapshot(
       query(collection(db, COLLECTIONS.supportRequests), where('requesterUid', '==', uid)),
       (snap) => {
+        // No signal and nothing cached: an empty answer here is a guess,
+        // not "there are none". Say it could not load (shared/connection.ts).
+        if (isCachedEmpty(snap)) {
+          setFailed(true);
+          setLoading(false);
+          return;
+        }
         setRequests(snap.docs.map((d) => ({ ...(d.data() as SupportRequest), id: d.id })));
         setLoading(false);
       },

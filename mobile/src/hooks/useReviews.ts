@@ -7,6 +7,7 @@ import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/f
 import { COLLECTIONS, type Review } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useRetry } from './useRetry';
+import { isCachedEmpty } from '../network/connection';
 
 export function useReviews(subjectUid: string | undefined) {
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -30,6 +31,13 @@ export function useReviews(subjectUid: string | undefined) {
         limit(50),
       ),
       (snap) => {
+        // No signal and nothing cached: an empty answer here is a guess,
+        // not "there are none". Say it could not load (shared/connection.ts).
+        if (isCachedEmpty(snap)) {
+          setFailed(true);
+          setLoading(false);
+          return;
+        }
         setReviews(snap.docs.map((d) => ({ ...(d.data() as Review), id: d.id })));
         setLoading(false);
       },

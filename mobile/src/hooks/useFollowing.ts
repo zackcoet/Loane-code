@@ -19,6 +19,7 @@ import {
 import { COLLECTIONS, PAGE_SIZES, type Follow, type User, type UserSummary } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
+import { isCachedEmpty } from '../network/connection';
 
 export function useFollowingUids() {
   const { profile } = useAuth();
@@ -272,6 +273,12 @@ export function useFollowList(uid: string | undefined, side: 'followers' | 'foll
         limit(windowSize),
       ),
       (snap) => {
+        // No signal and nothing cached: "no followers yet" would be a
+        // guess. Say it could not load (shared/connection.ts).
+        if (isCachedEmpty(snap)) {
+          done(false);
+          return;
+        }
         const uids = snap.docs.map((d) => (d.data() as Follow)[other]);
         if (live) setHasMore(snap.docs.length >= windowSize);
         if (uids.length === 0) {
