@@ -10,7 +10,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { TERMINAL_BOOKING_STATUSES, color, controls, radius, spacing } from '@loane/shared';
 import { BookingRow, needsMe } from '../src/components/BookingRow';
 import { EmptyState } from '../src/components/EmptyState';
@@ -18,6 +18,7 @@ import { LoadError } from '../src/components/LoadError';
 import { Header } from '../src/components/Header';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
+import { SkeletonRows } from '../src/components/Skeleton';
 import { useMyBookings } from '../src/hooks/useBookings';
 import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 
@@ -71,9 +72,7 @@ export default function MyRentals() {
       </View>
 
       {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
-        </View>
+        <SkeletonRows avatar={56} shape="square" />
       ) : failed ? (
         <LoadError what={tab === 'renting' ? 'your rentals' : 'your lending'} onRetry={retry} />
       ) : bookings.length === 0 ? (
@@ -124,7 +123,6 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
   tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.accent },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { padding: spacing.md, paddingBottom: spacing.xxl },
   sectionHeader: { marginTop: spacing.md, marginBottom: spacing.sm },
   row: {

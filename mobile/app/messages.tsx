@@ -14,7 +14,7 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { color, controls, fonts, radius, spacing, type } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
 import { LoadError } from '../src/components/LoadError';
@@ -23,6 +23,7 @@ import { Icon } from '../src/components/Icon';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { ThreadRow } from '../src/components/ThreadRow';
+import { SkeletonRows } from '../src/components/Skeleton';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useInbox } from '../src/hooks/useMessaging';
 import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
@@ -90,9 +91,7 @@ export default function Messages() {
       ) : null}
 
       {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
-        </View>
+        <SkeletonRows avatar={52} />
       ) : failed ? (
         <LoadError what="your messages" onRetry={retry} />
       ) : conversations.length === 0 && requests.length === 0 ? (
@@ -174,7 +173,6 @@ const styles = StyleSheet.create({
   pressed: { opacity: 0.7 },
   // An unread request: cherry, because it is asking to be answered.
   dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: color.button.primary.background },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingBottom: spacing.xxl },
   searchRow: {
     flexDirection: 'row',

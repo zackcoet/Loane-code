@@ -21,6 +21,7 @@ import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
+import { SkeletonRows } from '../src/components/Skeleton';
 import { usePostLikers } from '../src/hooks/usePostLikers';
 import { useHiddenUids } from '../src/hooks/useBlocks';
 
@@ -40,9 +41,7 @@ export default function PostLikes() {
       <Header title="Likes" onBack={() => router.back()} />
 
       {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
-        </View>
+        <SkeletonRows />
       ) : error ? (
         <EmptyState
           title="Couldn't load likes"
@@ -102,7 +101,6 @@ export default function PostLikes() {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
   more: { minHeight: controls.minTapTarget, alignItems: 'center', justifyContent: 'center' },

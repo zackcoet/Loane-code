@@ -20,6 +20,7 @@ import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
+import { SkeletonRows } from '../src/components/Skeleton';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useFollowList } from '../src/hooks/useFollowing';
 import { useHiddenUids } from '../src/hooks/useBlocks';
@@ -82,9 +83,7 @@ export default function FollowListScreen() {
       <Header title={name ? `${name} · ${title}` : title} onBack={() => router.back()} />
 
       {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
-        </View>
+        <SkeletonRows />
       ) : error && visible.length === 0 ? (
         <EmptyState
           title="Couldn't load this list"
@@ -159,7 +158,6 @@ export default function FollowListScreen() {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
   more: { minHeight: controls.minTapTarget, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm },

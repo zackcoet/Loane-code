@@ -16,7 +16,7 @@
 
 import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import {
   WORDS,
   BOOKING_STATUS_LABELS,
@@ -35,6 +35,7 @@ import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useMyBookings } from '../src/hooks/useBookings';
 import { ThumbImage } from '../src/components/ThumbImage';
+import { SkeletonRows } from '../src/components/Skeleton';
 import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 
 export default function RentalRequests() {
@@ -90,9 +91,7 @@ export default function RentalRequests() {
       <Header title="Requests" onBack={() => router.back()} />
 
       {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
-        </View>
+        <SkeletonRows avatar={56} shape="square" />
       ) : failed ? (
         <LoadError what="your requests" onRetry={retry} />
       ) : incoming.length === 0 && outgoing.length === 0 ? (
@@ -197,7 +196,6 @@ function RequestRow({
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
   section: { paddingTop: spacing.lg, paddingBottom: spacing.sm },
   note: { marginTop: 2 },

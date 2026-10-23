@@ -41,6 +41,7 @@ import { Icon } from '../src/components/Icon';
 import { ReportSheet } from '../src/components/ReportSheet';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
+import { SkeletonRows } from '../src/components/Skeleton';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useComments } from '../src/hooks/useComments';
 import { useHiddenUids } from '../src/hooks/useBlocks';
@@ -119,9 +120,7 @@ export default function Comments() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {loading ? (
-          <View style={styles.loading}>
-            <ActivityIndicator color={color.icon.default} />
-          </View>
+          <SkeletonRows avatar={32} />
         ) : error && visible.length === 0 ? (
           <EmptyState
             title="Couldn't load comments"
@@ -304,7 +303,6 @@ function Row({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { padding: spacing.md, gap: spacing.md },
   more: { minHeight: controls.minTapTarget, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },

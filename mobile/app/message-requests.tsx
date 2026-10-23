@@ -8,14 +8,15 @@
  */
 
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, StyleSheet, View } from 'react-native';
-import { color, spacing } from '@loane/shared';
+import { FlatList, StyleSheet } from 'react-native';
+import { spacing } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
 import { LoadError } from '../src/components/LoadError';
 import { Header } from '../src/components/Header';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { ThreadRow } from '../src/components/ThreadRow';
+import { SkeletonRows } from '../src/components/Skeleton';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useInbox } from '../src/hooks/useMessaging';
 import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
@@ -31,9 +32,7 @@ export default function MessageRequests() {
     <Screen flush>
       <Header title="Message requests" onBack={() => router.back()} />
       {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
-        </View>
+        <SkeletonRows avatar={52} />
       ) : failed ? (
         <LoadError what="your message requests" onRetry={retry} />
       ) : requests.length === 0 ? (
@@ -67,7 +66,6 @@ export default function MessageRequests() {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingBottom: spacing.xxl },
   note: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
 });

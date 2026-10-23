@@ -36,6 +36,7 @@ import { Header } from '../../src/components/Header';
 import { IconButton } from '../../src/components/IconButton';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
+import { SkeletonRows } from '../../src/components/Skeleton';
 import { useMyBookings } from '../../src/hooks/useBookings';
 import { useNotifications } from '../../src/hooks/useNotifications';
 import { usePullToRefresh } from '../../src/hooks/usePullToRefresh';
@@ -300,12 +301,9 @@ export default function Activity() {
   );
 }
 
+/** Both tabs are rows — a booking's piece, or who did something. */
 function Loading() {
-  return (
-    <View style={styles.loading}>
-      <ActivityIndicator color={color.icon.default} />
-    </View>
-  );
+  return <SkeletonRows avatar={44} />;
 }
 
 const styles = StyleSheet.create({
@@ -317,7 +315,6 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
   tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.accent },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
   section: { paddingTop: spacing.lg, paddingBottom: spacing.sm },
   note: { marginTop: 2 },

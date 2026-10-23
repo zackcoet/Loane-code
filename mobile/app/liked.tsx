@@ -3,12 +3,11 @@
  */
 
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { color } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
 import { LoadError } from '../src/components/LoadError';
 import { Header } from '../src/components/Header';
 import { PostGrid } from '../src/components/PostGrid';
+import { SkeletonGrid } from '../src/components/Skeleton';
 import { Screen } from '../src/components/Screen';
 import { useLikedPosts } from '../src/hooks/useLikedPosts';
 import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
@@ -23,9 +22,7 @@ export default function Liked() {
     <Screen flush>
       <Header title="Liked" onBack={() => router.back()} />
       {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
-        </View>
+        <SkeletonGrid />
       ) : failed ? (
         <LoadError what="your liked looks" onRetry={retry} />
       ) : posts.length === 0 ? (
@@ -45,7 +42,3 @@ export default function Liked() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-});
