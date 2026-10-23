@@ -1,5 +1,5 @@
 /**
- * The walkthrough: five coach-marks over the real tab bar, once.
+ * The walkthrough: three coach-marks over the real tab bar, once.
  *
  * PLACEMENT RULE:
  * Every spotlight circle is positioned from the measured `measureInWindow`
@@ -34,6 +34,13 @@ interface Step {
   body: string;
 }
 
+/**
+ * THREE STEPS, at most. It was six; nobody reads a sixth coach-mark,
+ * and every extra one teaches her that Skip is the button to look for.
+ * These three are the loop the app exists for — see a look, rent the
+ * piece in it, put her own on Loane — and the place it all lands.
+ * Search, messages and Saved explain themselves once she is in them.
+ */
 const STEPS: Step[] = [
   {
     target: 'feed',
@@ -41,24 +48,9 @@ const STEPS: Step[] = [
     body: 'Looks from students at USC. Tap a tagged piece to rent it.',
   },
   {
-    target: 'search',
-    title: 'Find a piece',
-    body: 'Search closets by occasion, size or price — gameday, formals, rush.',
-  },
-  {
-    target: 'messages',
-    title: 'Your messages',
-    body: 'Handoffs get arranged here. A dot means somebody is waiting on you.',
-  },
-  {
     target: 'post',
     title: 'Share or lend',
     body: 'Post a look, or put a piece of yours on Loane for someone else to rent.',
-  },
-  {
-    target: 'profile',
-    title: 'Saved pieces',
-    body: 'Heart a piece to save it, and find it again here.',
   },
   {
     target: 'activity',
