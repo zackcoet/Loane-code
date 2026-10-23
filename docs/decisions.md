@@ -1659,3 +1659,25 @@ it VoiceOver said only "switch, off" or read the placeholder.
 **A new screen must keep this:** using the shared `Text`, `Input`,
 `Toggle` and `Header` gets all of it for free. A raw `Text` needs the
 `maxFontSizeMultiplier` line by hand.
+
+---
+
+## 2026-10-23 — Offline: say so at once, never guess "not there" (autopilot run 24)
+
+**Decision:** With no signal, Loane (1) shows a small "No internet
+connection" bar; (2) refuses a save, upload or message straight away
+with "No internet connection…" and keeps what she typed; (3) treats an
+empty answer from the phone's cache as "couldn't load", never as "this
+doesn't exist" or "nothing here yet".
+
+**Why refuse instead of queueing:** Firestore would queue the write and
+finish it when the signal returns — but the queue lives in memory, so
+closing the app loses it, and meanwhile the button spins forever. A
+clear "no internet, try again" is honest; a message that silently never
+sends is not. **Why the cache rule:** the cache starts empty every
+launch, so offline it answers "no such profile" for her own account —
+which sent signed-in students to the create-account screen. Only the
+server may say something is gone (`shared/src/connection.ts`).
+**Photo uploads give up after one minute** instead of Firebase's ten.
+**Uses `@react-native-community/netinfo` 12.0.1**, the version Expo SDK
+57 ships in Expo Go, so no development build is needed.

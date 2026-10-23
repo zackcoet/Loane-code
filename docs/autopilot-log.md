@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 24 (2 minutes, whenever you next have the app open): turn on **Airplane Mode** and poke around — open the app, open a chat and try sending, open a look. You should see a dark "No internet connection" bar and clear messages, never a frozen spinner or the sign-up screen. The overnight machine can't run a phone, so this is the one thing it couldn't check by hand.
 - From run 23 (when you submit to the App Store): Apple needs a public web link to the Privacy Policy, and the privacy form answers are in `docs/app-store-privacy.md`.
 - **From run 22 — one decision:** right now ANY .edu email can sign up (a student at Clemson gets her own little "school" made for her automatically — that was set up on Oct 12). Backlog item F7 says non-USC emails should go to a waitlist instead. Doing that means turning those students away, so I didn't build it. Reply "USC only + waitlist" or "keep any .edu" and the next run will do it.
 - From run 22 (only when you next deploy): the database rules gained one small allowed field (her Get started answers) and account deletion now lowers the campus student count — normal deploy, nothing to switch on.
@@ -16,6 +17,47 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-23 (run 24, ~3 AM Central) — Loane behaves when the signal drops
+
+**Plan:** G3 — no crashes or confusion with no internet, slow internet, or deleted posts/accounts. First find what actually goes wrong offline, then fix the worst first: anything that misleads her (wrong screen, "not found", "nothing yet") and anything that spins forever. Then start H (tidy-ups and speed).
+
+**Built:**
+- **A "No internet connection" bar.** A small dark bar floats just above the tabs whenever the phone has no signal, and disappears when it's back. It never blocks a tap.
+- **Saves don't spin forever any more.** Before, with no signal, saving a piece, editing a look or profile, uploading a photo, or sending a message just... waited. The button stayed grey and her message vanished from the box. Now she's told straight away "No internet connection. Check your signal and try again." and **what she typed stays in the box.**
+- **Slow signal:** a photo upload now gives up after 1 minute and says so (it used to keep trying for 10 minutes behind a spinner).
+
+**What to tap to see it:**
+- Turn on **Airplane Mode** → open Loane → the bar shows near the bottom. You stay signed in.
+- Still in Airplane Mode: Messages → open a chat → type something → send → "No internet connection… Your message is still in the box."
+- Open a look or a piece from your profile → "Couldn't load… Try again" (not "This look isn't here"). Turn Airplane Mode off → tap Try again → it loads.
+
+**Fixed:**
+- **The big one: opening Loane with no signal sent signed-in students to the "create account" screen.** The app asked for her profile, got "nothing" from the phone's empty memory, and believed it. Now it waits for the real answer.
+- With no signal, a look, a piece, a rental or a chat could say "not found" or "isn't here", and Messages, Activity, My Rentals, the feed and comments could say "nothing yet". They now say "Couldn't load — Try again", which is the truth.
+- Deleted posts and deleted accounts: checked — earlier runs already handle these ("not found" screens, and a "Deleted account" name everywhere instead of a crash). Nothing to fix.
+- Two old notes in the code said blocking and some server features were "not built yet" — they are. Notes corrected; nothing a student sees changed.
+- The small piece photo on a rental page now loads the small copy of the photo, not the full-size one (faster, less data).
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed: type checks, lint, formatting, the index check (84 searches, none missing), all 290 shared tests (7 new), the server tests that don't need the database, and the iPhone app build. **No server code or database rules changed tonight**, so the database tests have nothing new to catch — GitHub runs them anyway on this push.
+- Nobody can turn on Airplane Mode on a phone from here, so the offline behaviour is checked by reading the code, not by hand — see NEEDS ZACK.
+- One new free building block was added to the app (the standard Expo tool for "is the phone online?"). It already works in Expo Go — no new app build needed.
+
+**🚨 NEEDS ZACK:**
+- Try Airplane Mode once (steps above) and tell me if anything looks off.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** H — tests and tidy-ups, then the rest of the speed work (H3). Then the suggested items.
+
+**Commits:**
+- No signal no longer means 'not found': opening Loane offline kept her signed in instead of sending her to create an account
+- Offline: a 'No internet connection' bar, and saves, uploads and messages say so at once instead of spinning forever
+- Notes: two stale 'not built yet' comments (blocking, server functions) now say what exists
+- Rental page: the small piece photo loads the thumbnail, not the full-size photo
+- Offline: Messages, Activity, rentals, the feed and comments say 'Couldn't load' instead of a false 'nothing here yet'
 
 ---
 

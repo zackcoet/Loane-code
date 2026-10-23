@@ -126,16 +126,18 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 ### G. App Store readiness
 ✅ 1. Account deletion (see B4).
 ✅ 2. Every screen works with large text sizes and VoiceOver labels on buttons. *(Run 23: text follows the iPhone's Text Size up to 1.5x — every fixed-size piece checked to fit; switches, text boxes and headings now speak properly in VoiceOver. Every tappable thing already had a name or its own words — checked with a script. See `docs/decisions.md`.)*
-3. No crashes on: no internet, slow internet, empty data, deleted posts/users.
+✅ 3. No crashes on: no internet, slow internet, empty data, deleted posts/users. *(Run 24: a "No internet connection" bar; saves, uploads and messages say "no internet" at once and keep what she typed instead of spinning; an offline launch no longer sends her to create an account; looks, pieces, rentals, Messages, Activity, the feed and comments say "Couldn't load" offline instead of "not found"/"nothing yet". Photo uploads give up after 1 minute on a bad signal (was 10). Deleted posts and accounts were already handled by earlier runs ("not found" screens, "Deleted account" shells). See `docs/decisions.md`.)*
 ✅ 4. Privacy: list every type of data collected in `docs/app-store-privacy.md` (for the App Store privacy form). *(Run 23: written from the code. No tracking, no ads, no outside analytics. Filling in Apple's form is Zack's.)*
 ✅ 5. Remove any dev-only text, test buttons, or placeholder copy from user-facing screens. *(Run 23: swept every screen — none found. "Payments are coming soon" on Payouts is deliberate while payments are off; Try-On's "soon" only shows if Try-On is switched on.)*
 
 6. *(suggested)* A lint check that fails when a screen uses React Native's own `Text` without the text-size cap, so new screens can't miss it.
+7. *(suggested)* The same offline rule for the remaining live lists (followers, saved, liked, reviews, help requests) — run 24 covered the main ones.
+8. *(suggested)* Test the offline behaviour on a real phone: Airplane Mode → open Loane, open a chat and send, open a look. Overnight runs can't run the phone.
 
 ### H. Quality
 1. Add tests for every new backend function and rules change.
 2. Fix lint warnings and any `TODO` that's under an hour of work.
-3. Performance: images sized properly, lists virtualized, no needless re-renders.
+3. Performance: images sized properly, lists virtualized, no needless re-renders. *(Run 24 started: the rental page's small piece photo now loads the thumbnail. Every long list already uses a scrolling list that only draws what's on screen; the shared-look/piece cards in chats stay full-size on purpose — a 480px thumbnail looks soft at that size.)*
 ✅ 4. *(suggested — solved by C3: GitHub now runs the emulator tests on every push)* Let the overnight runner start the emulators: it can't download the Firestore emulator (Google's download site is blocked from the cloud runner), so rules and booking tests only run on Zack's laptop or in CI (see C3).
 
 ---
