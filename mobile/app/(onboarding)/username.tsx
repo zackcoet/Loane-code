@@ -1,10 +1,12 @@
 /**
  * Step 3 (last) — claim a username, and create the account.
  *
- * Straight into the feed from here. There used to be three intro
- * slides between this and the app: a carousel explaining a feed, shown
- * to somebody who had just finished signing up to see the feed. The
- * feed explains itself faster.
+ * From here she goes to three short, skippable "Get started" questions
+ * (app/get-started.tsx) and then the feed. There used to be three intro
+ * slides here: a carousel explaining a feed, shown to somebody who had
+ * just finished signing up to see the feed. The feed explains itself
+ * faster — the questions are different because they ASK something the
+ * feed then uses.
  *
  * This is where everything actually happens. One call to `createAccount`
  * checks the school domain, creates the login, writes the profile and
@@ -40,6 +42,7 @@ import { auth } from '../../src/firebase/config';
 import { checkUsername, createAccount } from '../../src/firebase/callables';
 import { callableErrorMessage } from '../../src/firebase/errors';
 import { useSignupDraft } from '../../src/auth/signupDraft';
+import { markJustSignedUp } from '../../src/auth/justSignedUp';
 import { logEvent } from '../../src/analytics/events';
 import { text } from '../../src/theme';
 
@@ -149,12 +152,14 @@ export default function ClaimUsername() {
       });
 
       // Sign in with the one-time token the server minted. The root layout
-      // sees the profile appear and moves her on.
+      // sees the profile appear and moves her on — to the "Get started"
+      // steps, because of the mark set first.
+      markJustSignedUp();
       await signInWithCustomToken(auth, result.data.token);
 
       logEvent('signup_completed', { surface: 'onboarding' });
       reset();
-      router.replace('/(tabs)/feed');
+      router.replace('/get-started');
     } catch (err) {
       setError(callableErrorMessage(err, 'Could not finish setting up your account. Try again.'));
     } finally {

@@ -27,6 +27,7 @@ import { collection, documentId, getDocs, query, where, type Timestamp } from 'f
 import {
   COLLECTIONS,
   buildOccasionAffinity,
+  withPickedOccasions,
   nextFeedOrder,
   toIsoDate,
   type Listing,
@@ -118,7 +119,10 @@ export function useForYouOrder(posts: Post[], viewer: RankingViewerData | null) 
         following: viewer.following,
         followers: viewer.followers,
         interactions: viewer.interactions,
-        occasionAffinity: buildOccasionAffinity(likedOccasions),
+        occasionAffinity: withPickedOccasions(
+          buildOccasionAffinity(likedOccasions),
+          viewer.pickedOccasions,
+        ),
       },
       listings: (id) => listingCache.current.get(id) ?? undefined,
       nowMs: now.getTime(),

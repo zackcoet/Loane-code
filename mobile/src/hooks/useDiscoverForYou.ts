@@ -30,6 +30,7 @@ import {
 import {
   COLLECTIONS,
   buildOccasionAffinity,
+  withPickedOccasions,
   occasionsOfSaved,
   rankListings,
   toIsoDate,
@@ -105,7 +106,10 @@ export function useDiscoverForYou(
         following: viewer.following,
         followers: viewer.followers,
         interactions: viewer.interactions,
-        occasionAffinity: buildOccasionAffinity(occasionsOfSaved(savedIds, (id) => byId.get(id))),
+        occasionAffinity: withPickedOccasions(
+          buildOccasionAffinity(occasionsOfSaved(savedIds, (id) => byId.get(id))),
+          viewer.pickedOccasions,
+        ),
       },
       now.getTime(),
       toIsoDate(now),

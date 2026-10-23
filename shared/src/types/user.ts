@@ -2,6 +2,7 @@ import type { AccountStatus, Size, ShoeSize, UserRole, VerificationMethod } from
 import type { BaseDoc, CampusScoped, Timestampish } from './common';
 import type { LegalAcceptance } from './legal';
 import type { UserTryOn } from './tryOn';
+import type { UserOnboarding } from '../onboarding';
 
 /**
  * `users/{uid}`
@@ -258,6 +259,14 @@ export interface UserPrivate {
    * else either. Hers to write: it only withholds something about her.
    */
   messaging?: { readReceipts: boolean };
+
+  /**
+   * Her answers to the "Get started" steps after signup — how she will
+   * use Loane and which occasions are coming up. Optional: accounts from
+   * before the steps existed have none. Hers to write; the rules check
+   * its shape. See shared/src/onboarding.ts.
+   */
+  onboarding?: UserOnboarding;
 
   notificationPreferences: {
     pushEnabled: boolean;

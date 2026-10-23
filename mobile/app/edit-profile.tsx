@@ -23,7 +23,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View,
 } from 'react-native';
 import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import {
@@ -48,7 +47,7 @@ import {
 } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { Button } from '../src/components/Button';
-import { Chip } from '../src/components/Chip';
+import { SizePicker } from '../src/components/SizePicker';
 import { Input } from '../src/components/Input';
 import { Screen } from '../src/components/Screen';
 import { Toggle } from '../src/components/Toggle';
@@ -332,40 +331,6 @@ export default function EditProfile() {
   );
 }
 
-function SizePicker({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  options: readonly string[];
-  value: string | null;
-  onChange: (value: string | null) => void;
-}) {
-  return (
-    <View style={styles.sizeGroup}>
-      <Text style={styles.sizeLabel}>{label}</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.sizeScroll}
-        contentContainerStyle={styles.sizeRow}
-      >
-        {options.map((option) => (
-          <Chip
-            key={option}
-            label={option}
-            active={value === option}
-            // Tapping the selected size clears it.
-            onPress={() => onChange(value === option ? null : option)}
-          />
-        ))}
-      </ScrollView>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
@@ -380,15 +345,6 @@ const styles = StyleSheet.create({
   bioInput: { height: 88, textAlignVertical: 'top' },
   sizeHeading: { marginTop: spacing.md },
   sizeHelp: { marginTop: spacing.xs, marginBottom: spacing.md },
-  sizeGroup: { marginBottom: spacing.lg },
-  sizeLabel: {
-    fontFamily: fonts.body,
-    fontSize: type.bodySmall.size,
-    color: color.text.secondary,
-    marginBottom: spacing.sm,
-  },
-  sizeScroll: { flexGrow: 0, flexShrink: 0 },
-  sizeRow: { gap: spacing.sm, alignItems: 'center', paddingRight: spacing.md },
   error: {
     fontFamily: fonts.body,
     color: color.status.error,

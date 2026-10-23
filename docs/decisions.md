@@ -1599,3 +1599,36 @@ need to answer. Grouping works over the updates already loaded (a page
 at a time), so a very old like can appear as its own row further down.
 Tapping a grouped row marks every alert in it read.
 
+
+---
+
+## 2026-10-23 — "Get started": three skippable questions after signup (autopilot run 22)
+
+**Decision:** a brand-new account goes from "Create account" to one
+screen, `app/get-started.tsx`, with three steps — how she will use Loane
+(rent / lend / both), what's coming up (occasions), and her size
+(optional) — then the Feed. Every step has Skip.
+
+**Why this is not the intro carousel coming back:** the carousel that
+was removed EXPLAINED the feed. These ASK something the feed uses:
+her occasion picks count as 3 liked looks each in the For You score
+(`withPickedOccasions`), so a girl with no likes yet sees Formal looks
+first if she said Formal is coming up. Three real likes on another
+occasion already outweigh a pick, so it fades as she uses the app.
+
+**Where the answers live:** `users/{uid}/private/settings.onboarding`.
+Only her phone needs them (ranking runs on her phone), they move no
+counter and grant nothing, so the app writes them; the rules check the
+shape (one of three intents, real occasions only, no extra keys). Her
+size goes to `sizes` on her profile, the field Edit Profile already
+writes, and stays hidden unless she turns "Show my sizes" on.
+
+**Only new accounts see it.** An in-memory mark set at signup
+(`src/auth/justSignedUp.ts`) tells the root guard to send her here
+instead of the Feed. Signing in on a new phone, or an account from
+before tonight, goes straight to the Feed — existing students are not
+asked. Saved once at the end, so there is no half-finished state.
+
+**Analytics:** each step logs the existing `onboarding_step` event with
+the step and whether she answered or skipped — never her size, which is
+about her body.

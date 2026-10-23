@@ -58,7 +58,7 @@ there and nowhere else.
 | Part | Weight | What it means | Where the data comes from |
 |---|---|---|---|
 | **who** | 1.0 | 0.6 if she follows the author, +0.2 if they follow each other, +0.05 per look of theirs she has liked/saved/commented on (at most +0.2). Her own looks score 0. | Her follows and likes |
-| **what** | 0.6 | How well the look's occasions match the occasions she engages with — her favourite occasion scores 1, others relative to it. | Occasions of looks she has liked (each occasion capped at 20) |
+| **what** | 0.6 | How well the look's occasions match the occasions she engages with — her favourite occasion scores 1, others relative to it. | Occasions of looks she has liked (each occasion capped at 20), plus 3 for each occasion she picked in "Get started" after signup (`withPickedOccasions`, `shared/src/onboarding.ts`) — enough to steer day one, outweighed once she has liked a few looks |
 | **fresh** | 1.2 | 1 when just posted, halves every 36 hours. | `createdAt` |
 | **quality** | 0.8 | Engagement *per viewer*, not raw likes. A like = 1, save = 2, comment = 3, share = 3, tagged-piece tap = 4, divided by (opens + likes). Smoothed as if every look started with 20 viewers at 10%, so 1 view + 1 like is not "perfect". 0.6 per viewer or better scores 1. | `post.stats` — server-written counters only |
 | **available** | 0.4 | Share of the tagged pieces she could actually get this week (up, and either for sale or with at least one free day in the next 7). No tagged pieces = 0. | The listings, which she cannot edit |

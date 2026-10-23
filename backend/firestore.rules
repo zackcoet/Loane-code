@@ -175,9 +175,28 @@ service cloud.firestore {
                // Whether her phone says "Seen". It only ever withholds
                // something about her, so it is hers to switch.
                'messaging',
+               // Her "Get started" answers: rent/lend/both and the
+               // occasions coming up. Only her own phone reads them, to
+               // rank her feed. Shape-checked so it stays small.
+               'onboarding',
                'updatedAt'
-             ]);
+             ])
+          && onboardingOk();
         allow delete: if false;
+      }
+
+      // MUST match shared/src/onboarding.ts: intent is one of
+      // ONBOARDING_INTENTS or null, occasions a list of at most 8
+      // (the number of OCCASIONS). Only checked when she changes it.
+      function onboardingOk() {
+        let o = request.resource.data.onboarding;
+        return !('onboarding' in changed())
+          || (o is map
+              && o.keys().hasOnly(['intent', 'occasions', 'completedAt'])
+              && (!('intent' in o) || o.intent == null || o.intent in ['rent', 'lend', 'both'])
+              && (!('occasions' in o) || (o.occasions is list && o.occasions.size() <= 8
+                  && o.occasions.hasOnly(['gameday', 'going_out', 'formal', 'date_function',
+                                          'rush', 'vacation', 'wedding', 'graduation']))));
       }
 
       /**

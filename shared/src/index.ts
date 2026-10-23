@@ -37,3 +37,4 @@ export * from './trending';
 export * from './mentions';
 export * from './recentSearches';
 export * from './notificationGroups';
+export * from './onboarding';

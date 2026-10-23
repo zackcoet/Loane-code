@@ -328,6 +328,53 @@ describe('private settings', () => {
     );
   });
 
+  it('lets her save her own "Get started" answers, and only a sane shape', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', ELLA, 'private', 'settings'), { uid: ELLA });
+    });
+    const mine = doc(asElla(), 'users', ELLA, 'private', 'settings');
+    await assertSucceeds(
+      setDoc(
+        mine,
+        {
+          onboarding: {
+            intent: 'both',
+            occasions: ['gameday', 'formal'],
+            completedAt: serverTimestamp(),
+          },
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      ),
+    );
+    // Skipping everything is a valid answer.
+    await assertSucceeds(
+      updateDoc(mine, {
+        onboarding: { intent: null, occasions: [], completedAt: serverTimestamp() },
+      }),
+    );
+    // Not one of the three answers.
+    await assertFails(
+      updateDoc(mine, { onboarding: { intent: 'admin', occasions: [], completedAt: null } }),
+    );
+    // A made-up occasion.
+    await assertFails(
+      updateDoc(mine, { onboarding: { intent: 'rent', occasions: ['party'], completedAt: null } }),
+    );
+    // Smuggling something else inside it.
+    await assertFails(
+      updateDoc(mine, {
+        onboarding: { intent: 'rent', occasions: [], completedAt: null, role: 'admin' },
+      }),
+    );
+    // Somebody else's.
+    await assertFails(
+      updateDoc(doc(asMaddie(), 'users', ELLA, 'private', 'settings'), {
+        onboarding: { intent: 'rent', occasions: [], completedAt: null },
+      }),
+    );
+  });
+
   it('stops another student reading her contact details', async () => {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), 'users', ELLA, 'private', 'settings'), {
@@ -412,7 +459,9 @@ describe('listings', () => {
     // used to allow only draft and active, so turning it off meant the
     // listing was refused — and the app blamed her connection for it.
     await assertSucceeds(
-      createListingAs(ELLA, 'listing-paused',
+      createListingAs(
+        ELLA,
+        'listing-paused',
         listingDoc(ELLA, { id: 'listing-paused', status: 'paused' }),
       ),
     );
@@ -421,7 +470,9 @@ describe('listings', () => {
   it('still refuses a status the app never writes', async () => {
     for (const status of ['sold', 'suspended', 'removed']) {
       await assertFails(
-        createListingAs(ELLA, `listing-${status}`,
+        createListingAs(
+          ELLA,
+          `listing-${status}`,
           listingDoc(ELLA, { id: `listing-${status}`, status }),
         ),
       );
@@ -436,7 +487,9 @@ describe('listings', () => {
 
   it('stops a new listing starting with a fake view count', async () => {
     await assertFails(
-      createListingAs(ELLA, 'listing-inflated',
+      createListingAs(
+        ELLA,
+        'listing-inflated',
         listingDoc(ELLA, {
           id: 'listing-inflated',
           stats: { viewCount: 9999, saveCount: 0, tagCount: 0, completedRentals: 0 },
@@ -475,7 +528,9 @@ describe('listings', () => {
 
   it('refuses a listing with no photos', async () => {
     await assertFails(
-      createListingAs(ELLA, 'listing-nophoto',
+      createListingAs(
+        ELLA,
+        'listing-nophoto',
         listingDoc(ELLA, { id: 'listing-nophoto', photos: [], coverUrl: null }),
       ),
     );
@@ -483,7 +538,9 @@ describe('listings', () => {
 
   it('refuses a listing with no occasions — nobody could ever find it', async () => {
     await assertFails(
-      createListingAs(ELLA, 'listing-noocc',
+      createListingAs(
+        ELLA,
+        'listing-noocc',
         listingDoc(ELLA, { id: 'listing-noocc', occasions: [] }),
       ),
     );
@@ -491,7 +548,9 @@ describe('listings', () => {
 
   it('refuses a rentable listing with no price', async () => {
     await assertFails(
-      createListingAs(ELLA, 'listing-free',
+      createListingAs(
+        ELLA,
+        'listing-free',
         listingDoc(ELLA, {
           id: 'listing-free',
           pricing: { threeDayCents: null, sevenDayCents: null },
@@ -504,7 +563,9 @@ describe('listings', () => {
     // The value is what caps a damage claim later, so a rentable piece
     // without one has no protection behind it.
     await assertFails(
-      createListingAs(ELLA, 'listing-novalue',
+      createListingAs(
+        ELLA,
+        'listing-novalue',
         listingDoc(ELLA, { id: 'listing-novalue', garmentValueCents: 0 }),
       ),
     );
@@ -512,7 +573,9 @@ describe('listings', () => {
 
   it('refuses a price that is not whole cents', async () => {
     await assertFails(
-      createListingAs(ELLA, 'listing-float',
+      createListingAs(
+        ELLA,
+        'listing-float',
         listingDoc(ELLA, {
           id: 'listing-float',
           pricing: { threeDayCents: 25.5, sevenDayCents: 4000 },
@@ -523,7 +586,9 @@ describe('listings', () => {
 
   it('refuses a for-sale listing with no sale price', async () => {
     await assertFails(
-      createListingAs(ELLA, 'listing-nosale',
+      createListingAs(
+        ELLA,
+        'listing-nosale',
         listingDoc(ELLA, { id: 'listing-nosale', intent: 'sell', salePriceCents: null }),
       ),
     );
@@ -531,7 +596,9 @@ describe('listings', () => {
 
   it('refuses a listing placed on another campus', async () => {
     await assertFails(
-      createListingAs(ELLA, 'listing-elsewhere',
+      createListingAs(
+        ELLA,
+        'listing-elsewhere',
         listingDoc(ELLA, { id: 'listing-elsewhere', campusId: 'some-other-school' }),
       ),
     );
@@ -2496,7 +2563,9 @@ describe('security review — collections with no test before', () => {
     });
     await assertFails(getDoc(doc(asNosy(), 'users', ELLA, 'notifications', 'n-1')));
     await assertFails(
-      updateDoc(doc(asNosy(), 'users', ELLA, 'notifications', 'n-1'), { readAt: serverTimestamp() }),
+      updateDoc(doc(asNosy(), 'users', ELLA, 'notifications', 'n-1'), {
+        readAt: serverTimestamp(),
+      }),
     );
   });
 

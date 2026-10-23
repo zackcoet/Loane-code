@@ -6,13 +6,24 @@
  * likes, and which looks) and who follows her (for the "mutual" bonus).
  * Who she follows is the live listener the screens already use.
  *
+ * Also her "What's coming up?" picks from signup (private settings), so
+ * a brand-new student's feed leans toward them before she has liked
+ * anything — see shared/src/onboarding.ts.
+ *
  * Every read failing falls back to empty: the screen is still the
  * screen, just less personal — never an error.
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
-import { COLLECTIONS, type Follow, type Like } from '@loane/shared';
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
+import {
+  COLLECTIONS,
+  cleanOccasionPicks,
+  type Follow,
+  type Like,
+  type Occasion,
+  type UserPrivate,
+} from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { useFollowingUids } from './useFollowing';
@@ -29,6 +40,8 @@ export interface RankingViewerData {
   likes: Like[];
   /** Author uid → how many of their looks she has liked. */
   interactions: Map<string, number>;
+  /** The occasions she picked in "Get started". Empty if she skipped or never saw it. */
+  pickedOccasions: Occasion[];
 }
 
 export function useRankingViewer() {
@@ -36,7 +49,11 @@ export function useRankingViewer() {
   const uid = profile?.uid ?? null;
   const { uids: following, loading: followingLoading } = useFollowingUids();
 
-  const [read, setRead] = useState<{ likes: Like[]; followers: Set<string> } | null>(null);
+  const [read, setRead] = useState<{
+    likes: Like[];
+    followers: Set<string>;
+    picked: Occasion[];
+  } | null>(null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
@@ -46,7 +63,7 @@ export function useRankingViewer() {
     // until the new one lands, so the screen never flashes a loader.
     if (attempt === 0) setRead(null);
     void (async () => {
-      const [likes, followers] = await Promise.all([
+      const [likes, followers, picked] = await Promise.all([
         getDocs(
           query(
             collection(db, COLLECTIONS.likes),
@@ -66,8 +83,13 @@ export function useRankingViewer() {
         )
           .then((s) => new Set(s.docs.map((d) => (d.data() as Follow).followerUid)))
           .catch(() => new Set<string>()),
+        getDoc(doc(db, COLLECTIONS.users, uid, 'private', 'settings'))
+          .then((s) =>
+            cleanOccasionPicks((s.data() as UserPrivate | undefined)?.onboarding?.occasions ?? []),
+          )
+          .catch(() => [] as Occasion[]),
       ]);
-      if (live) setRead({ likes, followers });
+      if (live) setRead({ likes, followers, picked });
     })();
     return () => {
       live = false;
@@ -83,7 +105,14 @@ export function useRankingViewer() {
     for (const like of read.likes) {
       interactions.set(like.postAuthorUid, (interactions.get(like.postAuthorUid) ?? 0) + 1);
     }
-    return { uid, following, followers: read.followers, likes: read.likes, interactions };
+    return {
+      uid,
+      following,
+      followers: read.followers,
+      likes: read.likes,
+      interactions,
+      pickedOccasions: read.picked,
+    };
   }, [uid, read, following, followingLoading]);
 
   return { viewer: data, reload };

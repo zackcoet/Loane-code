@@ -16,6 +16,7 @@ import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import { isJustSignedUp } from '../src/auth/justSignedUp';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -72,7 +73,11 @@ function RootNavigator() {
       // instant it opened. Anything that is not onboarding or sign-in
       // is somewhere she deliberately navigated to, and this guard has
       // no business having an opinion about it.
-      if (inOnboarding || inAuth || atRoot) router.replace('/(tabs)/feed');
+      // A brand-new account goes to the "Get started" steps first; see
+      // src/auth/justSignedUp.ts.
+      if (inOnboarding || inAuth || atRoot) {
+        router.replace(isJustSignedUp() ? '/get-started' : '/(tabs)/feed');
+      }
       return;
     }
 
@@ -115,6 +120,8 @@ function RootNavigator() {
       <Stack.Screen name="(onboarding)" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
+      {/* No swipe back: there is nothing behind it but the signup she just finished. */}
+      <Stack.Screen name="get-started" options={{ gestureEnabled: false }} />
       <Stack.Screen name="post-sheet" options={{ presentation: 'modal' }} />
       <Stack.Screen
         name="menu"
