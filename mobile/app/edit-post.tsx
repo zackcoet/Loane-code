@@ -45,6 +45,7 @@ import { db } from '../src/firebase/config';
 import { deletePost } from '../src/firebase/callables';
 import { callableErrorMessage } from '../src/firebase/errors';
 import { logEvent } from '../src/analytics/events';
+import { useConfirmDiscard } from '../src/hooks/useConfirmDiscard';
 import { useKeyboardPadding } from '../src/hooks/useKeyboardPadding';
 
 export default function EditPost() {
@@ -84,6 +85,14 @@ export default function EditPost() {
     setHydrated(true);
   }, [post, hydrated]);
 
+  const dirty =
+    hydrated &&
+    !!post &&
+    (caption !== post.caption ||
+      occasions.length !== post.occasions.length ||
+      occasions.some((o) => !post.occasions.includes(o)));
+  const { allowLeave } = useConfirmDiscard(dirty);
+
   const onSave = async () => {
     if (!post) return;
     setSaving(true);
@@ -95,6 +104,7 @@ export default function EditPost() {
         updatedAt: serverTimestamp(),
       });
       logEvent('post_edit', { surface: 'feed', targetType: 'post', targetId: post.id });
+      allowLeave();
       router.back();
     } catch {
       setError('Could not save that. Try again.');
@@ -115,6 +125,7 @@ export default function EditPost() {
           try {
             await deletePost({ postId: post.id });
             logEvent('post_delete', { surface: 'feed', targetType: 'post', targetId: post.id });
+            allowLeave();
             router.back();
           } catch (err) {
             Alert.alert('Loane', callableErrorMessage(err, 'Could not delete that. Try again.'));

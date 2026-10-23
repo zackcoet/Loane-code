@@ -26,6 +26,7 @@ import { ListingForm } from '../src/components/ListingForm';
 import { Screen } from '../src/components/Screen';
 import { useAuth } from '../src/auth/AuthProvider';
 import { useListing } from '../src/hooks/useListing';
+import { useConfirmDiscard } from '../src/hooks/useConfirmDiscard';
 import { EMPTY_FORM, useListingForm } from '../src/hooks/useListingForm';
 import { removeListing } from '../src/firebase/callables';
 import { callableErrorMessage } from '../src/firebase/errors';
@@ -65,9 +66,12 @@ export default function EditListing() {
   const [removing, setRemoving] = useState(false);
 
   // Fill the form once, when the listing arrives.
+  /** The form as loaded, to tell whether she has changed anything. */
+  const [original, setOriginal] = useState<string | null>(null);
+
   useEffect(() => {
     if (!listing || hydrated) return;
-    hydrate({
+    const initial = {
       ...EMPTY_FORM,
       name: listing.name,
       description: listing.description,
@@ -89,15 +93,23 @@ export default function EditListing() {
       sameDay: listing.sameDay?.enabled ?? false,
       availableNow: listing.status === 'active',
       blackoutDates: listing.blackoutDates ?? [],
-    });
+    };
+    hydrate(initial);
+    setOriginal(JSON.stringify(initial));
     setHydrated(true);
   }, [listing, hydrated, hydrate]);
+
+  // A plain comparison of the whole form: it is small, and this way a
+  // field added to the form later is covered without anyone remembering.
+  const dirty = original !== null && JSON.stringify(controller.form) !== original;
+  const { allowLeave } = useConfirmDiscard(dirty);
 
   const onSave = async () => {
     if (!profile || !listing) return;
     const saved = await controller.save(profile, listing.id);
     if (!saved) return;
     logEvent('listing_edit', { surface: 'closet', targetType: 'listing', targetId: listing.id });
+    allowLeave();
     router.back();
   };
 
@@ -126,6 +138,7 @@ export default function EditListing() {
                   ? 'Taken out of the marketplace. We kept the record because it has been rented before.'
                   : 'Taken out of the marketplace.',
               );
+              allowLeave();
               router.back();
             } catch (err) {
               Alert.alert('Loane', callableErrorMessage(err, 'Could not remove that. Try again.'));

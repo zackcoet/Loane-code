@@ -58,6 +58,7 @@ import { db } from '../src/firebase/config';
 import { changeUsername, checkUsername } from '../src/firebase/callables';
 import { callableErrorMessage } from '../src/firebase/errors';
 import { logEvent } from '../src/analytics/events';
+import { useConfirmDiscard } from '../src/hooks/useConfirmDiscard';
 import { useKeyboardPadding } from '../src/hooks/useKeyboardPadding';
 import { useProfilePhoto } from '../src/hooks/useProfilePhoto';
 import { useUserSettings } from '../src/hooks/useUserSettings';
@@ -104,6 +105,21 @@ export default function EditProfile() {
   // Shared with tapping your avatar on your profile, so there is one
   // place that knows how a profile photo gets changed.
   const { change: choosePhoto, uploading } = useProfilePhoto({ onPicked: setPhotoUrl });
+
+  // Anything different from what is saved counts as unsaved work.
+  const dirty =
+    !!profile &&
+    (displayName !== profile.displayName ||
+      normalizeUsername(username) !== profile.username ||
+      bio !== (profile.bio ?? '') ||
+      photoUrl !== (profile.photoUrl ?? null) ||
+      showSizes !== (profile.showSizes ?? false) ||
+      sizes.tops !== (profile.sizes.tops ?? null) ||
+      sizes.bottoms !== (profile.sizes.bottoms ?? null) ||
+      sizes.dresses !== (profile.sizes.dresses ?? null) ||
+      sizes.shoe !== (profile.sizes.shoe ?? null) ||
+      (phoneTouched && normalizePhone(phone) !== normalizePhone(settings.settings?.phone ?? '')));
+  const { allowLeave } = useConfirmDiscard(dirty);
 
   if (!profile) {
     return (
@@ -178,6 +194,7 @@ export default function EditProfile() {
       await settings.save({ phone: normalizePhone(phone) || null });
 
       logEvent('profile_edit', { surface: 'profile', targetType: 'user', targetId: profile.uid });
+      allowLeave();
       router.back();
     } catch (err) {
       const message = callableErrorMessage(err, 'Could not save your profile. Try again.');
