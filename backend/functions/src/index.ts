@@ -68,11 +68,11 @@
  *                               post photo for grids to load
  *   - removeThumbnail           deletes it when the photo is deleted
  *
- * Skeletons with TODOs, filled in during later phases:
- *   - social counters  (Phase 3)
- *   - booking lifecycle: accept, decline, handoff, return (Phase 4)
- *   - payments, payouts, protection holds, damage claims (Phase 5)
- *   - reviews, reports, push notifications (Phase 6)
+ * Social counters, the booking lifecycle, reviews and reports are all
+ * built (exported below). Still to come:
+ *   - payments, payouts and damage claims (Phase 5 — switched off until
+ *     Loane, Inc.'s Stripe setup is done; see docs/payments.md)
+ *   - push notifications (need a development build, not Expo Go)
  */
 
 export { createAccount, checkCampusEmail } from './auth/createAccount';

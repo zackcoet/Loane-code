@@ -281,9 +281,9 @@ export interface UserPrivate {
 /**
  * `users/{uid}/blocked/{blockedUid}`
  *
- * TODO-PHASE6: blocking is separate from reporting. A block hides both users
- * from each other's feed, search, profile and messages. Designed now, built
- * in Phase 6.
+ * Blocking is separate from reporting. A block hides both users from each
+ * other's feed, search, comments, profile and messages — see
+ * shared/src/blocking.ts and mobile/src/hooks/useBlocks.tsx.
  */
 export interface BlockedUser {
   blockedUid: string;
