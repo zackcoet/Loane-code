@@ -21,6 +21,7 @@ import {
   limit,
   orderBy,
   query,
+  where,
   type QueryConstraint,
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -37,6 +38,12 @@ export interface AdminData {
   damageClaims: DamageClaim[];
   adminActions: AdminAction[];
   events: AppEvent[];
+  /**
+   * Every "Get started" step event, read on its own: in the general
+   * newest-500 above they would be drowned out by feed impressions
+   * within a day of launch.
+   */
+  onboardingEvents: AppEvent[];
   legalDocs: LegalDoc[];
   legalDrafts: LegalDraft[];
 }
@@ -53,6 +60,7 @@ const COLLECTION_LIMITS = {
   damageClaims: 100,
   adminActions: 100,
   events: 500,
+  onboardingEvents: 3000,
   legalDocs: 100,
   legalDrafts: 10,
 } as const;
@@ -81,6 +89,7 @@ export async function loadAdminData(): Promise<AdminData> {
     damageClaims,
     adminActions,
     events,
+    onboardingEvents,
     legalDocs,
     legalDrafts,
   ] = await Promise.all([
@@ -99,6 +108,7 @@ export async function loadAdminData(): Promise<AdminData> {
     getCollection<DamageClaim>(COLLECTIONS.damageClaims, COLLECTION_LIMITS.damageClaims, true),
     getCollection<AdminAction>(COLLECTIONS.adminActions, COLLECTION_LIMITS.adminActions, true),
     getCollection<AppEvent>(COLLECTIONS.events, COLLECTION_LIMITS.events, true),
+    getOnboardingEvents(),
     getCollection<LegalDoc>(COLLECTIONS.legalDocs, COLLECTION_LIMITS.legalDocs, true),
     getCollection<LegalDraft>(COLLECTIONS.legalDrafts, COLLECTION_LIMITS.legalDrafts, false),
   ]);
@@ -115,9 +125,22 @@ export async function loadAdminData(): Promise<AdminData> {
     damageClaims,
     adminActions,
     events,
+    onboardingEvents,
     legalDocs,
     legalDrafts,
   };
+}
+
+async function getOnboardingEvents(): Promise<AppEvent[]> {
+  // index-check: one equality filter and no sort — the single-field index does it.
+  const snap = await getDocs(
+    query(
+      collection(db, COLLECTIONS.events),
+      where('type', '==', 'onboarding_step'),
+      limit(COLLECTION_LIMITS.onboardingEvents),
+    ),
+  );
+  return snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as AppEvent);
 }
 
 async function getCollection<T>(

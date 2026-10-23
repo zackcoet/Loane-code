@@ -1,4 +1,4 @@
-import type { AppEvent, User } from '@loane/shared';
+import { onboardingFunnel, type AppEvent, type User } from '@loane/shared';
 import {
   type AdminData,
   type DateWindow,
@@ -24,6 +24,7 @@ export function scopeData(data: AdminData, campusId: string): AdminData {
     damageClaims: data.damageClaims.filter((item) => matchesCampus(item, campusId)),
     adminActions: data.adminActions,
     events: data.events.filter((item) => matchesCampus(item, campusId)),
+    onboardingEvents: data.onboardingEvents.filter((item) => matchesCampus(item, campusId)),
     legalDocs: data.legalDocs,
     legalDrafts: data.legalDrafts,
   };
@@ -256,4 +257,11 @@ function uniqueAfter(events: AppEvent[], start: Date, end: Date | null) {
       })
       .map((event) => event.uid),
   ).size;
+}
+
+/** The "Get started" funnel, for students who signed up in the window. */
+export function makeOnboardingFunnel(data: AdminData, window: DateWindow) {
+  return onboardingFunnel(
+    data.onboardingEvents.filter((event) => isInWindow(event.createdAt, window)),
+  );
 }

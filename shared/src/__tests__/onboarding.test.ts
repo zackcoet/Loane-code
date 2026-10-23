@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cleanOccasionPicks,
   isOnboardingIntent,
+  onboardingFunnel,
   PICKED_OCCASION_WEIGHT,
   withPickedOccasions,
 } from '../onboarding';
@@ -52,5 +53,42 @@ describe('withPickedOccasions', () => {
 
   it('does nothing when she skipped the step', () => {
     expect(withPickedOccasions(new Map(), undefined).size).toBe(0);
+  });
+});
+
+describe('onboardingFunnel', () => {
+  const ev = (uid: string, meta: Record<string, string | number | boolean>) => ({ uid, meta });
+
+  it('counts each student once per row, answers apart from skips', () => {
+    const { rows, intents } = onboardingFunnel([
+      ev('a', { step: 'intent', action: 'next', intent: 'rent' }),
+      ev('a', { step: 'occasions', action: 'next', occasionCount: 2 }),
+      ev('a', { step: 'occasions', action: 'next', occasionCount: 3 }),
+      ev('a', { step: 'size', action: 'skip' }),
+      ev('a', { step: 'follow', action: 'next', followed: 3 }),
+      ev('a', { step: 'invite', action: 'next', invited: true }),
+      ev('b', { step: 'intent', action: 'skip' }),
+      ev('b', { step: 'occasions', action: 'skip' }),
+      ev('c', { step: 'intent', action: 'next', intent: 'lend' }),
+      ev('c', { step: 'follow', action: 'skip', followed: 1 }),
+      ev('c', { step: 'invite', action: 'list_first' }),
+    ]);
+    const value = (label: string) => rows.find((r) => r.label === label)?.value;
+    expect(value('Started Get started')).toBe(3);
+    expect(value('Said how she will use Loane')).toBe(2);
+    expect(value("Picked what's coming up")).toBe(1);
+    expect(value('Gave a size')).toBe(0);
+    expect(value('Followed 3 closets')).toBe(1);
+    expect(value('Invited friends')).toBe(1);
+    expect(value('Reached the feed')).toBe(2);
+    expect(intents).toEqual({ rent: 1, lend: 1, both: 0 });
+  });
+
+  it('uses her latest answer when she changed her mind', () => {
+    const { intents } = onboardingFunnel([
+      ev('a', { step: 'intent', action: 'next', intent: 'rent' }),
+      ev('a', { step: 'intent', action: 'next', intent: 'both' }),
+    ]);
+    expect(intents).toEqual({ rent: 0, lend: 0, both: 1 });
   });
 });

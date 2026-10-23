@@ -29,6 +29,7 @@ import {
   OCCASIONS,
   ONBOARDING_INTENT_COPY,
   ONBOARDING_INTENTS,
+  ONBOARDING_STEPS,
   SHOE_SIZES,
   SIZES,
   cleanOccasionPicks,
@@ -40,6 +41,7 @@ import {
   type,
   type Occasion,
   type OnboardingIntent,
+  type OnboardingStep,
   type ShoeSize,
   type Size,
   type Timestampish,
@@ -58,8 +60,9 @@ import { useUserSettings } from '../src/hooks/useUserSettings';
 import { useInviteShare } from '../src/hooks/useInviteShare';
 import { text } from '../src/theme';
 
-const STEPS = ['intent', 'occasions', 'size', 'follow', 'invite'] as const;
-type Step = (typeof STEPS)[number];
+// One list, shared with the dashboard's funnel that reads these steps back.
+const STEPS = ONBOARDING_STEPS;
+type Step = OnboardingStep;
 
 type Sizes = User['sizes'];
 const NO_SIZES: Sizes = { tops: null, bottoms: null, dresses: null, shoe: null };

@@ -72,3 +72,82 @@ export function withPickedOccasions(
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// The admin funnel (F8)
+// ---------------------------------------------------------------------------
+
+/** The steps, in order, as logged in `onboarding_step` events' `meta.step`. */
+export const ONBOARDING_STEPS = ['intent', 'occasions', 'size', 'follow', 'invite'] as const;
+export type OnboardingStep = (typeof ONBOARDING_STEPS)[number];
+
+/** The bit of an `onboarding_step` event the funnel reads. */
+export interface OnboardingStepEvent {
+  uid: string | null;
+  meta: Record<string, string | number | boolean>;
+}
+
+export interface OnboardingFunnelRow {
+  label: string;
+  value: number;
+}
+
+export interface OnboardingFunnel {
+  rows: OnboardingFunnelRow[];
+  /** Answers to "How will you use Loane?", one per student (her latest). */
+  intents: Record<OnboardingIntent, number>;
+}
+
+/**
+ * Turns `onboarding_step` events into the dashboard's funnel: how many
+ * students reached each step, and how many actually answered it rather
+ * than skipping. Each student counts once per row however many times
+ * she went Back and forward.
+ */
+export function onboardingFunnel(events: readonly OnboardingStepEvent[]): OnboardingFunnel {
+  const sets = {
+    started: new Set<string>(),
+    intent: new Set<string>(),
+    occasions: new Set<string>(),
+    size: new Set<string>(),
+    followed3: new Set<string>(),
+    invited: new Set<string>(),
+    finished: new Set<string>(),
+  };
+  const latestIntent = new Map<string, OnboardingIntent>();
+
+  for (const e of events) {
+    if (!e.uid) continue;
+    const step = e.meta?.step;
+    const action = e.meta?.action;
+    sets.started.add(e.uid);
+    if (action === 'next' && step === 'intent' && isOnboardingIntent(e.meta.intent)) {
+      sets.intent.add(e.uid);
+      latestIntent.set(e.uid, e.meta.intent);
+    }
+    if (action === 'next' && step === 'occasions') sets.occasions.add(e.uid);
+    if (action === 'next' && step === 'size') sets.size.add(e.uid);
+    if (step === 'follow' && typeof e.meta.followed === 'number' && e.meta.followed >= 3) {
+      sets.followed3.add(e.uid);
+    }
+    if (step === 'invite' && e.meta.invited === true) sets.invited.add(e.uid);
+    // The last step, answered or skipped, or "Put a piece on Loane" from it.
+    if (step === 'invite' || action === 'list_first') sets.finished.add(e.uid);
+  }
+
+  const intents: Record<OnboardingIntent, number> = { rent: 0, lend: 0, both: 0 };
+  for (const i of latestIntent.values()) intents[i] += 1;
+
+  return {
+    rows: [
+      { label: 'Started Get started', value: sets.started.size },
+      { label: 'Said how she will use Loane', value: sets.intent.size },
+      { label: "Picked what's coming up", value: sets.occasions.size },
+      { label: 'Gave a size', value: sets.size.size },
+      { label: 'Followed 3 closets', value: sets.followed3.size },
+      { label: 'Invited friends', value: sets.invited.size },
+      { label: 'Reached the feed', value: sets.finished.size },
+    ],
+    intents,
+  };
+}

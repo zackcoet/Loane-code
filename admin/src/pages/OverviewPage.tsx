@@ -2,7 +2,13 @@ import { useMemo } from 'react';
 import type { Campus } from '@loane/shared';
 import type { AdminData, DateRangeKey } from '../data/adminData';
 import { getDateWindow } from '../data/adminData';
-import { makeFunnel, makeOverviewMetrics, makeRetention, scopeData } from '../data/analytics';
+import {
+  makeFunnel,
+  makeOnboardingFunnel,
+  makeOverviewMetrics,
+  makeRetention,
+  scopeData,
+} from '../data/analytics';
 import { ChartCard, Funnel } from '../components/charts';
 import { CampusSelect, EmptyState, MetricCard, Panel, Segmented, Toolbar } from '../components/ui';
 import { FeatureSwitches } from '../components/FeatureSwitches';
@@ -15,11 +21,18 @@ interface Props {
   onCampusChange: (value: string) => void;
 }
 
-export function OverviewPage({ data, dateRange, campusId, onDateRangeChange, onCampusChange }: Props) {
+export function OverviewPage({
+  data,
+  dateRange,
+  campusId,
+  onDateRangeChange,
+  onCampusChange,
+}: Props) {
   const window = useMemo(() => getDateWindow(dateRange), [dateRange]);
   const scoped = useMemo(() => scopeData(data, campusId), [data, campusId]);
   const metrics = useMemo(() => makeOverviewMetrics(scoped, window), [scoped, window]);
   const funnel = useMemo(() => makeFunnel(scoped, window), [scoped, window]);
+  const getStarted = useMemo(() => makeOnboardingFunnel(scoped, window), [scoped, window]);
   const retention = useMemo(() => makeRetention(scoped.users, scoped.events), [scoped]);
 
   return (
@@ -55,6 +68,22 @@ export function OverviewPage({ data, dateRange, campusId, onDateRangeChange, onC
         <FeatureSwitches />
         <Panel title="Activation Funnel" kicker="Signed up to rental completed">
           <Funnel rows={funnel} />
+        </Panel>
+        <Panel title="Get Started Funnel" kicker="The steps after signup, answered vs skipped">
+          {getStarted.rows[0]?.value ? (
+            <>
+              <Funnel rows={getStarted.rows} />
+              <p className="muted">
+                How she will use Loane — rent {getStarted.intents.rent}, lend{' '}
+                {getStarted.intents.lend}, both {getStarted.intents.both}
+              </p>
+            </>
+          ) : (
+            <EmptyState
+              title="Nobody yet"
+              body="Students who sign up from this version of the app answer these after creating their account."
+            />
+          )}
         </Panel>
         <Panel title="Retention" kicker="Signup cohorts returning later">
           {retention.length > 0 ? (
