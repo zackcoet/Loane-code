@@ -25,6 +25,7 @@ import {
 import { SkeletonGrid } from '../../src/components/Skeleton';
 import {
   fonts,
+  hasAnySize,
   matchingOccasions,
   OCCASIONS,
   OCCASION_LABELS,
@@ -269,6 +270,25 @@ export default function Discover() {
         style={styles.chipScroll}
         contentContainerStyle={styles.chipRow}
       >
+        {/* One tap instead of Filter → My size. Only once she has a size
+            on her profile; without one the Filter sheet offers "Add my
+            sizes", which is the better place to explain it. */}
+        {hasAnySize(mySizes) ? (
+          <Chip
+            label="My size"
+            active={filters.mySize}
+            onPress={() => {
+              const next = !filters.mySize;
+              setFilters({ ...filters, mySize: next });
+              if (next) {
+                logEvent('filter_used', {
+                  surface: 'discover',
+                  meta: { mySize: true, from: 'chip' },
+                });
+              }
+            }}
+          />
+        ) : null}
         {OCCASIONS.map((value) => (
           <Chip
             key={value}
