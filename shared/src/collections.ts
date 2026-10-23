@@ -15,6 +15,7 @@ export const COLLECTIONS = {
   likes: 'likes',
   postSaves: 'postSaves',
   comments: 'comments',
+  commentLikes: 'commentLikes',
   saves: 'saves',
   bookings: 'bookings',
   reviews: 'reviews',
@@ -133,6 +134,7 @@ export const paths = {
 export const ids = {
   like: (uid: string, postId: string) => `${uid}_${postId}`,
   postSave: (uid: string, postId: string) => `${uid}_${postId}`,
+  commentLike: (uid: string, commentId: string) => `${uid}_${commentId}`,
   save: (uid: string, listingId: string) => `${uid}_${listingId}`,
   follow: (followerUid: string, followingUid: string) => `${followerUid}_${followingUid}`,
   /** Sorted so the same two people always share one thread. */

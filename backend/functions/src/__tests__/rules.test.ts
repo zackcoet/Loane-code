@@ -764,6 +764,46 @@ describe('posts', () => {
   });
 });
 
+describe('comment likes', () => {
+  it('a heart on a comment cannot be written by the app', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'commentLikes', `${ELLA}_comment-1`), {
+        uid: ELLA,
+        commentId: 'comment-1',
+        postId: 'post-1',
+        commentAuthorUid: MADDIE,
+        campusId: CAMPUS,
+      }),
+    );
+  });
+
+  it('nor deleted by the app, even her own', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'commentLikes', `${ELLA}_comment-1`), {
+        uid: ELLA,
+        commentId: 'comment-1',
+        postId: 'post-1',
+        commentAuthorUid: MADDIE,
+        campusId: CAMPUS,
+      });
+    });
+    await assertFails(deleteDoc(doc(asElla(), 'commentLikes', `${ELLA}_comment-1`)));
+  });
+
+  it('is readable by any signed-in student, like a post like', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'commentLikes', `${ELLA}_comment-1`), {
+        uid: ELLA,
+        commentId: 'comment-1',
+        postId: 'post-1',
+        commentAuthorUid: MADDIE,
+        campusId: CAMPUS,
+      });
+    });
+    await assertSucceeds(getDoc(doc(asMaddie(), 'commentLikes', `${ELLA}_comment-1`)));
+  });
+});
+
 describe('post likes and saves', () => {
   it('a like cannot be written by the app', async () => {
     await assertFails(

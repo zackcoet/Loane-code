@@ -32,6 +32,7 @@ does, with admin credentials, after its own checks.
 | `listings` | Signed-in | Her own, checked field by field; counters/booked dates never | listings; listing availability |
 | `posts` | Signed-in | Her own; counters never | posts; post counters |
 | `comments` | Signed-in | Functions only | comments |
+| `commentLikes` | Signed-in | Functions only | comment likes |
 | `follows`, `likes`, `postSaves`, `saves` | Signed-in | Functions only | follows; saves; post likes and saves |
 | `bookings` | The two people in it, admins | Functions only | bookings; bookings, in detail; security review |
 | `reviews` | Signed-in (hidden ones admins only) | Functions only | reviews |

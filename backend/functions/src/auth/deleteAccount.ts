@@ -87,6 +87,7 @@ export const deleteMyAccount = onCall<void, Promise<{ ok: true }>>(
       listings: await removeListings(uid),
       comments: await removeComments(uid),
       likes: await removeLikes(uid),
+      commentLikes: await deleteWhere(COLLECTIONS.commentLikes, 'uid', uid, commentLikeCounter),
       postSaves: await deleteWhere(COLLECTIONS.postSaves, 'uid', uid, postSaveCounter),
       saves: await deleteWhere(COLLECTIONS.saves, 'uid', uid, listingSaveCounter),
       follows: await removeFollows(uid),
@@ -234,6 +235,14 @@ function postSaveCounter(doc: QueryDocumentSnapshot) {
   const postId = (doc.data() as { postId?: string }).postId;
   return postId
     ? { ref: db().collection(COLLECTIONS.posts).doc(postId), patch: minusOne('stats.saveCount') }
+    : null;
+}
+
+/** Her hearts on comments go, taking one off each comment's count. */
+function commentLikeCounter(doc: QueryDocumentSnapshot) {
+  const commentId = (doc.data() as { commentId?: string }).commentId;
+  return commentId
+    ? { ref: db().collection(COLLECTIONS.comments).doc(commentId), patch: minusOne('likeCount') }
     : null;
 }
 

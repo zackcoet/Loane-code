@@ -1,13 +1,22 @@
 import { type CallableRequest } from 'firebase-functions/v2/https';
 import { onCall } from '../lib/callable';
-import { COLLECTIONS, LIMITS, type Comment, type Post, type UserSummary } from '@loane/shared';
+import {
+  COLLECTIONS,
+  extractMentions,
+  LIMITS,
+  type Comment,
+  type NotificationType,
+  type Post,
+  type User,
+  type UserSummary,
+} from '@loane/shared';
 import { notify } from '../bookings/transitions';
 import { db, now, FieldValue } from '../lib/admin';
 import { rateLimit } from '../lib/rateLimit';
 import { failed, invalidArgument, notFound, permissionDenied } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
 import { queueAutoFlag } from '../moderation/autoFlag';
-import { assertNotBlocked } from '../moderation/block';
+import { assertNotBlocked, isBlockedEitherWay } from '../moderation/block';
 
 /**
  * Comments on a look.
@@ -80,6 +89,7 @@ export const addComment = onCall<AddInput, Promise<{ commentId: string }>>(
     // A reply has to answer a real, still-visible, top-level comment on
     // THIS post. The last check is what keeps the thread one level
     // deep: you cannot reply to a reply.
+    let parentAuthorUid: string | null = null;
     if (parentCommentId) {
       const parentSnap = await db().collection(COLLECTIONS.comments).doc(parentCommentId).get();
       if (!parentSnap.exists) throw notFound('That comment is gone.');
@@ -92,6 +102,7 @@ export const addComment = onCall<AddInput, Promise<{ commentId: string }>>(
       // Replying is talking TO the commenter, so it is refused between
       // blocked people even on a third person's look.
       if (parent.authorUid !== user.uid) await assertNotBlocked(user.uid, parent.authorUid);
+      parentAuthorUid = parent.authorUid;
     }
 
     const ref = db().collection(COLLECTIONS.comments).doc();
@@ -123,29 +134,86 @@ export const addComment = onCall<AddInput, Promise<{ commentId: string }>>(
     });
     await batch.commit();
 
-    /*
-      Never to herself: replying under your own look should not alert
-      you about it. After the commit, so a failed alert cannot lose the
-      comment.
-    */
-    if (post.authorUid !== user.uid) {
-      const alert = db().batch();
-      notify(alert, {
-        uid: post.authorUid,
-        type: 'post_commented',
-        title: `@${user.username} commented on your look`,
-        // The comment itself, trimmed — the whole point of a comment
-        // alert is knowing whether it needs an answer.
-        body: body.length > 80 ? `${body.slice(0, 77)}…` : body,
-        postId,
-        actor: { uid: user.uid, username: user.username, photoUrl: user.photoUrl },
-      });
-      await alert.commit();
-    }
+    // After the commit, so a failed alert cannot lose the comment.
+    await sendCommentAlerts({
+      user,
+      post,
+      postId,
+      body,
+      parentAuthorUid: parentAuthorUid,
+    });
 
     return { commentId: ref.id };
   },
 );
+
+/**
+ * Who hears about a new comment, and how. One alert per person at most,
+ * most specific reason wins:
+ *
+ *   1. "replied to your comment" — the person she answered.
+ *   2. "commented on your look"  — the look's author.
+ *   3. "mentioned you"           — anyone she @tagged.
+ *
+ * So the author of a look who is also the person being answered gets
+ * one alert (the reply), not two. Never to herself, and never to anyone
+ * blocked either way — a mention must not become a way round a block.
+ * Mentions only reach people on the look's campus, because that is
+ * everyone who can see it.
+ */
+async function sendCommentAlerts(params: {
+  user: User;
+  post: Post;
+  postId: string;
+  body: string;
+  parentAuthorUid: string | null;
+}): Promise<void> {
+  const { user, post, postId, body, parentAuthorUid } = params;
+  const recipients = new Map<string, { type: NotificationType; title: string }>();
+  const add = (uid: string, type: NotificationType, title: string) => {
+    if (uid === user.uid || recipients.has(uid)) return;
+    recipients.set(uid, { type, title });
+  };
+
+  if (parentAuthorUid) {
+    add(parentAuthorUid, 'comment_replied', `@${user.username} replied to your comment`);
+  }
+  add(post.authorUid, 'post_commented', `@${user.username} commented on your look`);
+
+  const handles = extractMentions(body).filter((h) => h !== user.username);
+  if (handles.length > 0) {
+    const snap = await db()
+      .collection(COLLECTIONS.users)
+      .where('campusId', '==', post.campusId)
+      .where('username', 'in', handles)
+      .get();
+    for (const doc of snap.docs) {
+      const mentioned = doc.data() as User;
+      if (mentioned.status !== 'active') continue;
+      // The look's author and the person answered already get a more
+      // specific alert; checked here so they are not looked up twice.
+      if (recipients.has(mentioned.uid) || mentioned.uid === user.uid) continue;
+      if (await isBlockedEitherWay(user.uid, mentioned.uid)) continue;
+      add(mentioned.uid, 'mentioned', `@${user.username} mentioned you in a comment`);
+    }
+  }
+
+  if (recipients.size === 0) return;
+  const batch = db().batch();
+  for (const [uid, { type, title }] of recipients) {
+    notify(batch, {
+      uid,
+      type,
+      title,
+      // The comment itself, trimmed — the whole point of a comment
+      // alert is knowing whether it needs an answer.
+      body: body.length > 80 ? `${body.slice(0, 77)}…` : body,
+      postId,
+      actor: { uid: user.uid, username: user.username, photoUrl: user.photoUrl },
+    });
+  }
+  await batch.commit();
+}
 
 export const deleteComment = onCall<DeleteInput, Promise<{ ok: true }>>(
   { region: 'us-central1' },

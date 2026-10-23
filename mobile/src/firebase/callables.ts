@@ -240,6 +240,15 @@ export const deleteComment = httpsCallable<{ commentId: string }, { ok: true }>(
   functions,
   'deleteComment',
 );
+/** Hearts on a comment. Server-side because they move a visible count. */
+export const likeComment = httpsCallable<{ commentId: string }, { on: boolean }>(
+  functions,
+  'likeComment',
+);
+export const unlikeComment = httpsCallable<{ commentId: string }, { on: boolean }>(
+  functions,
+  'unlikeComment',
+);
 
 /** Sends a look into one or more chats. */
 export const sharePost = httpsCallable<

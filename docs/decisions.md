@@ -1555,3 +1555,31 @@ A preview logs nothing. It is not a view of the page, and counting it as
 `post_view` / `listing_view` would inflate numbers the For You ranking
 reads. If we want to measure previews, they get their own event type,
 which means a rules change (see the suggestion under E in NORTH_STAR.md).
+
+## 2026-10-23 — Comment hearts, @mentions, and one alert per person (autopilot run 21)
+
+**Hearts on comments** are their own collection, `commentLikes/{uid}_{commentId}`,
+written only by `likeComment` / `unlikeComment` — same shape and reasons
+as post likes: the id makes a double heart impossible and the count on
+the comment cannot be faked from the app. Readable by any signed-in
+student, like post likes. Comments from before this have no `likeCount`;
+it reads as 0. Deleting an account takes her hearts back off; the data
+export lists them as `likedComments`. No event is logged for a comment
+heart yet — that needs a new event type in the rules.
+
+**@mentions** are worked out on the server from the comment text
+(`shared/src/mentions.ts`, the same code the phone uses to highlight
+them), capped at 5 people per comment, and only reach active students
+on the look's campus who have not blocked (or been blocked by) her.
+Usernames are only ever matched, never invented, so a typo alerts nobody.
+
+**One alert per person, most specific wins:** the person she answered
+gets "replied to your comment", the look's author gets "commented on
+your look", anyone she tagged gets "mentioned you". The author who is
+also the person answered gets one alert, not two.
+
+**Replying to a reply** files it under the top comment (threads stay one
+level, which the server enforces) and starts the box with that girl's
+@name, as Instagram does. Before this, tapping Reply on a reply sent a
+request the server refused, so she saw an error.
+

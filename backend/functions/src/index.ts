@@ -114,6 +114,7 @@ export { openConversation } from './messaging/openConversation';
 export { sharePost } from './messaging/sharePost';
 export { shareListing } from './messaging/shareListing';
 export { addComment, deleteComment } from './posts/comments';
+export { likeComment, unlikeComment } from './social/commentLikes';
 export { writeReview, editReview } from './reviews/writeReview';
 export { submitReport } from './moderation/report';
 export { submitSupportRequest } from './support/contact';

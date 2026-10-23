@@ -587,6 +587,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Hearts on comments. Public like post likes (a heart is not a
+    // secret), and written only by functions because each one moves the
+    // count on the comment.
+    match /commentLikes/{likeId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
     // -----------------------------------------------------------------
     // Social edges — follows, likes, saves
     //

@@ -251,4 +251,32 @@ export interface Comment extends BaseDoc, CampusScoped {
   status: 'active' | 'removed' | 'suspended';
   /** Set when an admin takes it down. */
   suspendedReason: string | null;
+
+  /**
+   * How many hearts it has. Written only by functions.
+   *
+   * Optional because comments written before comment likes existed do
+   * not have it — read it as 0 when it is missing.
+   */
+  likeCount?: number;
+}
+
+/**
+ * `commentLikes/{uid}_{commentId}`
+ *
+ * A heart on a comment. Its own collection rather than a list on the
+ * comment so the id makes a double like impossible — the same reason
+ * post likes work this way. Written only by functions, because it moves
+ * a visible count.
+ */
+export interface CommentLike {
+  id: string;
+  uid: string;
+  commentId: string;
+  /** So her app can fetch which comments on one look she has hearted. */
+  postId: string;
+  /** Denormalized so the alert reaches the right person without a read. */
+  commentAuthorUid: string;
+  campusId: string;
+  createdAt: Timestampish;
 }

@@ -25,10 +25,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
-import { COLLECTIONS, LIMITS, PAGE_SIZES, type Comment } from '@loane/shared';
+import { COLLECTIONS, LIMITS, PAGE_SIZES, type Comment, type CommentLike } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
-import { addComment, deleteComment } from '../firebase/callables';
+import { addComment, deleteComment, likeComment, unlikeComment } from '../firebase/callables';
 import { logEvent } from '../analytics/events';
 import { callableErrorMessage } from '../firebase/errors';
 
@@ -98,7 +98,80 @@ export function useComments(postId: string | undefined) {
     setAttempt((n) => n + 1);
   }, []);
 
+  /**
+   * Which comments on this look she has hearted, live from the server.
+   * One small query per open sheet: her hearts on this one look.
+   */
+  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+  /**
+   * Taps not yet confirmed, so the heart fills the moment she taps it.
+   * Keyed by comment id: true = she just liked it, false = unliked.
+   */
+  const [pendingLikes, setPendingLikes] = useState<Map<string, boolean>>(new Map());
+
+  useEffect(() => {
+    if (!postId || !profile) {
+      setLikedIds(new Set());
+      return;
+    }
+    // Two == filters and no sort — Firestore serves this without a
+    // composite index.
+    return onSnapshot(
+      query(
+        collection(db, COLLECTIONS.commentLikes),
+        where('uid', '==', profile.uid),
+        where('postId', '==', postId),
+      ),
+      (snap) => {
+        setLikedIds(new Set(snap.docs.map((d) => (d.data() as CommentLike).commentId)));
+      },
+      // Hearts failing to load is not worth an error screen; the
+      // comments still read fine with every heart empty.
+      () => setLikedIds(new Set()),
+    );
+  }, [postId, profile]);
+
   const comments = useMemo(() => all.filter((c) => c.status === 'active'), [all]);
+
+  /** Has she hearted this comment (counting a tap still on its way)? */
+  const isLiked = useCallback(
+    (commentId: string) => pendingLikes.get(commentId) ?? likedIds.has(commentId),
+    [pendingLikes, likedIds],
+  );
+
+  /**
+   * The count to show: the server's, nudged by a tap still on its way so
+   * the number moves with the heart instead of a second later.
+   */
+  const likeCountOf = useCallback(
+    (comment: Comment) => {
+      const base = comment.likeCount ?? 0;
+      const pending = pendingLikes.get(comment.id);
+      if (pending === undefined || pending === likedIds.has(comment.id)) return base;
+      return Math.max(0, base + (pending ? 1 : -1));
+    },
+    [pendingLikes, likedIds],
+  );
+
+  const toggleLike = useCallback(
+    async (comment: Comment) => {
+      const next = !isLiked(comment.id);
+      setPendingLikes((m) => new Map(m).set(comment.id, next));
+      try {
+        await (next ? likeComment : unlikeComment)({ commentId: comment.id });
+      } catch (err) {
+        throw new Error(callableErrorMessage(err, 'Could not do that just now.'));
+      } finally {
+        // The live listeners now carry the truth either way.
+        setPendingLikes((m) => {
+          const copy = new Map(m);
+          copy.delete(comment.id);
+          return copy;
+        });
+      }
+    },
+    [isLiked],
+  );
 
   /**
    * Comments in reading order: each top-level comment followed by its
@@ -203,6 +276,9 @@ export function useComments(postId: string | undefined) {
     add,
     remove,
     canDelete,
+    isLiked,
+    likeCountOf,
+    toggleLike,
     error,
     retry,
     hasMore,

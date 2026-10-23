@@ -23,6 +23,9 @@ export const SOCIAL_NOTIFICATION_TYPES: readonly NotificationType[] = [
   'new_follower',
   'post_liked',
   'post_commented',
+  'comment_liked',
+  'comment_replied',
+  'mentioned',
   'new_message',
 ];
 
