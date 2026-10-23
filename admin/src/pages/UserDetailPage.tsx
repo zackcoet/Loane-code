@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { COLLECTIONS, CATEGORY_LABELS, type AppEvent, type User, type UserPrivate } from '@loane/shared';
+import {
+  COLLECTIONS,
+  CATEGORY_LABELS,
+  type AppEvent,
+  type User,
+  type UserPrivate,
+} from '@loane/shared';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import type { AdminData } from '../data/adminData';
@@ -11,6 +17,7 @@ import {
   adminErrorMessage,
   grantTryOns,
   adminExportUserData,
+  adminDeleteAccount,
   suspendUser,
   unsuspendUser,
 } from '../data/adminActions';
@@ -23,7 +30,8 @@ interface Props {
   onBack: () => void;
 }
 
-type Dialog = 'suspend' | 'unsuspend' | 'note' | 'grantTryOns' | 'exportData' | null;
+type Dialog =
+  'suspend' | 'unsuspend' | 'note' | 'grantTryOns' | 'exportData' | 'deleteAccount' | null;
 
 export function UserDetailPage({ user, data, onBack }: Props) {
   const listings = data.listings.filter((listing) => listing.ownerUid === user.uid);
@@ -54,8 +62,11 @@ export function UserDetailPage({ user, data, onBack }: Props) {
   /** How many extra try-ons this grant gives. Five is another full free run. */
   const [grantCount, setGrantCount] = useState(5);
   const [error, setError] = useState<string | null>(null);
+  /** Her @username, typed again before an account is erased. */
+  const [confirmName, setConfirmName] = useState('');
 
   const suspended = user.status === 'suspended';
+  const deleted = user.status === 'deactivated';
   // Two rules the panel should not even offer, never mind enforce.
   const protectedAccount = user.role === 'admin';
 
@@ -69,7 +80,13 @@ export function UserDetailPage({ user, data, onBack }: Props) {
       if (dialog === 'grantTryOns') await grantTryOns({ uid: user.uid, count: grantCount, reason });
       if (dialog === 'exportData') {
         const { data: exported } = await adminExportUserData({ uid: user.uid, reason });
-        downloadJson(`loane-data-${user.username}-${new Date().toISOString().slice(0, 10)}.json`, exported);
+        downloadJson(
+          `loane-data-${user.username}-${new Date().toISOString().slice(0, 10)}.json`,
+          exported,
+        );
+      }
+      if (dialog === 'deleteAccount') {
+        await adminDeleteAccount({ uid: user.uid, reason, confirmUsername: confirmName });
       }
       setDialog(null);
     } catch (err) {
@@ -90,8 +107,8 @@ export function UserDetailPage({ user, data, onBack }: Props) {
         ) : null}
         {protectedAccount ? (
           <p className="cell-note">
-            This is an admin account. Admins cannot be suspended from here — remove the admin
-            claim first.
+            This is an admin account. Admins cannot be suspended from here — remove the admin claim
+            first.
           </p>
         ) : null}
         <div className="row-actions" style={{ marginTop: 12 }}>
@@ -106,6 +123,18 @@ export function UserDetailPage({ user, data, onBack }: Props) {
           {/* For a privacy request: everything we hold about her, as one
               file. Audited. Deleting is her own "Delete my account". */}
           <button onClick={() => setDialog('exportData')}>Export her data</button>
+          {/* For a privacy request she can't do herself. Same steps as her
+              own "Delete my account"; she must be typed in by @username. */}
+          <button
+            disabled={protectedAccount || deleted}
+            title={deleted ? 'This account is already deleted.' : undefined}
+            onClick={() => {
+              setConfirmName('');
+              setDialog('deleteAccount');
+            }}
+          >
+            Delete this account
+          </button>
         </div>
         {user.stats.cancellations > 0 ? (
           <p className="cell-note" style={{ marginTop: 12 }}>
@@ -141,8 +170,16 @@ export function UserDetailPage({ user, data, onBack }: Props) {
       <section className="metric-grid four">
         <MetricCard label="Listings" value={listings.length} detail="Closet items loaded" />
         <MetricCard label="Posts" value={posts.length} detail="Looks shared" />
-        <MetricCard label="As lender" value={user.stats.rentalsAsLender} detail="Completed rentals" />
-        <MetricCard label="As renter" value={user.stats.rentalsAsRenter} detail="Completed rentals" />
+        <MetricCard
+          label="As lender"
+          value={user.stats.rentalsAsLender}
+          detail="Completed rentals"
+        />
+        <MetricCard
+          label="As renter"
+          value={user.stats.rentalsAsRenter}
+          detail="Completed rentals"
+        />
       </section>
 
       <section className="two-column">
@@ -188,22 +225,26 @@ export function UserDetailPage({ user, data, onBack }: Props) {
             ? `Suspend @${user.username}?`
             : dialog === 'grantTryOns'
               ? `Give @${user.username} free try-ons?`
-            : dialog === 'exportData'
-              ? `Export everything about @${user.username}?`
-            : dialog === 'unsuspend'
-              ? `Lift the suspension on @${user.username}?`
-              : 'Add a private note'
+              : dialog === 'exportData'
+                ? `Export everything about @${user.username}?`
+                : dialog === 'deleteAccount'
+                  ? `Delete @${user.username}'s account?`
+                  : dialog === 'unsuspend'
+                    ? `Lift the suspension on @${user.username}?`
+                    : 'Add a private note'
         }
         description={
           dialog === 'suspend'
             ? 'She can still browse Loane, but cannot post, list, rent or message. She is told why and given an address to appeal to.'
             : dialog === 'exportData'
               ? 'Downloads one file with her profile, pieces, looks, rentals, chats and activity. Only for a privacy request — say which one.'
-            : dialog === 'grantTryOns'
-              ? `Adds ${grantCount} try-ons on top of her free five. Each one costs us about $0.08 to generate, unless it comes from the cache.`
-            : dialog === 'unsuspend'
-              ? 'She gets full access back and is told so.'
-              : 'Only admins can read this. She never sees it.'
+              : dialog === 'deleteAccount'
+                ? 'Cannot be undone. Exactly what her own "Delete my account" does: her looks, pieces, comments, likes, follows, photos and login go; past rentals, reviews she wrote and chats stay under "Deleted account". Refused while she has a rental going. Export her data first if she asked for a copy.'
+                : dialog === 'grantTryOns'
+                  ? `Adds ${grantCount} try-ons on top of her free five. Each one costs us about $0.08 to generate, unless it comes from the cache.`
+                  : dialog === 'unsuspend'
+                    ? 'She gets full access back and is told so.'
+                    : 'Only admins can read this. She never sees it.'
         }
         confirmLabel={
           dialog === 'suspend'
@@ -212,9 +253,11 @@ export function UserDetailPage({ user, data, onBack }: Props) {
               ? 'Lift it'
               : dialog === 'grantTryOns'
                 ? `Give ${grantCount}`
-              : dialog === 'exportData'
-                ? 'Download'
-                : 'Save note'
+                : dialog === 'exportData'
+                  ? 'Download'
+                  : dialog === 'deleteAccount'
+                    ? 'Delete for good'
+                    : 'Save note'
         }
         danger={error ?? undefined}
         busy={busy}
@@ -224,18 +267,27 @@ export function UserDetailPage({ user, data, onBack }: Props) {
           setError(null);
         }}
       >
-          dialog === 'grantTryOns' ? (
-            <label className="field">
-              <span>How many</span>
-              <input
-                type="number"
-                min={1}
-                max={100}
-                value={grantCount}
-                onChange={(e) => setGrantCount(Number(e.target.value))}
-              />
-            </label>
-          ) : undefined
+        {dialog === 'grantTryOns' ? (
+          <label className="field">
+            <span>How many</span>
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={grantCount}
+              onChange={(e) => setGrantCount(Number(e.target.value))}
+            />
+          </label>
+        ) : dialog === 'deleteAccount' ? (
+          <label className="field">
+            <span>Type @{user.username} to confirm</span>
+            <input
+              value={confirmName}
+              onChange={(e) => setConfirmName(e.target.value)}
+              autoComplete="off"
+            />
+          </label>
+        ) : undefined}
       </ActionDialog>
     </>
   );

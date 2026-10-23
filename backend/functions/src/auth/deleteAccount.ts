@@ -80,99 +80,120 @@ export const deleteMyAccount = onCall<void, Promise<{ ok: true }>>(
       throw failed('Admin accounts cannot be deleted from the app. Ask the team.');
     }
 
-    await refuseIfRentalsOpen(uid);
-
-    const removed = {
-      posts: await removePosts(uid),
-      listings: await removeListings(uid),
-      comments: await removeComments(uid),
-      likes: await removeLikes(uid),
-      commentLikes: await deleteWhere(COLLECTIONS.commentLikes, 'uid', uid, commentLikeCounter),
-      postSaves: await deleteWhere(COLLECTIONS.postSaves, 'uid', uid, postSaveCounter),
-      saves: await deleteWhere(COLLECTIONS.saves, 'uid', uid, listingSaveCounter),
-      follows: await removeFollows(uid),
-      blocks: await removeBlocks(uid),
-      reviews: await anonymizeReviews(uid, user.campusId),
-    };
-
-    // Her private subcollections: alerts, blocked, muted, dismissed
-    // suggestions, and the settings doc holding her email and phone.
-    // Deleting settings fires syncPhoneHash, which drops her from
-    // contact matching.
-    for (const sub of [
-      SUBCOLLECTIONS.userNotifications,
-      SUBCOLLECTIONS.userMuted,
-      SUBCOLLECTIONS.userDismissedSuggestions,
-      SUBCOLLECTIONS.userPrivate,
-    ]) {
-      await db().recursiveDelete(userRef.collection(sub));
-    }
-    await db().collection(COLLECTIONS.messageQuotas).doc(uid).delete();
-    await db().collection(COLLECTIONS.listingQuotas).doc(uid).delete();
-
-    // Try-on documents. The files go in the storage sweep below.
-    await deleteWhere(COLLECTIONS.tryOns, 'uid', uid);
-
-    // Files that are only hers. Listing photos are handled per listing in
-    // removeListings, because a rented piece's photo is part of the
-    // renter's history. Chat photos stay with the chat.
-    for (const folder of ['profile', 'posts', 'tryon']) {
-      await deleteStorageFolder(`users/${uid}/${folder}/`);
-    }
-
-    // The shell. This write is what renames her everywhere else.
-    await userRef.update({
-      username: deletedUsername(uid),
-      firstName: '',
-      displayName: DELETED_ACCOUNT_NAME,
-      bio: '',
-      photoUrl: null,
-      isVerified: false,
-      showSizes: false,
-      sizes: { tops: null, bottoms: null, dresses: null, shoe: null },
-      pushTokens: [],
-      isFoundingCloset: false,
-      status: 'deactivated',
-      deletedAt: now(),
-      lastActiveAt: null,
-      'stats.followerCount': 0,
-      'stats.followingCount': 0,
-      'stats.listingCount': 0,
-      'stats.postCount': 0,
-      updatedAt: now(),
-    });
-
-    // She no longer counts as a student here. The welcome screen's
-    // "girls at your school" number reads this, and a count that only
-    // ever goes up would slowly turn into a claim we cannot back.
-    // Best-effort: a missing campus document must not stop a deletion.
-    if (user.status !== 'deactivated') {
-      await db()
-        .collection(COLLECTIONS.campuses)
-        .doc(user.campusId)
-        .update({ 'stats.userCount': FieldValue.increment(-1) })
-        .catch((err) => logger.warn('Campus count not lowered', { uid, err: String(err) }));
-    }
-
-    /*
-      The username lock is KEPT, still pointing at her uid. Releasing it
-      would let somebody else register "@ellapetrick" the next day and be
-      mistaken for her by everyone who knew her. Admins can free it by
-      hand if she ever asks. See docs/decisions.md.
-    */
-
-    // Last: the login. Once this is gone she cannot retry, so everything
-    // above must already be finished.
-    try {
-      await auth().deleteUser(uid);
-    } catch (err) {
-      if ((err as { code?: string }).code !== 'auth/user-not-found') throw err;
-    }
-
-    logger.info('Account deleted', { uid, ...removed });
+    await eraseAccount(uid, user);
+    logger.info('Account deleted', { uid, by: 'self' });
     return { ok: true };
   },
 );
+
+/**
+ * Everything "Delete my account" does once the caller has been checked.
+ * Shared by her own button and an admin answering a privacy request, so
+ * the two can never drift apart. `withShell` lets the caller add a
+ * write (the admin audit row) to the batch that makes her a shell.
+ */
+export async function eraseAccount(
+  uid: string,
+  user: User,
+  withShell?: (batch: WriteBatch) => void,
+): Promise<void> {
+  const userRef = db().collection(COLLECTIONS.users).doc(uid);
+  await refuseIfRentalsOpen(uid);
+
+  const removed = {
+    posts: await removePosts(uid),
+    listings: await removeListings(uid),
+    comments: await removeComments(uid),
+    likes: await removeLikes(uid),
+    commentLikes: await deleteWhere(COLLECTIONS.commentLikes, 'uid', uid, commentLikeCounter),
+    postSaves: await deleteWhere(COLLECTIONS.postSaves, 'uid', uid, postSaveCounter),
+    saves: await deleteWhere(COLLECTIONS.saves, 'uid', uid, listingSaveCounter),
+    follows: await removeFollows(uid),
+    blocks: await removeBlocks(uid),
+    reviews: await anonymizeReviews(uid, user.campusId),
+  };
+
+  // Her private subcollections: alerts, blocked, muted, dismissed
+  // suggestions, and the settings doc holding her email and phone.
+  // Deleting settings fires syncPhoneHash, which drops her from
+  // contact matching.
+  for (const sub of [
+    SUBCOLLECTIONS.userNotifications,
+    SUBCOLLECTIONS.userMuted,
+    SUBCOLLECTIONS.userDismissedSuggestions,
+    SUBCOLLECTIONS.userPrivate,
+  ]) {
+    await db().recursiveDelete(userRef.collection(sub));
+  }
+  await db().collection(COLLECTIONS.messageQuotas).doc(uid).delete();
+  await db().collection(COLLECTIONS.listingQuotas).doc(uid).delete();
+
+  // Try-on documents. The files go in the storage sweep below.
+  await deleteWhere(COLLECTIONS.tryOns, 'uid', uid);
+
+  // Files that are only hers. Listing photos are handled per listing in
+  // removeListings, because a rented piece's photo is part of the
+  // renter's history. Chat photos stay with the chat.
+  for (const folder of ['profile', 'posts', 'tryon']) {
+    await deleteStorageFolder(`users/${uid}/${folder}/`);
+  }
+
+  // The shell. This write is what renames her everywhere else.
+  const shell = db().batch();
+  shell.update(userRef, {
+    username: deletedUsername(uid),
+    firstName: '',
+    displayName: DELETED_ACCOUNT_NAME,
+    bio: '',
+    photoUrl: null,
+    isVerified: false,
+    showSizes: false,
+    sizes: { tops: null, bottoms: null, dresses: null, shoe: null },
+    pushTokens: [],
+    isFoundingCloset: false,
+    status: 'deactivated',
+    deletedAt: now(),
+    lastActiveAt: null,
+    'stats.followerCount': 0,
+    'stats.followingCount': 0,
+    'stats.listingCount': 0,
+    'stats.postCount': 0,
+    updatedAt: now(),
+  });
+  // An admin deletion's audit row commits with the shell, so the one
+  // write that makes her "Deleted account" can never happen unrecorded.
+  withShell?.(shell);
+  await shell.commit();
+
+  // She no longer counts as a student here. The welcome screen's
+  // "girls at your school" number reads this, and a count that only
+  // ever goes up would slowly turn into a claim we cannot back.
+  // Best-effort: a missing campus document must not stop a deletion.
+  if (user.status !== 'deactivated') {
+    await db()
+      .collection(COLLECTIONS.campuses)
+      .doc(user.campusId)
+      .update({ 'stats.userCount': FieldValue.increment(-1) })
+      .catch((err) => logger.warn('Campus count not lowered', { uid, err: String(err) }));
+  }
+
+  /*
+    The username lock is KEPT, still pointing at her uid. Releasing it
+    would let somebody else register "@ellapetrick" the next day and be
+    mistaken for her by everyone who knew her. Admins can free it by
+    hand if she ever asks. See docs/decisions.md.
+  */
+
+  // Last: the login. Once this is gone she cannot retry, so everything
+  // above must already be finished.
+  try {
+    await auth().deleteUser(uid);
+  } catch (err) {
+    if ((err as { code?: string }).code !== 'auth/user-not-found') throw err;
+  }
+
+  logger.info('Account erased', { uid, ...removed });
+}
 
 // ---------------------------------------------------------------------------
 

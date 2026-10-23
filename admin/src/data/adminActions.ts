@@ -80,6 +80,15 @@ export const adminExportUserData = call<{ uid: string; reason: string }, Record<
   'adminExportUserData',
 );
 
+/**
+ * Deletes a student's account for a privacy request. The same steps as
+ * her own "Delete my account"; the server checks the typed @username.
+ */
+export const adminDeleteAccount = call<
+  { uid: string; reason: string; confirmUsername: string },
+  { ok: true }
+>('adminDeleteAccount');
+
 /** One switch on the switchboard (`config/features`). Audited server-side. */
 export const setFeatureFlag = call<
   { flag: FeatureFlagKey; value: boolean; reason: string },

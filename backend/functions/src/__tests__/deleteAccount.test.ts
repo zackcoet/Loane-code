@@ -23,6 +23,8 @@ const HARPER = 'uid-harper-delete';
 let app: App;
 let db: Firestore;
 let run: (req: CallableRequest<void>) => Promise<{ ok: true }>;
+let runAdmin: (req: CallableRequest<unknown>) => Promise<{ ok: true }>;
+const ADMIN = 'uid-admin-delete';
 
 function request(uid: string, authAgeSeconds = 10): CallableRequest<void> {
   return {
@@ -71,6 +73,9 @@ beforeAll(async () => {
   db = getFirestore(app);
   const mod = await import('../auth/deleteAccount');
   run = (req) => mod.deleteMyAccount.run(req);
+  const adminMod = await import('../admin/deleteUserAccount');
+  runAdmin = (req) =>
+    adminMod.adminDeleteAccount.run(req as Parameters<typeof adminMod.adminDeleteAccount.run>[0]);
 });
 
 afterAll(async () => {
@@ -87,6 +92,7 @@ beforeEach(async () => {
     COLLECTIONS.bookings,
     COLLECTIONS.reviews,
     COLLECTIONS.comments,
+    COLLECTIONS.adminActions,
   ]) {
     await db.recursiveDelete(db.collection(c));
   }
@@ -195,5 +201,73 @@ describe('deleteMyAccount', () => {
     await db.doc(`likes/${ELLA}_gone`).set({ uid: ELLA, postId: 'post-that-is-gone' });
     expect(await attempt(request(ELLA))).toBe('ok');
     expect((await db.doc('posts/post-that-is-gone').get()).exists).toBe(false);
+  });
+});
+
+describe('adminDeleteAccount', () => {
+  function asAdmin(uid: string, isAdmin: boolean, data: Record<string, unknown>) {
+    return {
+      auth: { uid, token: { admin: isAdmin, email: 'admin@joinloane.com' } },
+      data,
+    } as unknown as CallableRequest<unknown>;
+  }
+  async function attemptAdmin(req: CallableRequest<unknown>): Promise<string> {
+    try {
+      await runAdmin(req);
+      return 'ok';
+    } catch (error) {
+      return (error as { message?: string }).message ?? 'error';
+    }
+  }
+  const ok = { uid: ELLA, reason: 'emailed support asking', confirmUsername: '@elladelete' };
+
+  it('refuses a student deleting somebody else', async () => {
+    expect(await attemptAdmin(asAdmin(HARPER, false, ok))).toMatch(/Admins only/);
+    expect((await db.doc(`users/${ELLA}`).get()).data()?.status).toBe('active');
+  });
+
+  it('needs a reason and her @username typed', async () => {
+    expect(await attemptAdmin(asAdmin(ADMIN, true, { ...ok, reason: ' ' }))).toMatch(/Why/);
+    expect(
+      await attemptAdmin(asAdmin(ADMIN, true, { ...ok, confirmUsername: 'harperdelete' })),
+    ).toMatch(/@elladelete/);
+    expect((await db.doc(`users/${ELLA}`).get()).data()?.status).toBe('active');
+  });
+
+  it('never deletes an admin, or herself', async () => {
+    await db.doc(`users/${ELLA}`).update({ role: 'admin' });
+    expect(await attemptAdmin(asAdmin(ADMIN, true, ok))).toMatch(/Admin accounts/);
+    expect(await attemptAdmin(asAdmin(ELLA, true, ok))).toMatch(/your own/);
+  });
+
+  it('refuses while a rental is still going', async () => {
+    await db.doc('bookings/b1').set({ lenderUid: HARPER, renterUid: ELLA, status: 'with_renter' });
+    expect(await attemptAdmin(asAdmin(ADMIN, true, ok))).toMatch(/rental still going/);
+  });
+
+  it('does what her own button does, and leaves one audit row', async () => {
+    expect(await attemptAdmin(asAdmin(ADMIN, true, ok))).toBe('ok');
+
+    const shell = (await db.doc(`users/${ELLA}`).get()).data();
+    expect(shell?.status).toBe('deactivated');
+    expect(shell?.displayName).toBe(DELETED_ACCOUNT_NAME);
+    expect((await db.doc('posts/post-ella').get()).data()?.status).toBe('removed');
+    expect((await db.doc('posts/post-harper').get()).data()?.stats.likeCount).toBe(0);
+    await expect(getAuth(app).getUser(ELLA)).rejects.toBeTruthy();
+
+    const audit = await db.collection(COLLECTIONS.adminActions).get();
+    expect(audit.size).toBe(1);
+    expect(audit.docs[0]!.data()).toMatchObject({
+      action: 'user_account_deleted',
+      targetId: ELLA,
+      adminUid: ADMIN,
+      notes: 'emailed support asking',
+    });
+  });
+
+  it('can be run again on a half-finished deletion', async () => {
+    expect(await attemptAdmin(asAdmin(ADMIN, true, ok))).toBe('ok');
+    // Her username is now the shell's, so the typed one no longer matches.
+    expect(await attemptAdmin(asAdmin(ADMIN, true, ok))).toBe('ok');
   });
 });

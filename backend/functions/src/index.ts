@@ -45,6 +45,8 @@
  *   - resolveReport      can hide content and suspend in the same call
  *   - resolveDispute     decides a flagged return
  *   - resolveSupportRequest  closes a contact-us message
+ *   - adminDeleteAccount     a privacy request: the same steps as
+ *                            deleteMyAccount, confirmed by typing her @username
  *
  * Background triggers:
  *   - countListingView          moves a listing's view count
@@ -135,6 +137,7 @@ export { resolveDispute } from './admin/resolveDispute';
 export { resolveSupportRequest } from './admin/resolveSupportRequest';
 export { setFeatureFlag } from './admin/featureFlags';
 export { exportMyData, adminExportUserData } from './privacy/exportUserData';
+export { adminDeleteAccount } from './admin/deleteUserAccount';
 export { suggestedClosets } from './social/suggestedClosets';
 export { matchContacts } from './social/matchContacts';
 
@@ -145,10 +148,7 @@ export { generateTryOn } from './tryon/generateTryOn';
 export { deleteTryOnData } from './tryon/deleteTryOnData';
 export { setTryOnBodyPhoto, clearTryOnBodyPhoto } from './tryon/setBodyPhoto';
 export { checkPhoto } from './tryon/checkPhoto';
-export {
-  sendVerificationCode,
-  confirmVerificationCode,
-} from './auth/emailVerification';
+export { sendVerificationCode, confirmVerificationCode } from './auth/emailVerification';
 export { prepareFlatPhoto } from './tryon/prepareFlatPhoto';
 export { grantTryOns, setTryOnConfig } from './tryon/admin';
 export { sweepUnsavedTryOns, runTryOnSweep } from './tryon/sweepUnsavedTryOns';
