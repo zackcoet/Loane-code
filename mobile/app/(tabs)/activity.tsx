@@ -12,21 +12,23 @@
  * one screen rather than behind a mode switch, with anything needing
  * an answer lifted to the top under "Needs you".
  *
- * UPDATES is the old notification list, unchanged. It answers "what
- * happened"; Rentals answers "what do I have to do".
+ * UPDATES is the notification list, with likes and follows grouped the
+ * way Instagram does. It answers "what happened"; Rentals answers "what
+ * do I have to do".
  */
 
 import { useMemo, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
 import {
   WORDS,
   TERMINAL_BOOKING_STATUSES,
   color,
   controls,
+  groupNotifications,
+  notificationTarget,
   spacing,
   type Booking,
-  type Notification,
 } from '@loane/shared';
 import { Avatar } from '../../src/components/Avatar';
 import { BookingRow, needsMe } from '../../src/components/BookingRow';
@@ -42,13 +44,6 @@ import { useNotifications } from '../../src/hooks/useNotifications';
 import { usePullToRefresh } from '../../src/hooks/usePullToRefresh';
 
 /** Turns a stored deep link into a route this app can push. */
-function target(
-  notification: Notification,
-): { pathname: '/rental/[id]'; params: { id: string } } | null {
-  const bookingId = notification.refs?.bookingId;
-  return bookingId ? { pathname: '/rental/[id]', params: { id: bookingId } } : null;
-}
-
 function ago(value: unknown): string {
   const date =
     value && typeof value === 'object' && 'toDate' in (value as Record<string, unknown>)
@@ -81,13 +76,17 @@ export default function Activity() {
     loading: loadingNotifications,
     failed: notificationsFailed,
     retry: retryNotifications,
-    markRead,
+    markManyRead,
     hasMore: moreNotifications,
     loadMore: loadMoreNotifications,
     loadingMore: loadingMoreNotifications,
   } = useNotifications();
 
   const unreadUpdates = notifications.filter((n) => !n.readAt).length;
+  // "@ella and 4 others liked your look" — see groupNotifications.
+  const groups = useMemo(() => groupNotifications(notifications), [notifications]);
+  const markAllRead = () =>
+    void markManyRead(notifications.filter((n) => !n.readAt).map((n) => n.id));
 
   const rows = useMemo<Row[]>(() => {
     const live = (bookings: Booking[]) =>
@@ -249,8 +248,25 @@ export default function Activity() {
       ) : (
         <FlatList
           refreshControl={refreshControl}
-          data={notifications}
-          keyExtractor={(n) => n.id}
+          data={groups}
+          keyExtractor={(g) => g.key}
+          ListHeaderComponent={
+            unreadUpdates > 0 ? (
+              <View style={styles.markAllRow}>
+                <Pressable
+                  onPress={markAllRead}
+                  accessibilityRole="button"
+                  accessibilityLabel="Mark all updates as read"
+                  hitSlop={8}
+                  style={styles.markAll}
+                >
+                  <Text variant="caption" tone="secondary">
+                    Mark all as read
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null
+          }
           contentContainerStyle={styles.list}
           // A page at a time: nearing the bottom brings in the next.
           onEndReached={moreNotifications ? loadMoreNotifications : undefined}
@@ -262,16 +278,18 @@ export default function Activity() {
               </View>
             ) : null
           }
-          renderItem={({ item }) => {
-            const unread = !item.readAt;
+          renderItem={({ item: group }) => {
+            const item = group.lead;
+            const unread = group.unread;
             return (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={item.title}
+                accessibilityLabel={group.title}
                 onPress={() => {
-                  void markRead(item.id);
-                  const to = target(item);
-                  if (to) router.push(to);
+                  // A grouped row is read as a whole.
+                  void markManyRead(group.members.filter((m) => !m.readAt).map((m) => m.id));
+                  const to = notificationTarget(item);
+                  if (to) router.push(to as Href);
                 }}
                 style={({ pressed }) => [
                   styles.row,
@@ -281,7 +299,7 @@ export default function Activity() {
               >
                 <Avatar url={item.actorPhotoUrl} name={item.actorUsername} size={40} />
                 <View style={styles.rowText}>
-                  <Text numberOfLines={1}>{item.title}</Text>
+                  <Text numberOfLines={2}>{group.title}</Text>
                   <Text variant="bodySmall" tone="secondary">
                     {item.body}
                   </Text>
@@ -308,6 +326,8 @@ function Loading() {
 
 const styles = StyleSheet.create({
   more: { minHeight: controls.minTapTarget, alignItems: 'center', justifyContent: 'center' },
+  markAllRow: { flexDirection: 'row', justifyContent: 'flex-end' },
+  markAll: { minHeight: controls.minTapTarget, justifyContent: 'center' },
   tabRow: {
     flexDirection: 'row',
     borderBottomWidth: StyleSheet.hairlineWidth,

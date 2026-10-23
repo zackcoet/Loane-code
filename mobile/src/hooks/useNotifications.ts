@@ -18,6 +18,7 @@ import {
   serverTimestamp,
   updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
 import { COLLECTIONS, PAGE_SIZES, isHiddenNotification, type Notification } from '@loane/shared';
 import { db } from '../firebase/config';
@@ -96,6 +97,28 @@ export function useNotifications() {
     [uid],
   );
 
+  /**
+   * Marks several read at once — a grouped row, or "Mark all as read".
+   * One batch per 450 so a long backlog never hits the 500-write cap.
+   * Only her own alerts' readAt moves, which is all the rules allow.
+   */
+  const markManyRead = useCallback(
+    async (ids: string[]) => {
+      if (!uid || ids.length === 0) return;
+      for (let i = 0; i < ids.length; i += 450) {
+        const batch = writeBatch(db);
+        for (const id of ids.slice(i, i + 450)) {
+          batch.update(doc(db, COLLECTIONS.users, uid, 'notifications', id), {
+            readAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        }
+        await batch.commit().catch(() => {});
+      }
+    },
+    [uid],
+  );
+
   // Likes, comments and follows from someone blocked either way are
   // hidden. Rental alerts are not — see isHiddenNotification.
   const hidden = useHiddenUids();
@@ -104,7 +127,17 @@ export function useNotifications() {
     [notifications, hidden],
   );
 
-  return { notifications: visible, loading, failed, retry, markRead, hasMore, loadMore, loadingMore };
+  return {
+    notifications: visible,
+    loading,
+    failed,
+    retry,
+    markRead,
+    markManyRead,
+    hasMore,
+    loadMore,
+    loadingMore,
+  };
 }
 
 /**
