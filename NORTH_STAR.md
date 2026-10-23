@@ -125,10 +125,12 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 
 ### G. App Store readiness
 ✅ 1. Account deletion (see B4).
-2. Every screen works with large text sizes and VoiceOver labels on buttons.
+✅ 2. Every screen works with large text sizes and VoiceOver labels on buttons. *(Run 23: text follows the iPhone's Text Size up to 1.5x — every fixed-size piece checked to fit; switches, text boxes and headings now speak properly in VoiceOver. Every tappable thing already had a name or its own words — checked with a script. See `docs/decisions.md`.)*
 3. No crashes on: no internet, slow internet, empty data, deleted posts/users.
-4. Privacy: list every type of data collected in `docs/app-store-privacy.md` (for the App Store privacy form).
-5. Remove any dev-only text, test buttons, or placeholder copy from user-facing screens.
+✅ 4. Privacy: list every type of data collected in `docs/app-store-privacy.md` (for the App Store privacy form). *(Run 23: written from the code. No tracking, no ads, no outside analytics. Filling in Apple's form is Zack's.)*
+✅ 5. Remove any dev-only text, test buttons, or placeholder copy from user-facing screens. *(Run 23: swept every screen — none found. "Payments are coming soon" on Payouts is deliberate while payments are off; Try-On's "soon" only shows if Try-On is switched on.)*
+
+6. *(suggested)* A lint check that fails when a screen uses React Native's own `Text` without the text-size cap, so new screens can't miss it.
 
 ### H. Quality
 1. Add tests for every new backend function and rules change.

@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 23 (when you submit to the App Store): Apple needs a public web link to the Privacy Policy, and the privacy form answers are in `docs/app-store-privacy.md`.
 - **From run 22 — one decision:** right now ANY .edu email can sign up (a student at Clemson gets her own little "school" made for her automatically — that was set up on Oct 12). Backlog item F7 says non-USC emails should go to a waitlist instead. Doing that means turning those students away, so I didn't build it. Reply "USC only + waitlist" or "keep any .edu" and the next run will do it.
 - From run 22 (only when you next deploy): the database rules gained one small allowed field (her Get started answers) and account deletion now lowers the campus student count — normal deploy, nothing to switch on.
 - From run 21 (only when you next deploy): it adds new server functions for hearting comments — normal deploy, nothing to switch on.
@@ -15,6 +16,45 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-23 (run 23, ~2 AM Central) — Bigger text that doesn't break, VoiceOver fixes, and the App Store privacy answers
+
+**Plan:** F7 (waitlist) still waits on your decision, so on to section G, App Store readiness. G2 first — make the app work with the iPhone's bigger text sizes and with VoiceOver (the screen reader blind users rely on, which Apple checks). Then G5, a sweep for test/placeholder text, and G4, the list of data we collect for Apple's privacy form. G3 (no crashes offline) is too big to start this late — next run.
+
+**Built:**
+- **Text follows her phone's Text Size setting.** If she has bigger text on her iPhone, Loane's text gets bigger too — up to 1.5 times normal. That covers every normal size on the iPhone. The extra-large "Accessibility" sizes stop at 1.5x, because past that the price on a button, the occasion chips and the screen titles would spill out of their shapes (Instagram does the same). I checked each fixed-size piece fits at 1.5x; text boxes were the one tight fit, so they now grow instead of cutting letters off. The logo and the initials in a profile circle stay the same size, because they're drawn inside fixed circles.
+- **VoiceOver speaks properly:**
+  - Every on/off switch now says what it is ("Show read receipts, switch, on") — before it said just "switch, on".
+  - Every text box says what it's for ("Email", "Message", "Search closets and pieces") — before, sign-in and signup boxes only read their grey hint text.
+  - Screen titles and big headings are announced as headings, so she can jump between them.
+  - I checked every tappable thing in the app with a script: all of them already had a spoken name or their own words. Earlier runs did this well.
+- **App Store privacy answers** — `docs/app-store-privacy.md`. When you submit to the App Store, Apple makes you fill in a form about what data the app collects. This page is the answer sheet, written from the code: names, emails, phone (optional), photos, messages, comments, rentals, sizes, app usage, help requests. **No tracking, no ads, no outside analytics** — so the "tracking" box is No and the tracking popup isn't needed. Contacts count as "not collected" (they're scrambled on her phone and never saved). It also says what to add when payments, Try-On or a crash reporter get switched on.
+
+**What to tap to see it:**
+- iPhone **Settings → Accessibility → Display & Text Size → Larger Text** → drag the slider right → open Loane. Text is bigger; buttons, chips and the price tags still hold together.
+- iPhone **Settings → Accessibility → VoiceOver** → on (triple-click the side button to turn it off again). In Loane: Settings → Privacy → touch the read receipts switch → it reads the name. Sign out → Sign in → touch the email box → it says "Email".
+- The privacy answers: open `docs/app-store-privacy.md` on GitHub (autopilot branch).
+
+**Fixed:**
+- On/off switches and text boxes that VoiceOver couldn't name (above).
+- A leftover note in the listing form said "blocking out dates comes later" — that screen has existed for a while (Edit listing → Blocked dates). Note corrected; nothing a student sees changed.
+
+**Skipped / blocked:**
+- **G5 (remove test/placeholder text):** swept every screen — found nothing to remove. "Payments are coming soon" on Payouts is on purpose while payments are off. Marked done.
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed: type checks, lint, the index check (84 searches, none missing), all 283 shared tests, the server tests that don't need the database, and the iPhone app build. Tonight changed no server code or database rules — only the app's screens.
+
+**🚨 NEEDS ZACK:**
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+- New, for when you submit to the App Store (no rush): Apple needs a public web link to the Privacy Policy. Make sure it's live on joinloane.com, and use `docs/app-store-privacy.md` to fill in the privacy form.
+
+**Next up:** G3 — make sure nothing crashes with no internet, slow internet, or a deleted post/account. Then H.
+
+**Commits:**
+- Accessibility: text grows with the iPhone's Text Size (up to 1.5x); VoiceOver names for switches, fields and headings
+- Listing form: replace a stale 'blocked dates come later' note — that screen exists now
+- App Store privacy answers: every kind of data Loane keeps, in Apple's categories
 
 ---
 
