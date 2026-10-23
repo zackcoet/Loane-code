@@ -244,7 +244,12 @@ export default function Activity() {
       ) : notificationsFailed ? (
         <LoadError what="your updates" onRetry={retryNotifications} />
       ) : notifications.length === 0 ? (
-        <EmptyState title="Nothing yet" body="Answers, handoffs and reminders will show up here." />
+        <EmptyState
+          title="Nothing yet"
+          body="Likes, follows, answers, handoffs and reminders will show up here."
+          actionLabel="Find closets to follow"
+          onAction={() => router.push('/find-friends')}
+        />
       ) : (
         <FlatList
           refreshControl={refreshControl}

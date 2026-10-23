@@ -141,6 +141,8 @@ export default function OtherProfile() {
         <EmptyState
           title="Closet not found"
           body={`We couldn't find @${username ?? ''} on Loane.`}
+          actionLabel="Find people"
+          onAction={() => router.push('/find-friends')}
         />
       </Screen>
     );

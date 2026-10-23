@@ -59,7 +59,12 @@ export default function OwnIt() {
     return (
       <Screen flush>
         <Header title={WORDS.buy} onBack={() => router.back()} />
-        <EmptyState title="Not for sale" body="This piece is not available to buy." />
+        <EmptyState
+          title="Not for sale"
+          body="This piece is not available to buy."
+          actionLabel="Find something else"
+          onAction={() => router.push('/(tabs)/discover')}
+        />
       </Screen>
     );
   }

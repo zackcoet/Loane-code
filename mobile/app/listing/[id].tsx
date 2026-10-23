@@ -131,7 +131,12 @@ export default function ListingDetail() {
     return (
       <Screen flush>
         <Header title="" onBack={() => router.back()} />
-        <EmptyState title="Not found" body="That piece is no longer listed." />
+        <EmptyState
+          title="Not found"
+          body="That piece is no longer listed."
+          actionLabel="Find something else"
+          onAction={() => router.push('/(tabs)/discover')}
+        />
       </Screen>
     );
   }

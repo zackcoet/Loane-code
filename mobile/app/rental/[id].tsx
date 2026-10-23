@@ -94,7 +94,12 @@ export default function RentalScreen() {
     return (
       <Screen flush>
         <Header title="Rental" onBack={() => router.back()} />
-        <EmptyState title="Not found" body="We couldn't find that rental." />
+        <EmptyState
+          title="Not found"
+          body="We couldn't find that rental."
+          actionLabel="See my rentals"
+          onAction={() => router.push('/my-rentals')}
+        />
       </Screen>
     );
   }

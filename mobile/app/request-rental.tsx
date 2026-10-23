@@ -141,7 +141,12 @@ export default function RequestRental() {
     return (
       <Screen flush>
         <Header title="Request" onBack={() => router.back()} />
-        <EmptyState title="Not available" body="That piece is no longer up for rent." />
+        <EmptyState
+          title="Not available"
+          body="That piece is no longer up for rent."
+          actionLabel="Find something else"
+          onAction={() => router.push('/(tabs)/discover')}
+        />
       </Screen>
     );
   }

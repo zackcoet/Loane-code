@@ -77,7 +77,12 @@ export default function PostScreen() {
         <LoadError what="this look" onRetry={retry} />
       ) : !post || post.status !== 'active' || hidden.has(post.authorUid) ? (
         // Blocked either way reads the same as a deleted look.
-        <EmptyState title="Not found" body="That look is no longer up." />
+        <EmptyState
+          title="Not found"
+          body="That look is no longer up."
+          actionLabel="Back to the feed"
+          onAction={() => router.push('/(tabs)/feed')}
+        />
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <PostCard

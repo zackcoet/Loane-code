@@ -98,6 +98,8 @@ export default function Messages() {
         <EmptyState
           title="No messages yet"
           body="Message someone from her profile or a listing to ask about fit or pickup."
+          actionLabel="Find something to wear"
+          onAction={() => router.push('/(tabs)/discover')}
         />
       ) : conversations.length === 0 && !term ? (
         <EmptyState
