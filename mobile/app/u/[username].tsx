@@ -10,8 +10,9 @@
 
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, View } from 'react-native';
-import { color, controls, isDeletedAccount, spacing } from '@loane/shared';
+import { Alert, ScrollView, StyleSheet } from 'react-native';
+import { SkeletonProfile } from '../../src/components/Skeleton';
+import { controls, isDeletedAccount, spacing } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { EmptyState } from '../../src/components/EmptyState';
 import { ProfileHeader } from '../../src/components/ProfileHeader';
@@ -106,9 +107,7 @@ export default function OtherProfile() {
     return (
       <Screen flush>
         <Header title="" onBack={() => router.back()} />
-        <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
-        </View>
+        <SkeletonProfile />
       </Screen>
     );
   }
@@ -229,7 +228,6 @@ export default function OtherProfile() {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingBottom: spacing.xxl },
   action: { flex: 1, height: controls.buttonHeightSmall },
 });

@@ -8,7 +8,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
-  ActivityIndicator,
   Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -18,6 +17,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { SkeletonDetail } from '../../src/components/Skeleton';
 import {
   addDays,
   toIsoDate,
@@ -111,9 +111,7 @@ export default function ListingDetail() {
     return (
       <Screen flush>
         <Header title="" onBack={() => router.back()} />
-        <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
-        </View>
+        <SkeletonDetail aspectRatio={0.85} />
       </Screen>
     );
   }
@@ -486,7 +484,6 @@ const styles = StyleSheet.create({
   stripOut: { backgroundColor: color.role.shared.background },
   stripFree: { backgroundColor: color.surface.muted },
   headerActions: { flexDirection: 'row', alignItems: 'center' },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   scroll: { flex: 1 },
   content: { paddingBottom: spacing.xxl },
   photo: { aspectRatio: 0.85, backgroundColor: color.surface.muted },

@@ -8,9 +8,10 @@
 
 import { useEffect, useRef } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
+import { SkeletonDetail } from '../../src/components/Skeleton';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { COLLECTIONS, color, spacing, type Post } from '@loane/shared';
+import { COLLECTIONS, spacing, type Post } from '@loane/shared';
 import { useState } from 'react';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
@@ -71,9 +72,7 @@ export default function PostScreen() {
       <Header title="Look" onBack={() => router.back()} />
 
       {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
-        </View>
+        <SkeletonDetail aspectRatio={0.8} />
       ) : failed ? (
         <LoadError what="this look" onRetry={retry} />
       ) : !post || post.status !== 'active' || hidden.has(post.authorUid) ? (
@@ -130,6 +129,5 @@ export default function PostScreen() {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { paddingTop: spacing.sm, paddingBottom: spacing.xxl },
 });

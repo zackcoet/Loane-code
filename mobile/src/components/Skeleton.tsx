@@ -24,7 +24,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { color, spacing } from '@loane/shared';
+import { color, radius, spacing } from '@loane/shared';
 
 /** Slow on purpose: a fast pulse reads as anxious. */
 const PULSE_MS = 900;
@@ -97,33 +97,166 @@ export function SkeletonRows({
  * A grid of tiles, shaped like the grid it stands in for so nothing
  * jumps when the real one arrives. Defaults match PostGrid: two
  * columns of 4:5 looks with a gap between.
+ *
+ * `gutter` is the space between tiles (profiles use a 2pt hairline,
+ * like Instagram). `captions` adds two short lines under each tile, for
+ * grids of pieces that carry a name and price underneath.
  */
 export function SkeletonGrid({
   count = 6,
   columns = 2,
   aspectRatio = 0.8,
+  gutter = spacing.md,
+  captions = false,
 }: {
   count?: number;
   columns?: number;
   aspectRatio?: number;
+  gutter?: number;
+  captions?: boolean;
 }) {
   const pulse = usePulse();
-  // Gaps are padding on each cell; half on each side makes a full gap between.
-  const width = `${100 / columns}%` as DimensionValue;
   return (
     <Animated.View
-      style={[styles.grid, pulse]}
+      style={pulse}
       accessible
       accessibilityLabel="Loading"
       accessibilityRole="progressbar"
     >
+      <GridShapes
+        count={count}
+        columns={columns}
+        aspectRatio={aspectRatio}
+        gutter={gutter}
+        captions={captions}
+      />
+    </Animated.View>
+  );
+}
+
+/** The tiles alone, so a profile skeleton can put them under its header. */
+function GridShapes({
+  count,
+  columns,
+  aspectRatio,
+  gutter,
+  captions,
+}: {
+  count: number;
+  columns: number;
+  aspectRatio: number;
+  gutter: number;
+  captions: boolean;
+}) {
+  // Gaps are padding on each cell; half on each side makes a full gap between.
+  const width = `${100 / columns}%` as DimensionValue;
+  const half = gutter / 2;
+  return (
+    <View style={[styles.grid, { padding: half }]} importantForAccessibility="no-hide-descendants">
       {Array.from({ length: count }, (_, i) => (
+        <View key={i} style={{ width, padding: half }}>
+          <View style={[styles.block, { aspectRatio, width: '100%' }]} />
+          {captions ? (
+            <View style={styles.caption}>
+              <Bar width={i % 2 === 0 ? '70%' : '55%'} height={10} />
+              <Bar width="30%" height={10} />
+            </View>
+          ) : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * One look or one piece: the big photo, who it belongs to, then a few
+ * lines of words. `aspectRatio` matches the real photo on that page.
+ */
+export function SkeletonDetail({ aspectRatio = 0.8 }: { aspectRatio?: number }) {
+  const pulse = usePulse();
+  return (
+    <Animated.View
+      style={pulse}
+      accessible
+      accessibilityLabel="Loading"
+      accessibilityRole="progressbar"
+    >
+      <View importantForAccessibility="no-hide-descendants">
+        <View style={[styles.block, { aspectRatio, width: '100%' }]} />
+        <View style={styles.detailBody}>
+          <View style={styles.row}>
+            <View style={[styles.block, styles.round, { width: 36, height: 36 }]} />
+            <View style={styles.lines}>
+              <Bar width="40%" />
+              <Bar width="25%" height={10} />
+            </View>
+          </View>
+          <Bar width="85%" />
+          <Bar width="70%" />
+          <Bar width="50%" />
+        </View>
+      </View>
+    </Animated.View>
+  );
+}
+
+/**
+ * A profile: the round photo and her name, the counts, then three
+ * across of closet tiles with the same 2pt hairline the real grid uses.
+ */
+export function SkeletonProfile() {
+  const pulse = usePulse();
+  return (
+    <Animated.View
+      style={pulse}
+      accessible
+      accessibilityLabel="Loading"
+      accessibilityRole="progressbar"
+    >
+      <View importantForAccessibility="no-hide-descendants">
+        <View style={styles.profileTop}>
+          <View style={[styles.block, styles.round, { width: 72, height: 72 }]} />
+          <View style={styles.lines}>
+            <Bar width="50%" height={14} />
+            <Bar width="35%" height={10} />
+            <Bar width="70%" height={10} />
+          </View>
+        </View>
+        <GridShapes count={9} columns={3} aspectRatio={1} gutter={2} captions={false} />
+      </View>
+    </Animated.View>
+  );
+}
+
+/**
+ * A chat: bubbles on both sides, hers on the right, so the screen
+ * already looks like a conversation before the first message lands.
+ */
+export function SkeletonChat() {
+  const pulse = usePulse();
+  // Fixed pattern rather than random, so it never shifts between renders.
+  const bubbles: { mine: boolean; width: DimensionValue }[] = [
+    { mine: false, width: '55%' },
+    { mine: false, width: '35%' },
+    { mine: true, width: '60%' },
+    { mine: false, width: '45%' },
+    { mine: true, width: '30%' },
+    { mine: true, width: '50%' },
+  ];
+  return (
+    <Animated.View
+      style={[styles.chat, pulse]}
+      accessible
+      accessibilityLabel="Loading"
+      accessibilityRole="progressbar"
+    >
+      {bubbles.map((b, i) => (
         <View
           key={i}
-          style={[styles.cell, { width }]}
+          style={[styles.bubbleRow, b.mine && styles.bubbleMine]}
           importantForAccessibility="no-hide-descendants"
         >
-          <View style={[styles.block, { aspectRatio, width: '100%' }]} />
+          <View style={[styles.block, styles.bubble, { width: b.width }]} />
         </View>
       ))}
     </Animated.View>
@@ -136,6 +269,20 @@ const styles = StyleSheet.create({
   rows: { paddingHorizontal: spacing.md, paddingTop: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
   lines: { flex: 1, gap: spacing.xs },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', padding: spacing.md / 2 },
-  cell: { padding: spacing.md / 2 },
+  round: { borderRadius: radius.pill },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  caption: { gap: spacing.xs, paddingTop: spacing.sm },
+  detailBody: { padding: spacing.md, gap: spacing.sm },
+  profileTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  // Chat bubbles are the one rounded shape: the real bubbles are rounded.
+  chat: { flex: 1, justifyContent: 'flex-end', padding: spacing.md, gap: spacing.sm },
+  bubbleRow: { flexDirection: 'row' },
+  bubbleMine: { justifyContent: 'flex-end' },
+  bubble: { height: 36, borderRadius: radius.lg },
 });

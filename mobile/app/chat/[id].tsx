@@ -22,6 +22,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SkeletonChat } from '../../src/components/Skeleton';
 import {
   fonts,
   LIMITS,
@@ -306,9 +307,7 @@ export default function Chat() {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
         {loading ? (
-          <View style={styles.loading}>
-            <ActivityIndicator color={color.icon.default} />
-          </View>
+          <SkeletonChat />
         ) : failed && messages.length === 0 ? (
           <LoadError what="this chat" onRetry={retry} />
         ) : messages.length === 0 ? (
@@ -756,7 +755,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.md, paddingVertical: spacing.md, gap: spacing.sm },
   older: {
     minHeight: controls.minTapTarget,

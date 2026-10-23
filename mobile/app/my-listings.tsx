@@ -8,14 +8,8 @@
  */
 
 import { useRouter } from 'expo-router';
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { FlatList, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { SkeletonRows } from '../src/components/Skeleton';
 import {
   color,
   controls,
@@ -61,9 +55,7 @@ export default function MyListings() {
       <Header title="My Listings" onBack={() => router.back()} />
 
       {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
-        </View>
+        <SkeletonRows shape="square" avatar={72} />
       ) : failed ? (
         <LoadError what="your listings" onRetry={retry} />
       ) : items.length === 0 ? (
@@ -156,7 +148,6 @@ function Row({ listing, thumb }: { listing: Listing; thumb: number }) {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { padding: spacing.md, paddingBottom: spacing.xxl },
   addButton: { marginBottom: spacing.lg, height: controls.buttonHeightSmall },
   row: {

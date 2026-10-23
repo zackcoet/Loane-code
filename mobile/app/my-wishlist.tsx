@@ -11,15 +11,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Pressable,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { SkeletonGrid } from '../src/components/Skeleton';
 import { color, controls, radius, spacing, type TryOn } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
 import { LoadError } from '../src/components/LoadError';
@@ -140,7 +133,7 @@ export default function MyWishlist() {
 
       {tab === 'items' ? (
         items.loading ? (
-          <Loading />
+          <SkeletonGrid aspectRatio={0.75} captions />
         ) : items.failed ? (
           <LoadError what="your saved pieces" onRetry={items.retry} />
         ) : items.listings.length === 0 ? (
@@ -183,7 +176,7 @@ export default function MyWishlist() {
         )
       ) : tab === 'tryons' ? (
         tryOns.loading ? (
-          <Loading />
+          <SkeletonGrid />
         ) : tryOns.items.length === 0 ? (
           <EmptyState
             title="No try-ons saved yet"
@@ -204,7 +197,7 @@ export default function MyWishlist() {
           />
         )
       ) : looks.loading ? (
-        <Loading />
+        <SkeletonGrid />
       ) : looks.failed ? (
         <LoadError what="your saved looks" onRetry={looks.retry} />
       ) : looks.posts.length === 0 ? (
@@ -248,14 +241,6 @@ export default function MyWishlist() {
   );
 }
 
-function Loading() {
-  return (
-    <View style={styles.loading}>
-      <ActivityIndicator color={color.icon.default} />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   tabRow: {
     flexDirection: 'row',
@@ -264,7 +249,6 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
   tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.accent },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   grid: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.xxl },
   fittingRoom: {
     flexDirection: 'row',

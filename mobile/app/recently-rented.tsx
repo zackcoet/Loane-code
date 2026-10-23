@@ -8,7 +8,8 @@
 
 import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
-import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SkeletonRows } from '../src/components/Skeleton';
 import { color, controls, formatRange, spacing } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
@@ -33,9 +34,7 @@ export default function RecentlyRented() {
       <Header title="Recently Rented" onBack={() => router.back()} />
 
       {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
-        </View>
+        <SkeletonRows shape="square" avatar={56} />
       ) : rented.length === 0 ? (
         <EmptyState
           title="Nothing rented yet"
@@ -84,7 +83,6 @@ export default function RecentlyRented() {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { padding: spacing.md },
   row: {
     flexDirection: 'row',

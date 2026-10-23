@@ -22,7 +22,7 @@ import { usePostDraft } from '../post/postDraft';
 import { startLook } from '../post/startLook';
 import { ProfileGateSheet } from './ProfileGateSheet';
 import { useProfileGate } from '../hooks/useProfileGate';
-import { ActivityIndicator, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { color, formatCentsShort, radius, spacing, type Listing, type Post } from '@loane/shared';
 import { EmptyState } from './EmptyState';
 import { LoadError } from './LoadError';
@@ -31,6 +31,7 @@ import { Text } from './Text';
 import { useUserListings, useUserPosts } from '../hooks/useProfile';
 import { useIsSaved } from '../hooks/useSaved';
 import { ThumbImage } from './ThumbImage';
+import { SkeletonGrid } from './Skeleton';
 
 const TABS = ['closet', 'posts'] as const;
 type ProfileTab = (typeof TABS)[number];
@@ -227,12 +228,9 @@ function PostTile({ post, size, onPress }: { post: Post; size: number; onPress: 
   );
 }
 
+/** Three across of grey squares with the same hairline, so nothing jumps. */
 function Loading() {
-  return (
-    <View style={styles.loading}>
-      <ActivityIndicator color={color.icon.default} />
-    </View>
-  );
+  return <SkeletonGrid count={9} columns={COLUMNS} aspectRatio={1} gutter={GUTTER} />;
 }
 
 const styles = StyleSheet.create({
@@ -276,5 +274,4 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     backgroundColor: color.scrim.onPhoto,
   },
-  loading: { paddingVertical: spacing.xl, alignItems: 'center' },
 });

@@ -21,6 +21,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { SkeletonGrid } from '../../src/components/Skeleton';
 import {
   fonts,
   OCCASIONS,
@@ -40,7 +41,6 @@ import { FilterSheet } from '../../src/components/FilterSheet';
 import { ListingCard } from '../../src/components/ListingCard';
 import { TrendingRow } from '../../src/components/TrendingRow';
 import { Logo } from '../../src/components/Logo';
-import { LoaneLoader } from '../../src/components/LoaneLoader';
 import { Screen } from '../../src/components/Screen';
 import { Icon } from '../../src/components/Icon';
 import { Text } from '../../src/components/Text';
@@ -276,9 +276,7 @@ export default function Discover() {
       </View>
 
       {loading ? (
-        <View style={styles.loading}>
-          <LoaneLoader size={34} />
-        </View>
+        <SkeletonGrid aspectRatio={0.75} captions />
       ) : error ? (
         <EmptyState
           title="Couldn't load Discover"
@@ -433,7 +431,6 @@ const styles = StyleSheet.create({
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: spacing.md },
   tabActive: { borderBottomWidth: 2, borderBottomColor: color.border.accent },
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   count: { marginBottom: spacing.sm },
   grid: { paddingHorizontal: spacing.md, paddingTop: spacing.md, paddingBottom: spacing.xxl },
   gridRow: { gap: spacing.md },

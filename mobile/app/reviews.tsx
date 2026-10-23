@@ -9,7 +9,8 @@
 
 import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { SkeletonRows } from '../src/components/Skeleton';
 import { color, spacing, timeAgo, type Review } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { EmptyState } from '../src/components/EmptyState';
@@ -38,9 +39,7 @@ export default function Reviews() {
       <Header title="Reviews" onBack={() => router.back()} />
 
       {loading ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={color.icon.default} />
-        </View>
+        <SkeletonRows />
       ) : failed ? (
         <LoadError what="reviews" onRetry={retry} />
       ) : reviews.length === 0 ? (
@@ -134,7 +133,6 @@ export default function Reviews() {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list: { paddingHorizontal: spacing.md, paddingBottom: spacing.xxl },
   summary: {
     gap: spacing.xs,
