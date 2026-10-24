@@ -17,7 +17,8 @@ export const resolveSupportRequest = onCall<ResolveSupportInput, Promise<{ ok: t
     const admin = requireAdminContext(request);
     const { requestId } = request.data ?? {};
     const notes = requireReason(request.data?.notes, 'Add a note about how this was resolved.');
-    if (!requestId) throw notFound('We could not find that support request.');
+    if (!requestId || typeof requestId !== 'string')
+      throw notFound('We could not find that support request.');
 
     const ref = db().collection(COLLECTIONS.supportRequests).doc(requestId);
     await db().runTransaction(async (tx) => {

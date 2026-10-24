@@ -33,8 +33,10 @@ export function requireAdminContext(request: CallableRequest): AdminContext {
 }
 
 /** Every admin action must say why. A log full of blanks is not a log. */
-export function requireReason(reason: string | undefined, prompt: string): string {
-  const trimmed = (reason ?? '').trim();
+export function requireReason(reason: unknown, prompt: string): string {
+  // Anything that is not text is treated as no note at all, rather than
+  // crashing into a vague "something went wrong".
+  const trimmed = typeof reason === 'string' ? reason.trim() : '';
   if (!trimmed) throw invalidArgument(prompt);
   if (trimmed.length > 1000) throw invalidArgument('That note is too long.');
   return trimmed;
