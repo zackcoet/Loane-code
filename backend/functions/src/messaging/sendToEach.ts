@@ -14,11 +14,18 @@ import { ensureConversation } from './openConversation';
  * send. Sending to five friends and getting an error because one of
  * them blocked her would tell her something about that person that she
  * is not entitled to know.
+ *
+ * `subjectUid` is whoever the card is ABOUT — the look's author, the
+ * piece's owner, the profile itself. A friend who has blocked that
+ * person (or been blocked by her) is skipped too: otherwise a share
+ * would put a girl's closet in front of exactly the person she blocked
+ * to keep it from. Skipped quietly, for the same reason as above.
  */
 export async function sendToEach(
   me: User,
   toUids: string[],
   content: Pick<Message, 'body' | 'sharedPost' | 'sharedListing' | 'sharedProfile'>,
+  subjectUid: string | null = null,
 ): Promise<{ sentTo: number; lastConversationId: string | null }> {
   let sentTo = 0;
   let lastConversationId: string | null = null;
@@ -29,6 +36,7 @@ export async function sendToEach(
     const them = themSnap.data() as User;
     if (them.status !== 'active') continue;
     if (await isBlockedEitherWay(me.uid, uid)) continue;
+    if (subjectUid && subjectUid !== uid && (await isBlockedEitherWay(subjectUid, uid))) continue;
 
     const conversationId = await ensureConversation(me, them);
     const message: Omit<Message, 'createdAt' | 'updatedAt'> = {
@@ -59,6 +67,11 @@ export async function sendToEach(
   }
 
   return { sentTo, lastConversationId };
+}
+
+/** Her optional note, trimmed. Anything that is not text counts as no note. */
+export function cleanNote(raw: unknown): string {
+  return typeof raw === 'string' ? raw.trim() : '';
 }
 
 /**

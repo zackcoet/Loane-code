@@ -7,7 +7,7 @@ import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
 import { isBlockedEitherWay } from '../moderation/block';
 import { rateLimit } from '../lib/rateLimit';
-import { cleanRecipients, sendToEach } from './sendToEach';
+import { cleanNote, cleanRecipients, sendToEach } from './sendToEach';
 
 /**
  * `shareProfile`
@@ -44,7 +44,7 @@ export const shareProfile = onCall<ShareInput, Promise<ShareResult>>(
   async (request: CallableRequest<ShareInput>): Promise<ShareResult> => {
     const me = await requireVerifiedStudent(request);
     const uid = request.data?.uid;
-    const note = typeof request.data?.note === 'string' ? request.data.note.trim() : '';
+    const note = cleanNote(request.data?.note);
     const toUids = cleanRecipients(request.data?.toUids, me.uid);
 
     if (!uid || typeof uid !== 'string') throw invalidArgument('Whose profile?');
@@ -66,12 +66,17 @@ export const shareProfile = onCall<ShareInput, Promise<ShareResult>>(
       throw notFound('That account is not available.');
     }
 
-    const { sentTo, lastConversationId } = await sendToEach(me, toUids, {
-      body: note,
-      sharedPost: null,
-      sharedListing: null,
-      sharedProfile: profileShareSnapshot(user),
-    });
+    const { sentTo, lastConversationId } = await sendToEach(
+      me,
+      toUids,
+      {
+        body: note,
+        sharedPost: null,
+        sharedListing: null,
+        sharedProfile: profileShareSnapshot(user),
+      },
+      uid,
+    );
 
     if (sentTo === 0) throw failed('We could not send that to anyone you picked.');
 

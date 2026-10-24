@@ -6,7 +6,8 @@ import { db } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
 import { rateLimit } from '../lib/rateLimit';
-import { cleanRecipients, sendToEach } from './sendToEach';
+import { isBlockedEitherWay } from '../moderation/block';
+import { cleanNote, cleanRecipients, sendToEach } from './sendToEach';
 
 /**
  * `shareListing`
@@ -44,7 +45,7 @@ export const shareListing = onCall<ShareInput, Promise<ShareResult>>(
   async (request: CallableRequest<ShareInput>): Promise<ShareResult> => {
     const me = await requireVerifiedStudent(request);
     const listingId = request.data?.listingId;
-    const note = typeof request.data?.note === 'string' ? request.data.note.trim() : '';
+    const note = cleanNote(request.data?.note);
     const toUids = cleanRecipients(request.data?.toUids, me.uid);
 
     if (!listingId || typeof listingId !== 'string') throw invalidArgument('Which piece?');
@@ -61,12 +62,22 @@ export const shareListing = onCall<ShareInput, Promise<ShareResult>>(
     // Paused, sold, removed or taken down: none of those should land in
     // a friend's chat looking available.
     if (listing.status !== 'active') throw failed('That piece is not available right now.');
+    // Blocked either way: the same answer as a piece that is gone, so a
+    // share never reveals a block.
+    if (listing.ownerUid !== me.uid && (await isBlockedEitherWay(me.uid, listing.ownerUid))) {
+      throw notFound('That piece is gone.');
+    }
 
-    const { sentTo, lastConversationId } = await sendToEach(me, toUids, {
-      body: note,
-      sharedPost: null,
-      sharedListing: listingShareSnapshot({ ...listing, id: snap.id }),
-    });
+    const { sentTo, lastConversationId } = await sendToEach(
+      me,
+      toUids,
+      {
+        body: note,
+        sharedPost: null,
+        sharedListing: listingShareSnapshot({ ...listing, id: snap.id }),
+      },
+      listing.ownerUid,
+    );
 
     if (sentTo === 0) throw failed('We could not send that to anyone you picked.');
 

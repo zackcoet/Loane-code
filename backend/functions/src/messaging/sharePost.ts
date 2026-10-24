@@ -6,7 +6,8 @@ import { db, now, FieldValue } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
 import { rateLimit } from '../lib/rateLimit';
-import { cleanRecipients, sendToEach } from './sendToEach';
+import { isBlockedEitherWay } from '../moderation/block';
+import { cleanNote, cleanRecipients, sendToEach } from './sendToEach';
 
 /**
  * `sharePost`
@@ -40,11 +41,11 @@ export const sharePost = onCall<ShareInput, Promise<ShareResult>>(
   async (request: CallableRequest<ShareInput>): Promise<ShareResult> => {
     const me = await requireVerifiedStudent(request);
     const postId = request.data?.postId;
-    const note = (request.data?.note ?? '').trim();
+    const note = cleanNote(request.data?.note);
 
     const toUids = cleanRecipients(request.data?.toUids, me.uid);
 
-    if (!postId) throw invalidArgument('Which look?');
+    if (!postId || typeof postId !== 'string') throw invalidArgument('Which look?');
     if (toUids.length === 0) throw invalidArgument('Pick someone to send it to.');
     if (toUids.length > LIMITS.sharePostRecipients.max) {
       throw invalidArgument(`You can send to ${LIMITS.sharePostRecipients.max} people at a time.`);
@@ -58,6 +59,11 @@ export const sharePost = onCall<ShareInput, Promise<ShareResult>>(
     if (post.status !== 'active') throw failed('That look is no longer up.');
     if (post.settings?.sharingDisabled === true)
       throw failed('Sharing is turned off for that look.');
+    // Blocked either way: the same answer as a look that is gone, so a
+    // share never reveals a block.
+    if (post.authorUid !== me.uid && (await isBlockedEitherWay(me.uid, post.authorUid))) {
+      throw notFound('That look is gone.');
+    }
 
     // The snapshot that goes in the bubble. Stored rather than looked up
     // so the chat renders instantly and does not turn into a blank card
@@ -69,11 +75,12 @@ export const sharePost = onCall<ShareInput, Promise<ShareResult>>(
       authorUsername: post.author.username,
     };
 
-    const { sentTo, lastConversationId } = await sendToEach(me, toUids, {
-      body: note,
-      sharedPost,
-      sharedListing: null,
-    });
+    const { sentTo, lastConversationId } = await sendToEach(
+      me,
+      toUids,
+      { body: note, sharedPost, sharedListing: null },
+      post.authorUid,
+    );
 
     if (sentTo === 0) throw failed('We could not send that to anyone you picked.');
 
