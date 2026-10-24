@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 31 (only when you next deploy): small server fixes to following, likes/saves and changing a username. Normal deploy, nothing to switch on.
 - From run 30 (only when you next deploy): two server fixes — sign-ups and reviews. Normal deploy, nothing to switch on. Optional: if you'd rather keep the old, tighter sign-up limit (5 an hour from one wifi instead of 30), say so.
 - Nothing new from run 29 (no server or database changes — nothing to deploy). Optional 1 minute: scroll the feed fast and type quickly in a long chat — it should feel smoother than before.
 - Nothing new from run 28 (no server or database changes — nothing to deploy).
@@ -23,6 +24,39 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-24 (run 31, ~1 AM Central) — Four small fixes in following, likes, saves and usernames
+
+**Plan:** Same as run 30 — everything left in the backlog waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run is H1/H2: read the server code for following, likes, saves and changing a username, which had no tests, fix what's wrong, and add tests.
+
+**Built / Fixed (what a student would notice):**
+- **A "started following you" alert always opens the right girl.** It used to open her by the @username she had that day — if she renamed herself later, tapping the alert said "Closet not found", or opened whoever took her old name. Same fix as shared profile cards got in run 28.
+- **Nobody can follow a deleted or suspended account.** An old profile or feed card could still show the Follow button; the follow counted and the "Deleted account" got an alert nobody would read. Unfollowing them still works, so she can tidy her list.
+- **No likes or saves on a look or piece that's gone.** A phone still showing an old card could like a deleted or taken-down look (and send its owner an alert for a look nobody can open), or save a deleted piece into her Saved list. Now it says "That post is gone" / "That piece is no longer listed". Paused and sold pieces can still be saved. Un-liking and un-saving always work.
+- **Changing your username twice quickly can't jam a name.** Two changes sent close together (a double tap, or two phones) could leave the in-between name locked to her forever, so nobody could ever use it. Fixed.
+- **Ten username changes a day, at most.** Nobody real needs more; it stops a script from grabbing lots of names. She sees "You have changed your username a lot today. Try again tomorrow."
+
+**What to tap to see it:**
+- Mostly invisible. To see the alert fix: have a friend follow you → she changes her username (Profile → Edit Profile) → you go to **Activity** → tap "@… followed you". It opens her profile, not "Closet not found".
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (85 searches, none missing), all 305 shared tests (1 new), and the server tests that don't need the database. The new database tests — 9 for following, 7 for usernames, 15 for likes and saves — ran on GitHub on the final code push, with the full test set: **all green ✅**.
+- One file (contact matching) got a whitespace-only tidy from the code formatter. No change in what it does.
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing urgent. Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code — comment hearts, contact matching, suggested closets, and the booking steps after a request — for bugs like tonight's, with tests.
+
+**Commits:**
+- Activity: a new-follower alert still opens the right closet after she changes her username
+- Follows: nobody new can follow a deleted or suspended account; tests for following
+- Usernames: a quick double change can't leave an old name locked forever, and ten changes a day at most
+- Likes and saves: nothing new lands on a deleted or taken-down look or piece, but taking one back always works; tests
+- Autopilot log for run 31
 
 ---
 
