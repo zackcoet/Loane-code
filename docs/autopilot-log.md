@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 32 (only when you next deploy): server fixes to comments and to accepting rentals/sales. Normal deploy, nothing to switch on.
 - From run 31 (only when you next deploy): small server fixes to following, likes/saves and changing a username. Normal deploy, nothing to switch on.
 - From run 30 (only when you next deploy): two server fixes — sign-ups and reviews. Normal deploy, nothing to switch on. Optional: if you'd rather keep the old, tighter sign-up limit (5 an hour from one wifi instead of 30), say so.
 - Nothing new from run 29 (no server or database changes — nothing to deploy). Optional 1 minute: scroll the feed fast and type quickly in a long chat — it should feel smoother than before.
@@ -24,6 +25,37 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-24 (run 32, ~2 AM Central) — A piece can't be sold twice, plus comment fixes
+
+**Plan:** The backlog is still waiting on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1/H2: read the comments, comment hearts and "after a request" rental steps, which had few or no tests, fix what was wrong, and add tests.
+
+**Built / Fixed (what a student would notice):**
+- **A piece can't be promised twice any more.** When a lender said yes, we only compared dates, and a sale has no dates. So she could say yes to two buyers for the same top, sell a dress a renter was already confirmed for, or rent out something she'd already sold. Now she sees a clear "no": "You already agreed to sell this piece to someone else", "It's on Loane until Tue, Nov 3, so you can't sell it yet", or "That piece has already been sold". Same rule as when a buyer first asks: whoever was promised first wins.
+- **No hearts on comments under a look that's gone.** If a look was deleted or taken down, an old screen could still heart its comments and send the writer an alert for a look nobody can open. Now it says "That look is gone." Taking a heart back always works.
+- **Deleting a comment twice at once can't throw the count off.** If she and the look's owner both deleted the same comment at the same moment, the comment count went down by two. Now it goes down once, and never below zero.
+- **Limits on what goes on a rental page.** A reason, a handoff note or a return-problem note is capped at 500 characters, and at most 8 photos. The app already uses ready-made reasons, so nobody will notice — it only stops someone with a script. Blocked calendar days must be real dates, up to a year's worth.
+
+**What to tap to see it:**
+- Mostly invisible. To see the main one: put a piece up for both rent and sale → have two friends tap **Become the owner** → go to **Profile → Rental requests** → accept the first → try to accept the second. It now says you already agreed to sell it.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (85 searches, none missing), all 305 shared tests, 16 new "can she say yes?" tests, and the server tests that don't need the database. The 10 new database tests for comments and hearts ran on GitHub with the full test set on both code pushes: **all green ✅**.
+- When a piece sells, the other girls still waiting on a request aren't told straight away — their request times out as before. Added as a suggestion (H6).
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing urgent. Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** H6 (tell waiting requests when a piece sells), then keep sweeping untested server code — contact matching, suggested closets and the hourly booking sweep.
+
+**Commits:**
+- Comments: no hearts under a look that's gone, and a double delete can't take the count down twice; tests
+- Bookings: a lender can't say yes to two buyers, sell a piece someone has rented, or rent out a sold one; tests
+- Rentals: cap the words and photos on a rental, and only real dates can be blocked on a calendar
+- Autopilot log for run 32
 
 ---
 
