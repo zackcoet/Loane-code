@@ -138,8 +138,9 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 ### H. Quality
 1. Add tests for every new backend function and rules change.
 2. Fix lint warnings and any `TODO` that's under an hour of work.
-3. Performance: images sized properly, lists virtualized, no needless re-renders. *(Run 24 started: the rental page's small piece photo now loads the thumbnail. Every long list already uses a scrolling list that only draws what's on screen; the shared-look/piece cards in chats stay full-size on purpose — a 480px thumbnail looks soft at that size.)*
+✅ 3. Performance: images sized properly, lists virtualized, no needless re-renders. *(Run 24 started: the rental page's small piece photo now loads the thumbnail. Every long list already uses a scrolling list that only draws what's on screen; the shared-look/piece cards in chats stay full-size on purpose — a 480px thumbnail looks soft at that size. Run 29 finished it: every small photo checked — all use thumbnails where one exists. The feed, Discover's grid and chats now only re-draw the cards that actually changed: before, one letter typed in a chat re-drew the whole thread, and one like on campus re-drew every feed card. See `docs/decisions.md`.)*
 ✅ 4. *(suggested — solved by C3: GitHub now runs the emulator tests on every push)* Let the overnight runner start the emulators: it can't download the Firestore emulator (Google's download site is blocked from the cloud runner), so rules and booking tests only run on Zack's laptop or in CI (see C3).
+5. *(suggested)* Feel-check run 29's speed-up on a real phone: scroll the feed, type fast in a long chat. Overnight runs can't hold a phone.
 
 ---
 

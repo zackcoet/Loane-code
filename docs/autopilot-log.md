@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- Nothing new from run 29 (no server or database changes — nothing to deploy). Optional 1 minute: scroll the feed fast and type quickly in a long chat — it should feel smoother than before.
 - Nothing new from run 28 (no server or database changes — nothing to deploy).
 - From run 27 (only when you next deploy): one new server function (`shareProfile`) and a database rules update (new tracked actions, and the rules that guard profile cards in chats). Deploy the rules **at the same time as or before** the app update goes out — normal deploy, nothing to switch on.
 - Nothing new from run 26 (no server or database changes — nothing to deploy).
@@ -21,6 +22,42 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-24 (run 29, ~11 PM Central) — Smoother feed, Discover and chats
+
+**Plan:** H3 (speed). Check every small photo uses the small copy; then stop the busiest screens — the feed, Discover's grid and chats — from re-drawing every card when only one thing changed. B8 still waits on payments, F7 on your decision, G8 needs a real phone. H2: no warnings, and every leftover note in the code is a future-phase job, so nothing to do.
+
+**Built (what a student would feel, not see):**
+- **The feed scrolls smoother.** Before, one like anywhere on campus, or a new page loading, made the phone re-draw every look it was holding (up to ~15, each with its photos). Now only the look that changed re-draws.
+- **Discover's grid stays snappy while she types or filters.** Every letter in the search box used to re-draw every piece on screen; now unchanged pieces are skipped. A save on one piece no longer re-draws all the others either.
+- **Typing in a long chat no longer lags.** Each letter used to re-draw every message in the thread. Now only the message box changes; a new message or heart re-draws just that one bubble.
+- Photos: checked every small photo in the app — all already use the small, quick-loading copy where one exists. Nothing to change.
+
+**What to tap to see it:**
+- Nothing looks different — it should just *feel* quicker, most on an older iPhone. Try: Feed → scroll fast; Discover → type in search; Messages → a long chat → type quickly.
+
+**Fixed:**
+- The extra re-drawing above. No broken features found.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint (with the text-size check), the index check (84 searches, none missing), all 299 shared tests. No server code or database rules changed tonight; GitHub runs the full set on the push.
+- I couldn't feel the speed-up on a real phone — added as H5 for a 1-minute check by you.
+- Profiles, Activity and the inbox didn't get this treatment — their lists are short enough that it would add code without a difference you'd feel. Written down in `docs/decisions.md`.
+- B8 (Venmo words) still waits on payments; F7 still waits on your decision; G8 needs a phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing new. Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** The founder backlog is now done except items waiting on you (F7), on payments (B8) or on a real phone (G8, H5). Next runs: H1/H2 sweeps (tests for anything untested, small fixes), and new *(suggested)* polish ideas.
+
+**Commits:**
+- Feed: a card only re-draws when its own look changes, so scrolling stays smooth
+- Discover: grid cards skip re-drawing while she types or filters unless their piece changed
+- Feed and Discover: a like or save on one piece no longer re-draws every card on screen
+- Chat: typing no longer re-draws every message in the thread
+- Autopilot log for run 29; H3 done
 
 ---
 

@@ -6,6 +6,28 @@ much as the answer.
 
 ---
 
+## 2026-10-24 — Busy lists only re-draw the rows that changed (autopilot run 29)
+
+**Decision:** The feed's cards (`FeedPostRow`), Discover's grid cards
+(`ListingCard`) and chat bubbles (`Bubble`) are wrapped in React's `memo`,
+and their screens hand them handlers that take the look, piece or message
+as an argument, built once (`useMemo`/`useCallback`). The live listeners
+behind them keep the same object for every document Firestore says did
+not change (`mobile/src/firebase/snapshotRows.ts`).
+
+**Why both halves:** `memo` skips a row only when everything it was
+given is the *same* as last time. Inline arrow functions are new on every
+render, and Firestore rebuilds every document on every snapshot, so
+either one alone would make `memo` do nothing. Before this, one letter
+typed in a chat re-drew the whole thread, and one like anywhere on campus
+re-drew every card in the feed.
+
+**Why not everywhere:** shorter lists (profiles, Activity, inbox) are
+cheap enough already; doing it there adds code that buys nothing a
+student would feel. Worth revisiting if a real phone shows lag there.
+
+---
+
 ## 2026-10-22 — For You never reshuffles under her thumb, and ranks page by page (autopilot run 16)
 
 **Decision:** All Campus is ranked on her phone from the pages already
