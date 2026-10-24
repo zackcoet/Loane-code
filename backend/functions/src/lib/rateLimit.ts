@@ -111,6 +111,16 @@ export const LIMITS = {
     windowMs: DAY,
     message: 'You have checked your contacts a few times today. Try again tomorrow.',
   },
+  /**
+   * Writing to support. Like reporting, generous: a girl with a real
+   * problem may write several times while she waits. Ten a day still
+   * stops a script flooding the help queue the team reads by hand.
+   */
+  support: {
+    max: 10,
+    windowMs: DAY,
+    message: 'Thanks — we have your messages and will reply soon. Try again tomorrow.',
+  },
   /** Downloading her data reads everything she has. Nobody needs it hourly. */
   dataExport: {
     max: 3,

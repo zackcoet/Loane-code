@@ -42,48 +42,65 @@ export const removeListing = onCall<RemoveListingInput, Promise<RemoveListingRes
   async (request: CallableRequest<RemoveListingInput>): Promise<RemoveListingResult> => {
     const user = await requireActiveUser(request);
     const listingId = request.data?.listingId;
-    if (!listingId) throw invalidArgument('Which piece do you want to remove?');
+    if (typeof listingId !== 'string' || listingId === '') {
+      throw invalidArgument('Which piece do you want to remove?');
+    }
 
     const ref = db().collection(COLLECTIONS.listings).doc(listingId);
-    const snap = await ref.get();
-    if (!snap.exists) throw notFound('That piece is no longer listed.');
+    const bookingsQuery = db().collection(COLLECTIONS.bookings).where('listingId', '==', listingId);
 
-    const listing = snap.data() as Listing;
-    if (listing.ownerUid !== user.uid) {
-      throw permissionDenied("That's not your listing.");
-    }
-    if (listing.status === 'removed') {
-      return { keptForHistory: false, bookingCount: 0 };
-    }
+    /*
+      ONE TRANSACTION, because a request can land while she is removing.
 
-    const bookings = await db()
-      .collection(COLLECTIONS.bookings)
-      .where('listingId', '==', listingId)
-      .get();
+      Read-then-write would let this happen: we see no rentals, a renter's
+      request goes through a moment later (it only checked the piece was
+      still up), and then we take the piece down — leaving a girl waiting
+      on a piece nobody can see. Asking to rent reads the listing in its
+      own transaction, so doing the same here means one of the two always
+      goes first and the other sees the result.
+    */
+    const result = await db().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw notFound('That piece is no longer listed.');
 
-    // An in-flight rental blocks removal outright — someone is either
-    // waiting on an answer or physically holding the garment.
-    const live = bookings.docs.filter((d) =>
-      LIVE_STATUSES.includes((d.data() as { status: string }).status),
-    );
-    if (live.length > 0) {
-      throw failed(
-        'This piece has a rental in progress. Finish or cancel it before removing the listing.',
+      const listing = snap.data() as Listing;
+      if (listing.ownerUid !== user.uid) {
+        throw permissionDenied("That's not your listing.");
+      }
+      if (listing.status === 'removed') {
+        return { keptForHistory: false, bookingCount: 0, changed: false };
+      }
+
+      const bookings = await tx.get(bookingsQuery);
+
+      // An in-flight rental blocks removal outright — someone is either
+      // waiting on an answer or physically holding the garment.
+      const live = bookings.docs.filter((d) =>
+        LIVE_STATUSES.includes((d.data() as { status: string }).status),
       );
-    }
+      if (live.length > 0) {
+        throw failed(
+          'This piece has a rental in progress. Finish or cancel it before removing the listing.',
+        );
+      }
 
-    await ref.update({
-      status: 'removed',
-      removedAt: now(),
-      updatedAt: now(),
+      tx.update(ref, {
+        status: 'removed',
+        removedAt: now(),
+        updatedAt: now(),
+      });
+
+      return { keptForHistory: bookings.size > 0, bookingCount: bookings.size, changed: true };
     });
+
+    if (!result.changed) return { keptForHistory: false, bookingCount: 0 };
 
     logger.info('Listing removed', {
       listingId,
       ownerUid: user.uid,
-      bookingCount: bookings.size,
+      bookingCount: result.bookingCount,
     });
 
-    return { keptForHistory: bookings.size > 0, bookingCount: bookings.size };
+    return { keptForHistory: result.keptForHistory, bookingCount: result.bookingCount };
   },
 );

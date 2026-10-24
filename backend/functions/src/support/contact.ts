@@ -11,6 +11,7 @@ import {
 import { db, now } from '../lib/admin';
 import { invalidArgument } from '../lib/errors';
 import { requireActiveUser } from '../lib/guards';
+import { rateLimit } from '../lib/rateLimit';
 
 interface SupportInput {
   topic: SupportTopic;
@@ -22,17 +23,26 @@ export const submitSupportRequest = onCall<SupportInput, Promise<{ requestId: st
   async (request: CallableRequest<SupportInput>): Promise<{ requestId: string }> => {
     const user = await requireActiveUser(request);
     const { topic, message = '' } = request.data ?? {};
-    const trimmed = message.trim();
 
     if (!(SUPPORT_TOPICS as readonly string[]).includes(topic)) {
       throw invalidArgument('Pick a topic.');
     }
+    // A number or a list from a script would crash on .trim() and come
+    // back as a vague "something went wrong".
+    if (typeof message !== 'string') {
+      throw invalidArgument('Tell us what you need help with.');
+    }
+    const trimmed = message.trim();
     if (trimmed.length < LIMITS.supportMessage.min) {
       throw invalidArgument('Tell us what you need help with.');
     }
     if (trimmed.length > LIMITS.supportMessage.max) {
       throw invalidArgument('That message is too long.');
     }
+
+    // Counted only once the message is good, so a typo-and-retry
+    // never uses one up.
+    await rateLimit(user.uid, 'support');
 
     const ref = db().collection(COLLECTIONS.supportRequests).doc();
     const row: Omit<SupportRequest, 'createdAt' | 'updatedAt'> = {
