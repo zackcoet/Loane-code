@@ -8,6 +8,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { collection, limit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
+import { snapshotRows } from '../firebase/snapshotRows';
 import { COLLECTIONS, type Listing, type Post } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
@@ -42,7 +43,7 @@ interface Result<T> {
   retry: () => void;
 }
 
-function useCampusCollection<T>(
+function useCampusCollection<T extends { id: string }>(
   collectionName: string,
   campusField: string,
   pageSize: number,
@@ -87,7 +88,8 @@ function useCampusCollection<T>(
           return;
         }
         setError(null);
-        setItems(snap.docs.map((d) => ({ ...(d.data() as T), id: d.id })));
+        // Unchanged pieces keep their object, so their cards skip re-drawing.
+        setItems((current) => snapshotRows(current, snap));
         setLoading(false);
       },
       () => {
