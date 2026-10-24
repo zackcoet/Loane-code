@@ -40,4 +40,5 @@ export * from './notificationGroups';
 export * from './onboarding';
 export * from './mySize';
 export * from './socialProof';
+export * from './campusDemand';
 export * from './connection';
