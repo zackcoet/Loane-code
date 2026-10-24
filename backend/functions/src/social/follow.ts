@@ -52,6 +52,20 @@ async function setFollow(
     const [targetSnap, edgeSnap] = await Promise.all([tx.get(targetRef), tx.get(edgeRef)]);
     if (!targetSnap.exists) throw notFound('We could not find that closet.');
 
+    /*
+      Nobody new follows a deleted or suspended account. A deleted one is
+      a "Deleted account" shell that can never post again, and a stale
+      profile or feed card could still offer the button — the follow
+      would count, and the shell would get an alert nobody reads.
+
+      Unfollowing always works, so she can tidy her list whatever has
+      happened to the other account.
+    */
+    const targetStatus = (targetSnap.data() as { status?: string }).status;
+    if (shouldFollow && (targetStatus === 'deactivated' || targetStatus === 'suspended')) {
+      throw notFound('We could not find that closet.');
+    }
+
     const alreadyFollowing = edgeSnap.exists;
     // Nothing to do — tapping follow twice must not count twice.
     if (alreadyFollowing === shouldFollow) return;
