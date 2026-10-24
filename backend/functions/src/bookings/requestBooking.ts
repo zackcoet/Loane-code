@@ -139,6 +139,13 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
 
       const existing = await tx.get(conflictQuery);
 
+      // A sale she has already said yes to has no dates, so the overlap
+      // check below would wave this through — and leave the girl waiting
+      // on a request the lender can never accept.
+      if (existing.docs.some((doc) => (doc.data() as Booking).kind === 'purchase')) {
+        throw failed('That piece is being sold to someone else.');
+      }
+
       const clash = existing.docs.some((doc) => {
         const b = doc.data() as Booking;
         if (!b.startDate || !b.endDate) return false;

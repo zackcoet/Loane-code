@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { acceptClash } from '../bookings/acceptClash';
+import { acceptClash, requestsLeftBehind } from '../bookings/acceptClash';
 
 const TODAY = '2026-10-24';
 const active = { status: 'active' as const };
@@ -105,6 +105,29 @@ describe('accepting a purchase', () => {
   it('refused on a sold piece', () => {
     expect(acceptClash(purchase('a', 'requested'), { status: 'sold' }, [], TODAY)).toMatch(
       /already been sold/,
+    );
+  });
+});
+
+describe('requests left behind when she says yes', () => {
+  const waiting = [
+    purchase('a', 'requested'),
+    purchase('b', 'requested'),
+    rental('c', '2026-11-01', '2026-11-03', 'requested'),
+    rental('d', '2026-11-05', '2026-11-07', 'confirmed'),
+  ];
+
+  it('a sale: every other open request, rentals too, but not herself', () => {
+    expect(requestsLeftBehind(purchase('a'), waiting).map((b) => b.id)).toEqual(['b', 'c']);
+  });
+
+  it('a rental: nobody — a buyer can still have it once it is back', () => {
+    expect(requestsLeftBehind(rental('c', '2026-11-01', '2026-11-03'), waiting)).toEqual([]);
+  });
+
+  it('never touches a booking that is already past requested', () => {
+    expect(requestsLeftBehind(purchase('x'), [rental('d', '2026-11-05', '2026-11-07')])).toEqual(
+      [],
     );
   });
 });

@@ -16,7 +16,7 @@ import {
 import { db, now, Timestamp, FieldValue } from '../lib/admin';
 import { alreadyTaken, failed, invalidArgument } from '../lib/errors';
 import { requireActiveUser, requireHandoffReady } from '../lib/guards';
-import { acceptClash } from './acceptClash';
+import { acceptClash, requestsLeftBehind } from './acceptClash';
 import {
   assertCanTransition,
   completeBooking,
@@ -65,6 +65,16 @@ function checkPhotos(photos: unknown): ImageRef[] {
 // Accept or decline
 // ---------------------------------------------------------------------------
 
+/** What a girl still waiting sees on her request once the piece is sold. */
+export const SOLD_ELSEWHERE = 'Sold to someone else';
+
+/**
+ * Two writes each (the request and her alert), well inside a
+ * transaction's 500. A piece with more open requests than this is not
+ * a real closet; anything past it still times out as before.
+ */
+const LEFT_BEHIND_CAP = 100;
+
 export const respondToBooking = onCall<
   { bookingId: string; accept: boolean; reason?: string },
   Promise<{ status: Booking['status'] }>
@@ -102,6 +112,22 @@ export const respondToBooking = onCall<
         .collection(COLLECTIONS.conversations)
         .doc(ids.conversation(booking.lenderUid, booking.renterUid));
       const conversationSnap = await tx.get(conversationRef);
+
+      // A sale closes the door on everyone else still waiting. Read them
+      // now (reads before writes), answer them below in the same
+      // transaction, so nobody can be left hoping for a sold piece.
+      const waiting =
+        booking.kind === 'purchase'
+          ? (
+              await tx.get(
+                db()
+                  .collection(COLLECTIONS.bookings)
+                  .where('listingId', '==', booking.listingId)
+                  .where('status', '==', 'requested')
+                  .limit(LEFT_BEHIND_CAP),
+              )
+            ).docs.map((doc) => ({ ...(doc.data() as Booking), id: doc.id }))
+          : [];
 
       const clash = acceptClash(
         booking,
@@ -159,6 +185,22 @@ export const respondToBooking = onCall<
           photoUrl: booking.lender.photoUrl,
         },
       });
+      for (const other of requestsLeftBehind(booking, waiting)) {
+        tx.update(db().collection(COLLECTIONS.bookings).doc(other.id), {
+          status: 'declined',
+          declineReason: SOLD_ELSEWHERE,
+          expiresAt: null,
+          'timeline.respondedAt': now(),
+          updatedAt: now(),
+        });
+        notify(tx, {
+          uid: other.renterUid,
+          type: 'rental_declined',
+          title: 'That piece was sold',
+          body: `${booking.lender.username} sold ${pieceName(other)} to someone else.`,
+          bookingId: other.id,
+        });
+      }
       return 'confirmed' as const;
     }
 

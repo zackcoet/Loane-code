@@ -63,3 +63,21 @@ export function acceptClash(
   );
   return clash ? 'You already confirmed someone else for those dates.' : null;
 }
+
+/**
+ * Once she says yes to a buyer, which other requests for the piece can
+ * never be accepted?
+ *
+ * All of them, rentals included: `acceptClash` refuses any request
+ * while a sale is promised, so leaving them open only makes those girls
+ * wait for the hourly sweep to time them out, days later, for a piece
+ * that is already spoken for. Accepting a rental leaves the rest alone:
+ * a buyer can still have it once it is back, and other dates may be free.
+ */
+export function requestsLeftBehind<T extends Pick<Booking, 'id' | 'status'>>(
+  accepted: Pick<Booking, 'id' | 'kind'>,
+  requested: T[],
+): T[] {
+  if (accepted.kind !== 'purchase') return [];
+  return requested.filter((b) => b.id !== accepted.id && b.status === 'requested');
+}
