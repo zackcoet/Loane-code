@@ -50,6 +50,16 @@ async function setEdge(
     if (edgeSnap.exists === on) return;
 
     const post = postSnap.data() as Post;
+    /*
+      No new likes or saves on a look that is gone — deleted, taken down
+      by an admin, or not out yet. A phone still showing the old card
+      could otherwise count a like on it and send its author an alert
+      for a look nobody can open. Taking a like or save BACK always
+      works, so her Liked and Saved lists can be tidied.
+    */
+    if (on && post.status && post.status !== 'active') {
+      throw notFound('That post is gone.');
+    }
     // A like sends the author a notification, so it is contact — refused
     // between blocked people like a comment or a follow. Taking a like
     // back, and saving (which is private), stay allowed.

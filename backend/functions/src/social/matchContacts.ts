@@ -84,10 +84,7 @@ export const matchContacts = onCall<Input, Promise<{ matches: ContactMatch[] }>>
       throw new HttpsError('invalid-argument', 'hashes must be a list.');
     }
     if (incoming.length > MAX_HASHES_PER_CALL) {
-      throw new HttpsError(
-        'invalid-argument',
-        `Send at most ${MAX_HASHES_PER_CALL} at a time.`,
-      );
+      throw new HttpsError('invalid-argument', `Send at most ${MAX_HASHES_PER_CALL} at a time.`);
     }
 
     // Shape-check before hashing: a 64-character hex string is the only

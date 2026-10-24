@@ -18,6 +18,8 @@ import { requireActiveUser } from '../lib/guards';
  * actually changes, which keeps a double tap from counting twice.
  */
 
+const UNSAVEABLE: readonly Listing['status'][] = ['removed', 'suspended', 'draft'];
+
 interface SaveInput {
   listingId: string;
 }
@@ -44,8 +46,18 @@ async function setSaved(
     const alreadySaved = saveSnap.exists;
     if (alreadySaved === shouldSave) return;
 
+    const listing = listingSnap.data() as Listing;
+    /*
+      No new saves on a piece its owner deleted, an admin took down, or
+      that was never published — it would sit in her Saved list pointing
+      at a page that says "not found". Paused and sold pieces can still be
+      saved: they are real and may come back. Unsaving always works.
+    */
+    if (shouldSave && UNSAVEABLE.includes(listing.status)) {
+      throw notFound('That piece is no longer listed.');
+    }
+
     if (shouldSave) {
-      const listing = listingSnap.data() as Listing;
       const save: Save = {
         id: saveRef.id,
         uid: user.uid,
