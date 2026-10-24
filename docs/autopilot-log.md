@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 35 (only when you next deploy): server fixes to starting a chat, removing a piece, and Contact us. Normal deploy, nothing to switch on.
 - From run 34 (only when you next deploy): server fixes to "Find friends from contacts" and suggested closets. Normal deploy, nothing to switch on.
 - From run 33 (only when you next deploy): server fixes to accepting a sale, asking to rent, and the hourly rental clock. Normal deploy, nothing to switch on.
 - From run 32 (only when you next deploy): server fixes to comments and to accepting rentals/sales. Normal deploy, nothing to switch on.
@@ -27,6 +28,36 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-24 (run 35, ~5 AM Central) — Chats, removing a piece, and Contact us tightened up
+
+**Plan:** The backlog is still waiting on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1: read starting a chat, removing a piece, and the Contact us form in Help — none had tests — fix what was wrong, and add tests.
+
+**Built / Fixed (what a student would notice):**
+- **No new chats with deleted or suspended accounts.** You could start a brand-new chat with a "Deleted account" or a suspended girl from an old screen. Now it says "We could not find that student" — the same rule as following. A chat you *already had* with her still opens, so a renter whose lender gets suspended mid-rental can still scroll back to where they agreed to meet.
+- **A chat can only be "about" your own piece or rental.** Someone with a script could pin a stranger's rental or another girl's dress onto a chat. Now anything that doesn't belong to the two of you is quietly ignored, and the chat still opens normally.
+- **Removing a piece can't clash with a new request.** If a renter asked for a piece in the same split second its owner removed it, the request could slip through — leaving a girl waiting on a piece nobody can see. Now one always goes first and the other gets a clear answer.
+- **Contact us can't be flooded.** It had no cap, so a script could fill the help queue you read by hand. Now ten messages a day — a girl with a real problem never notices. A message that's refused for a typo doesn't use one up.
+
+**What to tap to see it:**
+- Mostly invisible. Contact us: **Profile → ☰ → Help → Contact us**, send a message — works exactly as before.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (86 searches, none missing), all 305 shared tests, and the server tests that don't need the database. The 19 new database tests (8 chats, 8 removing a piece, 3 Contact us) ran on GitHub — all green ✅.
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing urgent. Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code (H1) — sharing a look/piece/profile into chats, and the admin support-request tools — plus H2 (small cleanups).
+
+**Commits:**
+- Chats: no new chat with a deleted or suspended account, and a chat can only be about your own piece or rental; tests
+- Removing a piece can't race a new rental request; Contact us is capped at ten a day; tests
+- Autopilot log for run 35
+- GitHub checks on the code push (full set, database tests included): **492 passed, 0 failed ✅**
 
 ---
 
