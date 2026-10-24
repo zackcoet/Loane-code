@@ -88,6 +88,17 @@ export const LIMITS = {
    * and the last thing to do is stop her telling us.
    */
   report: { max: 20, windowMs: DAY, message: 'Thanks — we already have several from you today.' },
+  /**
+   * Changing her @username. Somebody trying a few before one feels right
+   * is normal (and the app checks each name is free as she types, so
+   * "taken" tries are rare). Ten a day still stops a script cycling
+   * through names to grab them, or to dodge being found.
+   */
+  usernameChange: {
+    max: 10,
+    windowMs: DAY,
+    message: 'You have changed your username a lot today. Try again tomorrow.',
+  },
   /** Downloading her data reads everything she has. Nobody needs it hourly. */
   dataExport: {
     max: 3,
