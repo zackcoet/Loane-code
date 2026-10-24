@@ -223,32 +223,39 @@ export const deleteComment = onCall<DeleteInput, Promise<{ ok: true }>>(
     if (!commentId) throw invalidArgument('Which comment?');
 
     const ref = db().collection(COLLECTIONS.comments).doc(commentId);
-    const snap = await ref.get();
-    if (!snap.exists) throw notFound('That comment is gone.');
 
-    const comment = snap.data() as Comment;
+    /*
+      In a transaction so two deletes sent together (a double tap, or
+      her and the look's author at the same moment) cannot both see it
+      still active and take the look's comment count down twice.
+    */
+    await db().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw notFound('That comment is gone.');
+      const comment = snap.data() as Comment;
 
-    // Her own comment, or a comment on her own look. The second one
-    // matters: the person whose post it is should be able to clear
-    // something nasty off it without waiting for us.
-    const postSnap = await db().collection(COLLECTIONS.posts).doc(comment.postId).get();
-    const postAuthorUid = postSnap.exists ? (postSnap.data() as Post).authorUid : null;
-    if (comment.authorUid !== user.uid && postAuthorUid !== user.uid) {
-      throw permissionDenied('That is not yours to delete.');
-    }
+      // Her own comment, or a comment on her own look. The second one
+      // matters: the person whose post it is should be able to clear
+      // something nasty off it without waiting for us.
+      const postRef = db().collection(COLLECTIONS.posts).doc(comment.postId);
+      const postSnap = await tx.get(postRef);
+      const post = postSnap.exists ? (postSnap.data() as Post) : null;
+      if (comment.authorUid !== user.uid && post?.authorUid !== user.uid) {
+        throw permissionDenied('That is not yours to delete.');
+      }
 
-    // Already gone. Say so rather than moving the count a second time.
-    if (comment.status !== 'active') throw failed('That comment is already gone.');
+      // Already gone. Say so rather than moving the count a second time.
+      if (comment.status !== 'active') throw failed('That comment is already gone.');
 
-    const batch = db().batch();
-    batch.update(ref, { status: 'removed', updatedAt: now() });
-    if (postSnap.exists) {
-      batch.update(postSnap.ref, {
-        'stats.commentCount': FieldValue.increment(-1),
-        updatedAt: now(),
-      });
-    }
-    await batch.commit();
+      tx.update(ref, { status: 'removed', updatedAt: now() });
+      // Never below zero, even on a look whose count predates this check.
+      if (post && (post.stats?.commentCount ?? 0) > 0) {
+        tx.update(postRef, {
+          'stats.commentCount': FieldValue.increment(-1),
+          updatedAt: now(),
+        });
+      }
+    });
 
     return { ok: true };
   },

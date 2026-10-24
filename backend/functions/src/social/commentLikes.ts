@@ -1,6 +1,6 @@
 import { type CallableRequest } from 'firebase-functions/v2/https';
 import { onCall } from '../lib/callable';
-import { COLLECTIONS, ids, type Comment, type CommentLike } from '@loane/shared';
+import { COLLECTIONS, ids, type Comment, type CommentLike, type Post } from '@loane/shared';
 import { notify } from '../bookings/transitions';
 import { db, now, FieldValue } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
@@ -47,6 +47,19 @@ async function setCommentLike(
     if (on) {
       // Taking a heart back off a removed comment is fine; adding one is not.
       if (comment.status !== 'active') throw failed('That comment is no longer there.');
+      /*
+        Nor on a comment under a look that is gone. Deleting or taking
+        down a look leaves its comments marked active, so without this a
+        phone still showing the old thread could heart one and send its
+        writer an alert that opens a look nobody can see — the same hole
+        post likes had (social/postEngagement.ts). Read last, because a
+        transaction reads everything before it writes anything.
+      */
+      const postSnap = await tx.get(db().collection(COLLECTIONS.posts).doc(comment.postId));
+      const post = postSnap.exists ? (postSnap.data() as Post) : null;
+      if (!post || (post.status && post.status !== 'active')) {
+        throw notFound('That look is gone.');
+      }
       // A heart alerts the commenter, so it is contact — refused between
       // blocked people, like a post like.
       if (comment.authorUid !== user.uid) await assertNotBlocked(user.uid, comment.authorUid);
