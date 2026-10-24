@@ -1,13 +1,46 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onCall } from '../lib/callable';
 import { logger } from 'firebase-functions';
-import { COLLECTIONS, type Booking } from '@loane/shared';
+import { COLLECTIONS, type Booking, type Timestampish } from '@loane/shared';
 import { db, now, Timestamp } from '../lib/admin';
 import { requireAdmin } from '../lib/guards';
 import { completeBooking, notify, pieceName } from './transitions';
 
 /** How long before a request expires we nudge the lender. */
 const EXPIRY_NUDGE_HOURS = 6;
+
+/**
+ * On the server these are always Firestore Timestamps; the shared type
+ * is looser because the phone sees them in other shapes too.
+ */
+function millis(value: Timestampish | null | undefined): number | null {
+  if (value == null) return null;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return Date.parse(value);
+  if (value instanceof Date) return value.getTime();
+  return value.seconds * 1000 + Math.floor(value.nanoseconds / 1e6);
+}
+
+function passed(deadline: Timestampish | null | undefined, nowTs: { toMillis(): number }): boolean {
+  const at = millis(deadline);
+  return at != null && at <= nowTs.toMillis();
+}
+
+/** Still waiting on the lender, and out of time. */
+export function stillStale(
+  booking: Pick<Booking, 'status'> & { expiresAt?: Timestampish | null },
+  nowTs: { toMillis(): number },
+): boolean {
+  return booking.status === 'requested' && passed(booking.expiresAt, nowTs);
+}
+
+/** Back with the lender, and nobody complained within the window. */
+export function stillSettled(
+  booking: Pick<Booking, 'status'> & { disputeWindowEndsAt?: Timestampish | null },
+  nowTs: { toMillis(): number },
+): boolean {
+  return booking.status === 'returned' && passed(booking.disputeWindowEndsAt, nowTs);
+}
 
 /**
  * The clock. Four things happen purely because time passed:
@@ -49,33 +82,46 @@ async function sweep(): Promise<SweepResult> {
     .get();
 
   for (const doc of stale.docs) {
-    const booking = doc.data() as Booking;
-    const batch = db().batch();
-    batch.update(doc.ref, {
-      status: 'declined',
-      declineReason: 'No answer in time',
-      expiresAt: null,
-      'timeline.respondedAt': now(),
-      updatedAt: now(),
+    /*
+      RE-READ, INSIDE A TRANSACTION.
+
+      The list above was read a moment ago, outside any lock. If the
+      lender said yes (or the renter cancelled) in between, a plain
+      write here would turn her confirmed rental back into "Request
+      expired". The transaction re-reads it and only declines what is
+      still waiting and still past its deadline.
+    */
+    const didExpire = await db().runTransaction(async (tx) => {
+      const snap = await tx.get(doc.ref);
+      const booking = snap.data() as Booking | undefined;
+      if (!booking || !stillStale(booking, nowTs)) return false;
+
+      tx.update(doc.ref, {
+        status: 'declined',
+        declineReason: 'No answer in time',
+        expiresAt: null,
+        'timeline.respondedAt': now(),
+        updatedAt: now(),
+      });
+      // Both sides need to know: she is not getting the dress, and the
+      // lender should know she missed it.
+      notify(tx, {
+        uid: booking.renterUid,
+        type: 'rental_declined',
+        title: 'Request expired',
+        body: `${booking.lender.username} didn't answer in time about ${pieceName(booking)}.`,
+        bookingId: doc.id,
+      });
+      notify(tx, {
+        uid: booking.lenderUid,
+        type: 'rental_declined',
+        title: 'You missed a request',
+        body: `A request for ${pieceName(booking)} expired before you answered.`,
+        bookingId: doc.id,
+      });
+      return true;
     });
-    // Both sides need to know: she is not getting the dress, and the
-    // lender should know she missed it.
-    notify(batch, {
-      uid: booking.renterUid,
-      type: 'rental_declined',
-      title: 'Request expired',
-      body: `${booking.lender.username} didn't answer in time about ${pieceName(booking)}.`,
-      bookingId: doc.id,
-    });
-    notify(batch, {
-      uid: booking.lenderUid,
-      type: 'rental_declined',
-      title: 'You missed a request',
-      body: `A request for ${pieceName(booking)} expired before you answered.`,
-      bookingId: doc.id,
-    });
-    await batch.commit();
-    expired += 1;
+    if (didExpire) expired += 1;
   }
 
   // --- 2. Returns nobody flagged ------------------------------------------
@@ -87,13 +133,20 @@ async function sweep(): Promise<SweepResult> {
     .get();
 
   for (const doc of settled.docs) {
-    const booking = doc.data() as Booking;
-    const batch = db().batch();
-    // The same helper confirmReturn uses when the lender closes it by
-    // hand, so the two endings cannot drift apart.
-    completeBooking(batch, doc.ref, booking);
-    await batch.commit();
-    completed += 1;
+    // Re-read for the same reason as above: if she flagged a problem, or
+    // the lender closed it by hand, in the moment since the list was
+    // read, completing it again would bury the complaint or count the
+    // rental twice in both their histories.
+    const didComplete = await db().runTransaction(async (tx) => {
+      const snap = await tx.get(doc.ref);
+      const booking = snap.data() as Booking | undefined;
+      if (!booking || !stillSettled(booking, nowTs)) return false;
+      // The same helper confirmReturn uses when the lender closes it by
+      // hand, so the two endings cannot drift apart.
+      completeBooking(tx, doc.ref, { ...booking, id: doc.id });
+      return true;
+    });
+    if (didComplete) completed += 1;
   }
 
   // --- 3. Reminders -------------------------------------------------------
@@ -198,9 +251,9 @@ async function sweep(): Promise<SweepResult> {
       notify(batch, {
         uid: item.uid,
         type:
-        item.key === 'dueToday' || item.key === 'dueTomorrow' || item.key === 'overdue'
-          ? 'return_reminder'
-          : 'rental_upcoming',
+          item.key === 'dueToday' || item.key === 'dueTomorrow' || item.key === 'overdue'
+            ? 'return_reminder'
+            : 'rental_upcoming',
         title: item.title,
         body: item.body,
         bookingId: doc.id,
