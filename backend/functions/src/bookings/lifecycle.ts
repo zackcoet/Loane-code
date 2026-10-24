@@ -6,13 +6,15 @@ import {
   RETURN_DISPUTE_WINDOW_HOURS,
   RETURN_PROBLEMS,
   ids,
-  rangesOverlap,
+  toIsoDate,
   type Booking,
   type ImageRef,
+  type Listing,
 } from '@loane/shared';
 import { db, now, Timestamp, FieldValue } from '../lib/admin';
 import { alreadyTaken, failed, invalidArgument } from '../lib/errors';
 import { requireActiveUser, requireHandoffReady } from '../lib/guards';
+import { acceptClash } from './acceptClash';
 import {
   assertCanTransition,
   completeBooking,
@@ -57,30 +59,31 @@ export const respondToBooking = onCall<
     if (accept) {
       // Confirming is the moment the dates become hers, so this is where
       // the conflict check has to happen again — another booking may have
-      // been confirmed since she asked.
-      const conflicts = await tx.get(
-        db()
-          .collection(COLLECTIONS.bookings)
-          .where('listingId', '==', booking.listingId)
-          .where('status', 'in', BLOCKING_BOOKING_STATUSES as string[]),
-      );
+      // been confirmed, or the piece sold, since she asked.
+      const listingRef = db().collection(COLLECTIONS.listings).doc(booking.listingId);
+      const [listingSnap, holding] = await Promise.all([
+        tx.get(listingRef),
+        tx.get(
+          db()
+            .collection(COLLECTIONS.bookings)
+            .where('listingId', '==', booking.listingId)
+            .where('status', 'in', BLOCKING_BOOKING_STATUSES as string[]),
+        ),
+      ]);
 
       // Read before any write — a transaction requires it.
       const conversationRef = db()
         .collection(COLLECTIONS.conversations)
         .doc(ids.conversation(booking.lenderUid, booking.renterUid));
       const conversationSnap = await tx.get(conversationRef);
-      const clash = conflicts.docs.some((doc) => {
-        const other = doc.data() as Booking;
-        if (doc.id === bookingId || !other.startDate || !other.endDate) return false;
-        return rangesOverlap(
-          { startDate: booking.startDate!, endDate: booking.endDate! },
-          { startDate: other.startDate, endDate: other.endDate },
-        );
-      });
-      if (clash) {
-        throw alreadyTaken('You already confirmed someone else for those dates.');
-      }
+
+      const clash = acceptClash(
+        booking,
+        listingSnap.exists ? (listingSnap.data() as Listing) : null,
+        holding.docs.map((doc) => doc.data() as Booking),
+        toIsoDate(new Date()),
+      );
+      if (clash) throw alreadyTaken(clash);
 
       tx.update(ref, {
         status: 'confirmed',
@@ -353,45 +356,45 @@ export const flagReturnProblem = onCall<
 // ---------------------------------------------------------------------------
 
 /** Either side can call it off before the garment changes hands. */
-export const cancelBooking = onCall<
-  { bookingId: string; reason: string },
-  Promise<{ ok: true }>
->({ region: 'us-central1' }, async (request) => {
-  const user = await requireActiveUser(request);
-  const { bookingId, reason = '' } = request.data ?? {};
-  if (!bookingId) throw invalidArgument('Which rental?');
-  if (!reason.trim()) throw invalidArgument('Say why, so the other person knows.');
+export const cancelBooking = onCall<{ bookingId: string; reason: string }, Promise<{ ok: true }>>(
+  { region: 'us-central1' },
+  async (request) => {
+    const user = await requireActiveUser(request);
+    const { bookingId, reason = '' } = request.data ?? {};
+    if (!bookingId) throw invalidArgument('Which rental?');
+    if (!reason.trim()) throw invalidArgument('Say why, so the other person knows.');
 
-  await db().runTransaction(async (tx) => {
-    const { booking, actor, ref } = await loadBookingFor(bookingId, user.uid, tx);
-    assertCanTransition(booking, 'cancelled', actor);
+    await db().runTransaction(async (tx) => {
+      const { booking, actor, ref } = await loadBookingFor(bookingId, user.uid, tx);
+      assertCanTransition(booking, 'cancelled', actor);
 
-    // Counted so a pattern is visible to an admin. One cancellation is
-    // life; five in a month is a lender nobody can rely on.
-    tx.update(db().collection(COLLECTIONS.users).doc(user.uid), {
-      'stats.cancellations': FieldValue.increment(1),
-      updatedAt: now(),
+      // Counted so a pattern is visible to an admin. One cancellation is
+      // life; five in a month is a lender nobody can rely on.
+      tx.update(db().collection(COLLECTIONS.users).doc(user.uid), {
+        'stats.cancellations': FieldValue.increment(1),
+        updatedAt: now(),
+      });
+
+      tx.update(ref, {
+        status: 'cancelled',
+        cancelledByUid: user.uid,
+        cancellationReason: reason.trim(),
+        expiresAt: null,
+        'timeline.cancelledAt': now(),
+        updatedAt: now(),
+      });
+      notify(tx, {
+        uid: actor === 'lender' ? booking.renterUid : booking.lenderUid,
+        type: 'rental_declined',
+        title: 'Rental cancelled',
+        body: `${actor === 'lender' ? booking.lender.username : booking.renter.username} cancelled ${pieceName(booking)}.`,
+        bookingId,
+      });
     });
 
-    tx.update(ref, {
-      status: 'cancelled',
-      cancelledByUid: user.uid,
-      cancellationReason: reason.trim(),
-      expiresAt: null,
-      'timeline.cancelledAt': now(),
-      updatedAt: now(),
-    });
-    notify(tx, {
-      uid: actor === 'lender' ? booking.renterUid : booking.lenderUid,
-      type: 'rental_declined',
-      title: 'Rental cancelled',
-      body: `${actor === 'lender' ? booking.lender.username : booking.renter.username} cancelled ${pieceName(booking)}.`,
-      bookingId,
-    });
-  });
-
-  return { ok: true };
-});
+    return { ok: true };
+  },
+);
 
 // ---------------------------------------------------------------------------
 // Lender's blocked dates
@@ -430,7 +433,7 @@ export const setBlockedDates = onCall<
   for (const doc of booked.docs) {
     const b = doc.data() as Booking;
     if (!b.startDate || !b.endDate) continue;
-    for (let d = b.startDate; d < b.endDate; ) {
+    for (let d = b.startDate; d < b.endDate;) {
       taken.add(d);
       const next = new Date(`${d}T00:00:00Z`);
       next.setUTCDate(next.getUTCDate() + 1);
