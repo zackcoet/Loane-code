@@ -2,6 +2,8 @@
  * Another student's profile and closet.
  *
  * Reached by tapping a name or photo anywhere in the app: `/u/ellacloset`.
+ * A link that knows her account id adds it — `/u/ellacloset?uid=…` — so it
+ * keeps working after she changes her username (see useProfileByUsername).
  *
  * Follow and Unfollow go through Cloud Functions — the app cannot write
  * the follow edge or anyone's follower count, because a follower count
@@ -37,14 +39,18 @@ export default function OtherProfile() {
   const router = useRouter();
   // Live list: the pull is reassurance, see usePullToRefresh.
   const { refreshControl } = usePullToRefresh();
-  const { username, from } = useLocalSearchParams<{ username: string; from?: string }>();
+  const { username, from, uid } = useLocalSearchParams<{
+    username: string;
+    from?: string;
+    uid?: string;
+  }>();
   // Where she tapped through from, so the feed algorithm can tell "opened
   // her profile from a look" apart from a search. Only known values, so a
   // hand-typed link cannot put arbitrary text in the event.
   const cameFrom = from === 'feed' || from === 'suggested' ? from : 'other';
   const { profile: me } = useAuth();
 
-  const { user, loading, notFound, failed, retry } = useProfileByUsername(username);
+  const { user, loading, notFound, failed, retry } = useProfileByUsername(username, uid);
   const { following } = useIsFollowing(user?.uid);
   const chat = useOpenChat();
   const [reporting, setReporting] = useState(false);
@@ -143,7 +149,7 @@ export default function OtherProfile() {
         <Header title="" onBack={() => router.back()} />
         <EmptyState
           title="Closet not found"
-          body={`We couldn't find @${username ?? ''} on Loane.`}
+          body={username ? `We couldn't find @${username} on Loane.` : "We couldn't find this closet."}
           actionLabel="Find people"
           onAction={() => router.push('/find-friends')}
         />

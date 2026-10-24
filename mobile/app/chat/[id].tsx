@@ -681,7 +681,17 @@ function Bubble({
           {message.sharedProfile ? (
             <SharedProfileCard
               item={message.sharedProfile}
-              onPress={() => router.push(`/u/${message.sharedProfile!.username}`)}
+              // By account id as well as handle: a card sent before she
+              // renamed herself must still open her, not "not found".
+              onPress={() =>
+                router.push({
+                  pathname: '/u/[username]',
+                  params: {
+                    username: message.sharedProfile!.username,
+                    uid: message.sharedProfile!.uid,
+                  },
+                })
+              }
             />
           ) : null}
           {message.photo ? (

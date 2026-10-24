@@ -27,8 +27,15 @@ const PAGE_SIZE = 40;
  * `usernames` lock document already maps a handle to a uid — the same
  * documents that make handles unique. So this is two point reads, not a
  * query.
+ *
+ * When the caller already knows her account id (a profile card shared in
+ * a chat carries it), pass `uid` too: the profile is then read by id and
+ * the handle is ignored. A handle can change — she can rename herself —
+ * but the account id never does, so an old card still opens the right
+ * person instead of "Closet not found" (or, worse, whoever took the
+ * handle later).
  */
-export function useProfileByUsername(username: string | undefined) {
+export function useProfileByUsername(username: string | undefined, uid?: string) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -37,7 +44,7 @@ export function useProfileByUsername(username: string | undefined) {
 
   useEffect(() => {
     setFailed(false);
-    if (!username) {
+    if (!username && !uid) {
       setLoading(false);
       setNotFound(true);
       return;
@@ -47,16 +54,22 @@ export function useProfileByUsername(username: string | undefined) {
     setLoading(true);
     setNotFound(false);
 
-    getDoc(doc(db, COLLECTIONS.usernames, username.toLowerCase()))
-      .then((lock) => {
+    // By id when we have one; otherwise the handle's lock gives us the id.
+    const resolveUid: Promise<string | null> = uid
+      ? Promise.resolve(uid)
+      : getDoc(doc(db, COLLECTIONS.usernames, (username ?? '').toLowerCase())).then((lock) =>
+          lock.exists() ? (lock.data() as { uid: string }).uid : null,
+        );
+
+    resolveUid
+      .then((found) => {
         if (cancelled) return;
-        if (!lock.exists()) {
+        if (!found) {
           setNotFound(true);
           setLoading(false);
           return;
         }
-        const uid = (lock.data() as { uid: string }).uid;
-        return getDoc(doc(db, COLLECTIONS.users, uid)).then((snap) => {
+        return getDoc(doc(db, COLLECTIONS.users, found)).then((snap) => {
           if (cancelled) return;
           if (!snap.exists()) setNotFound(true);
           else setUser(snap.data() as User);
@@ -76,7 +89,7 @@ export function useProfileByUsername(username: string | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [username, attempt]);
+  }, [username, uid, attempt]);
 
   return { user, loading, notFound, failed, retry };
 }
