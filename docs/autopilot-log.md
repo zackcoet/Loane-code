@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 34 (only when you next deploy): server fixes to "Find friends from contacts" and suggested closets. Normal deploy, nothing to switch on.
 - From run 33 (only when you next deploy): server fixes to accepting a sale, asking to rent, and the hourly rental clock. Normal deploy, nothing to switch on.
 - From run 32 (only when you next deploy): server fixes to comments and to accepting rentals/sales. Normal deploy, nothing to switch on.
 - From run 31 (only when you next deploy): small server fixes to following, likes/saves and changing a username. Normal deploy, nothing to switch on.
@@ -26,6 +27,36 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-24 (run 34, ~4 AM Central) — Contacts and suggested closets tightened up
+
+**Plan:** The backlog is still waiting on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1: read "find friends from your contacts" and "suggested closets" (the Follow-3-closets step), which had no tests, fix what was wrong, and add tests.
+
+**Built / Fixed (what a student would notice):**
+- **Someone who blocked you never shows up in your contacts.** If a girl had blocked you, you could still find her by having her number in your phone. Now she stays hidden, the same as everywhere else.
+- **Nobody can use "find friends" to guess phone numbers.** It could be called over and over with made-up numbers, which would let a script work out which numbers belong to girls at USC. Now it's capped at 40 checks a day — that's three full checks of a phone with 3,000 contacts, so a real student never notices. If she somehow does: "You have checked your contacts a few times today. Try again tomorrow."
+- **Suggested closets are USC girls only.** A friend-of-a-friend at another school (say, Clemson) could be suggested to follow, even though you could never borrow from her. Now only your own campus.
+- **The suggestion row stays full.** If a suggested girl had been suspended or had blocked you, she was quietly removed and the row came back one short. Now the next girl in line fills her spot.
+
+**What to tap to see it:**
+- Mostly invisible. To see contacts: **Profile → ☰ → Find Friends** (needs a friend whose number you have, signed up with that number in Settings). Suggestions: the **Follow 3 closets** step in Get started after creating an account.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (86 searches, none missing), all 305 shared tests, and the server tests that don't need the database (1 new). The 14 new database tests (9 for contacts, 5 for suggestions) run on GitHub — all green on GitHub ✅.
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing urgent. Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code (H1) — starting chats, removing a listing, and the support/contact form — plus H2 (small cleanups).
+
+**Commits:**
+- Contacts: someone who blocked you never shows up, and nobody can check numbers all day; tests
+- Suggested closets: same campus only, the row stays full when someone drops out, and a strange limit can't break it; tests
+- Autopilot log for run 34
+- GitHub checks on the code push (full set, database tests included): **473 passed, 0 failed ✅**
 
 ---
 

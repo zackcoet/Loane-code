@@ -1838,3 +1838,26 @@ Same run: the hourly sweep now re-reads each booking inside a
 transaction before expiring or completing it, so a yes, a cancel or a
 "problem with the return" landing in the same second is never
 overwritten.
+
+## 2026-10-24 — Contact matching is counted, and suggestions stay on campus (autopilot run 34)
+
+**Checking contacts is limited to 40 calls a day.** The pepper stops
+anyone reversing the stored hashes, but `matchContacts` itself answered
+any number of calls of 500 guesses each — enough for a script to walk a
+whole area code and learn which numbers belong to students on her
+campus. 40 calls is three full checks of a 3,000-contact phone; a
+guesser is capped at 20,000 numbers a day instead of millions. If a real
+student ever meets it, raise it.
+
+**Someone who blocked her never comes back as a contact match**, the
+same as suggested closets already did. Before, having her number was a
+way round the block.
+
+**Suggested closets are same-campus only.** The top-up was already;
+friends-of-friends were not, so a Clemson closet could be suggested to a
+USC girl through one shared follow. Loane is a handoff on your own
+campus, so that closet is one she could never borrow from.
+
+**The suggestion row reads 5 spares**, so a suspended account or
+someone who blocked her doesn't leave it short. The cost is up to 5
+more reads per call.
