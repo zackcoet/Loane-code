@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- Nothing new from run 28 (no server or database changes — nothing to deploy).
 - From run 27 (only when you next deploy): one new server function (`shareProfile`) and a database rules update (new tracked actions, and the rules that guard profile cards in chats). Deploy the rules **at the same time as or before** the app update goes out — normal deploy, nothing to switch on.
 - Nothing new from run 26 (no server or database changes — nothing to deploy).
 - From run 25 (only when you next deploy): one new dashboard function for deleting an account on a student's behalf — normal deploy, nothing to switch on.
@@ -20,6 +21,37 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-24 (run 28, ~10 PM Central) — Shared profile cards survive a rename; other schools' sign-ups in the dashboard
+
+**Plan:** E15 first (a shared profile card opens by @username, so it breaks if she renames herself — open it by her account instead). Then F11 (show how many students from other schools have signed up, in the dashboard). B8 still waits on payments; F7 still waits on your decision; then H3 if time allows.
+
+**Built:**
+- **A profile card sent in a chat always opens the right person**, even if she changes her @username later. Before, an old card would say "Closet not found" — or, worse, open whoever took her old @name.
+- **Dashboard → Campuses → "Sign-ups from other schools".** A list of every school outside South Carolina that students have signed up from, biggest first, with a total ("7 students from 3 other schools"). When there are none it says so. This is the number to watch when picking the next campus, and it helps with your F7 decision (keep letting any .edu in, or USC-only with a waitlist).
+
+**What to tap to see it:**
+- Phone: someone's profile → **…** → **Share profile** → send it to a friend → open that chat → tap the card. It opens her profile (same as before — the difference only shows after a rename).
+- Dashboard: sign in → **Campuses** → the new panel at the top. With the seeded data it says "None yet", because every seeded student is at South Carolina.
+
+**Fixed:**
+- The shared-profile rename problem above. Nothing else broken found.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (84 searches, none missing), all 299 shared tests (4 new), and the server tests that don't need the database. No server code or database rules changed tonight, so the database tests have nothing new to check; GitHub runs the full set on the push.
+- B8 (Venmo words) still waits on payments; F7 still waits on your decision.
+
+**🚨 NEEDS ZACK:**
+- Nothing new. Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in. The new Campuses panel shows how many students that would affect.
+
+**Next up:** H3 (speed checks — photo sizes and screens redrawing more than they need), then H1/H2 sweeps.
+
+**Commits:**
+- Shared profile cards open by account, so they still work after she changes her username
+- Dashboard: Campuses shows sign-ups from other schools, most first, to pick the next campus
+- Autopilot log for run 28
 
 ---
 

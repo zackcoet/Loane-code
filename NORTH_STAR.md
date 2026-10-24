@@ -109,7 +109,7 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 ✅ 12. *(suggested)* Count comment hearts as an event (`comment_like`) — needs a new event type in the database rules, same as 11. *(Run 27: `comment_like` / `comment_unlike`, logged after the server accepts the heart.)*
 ✅ 13. *(suggested)* "Share profile" — send a closet into a DM like a look (needs a new message card type and a rules change). *(Run 27: "…" on a profile → Share profile; ☰ → Share My Profile. Card stamped by a new server function, `shareProfile`; the rules refuse a phone-written one. See `docs/decisions.md`.)*
 ✅ 14. *(suggested)* "Discard changes?" on the new-look and new-piece flows too (only the edit screens have it). *(Run 25: "Discard this look?" on Arrange, "Discard this piece?" on Add to Closet and Quick add.)*
-15. *(suggested)* A shared profile card opens by @username, so it breaks if she later renames herself. Open it by account id instead (needs a small "profile by id" route).
+✅ 15. *(suggested)* A shared profile card opens by @username, so it breaks if she later renames herself. Open it by account id instead (needs a small "profile by id" route). *(Run 28: the card now opens her by account id, with the @username only as a fallback. No new route needed — the profile screen takes the id alongside the handle.)*
 
 ### F. Onboarding (from the founder's improvement list)
 ✅ 1. Rent / lend / both step. *(Run 22: `app/get-started.tsx`, straight after Create account, new accounts only. Every step skippable.)*
@@ -122,7 +122,7 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 ✅ 8. Onboarding steps tracked in the admin funnel. *(Run 22: Overview → Get Started Funnel.)*
 ✅ 9. Walkthrough tour max 3 steps. *(Run 22: feed, the +, Activity.)*
 ✅ 10. *(suggested)* A "My size" quick chip on Discover's top row, next to the occasions, so it is one tap instead of inside Filter. *(Run 25: first chip in the row, shown once she has a size on her profile.)*
-11. *(suggested)* Count signups on other schools' .edu addresses in the dashboard, to see demand for the next campus (pairs with F7).
+✅ 11. *(suggested)* Count signups on other schools' .edu addresses in the dashboard, to see demand for the next campus (pairs with F7). *(Run 28: Campuses → "Sign-ups from other schools", most first, from the server-kept student counts.)*
 
 ### G. App Store readiness
 ✅ 1. Account deletion (see B4).
