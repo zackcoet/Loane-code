@@ -48,6 +48,7 @@ import {
   type MessageReply,
 } from '@loane/shared';
 import { db } from '../firebase/config';
+import { snapshotRows } from '../firebase/snapshotRows';
 import { useAuth } from '../auth/AuthProvider';
 import { logEvent } from '../analytics/events';
 import { hapticSend } from '../haptics';
@@ -300,7 +301,9 @@ export function useConversation(conversationId: string | undefined) {
         ? query(messagesRef, orderBy('createdAt', 'desc'), endAt(liveAnchor))
         : query(messagesRef, orderBy('createdAt', 'desc'), limit(PAGE_SIZES.messages)),
       (snap) => {
-        setLiveMessages(snap.docs.map((d) => ({ ...(d.data() as Message), id: d.id })));
+        // Unchanged messages keep their object, so their bubbles skip
+        // re-drawing when one new message lands.
+        setLiveMessages((current) => snapshotRows(current, snap));
         if (!liveAnchor) {
           liveOldest.current = snap.docs[snap.docs.length - 1] ?? null;
           cursor.current = liveOldest.current;

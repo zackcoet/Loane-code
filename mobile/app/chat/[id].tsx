@@ -6,7 +6,7 @@
  * they are sent.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActionSheetIOS,
@@ -166,14 +166,24 @@ export default function Chat() {
     inputRef.current?.focus();
   }, []);
 
-  /** Tapping a quote scrolls up to the original, if it is loaded. */
-  const jumpTo = useCallback(
-    (messageId: string) => {
-      const index = messages.findIndex((m) => m.id === messageId);
-      if (index < 0) return;
-      listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
-    },
-    [messages],
+  /*
+    Tapping a quote scrolls up to the original, if it is loaded.
+    Reads the messages through a ref so this stays one function for the
+    life of the screen — a new one per message would re-draw every
+    bubble (see Bubble's memo).
+  */
+  const messagesRef = useRef(messages);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+  const jumpTo = useCallback((messageId: string) => {
+    const index = messagesRef.current.findIndex((m) => m.id === messageId);
+    if (index < 0) return;
+    listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
+  }, []);
+  const likeMessage = useCallback(
+    (messageId: string, on: boolean) => void setLiked(messageId, on),
+    [setLiked],
   );
 
   /** Send a photo — showing a stain, or how something fits. */
@@ -363,11 +373,11 @@ export default function Chat() {
                   message={item}
                   mine={item.senderUid === profile?.uid}
                   likedByMe={!!profile?.uid && (item.likedBy ?? []).includes(profile.uid)}
-                  onSetLiked={(on) => void setLiked(item.id, on)}
+                  onLike={likeMessage}
                   router={router}
-                  onReply={() => startReply(item)}
-                  onReport={
-                    item.senderUid !== profile?.uid ? () => setReportingMessage(item) : undefined
+                  onReplyTo={startReply}
+                  onReportMessage={
+                    item.senderUid !== profile?.uid ? setReportingMessage : undefined
                   }
                   onJumpTo={jumpTo}
                   quoteName={item.replyTo ? nameFor(item.replyTo.senderUid) : ''}
@@ -498,14 +508,21 @@ export default function Chat() {
  */
 const DOUBLE_TAP_MS = 300;
 
-function Bubble({
+/*
+ * memo: the chat screen re-draws on every letter she types (the draft
+ * lives there), and without this every bubble in the thread re-drew
+ * with it — the lag you feel typing in a long chat. The handlers take
+ * the message, so the screen passes the same function to every bubble
+ * and an unchanged bubble is skipped.
+ */
+const Bubble = memo(function Bubble({
   message,
   mine,
   likedByMe,
-  onSetLiked,
+  onLike,
   router,
-  onReply,
-  onReport,
+  onReplyTo,
+  onReportMessage,
   onJumpTo,
   quoteName,
   quoteGone,
@@ -514,17 +531,20 @@ function Bubble({
   mine: boolean;
   /** She has hearted this one herself. */
   likedByMe: boolean;
-  onSetLiked: (on: boolean) => void;
+  onLike: (messageId: string, on: boolean) => void;
   router: ReturnType<typeof useRouter>;
-  onReply: () => void;
+  onReplyTo: (message: Message) => void;
   /** Report this one message. Only offered on theirs, never her own. */
-  onReport?: () => void;
+  onReportMessage?: (message: Message) => void;
   onJumpTo: (messageId: string) => void;
   /** "You" or "@maddie" — who said the quoted message. */
   quoteName: string;
   /** The original was taken down by moderation since she replied. */
   quoteGone: boolean;
 }) {
+  const onSetLiked = (on: boolean) => onLike(message.id, on);
+  const onReply = () => onReplyTo(message);
+  const onReport = onReportMessage ? () => onReportMessage(message) : undefined;
   const hearts = (message.likedBy ?? []).length;
   const likeLabel = likedByMe ? 'Unlike' : 'Like';
 
@@ -738,7 +758,7 @@ function Bubble({
       </Pressable>
     </SwipeToReply>
   );
-}
+});
 
 /**
  * The quoted message at the top of a reply.
