@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 33 (only when you next deploy): server fixes to accepting a sale, asking to rent, and the hourly rental clock. Normal deploy, nothing to switch on.
 - From run 32 (only when you next deploy): server fixes to comments and to accepting rentals/sales. Normal deploy, nothing to switch on.
 - From run 31 (only when you next deploy): small server fixes to following, likes/saves and changing a username. Normal deploy, nothing to switch on.
 - From run 30 (only when you next deploy): two server fixes — sign-ups and reviews. Normal deploy, nothing to switch on. Optional: if you'd rather keep the old, tighter sign-up limit (5 an hour from one wifi instead of 30), say so.
@@ -25,6 +26,36 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-24 (run 33, ~3 AM Central) — When a piece sells, nobody is left waiting
+
+**Plan:** H6 from the backlog — when a lender says yes to a buyer, tell everyone else still waiting straight away. Then keep up H1: read the hourly rental clock (the server job that times out requests and closes finished rentals), which had no tests, fix what's wrong, and add tests.
+
+**Built / Fixed (what a student would notice):**
+- **"That piece was sold" — straight away.** The moment a lender says yes to a buyer, every other girl with an open request for that piece (buyers and renters) is told it was sold, and her request shows "Sold to someone else". Before, she waited up to a day for it to time out, for a piece that was already gone.
+- **No more asking to rent a piece that's being sold.** A sale has no dates, so the date check used to let a new rental request through — and the lender could never accept it. Now she sees "That piece is being sold to someone else" right away.
+- **The rental clock can't undo a yes.** Once an hour, the server times out unanswered requests and closes rentals nobody complained about. If the lender said yes (or the renter reported a problem with the return) in the same second the clock ran, the clock could overwrite it — turning a confirmed rental into "Request expired", or burying a complaint. Now the clock double-checks each one at the moment it writes.
+- Saying yes to a **rental** still leaves the other requests alone: a buyer can have the piece once it's back.
+
+**What to tap to see it:**
+- Put a piece up for both rent and sale → have two friends tap **Become the owner** → **Profile → Rental requests** → accept one. The other friend gets an alert "That piece was sold", and her request page says "Sold to someone else".
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (86 searches, none missing), all 305 shared tests, and 11 new tests that don't need the database. The 10 new database tests (selling, and the hourly clock) ran on GitHub with the full test set on both code pushes: **all green ✅**.
+- If a sale is later cancelled, the girls who were told "sold" aren't reopened — they'd ask again. Rare; written down in `docs/decisions.md`.
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing urgent. Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code (H1) — contact matching and suggested closets — plus H2 (small cleanups).
+
+**Commits:**
+- Bookings: when a piece sells, everyone else still waiting hears straight away, and nobody new can ask to rent it; tests
+- Rental clock: the hourly sweep can't undo a yes, a cancel or a complaint that lands at the same moment; tests
+- Autopilot log for run 33
 
 ---
 

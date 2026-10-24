@@ -1815,3 +1815,26 @@ rules happy; absent means "no".
 **Known limit:** the card opens the profile by @username as it was when
 sent. If she later changes her username, an old card shows "not found".
 Rare, and the same as an old link.
+
+## 2026-10-24 — A sale answers everyone else waiting (autopilot run 33)
+
+When a lender says yes to a buyer, every other open request for that
+piece — buyers and renters — is declined in the same step, reason
+"Sold to someone else", with an alert to each girl. They could never be
+accepted anyway (a promised sale blocks everything), and leaving them
+open meant waiting up to a day for the clock to time them out.
+
+Saying yes to a RENTAL declines nobody: a buyer can still have the piece
+once it's back, and other dates may be free.
+
+A new rental request on a piece with a promised sale is refused up
+front ("That piece is being sold to someone else").
+
+Accepted trade-off: if that sale is later cancelled, the declined girls
+are not reopened — they would ask again. Reopening someone's request
+without her asking felt worse than the rare re-ask.
+
+Same run: the hourly sweep now re-reads each booking inside a
+transaction before expiring or completing it, so a yes, a cancel or a
+"problem with the return" landing in the same second is never
+overwritten.
