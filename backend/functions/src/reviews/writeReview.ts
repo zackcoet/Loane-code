@@ -7,9 +7,9 @@ import {
   REVIEW_EDIT_WINDOW_HOURS,
   REVIEW_MAX_RATING,
   REVIEW_MIN_RATING,
+  ratingWithScore,
   type Booking,
   type Review,
-  type User,
 } from '@loane/shared';
 import { db, now } from '../lib/admin';
 import { failed, invalidArgument, notFound, permissionDenied } from '../lib/errors';
@@ -29,9 +29,18 @@ import { notify } from '../bookings/transitions';
  * lender's 48-hour window to flag a problem has passed. Reviewing a
  * rental that is about to be disputed would be messy for both sides.
  *
- * The star average is recomputed here, in the same transaction, so a
- * profile's rating can never drift from the reviews behind it.
+ * The star average is recomputed here, in the same transaction, FROM
+ * THE REVIEWS THEMSELVES (the visible ones), so a profile's rating can
+ * never drift from the reviews behind it. See `ratingWithScore`.
  */
+
+/** Every review of one person, read inside the transaction. */
+async function reviewsOf(tx: FirebaseFirestore.Transaction, subjectUid: string) {
+  const snap = await tx.get(
+    db().collection(COLLECTIONS.reviews).where('subjectUid', '==', subjectUid),
+  );
+  return snap.docs.map((d) => ({ ...(d.data() as Review), id: d.id }));
+}
 
 interface WriteInput {
   bookingId: string;
@@ -87,7 +96,8 @@ export const writeReview = onCall<WriteInput, Promise<{ reviewId: string }>>(
       const subjectRef = db().collection(COLLECTIONS.users).doc(subjectUid);
       const subjectSnap = await tx.get(subjectRef);
       if (!subjectSnap.exists) throw notFound('We could not find that student.');
-      const subject = subjectSnap.data() as User;
+      // Reads before writes: a transaction refuses a read after one.
+      const existing = await reviewsOf(tx, subjectUid);
 
       const review: Omit<Review, 'createdAt' | 'updatedAt'> = {
         id: reviewRef.id,
@@ -119,11 +129,13 @@ export const writeReview = onCall<WriteInput, Promise<{ reviewId: string }>>(
 
       // Recompute the average here, in the same transaction, so a
       // profile's stars can never disagree with the reviews behind them.
-      const count = subject.stats.ratingCount + 1;
-      const total = (subject.stats.ratingAverage ?? 0) * subject.stats.ratingCount + rating;
+      const { ratingCount, ratingAverage } = ratingWithScore(existing, {
+        id: reviewRef.id,
+        rating,
+      });
       tx.update(subjectRef, {
-        'stats.ratingCount': count,
-        'stats.ratingAverage': Math.round((total / count) * 100) / 100,
+        'stats.ratingCount': ratingCount,
+        'stats.ratingAverage': ratingAverage,
         updatedAt: now(),
       });
 
@@ -165,6 +177,10 @@ export const editReview = onCall<
 
     const review = snap.data() as Review;
     if (review.authorUid !== author.uid) throw permissionDenied('That is not your review.');
+    // Taken down by an admin. Letting her rewrite it would let her swap
+    // the words that got it taken down for kinder ones and ask for it
+    // back — and it would change a review nobody can see.
+    if (review.isHidden) throw failed('This review was taken down, so it cannot be changed.');
 
     const written = (review.createdAt as { toDate?: () => Date } | null)?.toDate?.();
     if (written && Date.now() - written.getTime() > REVIEW_EDIT_WINDOW_HOURS * 3600_000) {
@@ -174,19 +190,17 @@ export const editReview = onCall<
     const subjectRef = db().collection(COLLECTIONS.users).doc(review.subjectUid);
     const subjectSnap = await tx.get(subjectRef);
     if (!subjectSnap.exists) throw notFound('We could not find that student.');
-    const subject = subjectSnap.data() as User;
+    const existing = await reviewsOf(tx, review.subjectUid);
 
     tx.update(reviewRef, { rating, body: body.trim(), updatedAt: now() });
 
-    // Swap the old score out of the average and the new one in.
-    const count = subject.stats.ratingCount;
-    if (count > 0) {
-      const total = (subject.stats.ratingAverage ?? 0) * count - review.rating + rating;
-      tx.update(subjectRef, {
-        'stats.ratingAverage': Math.round((total / count) * 100) / 100,
-        updatedAt: now(),
-      });
-    }
+    // Her rating with this review's new score in place of the old one.
+    const { ratingCount, ratingAverage } = ratingWithScore(existing, { id: reviewId, rating });
+    tx.update(subjectRef, {
+      'stats.ratingCount': ratingCount,
+      'stats.ratingAverage': ratingAverage,
+      updatedAt: now(),
+    });
   });
 
   return { ok: true };

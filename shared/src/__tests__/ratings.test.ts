@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ratingFromVisible } from '../ratings';
+import { ratingFromVisible, ratingWithScore } from '../ratings';
 import { messagePreview, previewShowsMessage, REMOVED_MESSAGE_TEXT } from '../shares';
 
 const reviews = [
@@ -33,6 +33,51 @@ describe('ratingFromVisible', () => {
     expect(ratingFromVisible(reviews, { id: 'c', hide: true })).toEqual({
       ratingCount: 2,
       ratingAverage: 3,
+    });
+  });
+});
+
+describe('ratingWithScore', () => {
+  it('a new review joins the average', () => {
+    expect(ratingWithScore(reviews, { id: 'd', rating: 3 })).toEqual({
+      ratingCount: 3,
+      ratingAverage: 3,
+    });
+  });
+
+  it('the first review is the whole rating', () => {
+    expect(ratingWithScore([], { id: 'a', rating: 4 })).toEqual({
+      ratingCount: 1,
+      ratingAverage: 4,
+    });
+  });
+
+  it('re-scoring a review swaps its old score for the new one', () => {
+    expect(ratingWithScore(reviews, { id: 'b', rating: 5 })).toEqual({
+      ratingCount: 2,
+      ratingAverage: 5,
+    });
+  });
+
+  it('re-scoring a hidden review leaves her rating alone', () => {
+    expect(ratingWithScore(reviews, { id: 'c', rating: 1 })).toEqual({
+      ratingCount: 2,
+      ratingAverage: 3,
+    });
+  });
+
+  it('does not drift however many reviews she gets', () => {
+    // The old arithmetic multiplied a rounded average back up each time,
+    // so the error grew with every review. Summing from scratch cannot.
+    const many = Array.from({ length: 30 }, (_, i) => ({
+      id: `r${i}`,
+      rating: i % 3 === 0 ? 4 : 5,
+      isHidden: false,
+    }));
+    const sum = many.reduce((t, r) => t + r.rating, 0) + 4;
+    expect(ratingWithScore(many, { id: 'new', rating: 4 })).toEqual({
+      ratingCount: 31,
+      ratingAverage: Math.round((sum / 31) * 100) / 100,
     });
   });
 });
