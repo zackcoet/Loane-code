@@ -43,8 +43,14 @@ const DAY = 24 * HOUR;
  * that is the number these have to clear.
  */
 export const LIMITS = {
-  /** A student setting up one account, maybe retrying a bad password. */
-  signUp: { max: 5, windowMs: HOUR, message: 'Too many sign-ups from here. Try again later.' },
+  /**
+   * Counted per IP, not per student — so this is everybody behind one
+   * address. Campus wifi puts a whole building (or a launch table on
+   * Greene Street) behind a handful of addresses, and five an hour would
+   * turn real girls away at exactly the moment we most want them. Thirty
+   * still stops a script making accounts by the thousand.
+   */
+  signUp: { max: 30, windowMs: HOUR, message: 'Too many sign-ups from here. Try again later.' },
 
   /** Asking for six dresses before a formal is a busy evening, not abuse. */
   rentalRequest: {
@@ -133,11 +139,20 @@ export async function rateLimit(key: string, name: LimitName): Promise<void> {
   }
 }
 
-/** The caller's IP, for limiting something that happens before sign-in. */
-export function callerIp(rawRequest: { ip?: string; headers?: Record<string, unknown> }): string {
+/**
+ * The caller's IP, for limiting something that happens before sign-in,
+ * or null when there is none to go on.
+ *
+ * NULL, NOT A PLACEHOLDER. A constant like 'unknown' would put every
+ * caller without an IP into one shared bucket, so the first time a
+ * proxy stopped forwarding the header the whole world would share five
+ * sign-ups an hour. The caller skips the limit instead.
+ */
+export function callerIp(rawRequest: {
+  ip?: string;
+  headers?: Record<string, unknown>;
+}): string | null {
   const forwarded = rawRequest.headers?.['x-forwarded-for'];
   const first = typeof forwarded === 'string' ? forwarded.split(',')[0]?.trim() : undefined;
-  // Falling back to a constant would put every caller in one bucket and
-  // lock out the world, so an unknown IP is simply not limited.
-  return first || rawRequest.ip || 'unknown';
+  return first || rawRequest.ip?.trim() || null;
 }

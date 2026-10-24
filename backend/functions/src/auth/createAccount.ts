@@ -73,14 +73,16 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
     /*
       BY IP, because there is no uid yet — an account is what this
       function makes. The IP is the only thing we have before one
-      exists, and it is imperfect: a whole dorm behind one NAT shares
-      it, which is why the limit is five an hour rather than one.
+      exists, and it is imperfect: a whole dorm, or the campus wifi,
+      shares one, which is why the limit is thirty an hour rather than
+      one (see LIMITS.signUp).
 
       An unknown IP is not limited at all. Bucketing every unknown
       caller together would lock out the world the first time a proxy
       stopped forwarding the header.
     */
-    await rateLimit(callerIp(request.rawRequest), 'signUp');
+    const ip = callerIp(request.rawRequest);
+    if (ip) await rateLimit(ip, 'signUp');
 
     const {
       firstName: rawFirstName,

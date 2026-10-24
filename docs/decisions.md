@@ -6,6 +6,33 @@ much as the answer.
 
 ---
 
+## 2026-10-24 — Sign-ups: 30 an hour per address, and no address means no limit (autopilot run 30)
+
+**Decision:** `LIMITS.signUp` is 30 an hour per IP (was 5). When a
+sign-up arrives with no IP at all, `callerIp` returns `null` and the
+limit is skipped.
+
+**Why 30:** the count is per address, not per student. Campus wifi puts
+a whole building — or a launch table on Greene Street — behind a few
+addresses, and at 5 an hour the sixth girl in line would be turned
+away. The limiter's own rule is that a real student hitting it means
+the number is wrong. 30 still stops a script making accounts by the
+thousand.
+
+**Why null:** the code's comment already promised an unknown IP is not
+limited, but it actually returned the string `'unknown'`, which put
+every such caller in one shared bucket — the whole world on five
+sign-ups an hour. Fixed to match the promise; tested in
+`rateLimit.test.ts`.
+
+**Known limit, left for Phase 8:** the first `x-forwarded-for` entry is
+whatever the caller says, so a script can dodge this limit by faking
+it. Picking a later entry depends on exactly how Google's front end
+writes the header, and getting that wrong would bucket everyone under
+one Google address. App Check (Phase 8) is the real fix.
+
+---
+
 ## 2026-10-24 — Busy lists only re-draw the rows that changed (autopilot run 29)
 
 **Decision:** The feed's cards (`FeedPostRow`), Discover's grid cards
