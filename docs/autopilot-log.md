@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 30 (only when you next deploy): two server fixes — sign-ups and reviews. Normal deploy, nothing to switch on. Optional: if you'd rather keep the old, tighter sign-up limit (5 an hour from one wifi instead of 30), say so.
 - Nothing new from run 29 (no server or database changes — nothing to deploy). Optional 1 minute: scroll the feed fast and type quickly in a long chat — it should feel smoother than before.
 - Nothing new from run 28 (no server or database changes — nothing to deploy).
 - From run 27 (only when you next deploy): one new server function (`shareProfile`) and a database rules update (new tracked actions, and the rules that guard profile cards in chats). Deploy the rules **at the same time as or before** the app update goes out — normal deploy, nothing to switch on.
@@ -22,6 +23,36 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-24 (run 30, ~midnight Central) — Two hidden bugs fixed: sign-ups on campus wifi, and star ratings
+
+**Plan:** Everything left in the backlog waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run is H1/H2: read the server code nobody had tested yet, looking for real bugs, fix them, and add tests.
+
+**Built / Fixed (what a student would notice):**
+- **Signing up on campus wifi no longer gets girls turned away.** Sign-ups are limited per internet address, not per person — and on campus wifi, a whole building shares a few addresses. The limit was 5 an hour, so at a launch table on Greene Street the sixth girl in line would have seen "Too many sign-ups from here". Now it's 30 an hour, which still stops anyone making fake accounts by the thousand.
+- **A rare sign-up lockout for the whole world is gone.** If Google ever stopped telling us someone's address, every sign-up anywhere would have shared one bucket of 5 an hour. The code's own note said this shouldn't happen; it did anyway. Fixed.
+- **Star ratings stay exact.** Each new review nudged the stored average using an already-rounded number, so tiny errors built up over time. Now every new or edited review recounts her stars from the reviews themselves — the same way an admin takedown already did.
+- **A review an admin took down can't be quietly rewritten.** Before, the writer could still edit it (within 48 hours), which also shifted the lender's stars even though that review no longer counted. Now she sees "This review was taken down, so it cannot be changed."
+
+**What to tap to see it:**
+- Nothing looks different day to day. To see the review fix: as a renter, finish a rental → leave a review → the lender's profile shows the stars. (The takedown case needs the admin dashboard → Reviews → hide it, then try editing it on the phone.)
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (85 searches, none missing), all 304 shared tests (5 new), and the server tests that don't need the database (7 new). **GitHub ran the full set, database tests included (8 new ones for writing and editing reviews), on both of tonight's pushes: all green ✅.**
+- Known limit, written down for later (Phase 8, App Check): someone with a script can still fake their address to dodge the sign-up limit. Fixing it properly needs App Check, not a guess about Google's internals.
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing urgent. Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping the untested server code (follows, saves, shares, changing a username) for bugs like tonight's, with tests for each.
+
+**Commits:**
+- Sign-ups: room for a campus wifi crowd, and a missing address no longer locks out everyone
+- Reviews: stars are counted from the reviews themselves, and a taken-down review can't be rewritten
+- Autopilot log for run 30
 
 ---
 
