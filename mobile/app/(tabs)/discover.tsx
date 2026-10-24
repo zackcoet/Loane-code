@@ -7,7 +7,7 @@
  * are written up in src/hooks/useDiscover.ts and docs/roadmap.md.
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActionSheetIOS,
@@ -30,6 +30,7 @@ import {
   OCCASIONS,
   OCCASION_LABELS,
   type Occasion,
+  type Listing,
   type ListingEntryPoint,
   color,
   controls,
@@ -170,17 +171,24 @@ export default function Discover() {
     [term, quickOccasion],
   );
   const showRecent = searchFocused && term === '' && recent.length > 0;
-  const rememberSearch = () => {
+  // useCallback here and below: the grid's cards skip re-drawing when
+  // nothing they were given changed (ListingCard is memo'd), so these
+  // must stay the same function while she scrolls.
+  const rememberSearch = useCallback(() => {
     if (term) remember(term);
-  };
+  }, [term, remember]);
 
   // Press and hold a piece to see it big — see PeekPreview.
   const [peek, setPeek] = useState<PeekItem | null>(null);
+  const peekListing = useCallback((listing: Listing) => setPeek({ kind: 'listing', listing }), []);
 
-  const openListing = (listingId: string) => {
-    rememberSearch();
-    router.push({ pathname: '/listing/[id]', params: { id: listingId } });
-  };
+  const openListing = useCallback(
+    (listingId: string) => {
+      rememberSearch();
+      router.push({ pathname: '/listing/[id]', params: { id: listingId } });
+    },
+    [rememberSearch, router],
+  );
   // Tagged so the piece's view, and any request she makes from it, says
   // it came from Trending. See LISTING_ENTRY_POINTS.
   const openTrendingListing = (listingId: string) =>
@@ -188,10 +196,13 @@ export default function Discover() {
       pathname: '/listing/[id]',
       params: { id: listingId, from: 'trending' satisfies ListingEntryPoint },
     });
-  const openOwner = (username: string) => {
-    rememberSearch();
-    router.push(`/u/${username}`);
-  };
+  const openOwner = useCallback(
+    (username: string) => {
+      rememberSearch();
+      router.push(`/u/${username}`);
+    },
+    [rememberSearch, router],
+  );
 
   const openSort = () => {
     const labels = SORTS.map((s) => SORT_LABELS[s]);
@@ -436,7 +447,7 @@ export default function Discover() {
               width={cardWidth}
               onPressOwner={openOwner}
               onPress={openListing}
-              onLongPress={(listing) => setPeek({ kind: 'listing', listing })}
+              onLongPress={peekListing}
             />
           )}
         />

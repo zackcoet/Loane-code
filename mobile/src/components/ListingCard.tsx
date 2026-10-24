@@ -2,6 +2,7 @@
  * One garment in the Discover grid.
  */
 
+import { memo } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import {
   fonts,
@@ -38,7 +39,13 @@ interface Props {
   onLongPress?: (listing: Listing) => void;
 }
 
-export function ListingCard({
+/*
+ * memo: Discover's grid holds dozens of these, and the screen re-draws
+ * on every keystroke in search and every filter tap. A card whose piece
+ * and handlers are unchanged skips that work. Callers pass handlers that
+ * take the id (or listing), so one function serves every card.
+ */
+export const ListingCard = memo(function ListingCard({
   listing,
   width,
   onPress,
@@ -129,7 +136,7 @@ export function ListingCard({
       ) : null}
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: { marginBottom: spacing.lg },
