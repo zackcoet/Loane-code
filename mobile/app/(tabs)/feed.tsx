@@ -29,7 +29,7 @@ import { LoadError } from '../../src/components/LoadError';
 import { IconButton } from '../../src/components/IconButton';
 import { Logo } from '../../src/components/Logo';
 import { LoaneLoader } from '../../src/components/LoaneLoader';
-import { PostCard } from '../../src/components/PostCard';
+import { FeedPostRow, type FeedPostActions } from '../../src/components/FeedPostRow';
 import { ReportSheet } from '../../src/components/ReportSheet';
 import { ProfileGateSheet } from '../../src/components/ProfileGateSheet';
 import { Screen } from '../../src/components/Screen';
@@ -215,6 +215,37 @@ export default function Feed() {
     [router],
   );
 
+  // Built once (not per card, per render) so FeedPostRow can skip
+  // re-drawing looks that did not change — see FeedPostRow.tsx.
+  const openChat = chat.open;
+  const rowActions = useMemo<FeedPostActions>(
+    () => ({
+      onPressTag,
+      onPressAuthor: (username) => router.push(`/u/${username}?from=feed`),
+      onPressComments: (post) =>
+        router.push({
+          pathname: '/comments',
+          params: { postId: post.id, postAuthorUid: post.authorUid },
+        }),
+      onPressSend: (post) => router.push({ pathname: '/send-post', params: { postId: post.id } }),
+      onPressLikes: (post) => router.push({ pathname: '/post-likes', params: { postId: post.id } }),
+      onMessageSeller: (ownerUid, listingId) => void openChat(ownerUid, { listingId }),
+      /*
+        Straight into the dressing room with this look's pieces.
+        Try-On sends her to Choose a body first if she has no photo
+        yet, and brings her back itself — one place decides that
+        rather than every caller.
+      */
+      onTryOnLook: tryOnOn
+        ? (listingIds) =>
+            router.push({ pathname: '/try-on', params: { listings: listingIds.join(',') } })
+        : undefined,
+      onEdit: (post) => router.push({ pathname: '/edit-post', params: { id: post.id } }),
+      onMore,
+    }),
+    [onPressTag, router, openChat, tryOnOn, onMore],
+  );
+
   return (
     <Screen flush>
       {/* Menu left, mark centred, messages right — Instagram's shape,
@@ -374,45 +405,10 @@ export default function Feed() {
                 />
               ) : null}
               {index === caughtUpAt ? <CaughtUpMarker /> : null}
-              <PostCard
+              <FeedPostRow
                 post={item}
-                onPressTag={(listingId) => onPressTag(listingId, item.id)}
-                onPressAuthor={(username) => router.push(`/u/${username}?from=feed`)}
-                onPressComments={() =>
-                  router.push({
-                    pathname: '/comments',
-                    params: { postId: item.id, postAuthorUid: item.authorUid },
-                  })
-                }
-                onPressSend={() =>
-                  router.push({ pathname: '/send-post', params: { postId: item.id } })
-                }
-                onPressLikes={() =>
-                  router.push({ pathname: '/post-likes', params: { postId: item.id } })
-                }
-                onMessageSeller={(ownerUid, listingId) => void chat.open(ownerUid, { listingId })}
                 isMine={item.authorUid === profile?.uid}
-                /*
-                  Straight into the dressing room with this look's
-                  pieces. Try-On sends her to Choose a body first if
-                  she has no photo yet, and brings her back itself —
-                  one place decides that rather than every caller.
-                */
-                onTryOnLook={
-                  tryOnOn
-                    ? (listingIds) =>
-                        router.push({
-                          pathname: '/try-on',
-                          params: { listings: listingIds.join(',') },
-                        })
-                    : undefined
-                }
-                onEdit={
-                  item.authorUid === profile?.uid
-                    ? () => router.push({ pathname: '/edit-post', params: { id: item.id } })
-                    : undefined
-                }
-                onReport={item.authorUid !== profile?.uid ? () => onMore(item) : undefined}
+                actions={rowActions}
               />
             </>
           )}

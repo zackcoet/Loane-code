@@ -89,7 +89,18 @@ export function usePagedPosts() {
         limit(PAGE_SIZE),
       ),
       (snap) => {
-        setLivePage(snap.docs.map((d) => ({ ...(d.data() as Post), id: d.id })));
+        // Keep the SAME object for every look that did not change, so a
+        // new like on one look re-draws that card, not all twenty
+        // (FeedPostRow skips cards whose look is the same object). The
+        // first snapshot lists every look as changed, so nothing stale
+        // carries over.
+        const changed = new Set(snap.docChanges().map((c) => c.doc.id));
+        setLivePage((current) => {
+          const before = new Map(current.map((p) => [p.id, p]));
+          return snap.docs.map(
+            (d) => (!changed.has(d.id) && before.get(d.id)) || { ...(d.data() as Post), id: d.id },
+          );
+        });
         liveCursor.current = snap.docs[snap.docs.length - 1] ?? null;
         // Only move the cursor while nothing older has been loaded yet;
         // once she has paged down, the cursor belongs to the last older
