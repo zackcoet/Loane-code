@@ -84,7 +84,7 @@ describe('groupNotifications', () => {
 describe('notificationTarget', () => {
   it('sends each kind somewhere sensible', () => {
     expect(notificationTarget(n('rental_accepted', null, { bookingId: 'b1' }))).toBe('/rental/b1');
-    expect(notificationTarget(n('new_follower', 'maddie'))).toBe('/u/maddie');
+    expect(notificationTarget(n('new_follower', 'maddie'))).toBe('/u/maddie?uid=uid-maddie');
     expect(notificationTarget(n('post_liked', 'maddie', { postId: 'p1' }))).toBe('/post/p1');
     expect(notificationTarget(n('mentioned', 'maddie', { postId: 'p1' }))).toBe(
       '/comments?postId=p1',
@@ -93,5 +93,14 @@ describe('notificationTarget', () => {
       '/comments?postId=p1&postAuthorUid=uid-ella',
     );
     expect(notificationTarget(n('admin_notice', null))).toBeNull();
+  });
+
+  it('a follow alert still opens the right closet after she renames herself', () => {
+    // The alert keeps the name she had that day; the account id is what
+    // the profile screen trusts.
+    const alert = n('new_follower', 'maddie');
+    expect(notificationTarget(alert)).toContain('uid=uid-maddie');
+    // An old alert with no account id falls back to the name.
+    expect(notificationTarget({ ...alert, actorUid: null })).toBe('/u/maddie');
   });
 });

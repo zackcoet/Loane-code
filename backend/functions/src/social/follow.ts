@@ -91,7 +91,7 @@ async function setFollow(
       type: 'new_follower',
       title: `@${me.username} followed you`,
       body: 'Take a look at her closet.',
-      deepLink: `/u/${me.username}`,
+      deepLink: `/u/${me.username}?uid=${me.uid}`,
       actor: { uid: me.uid, username: me.username, photoUrl: me.photoUrl },
     });
     await batch.commit();
