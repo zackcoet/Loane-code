@@ -30,10 +30,11 @@
 
 import { HttpsError, type CallableRequest } from 'firebase-functions/v2/https';
 import { onCall } from '../lib/callable';
-import { COLLECTIONS, type User, type UserSummary } from '@loane/shared';
+import { COLLECTIONS, SUBCOLLECTIONS, type User, type UserSummary } from '@loane/shared';
 import { db } from '../lib/admin';
 import { requireVerifiedStudent } from '../lib/guards';
 import { CONTACT_MATCH_PEPPER, storedPhoneHash } from '../lib/phoneHash';
+import { rateLimit } from '../lib/rateLimit';
 
 /**
  * How many hashes one call may carry.
@@ -79,6 +80,12 @@ export const matchContacts = onCall<Input, Promise<{ matches: ContactMatch[] }>>
   async (request: CallableRequest<Input>) => {
     const me = await requireVerifiedStudent(request);
 
+    // Counted per call, before anything is looked up. Without a ceiling
+    // this function is the guessing machine the pepper exists to stop:
+    // 500 made-up numbers a call, as many calls as a script can send,
+    // would walk a whole area code. See LIMITS.contactMatch.
+    await rateLimit(me.uid, 'contactMatch');
+
     const incoming = request.data?.hashes ?? [];
     if (!Array.isArray(incoming)) {
       throw new HttpsError('invalid-argument', 'hashes must be a list.');
@@ -111,27 +118,43 @@ export const matchContacts = onCall<Input, Promise<{ matches: ContactMatch[] }>>
     if (uids.size === 0) return { matches: [] };
 
     // --- The people behind them -------------------------------------------
-    const [userDocs, followingSnap, blockedSnap] = await Promise.all([
-      db().getAll(...[...uids].map((uid) => db().collection(COLLECTIONS.users).doc(uid))),
+    const candidates = [...uids];
+    const [userDocs, followingSnap, blockedSnap, blockedBy] = await Promise.all([
+      db().getAll(...candidates.map((uid) => db().collection(COLLECTIONS.users).doc(uid))),
       db().collection(COLLECTIONS.follows).where('followerUid', '==', me.uid).get(),
-      db().collection(COLLECTIONS.users).doc(me.uid).collection('blocked').get(),
+      db().collection(COLLECTIONS.users).doc(me.uid).collection(SUBCOLLECTIONS.userBlocked).get(),
+      // The other direction: someone who has blocked HER must not turn
+      // up just because she has their number. Showing them would hand
+      // her a way round the block (and tell her they are on Loane).
+      // Same check as suggestedClosets — a read per match, but matches
+      // are a handful, not an address book.
+      Promise.all(
+        candidates.map((uid) =>
+          db()
+            .collection(COLLECTIONS.users)
+            .doc(uid)
+            .collection(SUBCOLLECTIONS.userBlocked)
+            .doc(me.uid)
+            .get(),
+        ),
+      ),
     ]);
 
     const following = new Set(followingSnap.docs.map((d) => d.get('followingUid') as string));
     const blocked = new Set(blockedSnap.docs.map((d) => d.id));
 
     const matches: ContactMatch[] = [];
-    for (const doc of userDocs) {
-      if (!doc.exists) continue;
+    userDocs.forEach((doc, index) => {
+      if (!doc.exists || blockedBy[index]?.exists) return;
       const user = doc.data() as User;
 
-      if (blocked.has(user.uid)) continue;
-      if (user.status !== 'active') continue;
+      if (blocked.has(user.uid)) return;
+      if (user.status !== 'active') return;
       // See the header: cross-campus matches are deliberately not shown.
-      if (user.campusId !== me.campusId) continue;
+      if (user.campusId !== me.campusId) return;
 
       matches.push({ ...summarize(user), isFollowing: following.has(user.uid) });
-    }
+    });
 
     // People she does not follow yet first — they are the reason she
     // opened this screen.

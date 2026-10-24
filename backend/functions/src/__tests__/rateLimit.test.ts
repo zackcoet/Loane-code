@@ -55,4 +55,11 @@ describe('LIMITS — the ceilings', () => {
     // address in an hour. If they hit this, the number is wrong.
     expect(LIMITS.signUp.max).toBeGreaterThanOrEqual(30);
   });
+
+  it('lets a big address book be checked a few times a day', () => {
+    // The app reads up to 3,000 contacts and sends 500 numbers a call.
+    // With two numbers each that is 12 calls; three full checks must fit.
+    expect(LIMITS.contactMatch.max).toBeGreaterThanOrEqual(3 * Math.ceil(6000 / 500));
+    expect(LIMITS.contactMatch.windowMs).toBeGreaterThanOrEqual(3600_000);
+  });
 });

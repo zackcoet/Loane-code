@@ -99,6 +99,18 @@ export const LIMITS = {
     windowMs: DAY,
     message: 'You have changed your username a lot today. Try again tomorrow.',
   },
+  /**
+   * Checking her contacts. Counted per CALL, and the app sends 500
+   * numbers a call — a full 3,000-contact address book with a couple of
+   * numbers each is about a dozen calls. Forty a day is three full
+   * checks of a big phone, and caps anybody guessing numbers at 20,000
+   * a day instead of millions.
+   */
+  contactMatch: {
+    max: 40,
+    windowMs: DAY,
+    message: 'You have checked your contacts a few times today. Try again tomorrow.',
+  },
   /** Downloading her data reads everything she has. Nobody needs it hourly. */
   dataExport: {
     max: 3,
