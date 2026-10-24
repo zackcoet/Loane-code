@@ -5,7 +5,9 @@ import {
   COLLECTIONS,
   RETURN_DISPUTE_WINDOW_HOURS,
   RETURN_PROBLEMS,
+  LIMITS,
   ids,
+  isIsoDate,
   toIsoDate,
   type Booking,
   type ImageRef,
@@ -36,6 +38,29 @@ import {
  * are Phase 6.
  */
 
+/**
+ * Free text and photos the other side will see. The app sends preset
+ * reasons and a handful of photos; this is the backstop for anything
+ * that is not the app.
+ */
+function checkNote(text: unknown): string {
+  if (text == null) return '';
+  if (typeof text !== 'string') throw invalidArgument('That note is not text.');
+  if (text.trim().length > LIMITS.bookingNote.max) {
+    throw invalidArgument(`Keep it under ${LIMITS.bookingNote.max} characters.`);
+  }
+  return text;
+}
+
+function checkPhotos(photos: unknown): ImageRef[] {
+  if (photos == null) return [];
+  if (!Array.isArray(photos)) throw invalidArgument('Those photos did not come through.');
+  if (photos.length > LIMITS.bookingPhotos.max) {
+    throw invalidArgument(`Up to ${LIMITS.bookingPhotos.max} photos.`);
+  }
+  return photos as ImageRef[];
+}
+
 // ---------------------------------------------------------------------------
 // Accept or decline
 // ---------------------------------------------------------------------------
@@ -45,8 +70,9 @@ export const respondToBooking = onCall<
   Promise<{ status: Booking['status'] }>
 >({ region: 'us-central1' }, async (request) => {
   const user = await requireActiveUser(request);
-  const { bookingId, accept, reason } = request.data ?? {};
+  const { bookingId, accept } = request.data ?? {};
   if (!bookingId) throw invalidArgument('Which rental?');
+  const reason = checkNote(request.data?.reason);
 
   // Only when accepting. Declining needs nothing — somebody with an
   // unfinished profile must still be able to say no.
@@ -138,7 +164,7 @@ export const respondToBooking = onCall<
 
     tx.update(ref, {
       status: 'declined',
-      declineReason: reason?.trim() || null,
+      declineReason: reason.trim() || null,
       expiresAt: null,
       'timeline.respondedAt': now(),
       updatedAt: now(),
@@ -173,8 +199,10 @@ export const recordDropoff = onCall<
   Promise<{ ok: true }>
 >({ region: 'us-central1' }, async (request) => {
   const user = await requireActiveUser(request);
-  const { bookingId, photos = [], notes } = request.data ?? {};
+  const bookingId = request.data?.bookingId;
   if (!bookingId) throw invalidArgument('Which rental?');
+  const photos = checkPhotos(request.data?.photos);
+  const notes = checkNote(request.data?.notes);
   if (photos.length === 0) {
     throw invalidArgument('Add a photo of the piece before you hand it over.');
   }
@@ -189,7 +217,7 @@ export const recordDropoff = onCall<
     tx.update(ref, {
       'handoff.dropoffPhotos': photos,
       'handoff.dropoffAt': now(),
-      'handoff.notes': notes?.trim() || booking.handoff.notes,
+      'handoff.notes': notes.trim() || booking.handoff.notes,
       updatedAt: now(),
     });
     notify(tx, {
@@ -250,8 +278,9 @@ export const confirmReturn = onCall<
   Promise<{ ok: true }>
 >({ region: 'us-central1' }, async (request) => {
   const user = await requireActiveUser(request);
-  const { bookingId, photos } = request.data ?? {};
+  const bookingId = request.data?.bookingId;
   if (!bookingId) throw invalidArgument('Which rental?');
+  const photos = checkPhotos(request.data?.photos);
 
   await db().runTransaction(async (tx) => {
     const { booking, actor, ref } = await loadBookingFor(bookingId, user.uid, tx);
@@ -265,7 +294,7 @@ export const confirmReturn = onCall<
       assertCanTransition(booking, 'completed', actor);
       tx.update(ref, {
         'handoff.lenderConfirmedReturnAt': now(),
-        ...(photos && photos.length > 0 ? { 'handoff.returnPhotos': photos } : {}),
+        ...(photos.length > 0 ? { 'handoff.returnPhotos': photos } : {}),
       });
       // Same helper the sweep uses, so confirming promptly and letting
       // the window lapse leave identical state.
@@ -282,7 +311,7 @@ export const confirmReturn = onCall<
       ...(actor === 'renter'
         ? { 'handoff.renterConfirmedReturnAt': now() }
         : { 'handoff.lenderConfirmedReturnAt': now() }),
-      ...(photos && photos.length > 0 ? { 'handoff.returnPhotos': photos } : {}),
+      ...(photos.length > 0 ? { 'handoff.returnPhotos': photos } : {}),
       disputeWindowEndsAt: Timestamp.fromDate(windowEnds),
       updatedAt: now(),
     });
@@ -314,8 +343,10 @@ export const flagReturnProblem = onCall<
   Promise<{ ok: true }>
 >({ region: 'us-central1' }, async (request) => {
   const user = await requireActiveUser(request);
-  const { bookingId, problem, note = '', photos = [] } = request.data ?? {};
+  const { bookingId, problem } = request.data ?? {};
   if (!bookingId) throw invalidArgument('Which rental?');
+  const note = checkNote(request.data?.note);
+  const photos = checkPhotos(request.data?.photos);
   if (!(RETURN_PROBLEMS as readonly string[]).includes(problem)) {
     throw invalidArgument('Pick what went wrong.');
   }
@@ -360,8 +391,9 @@ export const cancelBooking = onCall<{ bookingId: string; reason: string }, Promi
   { region: 'us-central1' },
   async (request) => {
     const user = await requireActiveUser(request);
-    const { bookingId, reason = '' } = request.data ?? {};
+    const bookingId = request.data?.bookingId;
     if (!bookingId) throw invalidArgument('Which rental?');
+    const reason = checkNote(request.data?.reason);
     if (!reason.trim()) throw invalidArgument('Say why, so the other person knows.');
 
     await db().runTransaction(async (tx) => {
@@ -415,6 +447,14 @@ export const setBlockedDates = onCall<
   const user = await requireActiveUser(request);
   const { listingId, dates = [] } = request.data ?? {};
   if (!listingId) throw invalidArgument('Which piece?');
+  // Only real calendar dates, and a year's worth at most — the calendar
+  // reads these on every renter's phone.
+  if (!Array.isArray(dates) || dates.some((d) => typeof d !== 'string' || !isIsoDate(d))) {
+    throw invalidArgument('Those dates did not come through. Try again.');
+  }
+  if (new Set(dates).size > LIMITS.blockedDates.max) {
+    throw invalidArgument(`You can block up to ${LIMITS.blockedDates.max} days at a time.`);
+  }
 
   const listingRef = db().collection(COLLECTIONS.listings).doc(listingId);
   const snap = await listingRef.get();

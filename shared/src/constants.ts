@@ -589,6 +589,17 @@ export const LIMITS = {
    */
   listingsPerHour: { max: 60, windowMs: 3_600_000 },
   commentBody: { min: 1, max: 500 },
+  /**
+   * Words on a rental — why it was declined or cancelled, a handoff
+   * note, what went wrong with a return. The app offers preset reasons
+   * today, so this only stops a script pasting a novel into the other
+   * girl's rental page.
+   */
+  bookingNote: { max: 500 },
+  /** Handoff and return-problem photos on one rental. */
+  bookingPhotos: { max: 8 },
+  /** Days a lender can block at once — a year's worth. */
+  blockedDates: { max: 366 },
   reportDetails: { max: 1000 },
   supportMessage: { min: 1, max: 2000 },
   /** Photos per listing / per post. */
