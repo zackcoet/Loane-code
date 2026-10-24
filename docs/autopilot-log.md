@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 36 (only when you next deploy): server fixes to sharing into chats and to closing Contact us messages in the dashboard. Normal deploy, nothing to switch on.
 - From run 35 (only when you next deploy): server fixes to starting a chat, removing a piece, and Contact us. Normal deploy, nothing to switch on.
 - From run 34 (only when you next deploy): server fixes to "Find friends from contacts" and suggested closets. Normal deploy, nothing to switch on.
 - From run 33 (only when you next deploy): server fixes to accepting a sale, asking to rent, and the hourly rental clock. Normal deploy, nothing to switch on.
@@ -28,6 +29,35 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-24 (run 36, ~6 AM Central) — Sharing into chats respects blocks
+
+**Plan:** The backlog is still waiting on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1: read sharing a look, piece or profile into a chat, and the dashboard's "resolve" button for Contact us messages — none had tests — fix what was wrong, and add tests.
+
+**Built / Fixed (what a student would notice):**
+- **A share can't get around a block.** If Ella blocked Kate, a friend could still send Kate one of Ella's looks or pieces in a chat — putting Ella's closet in front of the one person she blocked. Now Kate is quietly skipped (the friend just sees it went to everyone else). Profiles already worked this way for the sender, but not for the people receiving it — fixed too.
+- **You can't share something from a girl you have a block with.** Sharing her look or piece now answers "That look is gone" / "That piece is gone" — the same words as a deleted one, so nobody finds out about a block this way.
+- **Junk input gets a clear answer.** A broken or tampered request to share, or to close a Contact us message in the dashboard, now gets a plain message instead of a vague "something went wrong". This also covers the note box on every admin action.
+
+**What to tap to see it:**
+- Mostly invisible. To try it: on a look, tap the share arrow → pick friends → Send. Works exactly as before for everyone without a block.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (86 searches, none missing), all 305 shared tests, and the server tests that don't need the database. The 19 new database tests (15 for sharing, 4 for closing Contact us messages) ran on GitHub — all green ✅.
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing urgent. Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code (H1) — the remaining admin tools (taking content down, suspending, disputes) and creating/deleting a look — plus H2 (small cleanups).
+
+**Commits:**
+- Sharing into chats: never puts a look, piece or profile in front of someone with a block with its owner, and never across her own block; tests
+- Dashboard: closing a Contact us message (and every admin note) gives junk input a clear answer instead of a crash; tests
+- Autopilot log for run 36
+- GitHub checks on the code push (full set, database tests included): **511 passed, 0 failed ✅**
 
 ---
 
