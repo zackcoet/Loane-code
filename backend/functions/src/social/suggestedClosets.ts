@@ -30,6 +30,16 @@ import { requireVerifiedStudent } from '../lib/guards';
 /** Firestore's `in` operator takes at most 30 values. */
 const IN_CHUNK = 30;
 
+/**
+ * Extra candidates read beyond what she asked for.
+ *
+ * Some fall out at the last step — a deleted or suspended account, or
+ * somebody who has blocked her — and that can only be known after
+ * reading them. Without spares, one suspended girl with lots of mutuals
+ * would leave the row one short every single time.
+ */
+const SPARES = 5;
+
 export interface SuggestedCloset extends UserSummary {
   /** Closets she and this person both follow. Zero when unknown. */
   mutualCount: number;
@@ -62,7 +72,11 @@ export const suggestedClosets = onCall<Input, Promise<{ closets: SuggestedCloset
   { region: 'us-central1' },
   async (request: CallableRequest<Input>) => {
     const me = await requireVerifiedStudent(request);
-    const limit = Math.min(Math.max(request.data?.limit ?? 10, 1), 20);
+    // Anything but a whole number gets the default: a stray "10" or 2.5
+    // would otherwise reach Firestore's limit() and fail the whole row.
+    const asked = request.data?.limit;
+    const limit = Number.isInteger(asked) ? Math.min(Math.max(asked as number, 1), 20) : 10;
+    const pool = limit + SPARES;
 
     // --- Who she already follows, and who she will never be shown ------
     const [followingSnap, blockedSnap, dismissedSnap] = await Promise.all([
@@ -106,32 +120,32 @@ export const suggestedClosets = onCall<Input, Promise<{ closets: SuggestedCloset
     //
     // Over-fetch, because some of what comes back is already excluded or
     // already ranked, and a short row looks broken.
-    let candidates = ranked.slice(0, limit);
-    if (candidates.length < limit) {
+    let candidates = ranked.slice(0, pool);
+    if (candidates.length < pool) {
       const popular = await db()
         .collection(COLLECTIONS.users)
         .where('campusId', '==', me.campusId)
         .where('status', '==', 'active')
         .orderBy('stats.followerCount', 'desc')
-        .limit(limit * 3)
+        .limit(pool * 3)
         .get();
 
       const seen = new Set(candidates);
       for (const doc of popular.docs) {
-        if (candidates.length >= limit) break;
+        if (candidates.length >= pool) break;
         if (excluded.has(doc.id) || seen.has(doc.id)) continue;
         seen.add(doc.id);
         candidates.push(doc.id);
       }
     }
-    candidates = candidates.slice(0, limit);
+    candidates = candidates.slice(0, pool);
     if (candidates.length === 0) return { closets: [] };
 
     // --- Hydrate, and drop anyone who has blocked HER --------------------
     //
     // Her own block list was handled above. This is the other direction,
     // and it cannot be a query, so it is a read per candidate — which is
-    // why the list is capped at 20.
+    // why the list is capped at 20 (plus the spares).
     const [users, blockedBy] = await Promise.all([
       db().getAll(...candidates.map((uid) => db().collection(COLLECTIONS.users).doc(uid))),
       Promise.all(
@@ -151,6 +165,10 @@ export const suggestedClosets = onCall<Input, Promise<{ closets: SuggestedCloset
       if (!snap.exists || blockedBy[index]?.exists) return;
       const user = snap.data() as User;
       if (user.status !== 'active') return;
+      // A friend-of-a-friend at another school. Loane is a handoff on
+      // your own campus, so her closet is one she could never borrow
+      // from. (The top-up above is already same-campus.)
+      if (user.campusId !== me.campusId) return;
       closets.push({
         ...summarize(user),
         mutualCount: mutuals.get(snap.id) ?? 0,
@@ -158,6 +176,6 @@ export const suggestedClosets = onCall<Input, Promise<{ closets: SuggestedCloset
       });
     });
 
-    return { closets };
+    return { closets: closets.slice(0, limit) };
   },
 );
