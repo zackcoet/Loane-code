@@ -61,6 +61,72 @@ service cloud.firestore {
       return changed().hasOnly(allowed);
     }
 
+    // --- Photos must be her own uploads to Loane ------------------------
+    //
+    // A piece's photos and a profile photo are written straight from the
+    // phone, so without these a tampered app could show the whole campus
+    // any picture on the internet, or another girl's photo — and the
+    // Storage rules (her own folder, images only, under 8 MB) would never
+    // see it. Looks get the same check in createPost (isDownloadUrlFor in
+    // backend/functions/src/posts/createPost.ts); keep the two agreeing
+    // on the live side. (createPost trusts any host on the emulators,
+    // where it can tell it is on one; rules cannot, hence the local-
+    // network list below.)
+    //
+    // A download link looks like
+    //   https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<path, %2F for />?alt=media&token=…
+    //
+    // Live and dev: only Google's storage host, only our own two buckets
+    // (either spelling — projects made after late 2024 say
+    // .firebasestorage.app, older ones .appspot.com).
+    // Emulators: the phone reaches the laptop by its wifi address over
+    // plain http, so a local-network host is allowed — but ONLY with the
+    // demo-loane bucket, and "demo-" projects cannot exist in the real
+    // cloud, so nobody can host a real picture there.
+    function isLoaneStorageHost(prefix) {
+      return prefix.matches('https://firebasestorage[.]googleapis[.]com/v0/b/(loane-code|loane-dev)[.](firebasestorage[.]app|appspot[.]com)')
+        || prefix.matches('https?://(localhost|127[.]0[.]0[.]1|10([.][0-9]{1,3}){3}|192[.]168([.][0-9]{1,3}){2}|172[.](1[6-9]|2[0-9]|3[01])([.][0-9]{1,3}){2}|[A-Za-z0-9-]+[.]local)(:[0-9]{1,5})?/v0/b/demo-loane[.](firebasestorage[.]app|appspot[.]com)');
+    }
+
+    // The stored file a download link points at, still %-encoded, or ''
+    // when it is not a Loane download link at all.
+    function storedFileOf(url) {
+      let halves = url.split('/o/');
+      return url is string && url.size() <= 2048
+          && halves.size() == 2 && isLoaneStorageHost(halves[0])
+        ? halves[1].split('[?]')[0]
+        : '';
+    }
+
+    // Folder and file names the app writes are letters, digits, - and _
+    // (file names add the dot). Anything else is refused, which also
+    // keeps them safe to put inside the patterns above.
+    function isSafeName(s) {
+      return s is string && s.matches('[A-Za-z0-9_-]{1,128}');
+    }
+
+    // One photo of a piece: a file in users/{her uid}/listings/{this
+    // piece}/, its link the download link for that exact file, and a
+    // real size — every phone lays the photo out from width and height,
+    // so a zero or a negative would break the piece on everyone's screen.
+    // 20000 matches MAX_PHOTO_SIDE in createPost.
+    function isOwnListingPhoto(img, listingId) {
+      return img is map
+        && img.path is string
+        && img.path.matches('users/' + uid() + '/listings/' + listingId + '/[A-Za-z0-9_.-]{1,100}')
+        && storedFileOf(img.url)
+             == 'users%2F' + uid() + '%2Flistings%2F' + listingId + '%2F' + img.path.split('/')[4]
+        && img.width is number && img.width > 0 && img.width <= 20000
+        && img.height is number && img.height > 0 && img.height <= 20000;
+    }
+
+    // Her profile photo: null, or a file in users/{her uid}/profile/.
+    // Profiles store only the link, so the file name is checked from it.
+    function isOwnProfilePhotoUrl(url) {
+      return url == null
+        || storedFileOf(url).matches('users%2F' + uid() + '%2Fprofile%2F[A-Za-z0-9_.-]{1,100}');
+    }
+
     // -----------------------------------------------------------------
     // campuses — the approved-school list
     // -----------------------------------------------------------------
@@ -111,7 +177,10 @@ service cloud.firestore {
                  || (d.firstName is string && d.firstName.size() >= 1 && d.firstName.size() <= 40))
           && (!('displayName' in changed())
                  || (d.displayName is string && d.displayName.size() >= 1 && d.displayName.size() <= 40))
-          && (!('bio' in changed()) || (d.bio is string && d.bio.size() <= 200));
+          && (!('bio' in changed()) || (d.bio is string && d.bio.size() <= 200))
+          // Only checked when she changes it, so a photo saved before
+          // this check existed never locks her out of editing her bio.
+          && (!('photoUrl' in changed()) || isOwnProfilePhotoUrl(d.photoUrl));
       }
 
       // She may edit a narrow set of her own fields and nothing else.
@@ -472,6 +541,41 @@ service cloud.firestore {
           && draft().photos.size() <= 8;
       }
 
+      // Every photo of the piece, its "Try it on" flat photo, and the
+      // cover the grids show must be her own uploads for THIS piece (see
+      // isOwnListingPhoto). On an edit, a photo the piece already had is
+      // left alone — so a piece saved before this check existed (and the
+      // seeded pieces, whose photos are built into the seed) can still be
+      // paused, repriced or given a new photo; only the new ones are
+      // checked. The cover is a copy of the first photo's link; a
+      // different one would show the campus one picture in the grid and
+      // another on the piece.
+      function photoOk(img, listingId, isNew) {
+        return isOwnListingPhoto(img, listingId)
+          || (!isNew && img is map
+              && (img in resource.data.get('photos', [])
+                  || img == resource.data.get('flatPhoto', null)));
+      }
+
+      // Rules have no loops, hence one line per possible photo (max 8;
+      // hasRequiredFields has already checked there are 1 to 8).
+      function photosAreHers(listingId, isNew) {
+        let p = draft().photos;
+        return (!isNew && !changed().hasAny(['photos', 'coverUrl', 'flatPhoto']))
+          || (isSafeName(listingId)
+              && photoOk(p[0], listingId, isNew)
+              && (p.size() < 2 || photoOk(p[1], listingId, isNew))
+              && (p.size() < 3 || photoOk(p[2], listingId, isNew))
+              && (p.size() < 4 || photoOk(p[3], listingId, isNew))
+              && (p.size() < 5 || photoOk(p[4], listingId, isNew))
+              && (p.size() < 6 || photoOk(p[5], listingId, isNew))
+              && (p.size() < 7 || photoOk(p[6], listingId, isNew))
+              && (p.size() < 8 || photoOk(p[7], listingId, isNew))
+              && draft().get('coverUrl', null) == p[0].url
+              && (draft().get('flatPhoto', null) == null
+                  || photoOk(draft().flatPhoto, listingId, isNew)));
+      }
+
       /** A price, in whole cents, inside the allowed range. */
       function validPrice(cents) {
         return cents is int && cents >= 100 && cents <= 100000;
@@ -522,6 +626,7 @@ service cloud.firestore {
         // `update` has always allowed it; only `create` disagreed.
         && draft().status in ['draft', 'active', 'paused']
         && hasRequiredFields()
+        && photosAreHers(listingId, true)
         && pricingMatchesIntent()
         // She does not get to invent a view count.
         && countersStartAtZero()
@@ -548,6 +653,7 @@ service cloud.firestore {
            ])
         && draft().status in ['draft', 'active', 'paused']
         && hasRequiredFields()
+        && photosAreHers(listingId, false)
         && pricingMatchesIntent();
 
       // No hard delete, and no setting status to 'removed' from the app
