@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 37 (only when you next deploy): server fixes to the dashboard's take-down, suspend and dispute buttons, plus one tiny database rules addition. Normal deploy, nothing to switch on.
 - From run 36 (only when you next deploy): server fixes to sharing into chats and to closing Contact us messages in the dashboard. Normal deploy, nothing to switch on.
 - From run 35 (only when you next deploy): server fixes to starting a chat, removing a piece, and Contact us. Normal deploy, nothing to switch on.
 - From run 34 (only when you next deploy): server fixes to "Find friends from contacts" and suggested closets. Normal deploy, nothing to switch on.
@@ -29,6 +30,40 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-25 (run 37, ~10 PM Central) — The dashboard's moderation buttons can't undo the wrong thing
+
+**Plan:** The backlog is still waiting on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1: read the dashboard's take-down, suspend and "decide a disputed return" buttons — none had tests — fix what was wrong, and add tests.
+
+**Built / Fixed (what you'd notice in the dashboard):**
+- **"Put it back" returns a piece to what it was.** It always made the piece available again. So a SOLD piece that was reported, taken down and put back came back up for rent and sale — it could have been sold twice. Now sold stays sold, paused stays paused, and a scheduled look stays scheduled.
+- **You can't take down something its owner already deleted.** Doing so meant "Put it back" could bring a look or piece she'd deleted back to life. The button is greyed out on those now, and a report about one just closes.
+- **A deleted account can't be brought back by accident.** Suspending a "Deleted account" and then lifting the suspension turned it back into a live account. Now deleted accounts can't be suspended or warned, and "Lift suspension" only works on someone who's actually suspended.
+- **No double counting when two people click at once.** Two admins (or one double-click) deciding the same disputed return added the rental to both girls' histories twice. Same for taking down a comment (the count under the look dropped by two). Each now happens exactly once.
+- **Small dashboard tidy-ups:** the Listings page now says "Put it back" on a taken-down piece (it always said "Hide listing"), and the Suspend button at the top of a student's page — greyed out with "Needs a Cloud Function" for weeks — now works.
+- **Junk input gets a clear answer** instead of a vague "something went wrong", on all of these.
+
+**What to tap to see it:**
+- Admin dashboard → **Listings** → a piece that's been taken down now shows **Put it back**. Users → a student → the **Suspend** button at the top now opens the same box as the one in Moderation.
+- Nothing changes on the phone.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (86 searches, none missing), all 312 shared tests (7 new), and the server tests that don't need the database. The 23 new database tests (16 for take-downs and suspending, 3 for reports, 4 for disputes) ran on GitHub — all green ✅.
+- One thing noticed and left alone: a suspension can carry an "until" date, but nothing lifts it on its own yet (the dashboard doesn't offer the date either). Noted in `docs/decisions.md`; building the automatic lift is small if you ever want it.
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing urgent. Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code (H1) — creating and deleting a look, and the admin feature-switch panel — plus H2 (small cleanups).
+
+**Commits:**
+- Dashboard: putting a piece or look back returns it to what it was (sold stays sold); deleted accounts can't be suspended or revived; tests
+- Dashboard: deciding a disputed return can't count the rental twice when two admins click at once; junk input gets a clear answer; tests
+- Autopilot log for run 37
+- GitHub checks on the code push (full set, database tests included): **534 passed, 0 failed ✅**
 
 ---
 
