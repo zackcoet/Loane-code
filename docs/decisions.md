@@ -1921,3 +1921,11 @@ Add to Closet and Edit Listing now call `writeListing` (`backend/functions/src/l
 - **New pieces:** the phone picks the id (the photo folder needs it before anything is saved); the function refuses an id that already exists. Sixty new pieces an hour, counted in `rateLimits` like every other limit; `listingQuotas` is retired (readable, never written).
 - **Trade-off:** the hourly limit is now checked after the photos upload, so the 61st piece in an hour leaves its photos in storage. Rare enough not to matter.
 - **Deploying:** the rules change and the app change must go out together — an older app would be refused when saving a piece. The function must be live before the new app is used.
+
+## 2026-10-25 — Reports name whoever the server finds; blocking is one transaction (autopilot run 41)
+
+- **`submitReport` ignores the `targetUid` the phone sends.** For every kind of report the server looks the person up: a profile is that student, a comment or review is its author, a post or piece its owner, a rental the other side, a message its sender. The dashboard's one-click warn and suspend act on `targetUid`, so trusting the phone meant a tampered app could get the wrong girl suspended. A side benefit: "Report @user" from a chat never sent anyone, so those reports had no student attached and couldn't be acted on.
+- **Comment and review reports keep a copy of the words** (`snapshot`, up to 500 characters), like message reports do, because a comment can be deleted and a review hidden before an admin looks.
+- **No photos on reports for now.** Nothing in the app sends them and there's no storage folder for them, so a photo could only be a link to anywhere, shown in the dashboard. When report photos are built, check each is her own upload (`lib/downloadUrl`).
+- **Her own things can't be reported** (her profile, post, piece, comment, review). Junk input is refused before the daily report limit is counted.
+- **Blocking runs in a transaction**, so two taps at once take each follow off the counts once, not twice. Following now reads the block inside its own transaction, so a follow landing at the same instant as a block can't survive it.

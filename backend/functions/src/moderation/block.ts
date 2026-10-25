@@ -1,10 +1,11 @@
 import { type CallableRequest } from 'firebase-functions/v2/https';
 import { onCall } from '../lib/callable';
 import { logger } from 'firebase-functions';
-import { COLLECTIONS } from '@loane/shared';
+import { COLLECTIONS, ids } from '@loane/shared';
 import { db, now, FieldValue } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireActiveUser } from '../lib/guards';
+import { isDocId } from '../lib/input';
 
 /**
  * Blocking.
@@ -59,43 +60,48 @@ export const blockUser = onCall<BlockInput, Promise<{ ok: true }>>(
   async (request: CallableRequest<BlockInput>): Promise<{ ok: true }> => {
     const me = await requireActiveUser(request);
     const targetUid = request.data?.uid;
-    if (!targetUid) throw invalidArgument('Who do you want to block?');
+    if (!isDocId(targetUid)) throw invalidArgument('Who do you want to block?');
     if (targetUid === me.uid) throw failed("You can't block yourself.");
 
-    const target = await db().collection(COLLECTIONS.users).doc(targetUid).get();
-    if (!target.exists) throw notFound('We could not find that student.');
-
-    const batch = db().batch();
-    batch.set(
-      db().collection(COLLECTIONS.users).doc(me.uid).collection('blocked').doc(targetUid),
-      { blockedUid: targetUid, createdAt: now() },
-    );
-    // The reverse marker, so her app can hide him too.
-    batch.set(
-      db().collection(COLLECTIONS.users).doc(targetUid).collection('blockedBy').doc(me.uid),
-      { blockerUid: me.uid, createdAt: now() },
-    );
-
-    // Following each other stops making sense the moment one blocks.
+    const users = db().collection(COLLECTIONS.users);
+    const targetRef = users.doc(targetUid);
+    const blockRef = users.doc(me.uid).collection('blocked').doc(targetUid);
+    const reverseRef = users.doc(targetUid).collection('blockedBy').doc(me.uid);
     const edges = [
-      db().collection(COLLECTIONS.follows).doc(`${me.uid}_${targetUid}`),
-      db().collection(COLLECTIONS.follows).doc(`${targetUid}_${me.uid}`),
-    ];
-    const existing = await Promise.all(edges.map((ref) => ref.get()));
-    existing.forEach((snap, index) => {
-      if (!snap.exists) return;
-      batch.delete(edges[index]!);
-      const followerUid = index === 0 ? me.uid : targetUid;
-      const followingUid = index === 0 ? targetUid : me.uid;
-      batch.update(db().collection(COLLECTIONS.users).doc(followerUid), {
-        'stats.followingCount': FieldValue.increment(-1),
-      });
-      batch.update(db().collection(COLLECTIONS.users).doc(followingUid), {
-        'stats.followerCount': FieldValue.increment(-1),
+      db().collection(COLLECTIONS.follows).doc(ids.follow(me.uid, targetUid)),
+      db().collection(COLLECTIONS.follows).doc(ids.follow(targetUid, me.uid)),
+    ] as const;
+
+    /*
+      A transaction, not a plain batch: two taps on Block at the same
+      moment would both see the follow and both take one off the
+      follower counts. Inside a transaction the second one sees the
+      follow already gone. Following reads the block inside its own
+      transaction too (social/follow.ts), so a follow landing at the
+      same instant as a block can't slip in after it.
+    */
+    await db().runTransaction(async (tx) => {
+      const [target, ...existing] = await Promise.all([
+        tx.get(targetRef),
+        ...edges.map((ref) => tx.get(ref)),
+      ]);
+      if (!target.exists) throw notFound('We could not find that student.');
+
+      tx.set(blockRef, { blockedUid: targetUid, createdAt: now() });
+      // The reverse marker, so her app can hide him too.
+      tx.set(reverseRef, { blockerUid: me.uid, createdAt: now() });
+
+      // Following each other stops making sense the moment one blocks.
+      existing.forEach((snap, index) => {
+        if (!snap.exists) return;
+        tx.delete(edges[index]!);
+        const followerUid = index === 0 ? me.uid : targetUid;
+        const followingUid = index === 0 ? targetUid : me.uid;
+        tx.update(users.doc(followerUid), { 'stats.followingCount': FieldValue.increment(-1) });
+        tx.update(users.doc(followingUid), { 'stats.followerCount': FieldValue.increment(-1) });
       });
     });
 
-    await batch.commit();
     logger.info('User blocked', { by: me.uid, target: targetUid });
     return { ok: true };
   },
@@ -106,7 +112,7 @@ export const unblockUser = onCall<BlockInput, Promise<{ ok: true }>>(
   async (request: CallableRequest<BlockInput>): Promise<{ ok: true }> => {
     const me = await requireActiveUser(request);
     const targetUid = request.data?.uid;
-    if (!targetUid) throw invalidArgument('Who do you want to unblock?');
+    if (!isDocId(targetUid)) throw invalidArgument('Who do you want to unblock?');
 
     const batch = db().batch();
     batch.delete(

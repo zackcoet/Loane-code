@@ -16,6 +16,7 @@ import {
 import { db, now, Timestamp, FieldValue } from '../lib/admin';
 import { alreadyTaken, failed, invalidArgument } from '../lib/errors';
 import { requireActiveUser, requireHandoffReady } from '../lib/guards';
+import { isDocId } from '../lib/input';
 import { acceptClash, requestsLeftBehind } from './acceptClash';
 import {
   assertCanTransition,
@@ -488,7 +489,7 @@ export const setBlockedDates = onCall<
 >({ region: 'us-central1' }, async (request) => {
   const user = await requireActiveUser(request);
   const { listingId, dates = [] } = request.data ?? {};
-  if (!listingId) throw invalidArgument('Which piece?');
+  if (!isDocId(listingId)) throw invalidArgument('Which piece?');
   // Only real calendar dates, and a year's worth at most — the calendar
   // reads these on every renter's phone.
   if (!Array.isArray(dates) || dates.some((d) => typeof d !== 'string' || !isIsoDate(d))) {

@@ -7,7 +7,7 @@ import { db, now, FieldValue } from '../lib/admin';
 import { rateLimit } from '../lib/rateLimit';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
-import { assertNotBlocked } from '../moderation/block';
+import { isDocId } from '../lib/input';
 
 /**
  * `follow` and `unfollow`.
@@ -40,17 +40,28 @@ async function setFollow(
   await rateLimit(me.uid, 'follow');
   const targetUid = request.data?.uid;
 
-  if (!targetUid) throw invalidArgument('Who do you want to follow?');
+  if (!isDocId(targetUid)) throw invalidArgument('Who do you want to follow?');
   if (targetUid === me.uid) throw failed("You can't follow yourself.");
-  if (shouldFollow) await assertNotBlocked(me.uid, targetUid);
 
   const targetRef = db().collection(COLLECTIONS.users).doc(targetUid);
   const meRef = db().collection(COLLECTIONS.users).doc(me.uid);
   const edgeRef = db().collection(COLLECTIONS.follows).doc(ids.follow(me.uid, targetUid));
 
   await db().runTransaction(async (tx) => {
-    const [targetSnap, edgeSnap] = await Promise.all([tx.get(targetRef), tx.get(edgeRef)]);
+    // The block is read INSIDE the transaction. Checked before it, a
+    // block landing in between would be missed and the follow would
+    // stand after it (blockUser removes follows in its own transaction).
+    const [targetSnap, edgeSnap, iBlocked, theyBlocked] = await Promise.all([
+      tx.get(targetRef),
+      tx.get(edgeRef),
+      tx.get(meRef.collection('blocked').doc(targetUid)),
+      tx.get(targetRef.collection('blocked').doc(me.uid)),
+    ]);
     if (!targetSnap.exists) throw notFound('We could not find that closet.');
+    if (shouldFollow && (iBlocked.exists || theyBlocked.exists)) {
+      // The same vague words as assertNotBlocked, on purpose.
+      throw failed('That is not available.');
+    }
 
     /*
       Nobody new follows a deleted or suspended account. A deleted one is
