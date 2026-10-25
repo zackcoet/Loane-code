@@ -1,11 +1,6 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions';
-import {
-  BLOCKING_BOOKING_STATUSES,
-  COLLECTIONS,
-  datesInRange,
-  type Booking,
-} from '@loane/shared';
+import { BLOCKING_BOOKING_STATUSES, COLLECTIONS, datesInRange, type Booking } from '@loane/shared';
 import { db, now } from '../lib/admin';
 
 /**
@@ -38,8 +33,7 @@ export const syncListingAvailability = onDocumentWritten(
     // matters. Editing a handoff note should not trigger a recompute.
     const wasBlocking = before ? BLOCKING_BOOKING_STATUSES.includes(before.status) : false;
     const isBlocking = after ? BLOCKING_BOOKING_STATUSES.includes(after.status) : false;
-    const datesMoved =
-      before?.startDate !== after?.startDate || before?.endDate !== after?.endDate;
+    const datesMoved = before?.startDate !== after?.startDate || before?.endDate !== after?.endDate;
 
     if (wasBlocking === isBlocking && !datesMoved) return;
 

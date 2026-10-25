@@ -115,9 +115,7 @@ export const prepareFlatPhoto = onCall<Input, Promise<PrepareFlatPhotoResult>>(
           return {
             ok: true,
             fix: null,
-            imageBase64: image.startsWith('data:')
-              ? image.slice(image.indexOf(',') + 1)
-              : image,
+            imageBase64: image.startsWith('data:') ? image.slice(image.indexOf(',') + 1) : image,
             usedOriginal: false,
           };
         }

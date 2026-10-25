@@ -20,9 +20,11 @@ import {
 import { db, now, Timestamp } from '../lib/admin';
 import { alreadyTaken, failed, invalidArgument, notFound } from '../lib/errors';
 import { requireHandoffReady, requireVerifiedStudent } from '../lib/guards';
+import { isDocId } from '../lib/input';
 import { rateLimit } from '../lib/rateLimit';
 import { getFeatureFlags } from '../lib/featureFlags';
 import { assertNotBlocked } from '../moderation/block';
+import { checkNote } from './note';
 import { notify } from './transitions';
 
 /**
@@ -92,10 +94,12 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
     // from her campus and take a garment from her. The app asks for
     // these first; this is the same rule where it cannot be skipped.
     await requireHandoffReady(renter, 'you rent');
+    const { listingId, startDate, endDate } = request.data ?? {};
+    // Junk input gets a clear answer before it uses up one of her
+    // requests for the hour.
+    if (!isDocId(listingId)) throw invalidArgument('Pick an item to rent.');
+    const message = checkNote(request.data?.message);
     await rateLimit(renter.uid, 'rentalRequest');
-    const { listingId, startDate, endDate, message } = request.data ?? {};
-
-    if (!listingId) throw invalidArgument('Pick an item to rent.');
 
     const range: DateRange = { startDate, endDate };
     const dateCheck = validateDateRange(range, toIsoDate(new Date()));
@@ -231,7 +235,7 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
         durationDays,
         amounts,
         payment: newBookingPayment(),
-        renterMessage: message?.trim() || null,
+        renterMessage: message.trim() || null,
         handoff: {
           notes: null,
           dropoffPhotos: [],

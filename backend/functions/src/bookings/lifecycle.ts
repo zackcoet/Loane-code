@@ -21,6 +21,7 @@ import { isDocId } from '../lib/input';
 import { acceptClash, requestsLeftBehind } from './acceptClash';
 import { planBlockedDates } from './blockedDates';
 import { checkHandoffPhotos } from './handoffPhotos';
+import { checkNote } from './note';
 import {
   assertCanTransition,
   completeBooking,
@@ -41,20 +42,6 @@ import {
  * student needs to know her dress was accepted and push notifications
  * are Phase 6.
  */
-
-/**
- * Free text and photos the other side will see. The app sends preset
- * reasons and a handful of photos; this is the backstop for anything
- * that is not the app.
- */
-function checkNote(text: unknown): string {
-  if (text == null) return '';
-  if (typeof text !== 'string') throw invalidArgument('That note is not text.');
-  if (text.trim().length > LIMITS.bookingNote.max) {
-    throw invalidArgument(`Keep it under ${LIMITS.bookingNote.max} characters.`);
-  }
-  return text;
-}
 
 // ---------------------------------------------------------------------------
 // Accept or decline
@@ -254,7 +241,9 @@ export const recordDropoff = onCall<
     tx.update(ref, {
       'handoff.dropoffPhotos': photos,
       'handoff.dropoffAt': now(),
-      'handoff.notes': notes.trim() || booking.handoff.notes,
+      // `?? null`: a sale asked for before run 43 has no notes field,
+      // and writing "nothing" (undefined) fails the whole drop-off.
+      'handoff.notes': notes.trim() || (booking.handoff?.notes ?? null),
       updatedAt: now(),
     });
     notify(tx, {
@@ -283,6 +272,30 @@ export const confirmReceipt = onCall<{ bookingId: string }, Promise<{ ok: true }
 
       if (booking.handoff.dropoffPhotos.length === 0) {
         throw failed('Ask the lender to record the drop-off photo first.');
+      }
+
+      /*
+        A SALE ENDS HERE.
+
+        Nothing comes back on a purchase, so "I have it" is the last
+        step: the seller has said she handed it over (with a photo) and
+        the buyer has said she has it — both of them, which is what
+        `completeBooking` waits for before marking the piece sold. Before,
+        a sale went on to "with renter" like a rental, the buyer was told
+        to "return it by the end date" of a sale with no dates, and the
+        piece only became sold after someone pressed "I've returned it".
+      */
+      if (booking.kind === 'purchase') {
+        tx.update(ref, { 'handoff.renterConfirmedReceiptAt': now() });
+        completeBooking(tx, ref, booking);
+        notify(tx, {
+          uid: booking.lenderUid,
+          type: 'booking_confirmed',
+          title: 'Sold',
+          body: `${booking.renter.username} confirmed she has ${pieceName(booking)}. It's hers now.`,
+          bookingId,
+        });
+        return;
       }
 
       tx.update(ref, {
@@ -321,6 +334,15 @@ export const confirmReturn = onCall<
 
   await db().runTransaction(async (tx) => {
     const { booking, actor, ref } = await loadBookingFor(bookingId, user.uid, tx);
+
+    if (booking.kind === 'purchase') {
+      // A sale asked for before run 43 could reach "with renter" and had
+      // no way out but a "return". Let either side finish it, so none is
+      // left stuck; anything else about a return makes no sense on a sale.
+      if (booking.status !== 'with_renter') throw failed('Nothing comes back on a sale.');
+      completeBooking(tx, ref, booking);
+      return;
+    }
 
     // The second half of the handshake: she has said she returned it,
     // and now he is saying he has it back and it is fine. That ends
@@ -393,6 +415,11 @@ export const flagReturnProblem = onCall<
 
   await db().runTransaction(async (tx) => {
     const { booking, actor, ref } = await loadBookingFor(bookingId, user.uid, tx);
+    if (booking.kind === 'purchase') {
+      // There is no return on a sale to have a problem with. A problem
+      // with a sale is a report, which lands with Loane all the same.
+      throw failed('Nothing comes back on a sale. Use Report a problem instead.');
+    }
     assertCanTransition(booking, 'disputed', actor);
 
     const deadline = booking.disputeWindowEndsAt as { toDate?: () => Date } | null;
@@ -455,7 +482,7 @@ export const cancelBooking = onCall<{ bookingId: string; reason: string }, Promi
       notify(tx, {
         uid: actor === 'lender' ? booking.renterUid : booking.lenderUid,
         type: 'rental_declined',
-        title: 'Rental cancelled',
+        title: booking.kind === 'purchase' ? 'Sale cancelled' : 'Rental cancelled',
         body: `${actor === 'lender' ? booking.lender.username : booking.renter.username} cancelled ${pieceName(booking)}.`,
         bookingId,
       });

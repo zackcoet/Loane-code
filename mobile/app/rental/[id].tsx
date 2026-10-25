@@ -106,6 +106,9 @@ export default function RentalScreen() {
   }
 
   const isLender = booking.lenderUid === profile?.uid;
+  // A sale ends at "I have it" — nothing comes back — so the return steps
+  // never show for one.
+  const isSale = booking.kind === 'purchase';
   const them = isLender ? booking.renter : booking.lender;
 
   const run = async (label: string, fn: () => Promise<unknown>) => {
@@ -424,7 +427,21 @@ export default function RentalScreen() {
             />
           ) : null}
 
-          {booking.status === 'with_renter' ? (
+          {booking.status === 'with_renter' && isSale ? (
+            // Only a sale asked for before sales ended at "I have it" can
+            // be here. One tap finishes it.
+            <Button
+              label="Finish the sale"
+              loading={busy}
+              onPress={() =>
+                void run('finish the sale', async () => {
+                  await confirmReturn({ bookingId: booking.id });
+                })
+              }
+            />
+          ) : null}
+
+          {booking.status === 'with_renter' && !isSale ? (
             <Button
               // Either side can still start the return — a lender who
               // gets it handed back in person should not have to wait
@@ -492,7 +509,11 @@ export default function RentalScreen() {
 
           {(booking.status === 'requested' || booking.status === 'confirmed') &&
           !(booking.status === 'requested' && isLender) ? (
-            <Button label="Cancel rental" variant="text" onPress={onCancel} />
+            <Button
+              label={isSale ? 'Cancel sale' : 'Cancel rental'}
+              variant="text"
+              onPress={onCancel}
+            />
           ) : null}
         </View>
       </ScrollView>
@@ -517,7 +538,42 @@ export default function RentalScreen() {
 }
 
 function StatusBanner({ booking, isLender }: { booking: Booking; isLender: boolean }) {
-  const copy: Record<string, string> = {
+  const copy: Record<string, string> =
+    booking.kind === 'purchase' ? saleCopy(booking, isLender) : rentalCopy(booking, isLender);
+
+  return (
+    <Card style={styles.banner}>
+      <Text variant="label">{BOOKING_STATUS_LABELS[booking.status]}</Text>
+      <Text variant="bodySmall" tone="secondary" style={styles.blockBody}>
+        {copy[booking.status]}
+      </Text>
+    </Card>
+  );
+}
+
+/** What each step means on a sale — no dates, nothing comes back. */
+function saleCopy(booking: Booking, isLender: boolean): Record<string, string> {
+  return {
+    requested: isLender
+      ? `She’s asked to buy this. Accept or decline within ${REQUEST_EXPIRY_HOURS} hours.`
+      : `Waiting on an answer. She has ${REQUEST_EXPIRY_HOURS} hours.`,
+    confirmed: booking.handoff.dropoffAt
+      ? isLender
+        ? 'Handed over. Waiting for her to confirm she has it.'
+        : 'It’s been handed over — confirm when you have it.'
+      : isLender
+        ? 'Sold to her. Record the hand-over with a photo when you meet.'
+        : 'She said yes. She’ll hand it over and you confirm when you have it.',
+    with_renter: 'She has it. Tap Finish the sale to close it.',
+    completed: isLender ? 'Sold.' : 'It’s yours.',
+    declined: booking.declineReason ?? 'Declined.',
+    cancelled: booking.cancellationReason ?? 'Cancelled.',
+    disputed: 'A problem was reported. Loane is reviewing it.',
+  };
+}
+
+function rentalCopy(booking: Booking, isLender: boolean): Record<string, string> {
+  return {
     requested: isLender
       ? `She’s asked to rent this. Accept or decline within ${REQUEST_EXPIRY_HOURS} hours.`
       : `Waiting on an answer. She has ${REQUEST_EXPIRY_HOURS} hours.`,
@@ -537,15 +593,6 @@ function StatusBanner({ booking, isLender }: { booking: Booking; isLender: boole
     cancelled: booking.cancellationReason ?? 'Cancelled.',
     disputed: 'A problem was reported. Loane is reviewing it.',
   };
-
-  return (
-    <Card style={styles.banner}>
-      <Text variant="label">{BOOKING_STATUS_LABELS[booking.status]}</Text>
-      <Text variant="bodySmall" tone="secondary" style={styles.blockBody}>
-        {copy[booking.status]}
-      </Text>
-    </Card>
-  );
 }
 
 function Line({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
