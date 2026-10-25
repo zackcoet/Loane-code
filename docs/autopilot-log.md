@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 44 (only when you next deploy): a server fix to the hourly rental reminders, plus one new database index. Normal deploy, nothing to switch on.
 - From run 43 (only when you next deploy, and use the new app build after): server fixes to buying a piece and the rental steps. Normal deploy, nothing to switch on.
 - From run 42 (only when you next deploy): server fixes to blocking dates, rental hand-over photos and blocking someone, plus a small database rules change to editing a look. Normal deploy, nothing to switch on.
 - From run 41 (only when you next deploy): server fixes to reporting, blocking and following. Normal deploy, nothing to switch on.
@@ -36,6 +37,38 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-25 (run 44, ~5 AM Central) — Rental reminders arrive on the right day, and never at night
+
+**Plan:** The rest of the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1 with what run 43 pointed at: the hourly rental clock's reminders ("starts tomorrow", "drop off today", "due back", "overdue", "a request is about to expire"). Read it, fix what was wrong, add tests.
+
+**Built / Fixed (what a student would notice):**
+- **"Drop off today", "Pick up today" and "Due back today" now arrive on the actual day.** The server's clock runs on world time, which flips to the next day at 8 PM in Columbia — so these reminders were landing at 8 PM the evening before, and "This is overdue" went out at 8 PM on the day it was due. They now go by Columbia's day.
+- **No reminder buzzes her phone at night.** Reminders only go out between 8 AM and 9 PM. Anything held back goes at 8 AM.
+- **No "Due back today" after she's already handed it back**, and no double reminders if two clock runs overlap.
+- **Every rental gets its reminders once Loane is busy.** The clock used to look at only the first 300 live rentals, in no particular order — past that, some girls would silently never be reminded. It now only looks at the rentals that could need one (starting today/tomorrow, due back soon or just late).
+- **Tapping "A request is about to expire" opens the request.** Before, that alert could open nothing.
+- "This is overdue" says "Wed, Nov 4" instead of "2026-11-04".
+
+**What to tap to see it:** Nothing new to tap — these are alerts. To check by hand: book a rental that starts tomorrow, then in the dashboard run the booking clock; both girls get "starts tomorrow" in Activity. (Running it by hand from the dashboard always sends, whatever the hour.)
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, 312 shared tests and 127 server tests that don't need the database (11 new). The 5 new database tests ran on GitHub — **all green ✅**.
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+- Noticed, not changed: the rest of the app (the calendar, request checks) also uses world time, so after 8 PM in Columbia "today" is greyed out and a same-day request is treated as tomorrow's. It touches booking dates, so it's logged as a new backlog item (H9) for a careful run rather than squeezed in here.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: the reminder fix and one new database index. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** H9 (Columbia's "today" everywhere), or keep sweeping untested server code (H1): the admin dispute screen with sales in mind and the remaining dashboard buttons.
+
+**Commits:**
+- Rental reminders on campus time, never at night; each sent once inside a transaction; tests
+- Decisions and North Star notes; autopilot log for run 44
+- GitHub checks on the code push (full set, database tests included): **all green ✅**
 
 ---
 
