@@ -585,7 +585,7 @@ export const LIMITS = {
    * New pieces one student may put on Loane in an hour. Each one takes
    * photos and a form, so even a girl listing her whole closet in one
    * sitting manages a few dozen at most. A ceiling on a script, not on
-   * her. MUST match the number in firestore.rules (listingQuotas).
+   * her. Counted by the writeListing Cloud Function (rateLimits).
    */
   listingsPerHour: { max: 60, windowMs: 3_600_000 },
   commentBody: { min: 1, max: 500 },

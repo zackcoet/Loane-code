@@ -18,14 +18,19 @@ import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
 import { queueAutoFlag } from '../moderation/autoFlag';
 import { isDocId, isPlainObject } from '../lib/input';
+import { isDownloadUrlFor } from '../lib/downloadUrl';
+
+// Kept exported from here too, so existing imports keep working.
+export { isDownloadUrlFor };
 
 /**
  * `createPost`
  *
- * WHY THIS IS A FUNCTION WHEN LISTINGS ARE A DIRECT WRITE
+ * WHY THIS IS A FUNCTION
  *
- * A listing only touches its own document, so the security rules can
- * validate it and the app can write it. A post cannot: tagging a garment
+ * (Listings were once a direct write from the app, because a listing
+ * only touches its own document. Since run 40 they go through
+ * writeListing too, for its photo and name checks.) A post cannot be: tagging a garment
  * has to bump `tagCount` on a DIFFERENT document, and the flattened
  * `taggedListingIds` has to agree with the tags actually pinned to the
  * photos. Neither is something rules can do or the app can be trusted
@@ -323,41 +328,4 @@ function parsePhoto(value: unknown, uid: string): PhotoInput {
   });
 
   return { path, url, width: width as number, height: height as number, tags };
-}
-
-/**
- * Is `url` the download link for `path` in this project's own bucket?
- *
- * Download links look like
- * `https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<path, encoded>?alt=media&token=…`.
- * Both bucket spellings are accepted: projects made after late 2024 use
- * `.firebasestorage.app`, older ones `.appspot.com`. On the emulators the
- * host is the laptop (seen from a phone, its wifi address), so only the
- * bucket and file are checked there.
- */
-export function isDownloadUrlFor(url: string, path: string): boolean {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return false;
-  }
-
-  const onEmulator =
-    process.env.FUNCTIONS_EMULATOR === 'true' || !!process.env.FIREBASE_STORAGE_EMULATOR_HOST;
-  if (onEmulator) {
-    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
-  } else if (parsed.protocol !== 'https:' || parsed.hostname !== 'firebasestorage.googleapis.com') {
-    return false;
-  }
-
-  const projectId = process.env.GCLOUD_PROJECT ?? process.env.GCP_PROJECT;
-  const buckets = [
-    process.env.STORAGE_BUCKET,
-    `${projectId}.firebasestorage.app`,
-    `${projectId}.appspot.com`,
-  ].filter((b): b is string => !!b && !!projectId);
-  return buckets.some(
-    (bucket) => parsed.pathname === `/v0/b/${bucket}/o/${encodeURIComponent(path)}`,
-  );
 }

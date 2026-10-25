@@ -7,21 +7,12 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import {
-  doc,
-  getDoc,
-  increment,
-  serverTimestamp,
-  updateDoc,
-  writeBatch,
-  type DocumentReference,
-} from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
+import { FunctionsError } from 'firebase/functions';
 import {
   COLLECTIONS,
   LIMITS,
   dollarsToCents,
-  otherQuotaWrite,
-  quotaWrite,
   validateListingDraft,
   type Category,
   type Condition,
@@ -29,14 +20,14 @@ import {
   type IsoDate,
   type ListingDraft,
   type ListingIntent,
-  type MessageQuota,
   type Occasion,
   type ShoeSize,
   type Size,
   type User,
 } from '@loane/shared';
 import { db } from '../firebase/config';
-import { saveErrorMessage } from '../firebase/errors';
+import { writeListing } from '../firebase/callables';
+import { callableErrorMessage, saveErrorMessage } from '../firebase/errors';
 import {
   cropToSquare,
   uploadFlatPhotoPng,
@@ -44,35 +35,6 @@ import {
   type PickedPhoto,
 } from '../lib/photo';
 import { assertOnline } from '../network/connection';
-
-/** Shown when she has hit the hourly ceiling on new pieces. */
-export const LISTING_QUOTA_FULL_MESSAGE =
-  "You've put a lot on Loane in the last hour. Take a breather and try this one again in a little while — your draft is still here.";
-
-/** Her hourly new-piece counter, or null if she has none yet. */
-async function readListingQuota(uid: string): Promise<MessageQuota | null> {
-  const snap = await getDoc(doc(db, COLLECTIONS.listingQuotas, uid)).catch(() => null);
-  return snap?.exists() ? (snap.data() as MessageQuota) : null;
-}
-
-/**
- * Writes a NEW listing together with one tick of her hourly counter.
- * The security rules refuse a new listing that does not move the
- * counter by exactly one — see listingQuotas in firestore.rules.
- */
-async function createCounted(
-  ref: DocumentReference,
-  uid: string,
-  listing: Record<string, unknown>,
-  quota: 'start' | 'bump',
-): Promise<void> {
-  const batch = writeBatch(db);
-  batch.set(ref, listing);
-  const quotaDoc = doc(db, COLLECTIONS.listingQuotas, uid);
-  if (quota === 'start') batch.set(quotaDoc, { windowStart: serverTimestamp(), count: 1 });
-  else batch.update(quotaDoc, { count: increment(1) });
-  await batch.commit();
-}
 
 /** Photos in the form are either freshly picked or already uploaded. */
 export type FormPhoto =
@@ -303,30 +265,17 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
       setError(null);
       try {
         assertOnline();
-        const ref = existingId
-          ? doc(db, COLLECTIONS.listings, existingId)
-          : doc(db, COLLECTIONS.listings);
-
-        // A new piece needs room in her hourly counter. Checked before
-        // any photo uploads, so a refused piece leaves no stray files.
-        const windowMs = LIMITS.listingsPerHour.windowMs;
-        const quota = existingId ? null : await readListingQuota(owner.uid);
-        if (
-          !existingId &&
-          quota &&
-          quota.count >= LIMITS.listingsPerHour.max &&
-          quotaWrite(quota, Date.now(), windowMs) === 'bump'
-        ) {
-          setError(LISTING_QUOTA_FULL_MESSAGE);
-          return null;
-        }
+        // A new piece's id is picked here, without saving anything: its
+        // photos go in a folder named after it, and the server then
+        // checks every photo really is in that folder.
+        const listingId = existingId ?? doc(collection(db, COLLECTIONS.listings)).id;
 
         const photos: ImageRef[] = [];
         for (const [index, photo] of form.photos.entries()) {
           photos.push(
             photo.kind === 'uploaded'
               ? photo.ref
-              : await uploadListingPhoto(owner.uid, ref.id, photo.picked, index),
+              : await uploadListingPhoto(owner.uid, listingId, photo.picked, index),
           );
         }
 
@@ -349,97 +298,59 @@ export function useListingForm(initial: ListingFormState = EMPTY_FORM) {
           ? form.flatPhoto.kind === 'uploaded'
             ? form.flatPhoto.ref
             : form.flatPhoto.picked.uri.endsWith('.png')
-              ? await uploadFlatPhotoPng(owner.uid, ref.id, form.flatPhoto.picked)
-              : await uploadListingPhoto(owner.uid, ref.id, form.flatPhoto.picked, FLAT_PHOTO_INDEX)
+              ? await uploadFlatPhotoPng(owner.uid, listingId, form.flatPhoto.picked)
+              : await uploadListingPhoto(
+                  owner.uid,
+                  listingId,
+                  form.flatPhoto.picked,
+                  FLAT_PHOTO_INDEX,
+                )
           : null;
 
-        const rentable = form.intent === 'rent' || form.intent === 'both';
-        const sellable = form.intent === 'sell' || form.intent === 'both';
-
-        const body = {
-          id: ref.id,
-          campusId: owner.campusId,
-          ownerUid: owner.uid,
-          owner: {
-            uid: owner.uid,
-            username: owner.username,
-            displayName: owner.displayName,
-            photoUrl: owner.photoUrl,
-            campusId: owner.campusId,
-            isVerified: owner.isVerified,
-          },
-          name: form.name.trim(),
-          description: form.description.trim(),
-          brand: form.brand.trim() || null,
+        // Saved by the server, which copies her name and photo from her
+        // profile, checks every photo is her own upload, and counts new
+        // pieces against the hourly limit.
+        await writeListing({
+          listingId,
+          isNew: !existingId,
+          name: form.name,
+          description: form.description,
+          brand: draft.brand,
           category: form.category!,
           size: form.size,
           shoeSize: form.shoeSize,
           condition: form.condition,
           occasions: form.occasions,
-          colorNames: [],
-          photos,
-          coverUrl: photos[0]?.url ?? null,
-          flatPhoto: flatPhoto,
-          // Her premium stays null: most lenders never change it, and
-          // a number she did not choose should not be stored as if she
-          // did. See Listing.sameDay.
-          sameDay: { enabled: form.sameDay, premiumBps: null },
           intent: form.intent!,
-          // "Available now" off means it is listed but not bookable yet.
-          status: form.availableNow ? ('active' as const) : ('paused' as const),
-          pricing: {
-            oneDayCents: rentable ? draft.oneDayCents : null,
-            threeDayCents: rentable ? draft.threeDayCents : null,
-            sevenDayCents: rentable ? draft.sevenDayCents : null,
-          },
-          cleaningFeeCents: rentable ? draft.cleaningFeeCents : null,
-          salePriceCents: sellable ? draft.salePriceCents : null,
-          garmentValueCents: draft.garmentValueCents ?? 0,
-          // MVP: every rental request needs the lender's approval.
-          requiresApproval: true,
-          blackoutDates: form.blackoutDates,
-          // Derived by a Cloud Function; never written from the app.
-          suspendedReason: null,
-          removedAt: null,
-          updatedAt: serverTimestamp(),
-        };
+          oneDayCents: draft.oneDayCents,
+          threeDayCents: draft.threeDayCents,
+          sevenDayCents: draft.sevenDayCents,
+          salePriceCents: draft.salePriceCents,
+          garmentValueCents: draft.garmentValueCents,
+          cleaningFeeCents: draft.cleaningFeeCents,
+          photos,
+          flatPhoto,
+          sameDay: form.sameDay,
+          availableNow: form.availableNow,
+        });
 
-        if (existingId) {
-          await updateDoc(ref, body);
-        } else {
-          const listing = {
-            ...body,
-            stats: { viewCount: 0, saveCount: 0, tagCount: 0, completedRentals: 0 },
-            createdAt: serverTimestamp(),
-          };
-          const first = quotaWrite(quota, Date.now(), windowMs);
-          try {
-            await createCounted(ref, owner.uid, listing, first);
-          } catch {
-            // Her clock and the server's can disagree about whether the
-            // hour is up. One retry with the other choice settles it;
-            // a second refusal is real and falls through to the catch.
-            try {
-              await createCounted(ref, owner.uid, listing, otherQuotaWrite(first));
-            } catch (err) {
-              // Another phone of hers may have filled the hour meanwhile.
-              const now = await readListingQuota(owner.uid);
-              if ((now?.count ?? 0) >= LIMITS.listingsPerHour.max) {
-                setError(LISTING_QUOTA_FULL_MESSAGE);
-                return null;
-              }
-              throw err;
-            }
-          }
-        }
-
-        return ref.id;
+        return listingId;
       } catch (err) {
         // "Check your connection" was wrong and actively misleading:
         // the real failure here was the server refusing the write, and
         // blaming her wifi sent her retrying something that could never
         // work. Tell the truth about which of the two it was.
-        setError(saveErrorMessage(err));
+        // The server's own words when it was the server that said no
+        // (a missing price, the hourly limit); otherwise the photo upload
+        // failed, and saveErrorMessage knows those.
+        setError(
+          err instanceof FunctionsError
+            ? callableErrorMessage(
+                err,
+                'Could not save that. Try again, and tell us if it keeps happening.',
+              )
+            : saveErrorMessage(err),
+        );
         return null;
       } finally {
         setSaving(false);

@@ -397,38 +397,16 @@ service cloud.firestore {
     }
 
     /**
-     * listingQuotas/{uid} — the hourly ceiling on new pieces.
+     * listingQuotas/{uid} — RETIRED (run 40).
      *
-     * Exactly like messageQuotas: listings are written by the app, so
-     * every NEW listing is batched with a tick here, and the listing
-     * create rule checks the counter moved by exactly one. Edits are
-     * not counted. Without this a script could fill Discover with
-     * thousands of fake pieces in a minute.
-     *
-     * 60 MUST match LIMITS.listingsPerHour in shared/src/constants.ts.
+     * This was the hourly ceiling on new pieces while the app wrote
+     * pieces itself. Pieces are now saved by the writeListing function,
+     * which counts them in rateLimits like everything else. Old
+     * counters stay readable by their owner; nothing writes here.
      */
     match /listingQuotas/{ownerUid} {
-      function isOwner() {
-        return signedIn() && uid() == ownerUid;
-      }
-      function freshWindow() {
-        return request.resource.data.keys().hasOnly(['windowStart', 'count'])
-          && request.resource.data.windowStart == request.time
-          && request.resource.data.count == 1;
-      }
-
-      allow read: if isOwner() || isAdmin();
-      allow create: if isOwner() && freshWindow();
-      allow update: if isOwner()
-        && request.resource.data.keys().hasOnly(['windowStart', 'count'])
-        && (
-          (request.resource.data.windowStart == resource.data.windowStart
-            && request.resource.data.count == resource.data.count + 1
-            && request.resource.data.count <= 60)
-          || (request.time > resource.data.windowStart + duration.value(1, 'h')
-            && freshWindow())
-        );
-      allow delete: if false;
+      allow read: if signedIn() && (uid() == ownerUid || isAdmin());
+      allow write: if false;
     }
 
     match /phoneHashes/{hash} {
@@ -488,120 +466,23 @@ service cloud.firestore {
     // -----------------------------------------------------------------
     // listings — garments in closets
     //
-    // These checks mirror `validateListingDraft` in shared/src/validation.ts.
-    // The app's copy gives a friendly message; THIS copy is what makes it
-    // true, because security rules cannot call TypeScript. If you change
-    // one, change the other.
+    // Read by any signed-in student. WRITTEN ONLY BY CLOUD FUNCTIONS
+    // (run 40): writeListing for Add to Closet and Edit Listing,
+    // setBlockedDates, removeListing, the booking functions and the
+    // admin tools.
+    //
+    // Until run 40 the app wrote pieces itself and these rules checked
+    // the fields. They could not check that a piece's photos were her
+    // own uploads — 8 photos plus "Try it on" ran the rules out of
+    // steps — nor that the name and photo on the piece were hers. Both
+    // are checked in writeListing now, alongside validateListingDraft,
+    // so there is one copy of the rules of a good piece instead of two.
     // -----------------------------------------------------------------
     match /listings/{listingId} {
-      function draft() {
-        return request.resource.data;
-      }
-
-      function hasRequiredFields() {
-        return draft().keys().hasAll([
-                 'ownerUid', 'campusId', 'name', 'category', 'occasions',
-                 'intent', 'status', 'photos', 'pricing', 'stats'
-               ])
-          && draft().name is string
-          && draft().name.size() >= 2
-          && draft().name.size() <= 80
-          && draft().description is string
-          && draft().description.size() <= 1000
-          && draft().category in [
-               'dresses','tops','bottoms','sets','outerwear',
-               'shoes','bags','accessories','jewelry'
-             ]
-          && draft().occasions is list
-          && draft().occasions.size() >= 1
-          && draft().occasions.size() <= 8
-          && draft().intent in ['rent', 'sell', 'both']
-          && draft().photos is list
-          && draft().photos.size() >= 1
-          && draft().photos.size() <= 8;
-      }
-
-      /** A price, in whole cents, inside the allowed range. */
-      function validPrice(cents) {
-        return cents is int && cents >= 100 && cents <= 100000;
-      }
-
-      function pricingMatchesIntent() {
-        return (
-          // Rentable pieces need both durations priced and a documented
-          // value — the value is what caps a damage claim later.
-          !(draft().intent in ['rent', 'both'])
-          || (validPrice(draft().pricing.threeDayCents)
-              && validPrice(draft().pricing.sevenDayCents)
-              && draft().garmentValueCents is int
-              && draft().garmentValueCents >= 1000
-              && draft().garmentValueCents <= 500000)
-        ) && (
-          !(draft().intent in ['sell', 'both']) || validPrice(draft().salePriceCents)
-        );
-      }
-
-      function countersStartAtZero() {
-        return draft().stats.viewCount == 0
-          && draft().stats.saveCount == 0
-          && draft().stats.tagCount == 0
-          && draft().stats.completedRentals == 0;
-      }
-
-      // Either the count went up by one, or a fresh window opened with
-      // this very request. Mirrors countedInQuota for messages.
-      function countedInListingQuota() {
-        let q = /databases/$(database)/documents/listingQuotas/$(uid());
-        let after = getAfter(q).data;
-        return existsAfter(q)
-          && ((exists(q) && after.count == get(q).data.count + 1)
-              || (after.windowStart == request.time && after.count == 1));
-      }
-
       allow read: if signedIn();
-
-      allow create: if isVerifiedStudent()
-        && draft().ownerUid == uid()
-        && draft().campusId == existingUser().campusId
-        // 'paused' belongs here as much as the other two. The form
-        // writes it whenever "Available now" is off, and leaving it out
-        // meant anyone who turned that toggle off got their listing
-        // refused — with "check your connection", because the catch
-        // below could not tell a permission error from a dropped one.
-        // `update` has always allowed it; only `create` disagreed.
-        && draft().status in ['draft', 'active', 'paused']
-        && hasRequiredFields()
-        && pricingMatchesIntent()
-        // She does not get to invent a view count.
-        && countersStartAtZero()
-        // Every new piece ticks her hourly counter in the same batch —
-        // see listingQuotas.
-        && countedInListingQuota();
-
-      allow update: if isActive()
-        && resource.data.ownerUid == uid()
-        // Only a listing that is hers to manage. 'suspended' is an admin
-        // taking it down and 'removed' went through removeListing; if
-        // the old status were not checked, she could set it straight
-        // back to 'active' (the new-status check below allows that).
-        && resource.data.status in ['draft', 'active', 'paused']
-        // She cannot move a listing to another campus, change its owner,
-        // write its counters, or un-suspend it after an admin took it down.
-        && !changed().hasAny([
-             'ownerUid', 'campusId', 'stats', 'suspendedReason',
-             'statusBeforeSuspension',
-             'createdAt', 'owner', 'removedAt',
-             // Derived from the bookings by a Cloud Function. If the app
-             // could write it, a lender could hide a booked weekend.
-             'bookedDates'
-           ])
-        && draft().status in ['draft', 'active', 'paused']
-        && hasRequiredFields()
-        && pricingMatchesIntent();
-
-      // No hard delete, and no setting status to 'removed' from the app
-      // either: removing has to check for rental history first, so it goes
-      // through the removeListing Cloud Function. History must survive.
+      allow create, update: if false;
+      // No hard delete either: removing has to check for rental history
+      // first, so it goes through removeListing. History must survive.
       allow delete: if false;
     }
 

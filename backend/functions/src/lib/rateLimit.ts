@@ -21,7 +21,7 @@
  */
 
 import { logger } from 'firebase-functions';
-import { COLLECTIONS } from '@loane/shared';
+import { COLLECTIONS, LIMITS as SHARED_LIMITS } from '@loane/shared';
 import { db, now } from './admin';
 import { failed } from './errors';
 
@@ -57,6 +57,19 @@ export const LIMITS = {
     max: 20,
     windowMs: DAY,
     message: 'You have sent a lot of requests today. Try again tomorrow.',
+  },
+
+  /**
+   * New pieces in her closet. Somebody photographing her whole wardrobe
+   * on her first night is the heavy-but-real case, which is why it is
+   * sixty. Edits are not counted. The number lives in @loane/shared so
+   * the app and this agree.
+   */
+  listing: {
+    max: SHARED_LIMITS.listingsPerHour.max,
+    windowMs: SHARED_LIMITS.listingsPerHour.windowMs,
+    message:
+      "You've put a lot on Loane in the last hour. Take a breather and try this one again in a little while — your draft is still here.",
   },
 
   /** Posting a look is a considered act; nobody does ten in an hour. */

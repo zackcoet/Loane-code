@@ -6,7 +6,17 @@
  */
 
 import { httpsCallable } from 'firebase/functions';
-import type { ImageRef, Occasion, PostSettings, SupportTopic } from '@loane/shared';
+import type {
+  Category,
+  Condition,
+  ImageRef,
+  ListingIntent,
+  Occasion,
+  PostSettings,
+  ShoeSize,
+  Size,
+  SupportTopic,
+} from '@loane/shared';
 import { functions } from './config';
 
 /**
@@ -98,6 +108,41 @@ export const removeListing = httpsCallable<
   { listingId: string },
   { keptForHistory: boolean; bookingCount: number }
 >(functions, 'removeListing');
+
+/**
+ * Add to Closet and Edit Listing. Server-side so every photo is checked
+ * to be her own upload, and her name on the piece comes from her profile.
+ * Not to be confused with saveListing, which is the bookmark.
+ */
+export const writeListing = httpsCallable<WriteListingInput, { listingId: string }>(
+  functions,
+  'writeListing',
+);
+
+export interface WriteListingInput {
+  /** Picked on the phone for a new piece — the photo folder needs it first. */
+  listingId: string;
+  isNew: boolean;
+  name: string;
+  description: string;
+  brand: string | null;
+  category: Category;
+  size: Size | null;
+  shoeSize: ShoeSize | null;
+  condition: Condition;
+  occasions: Occasion[];
+  intent: ListingIntent;
+  oneDayCents: number | null;
+  threeDayCents: number | null;
+  sevenDayCents: number | null;
+  salePriceCents: number | null;
+  garmentValueCents: number | null;
+  cleaningFeeCents: number | null;
+  photos: ImageRef[];
+  flatPhoto: ImageRef | null;
+  sameDay: boolean;
+  availableNow: boolean;
+}
 
 /** Saving drives a counter, so like follows it is server-owned. */
 export const saveListing = httpsCallable<{ listingId: string }, { saved: boolean }>(
@@ -295,10 +340,10 @@ export const generateTryOn = httpsCallable<
 >(functions, 'generateTryOn');
 
 /** The confirmation travels with the photo; the server refuses it without. */
-export const setTryOnBodyPhoto = httpsCallable<
-  { path: string; confirmed: boolean },
-  { ok: true }
->(functions, 'setTryOnBodyPhoto');
+export const setTryOnBodyPhoto = httpsCallable<{ path: string; confirmed: boolean }, { ok: true }>(
+  functions,
+  'setTryOnBodyPhoto',
+);
 
 export const clearTryOnBodyPhoto = httpsCallable<void, { ok: true }>(
   functions,
@@ -314,10 +359,7 @@ export const clearTryOnBodyPhoto = httpsCallable<void, { ok: true }>(
 export const deleteMyAccount = httpsCallable<void, { ok: true }>(functions, 'deleteMyAccount');
 
 /** Everything Loane holds about her, as one JSON object. See privacy/exportUserData.ts. */
-export const exportMyData = httpsCallable<void, Record<string, unknown>>(
-  functions,
-  'exportMyData',
-);
+export const exportMyData = httpsCallable<void, Record<string, unknown>>(functions, 'exportMyData');
 
 export const deleteTryOnData = httpsCallable<void, { deleted: number }>(
   functions,

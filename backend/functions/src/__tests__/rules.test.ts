@@ -200,27 +200,6 @@ async function sendAs(
   return batch.commit();
 }
 
-/**
- * Creates a listing the way the app does: in one batch with a tick of
- * her hourly new-piece counter (listingQuotas). Without the tick the
- * rules refuse every new listing, so tests about other listing rules
- * use this to make sure the counter is never why they pass or fail.
- */
-async function createListingAs(
-  callerUid: string,
-  listingId: string,
-  data: Record<string, unknown>,
-) {
-  const db = testEnv.authenticatedContext(callerUid).firestore();
-  const quotaRef = doc(db, 'listingQuotas', callerUid);
-  const quota = await getDoc(quotaRef).catch(() => null);
-  const batch = writeBatch(db);
-  batch.set(doc(db, 'listings', listingId), data);
-  if (quota?.exists()) batch.update(quotaRef, { count: increment(1) });
-  else batch.set(quotaRef, { windowStart: serverTimestamp(), count: 1 });
-  return batch.commit();
-}
-
 describe('users', () => {
   it('lets her edit her own bio', async () => {
     await assertSucceeds(
@@ -497,256 +476,71 @@ describe('legal documents', () => {
 });
 
 describe('listings', () => {
-  it('lets her create a listing in her own closet', async () => {
-    await assertSucceeds(
-      createListingAs(ELLA, 'listing-new', listingDoc(ELLA, { id: 'listing-new' })),
+  // Since run 40 every piece is saved by the writeListing function, which
+  // checks the photos are her own uploads and copies her name from her
+  // profile. The checks that used to live here (prices, photos, campus,
+  // counters) are tested against that function in writeListing.test.ts.
+
+  it('lets any signed-in student see a piece, and nobody signed out', async () => {
+    await assertSucceeds(getDoc(doc(asMaddie(), 'listings', 'listing-1')));
+    await assertFails(getDoc(doc(asStranger(), 'listings', 'listing-1')));
+  });
+
+  it('refuses a new piece written straight from the phone, even a perfect one', async () => {
+    await assertFails(
+      setDoc(doc(asElla(), 'listings', 'listing-new'), listingDoc(ELLA, { id: 'listing-new' })),
     );
   });
 
-  it('lets her create one with "Available now" off', async () => {
-    // The form writes status 'paused' when that toggle is off. create
-    // used to allow only draft and active, so turning it off meant the
-    // listing was refused — and the app blamed her connection for it.
-    await assertSucceeds(
-      createListingAs(
-        ELLA,
-        'listing-paused',
-        listingDoc(ELLA, { id: 'listing-paused', status: 'paused' }),
+  it('refuses a piece with a photo from somewhere else on the internet', async () => {
+    const outside = { path: 'x.jpg', url: 'https://example.com/x.jpg', width: 1, height: 1 };
+    await assertFails(
+      setDoc(
+        doc(asElla(), 'listings', 'listing-web'),
+        listingDoc(ELLA, { id: 'listing-web', photos: [outside], coverUrl: outside.url }),
       ),
     );
   });
 
-  it('still refuses a status the app never writes', async () => {
-    for (const status of ['sold', 'suspended', 'removed']) {
-      await assertFails(
-        createListingAs(
-          ELLA,
-          `listing-${status}`,
-          listingDoc(ELLA, { id: `listing-${status}`, status }),
-        ),
-      );
-    }
+  it('refuses edits from the phone, even to her own piece', async () => {
+    const ref = doc(asElla(), 'listings', 'listing-1');
+    await assertFails(updateDoc(ref, { name: 'Still the same dress' }));
+    await assertFails(updateDoc(ref, { status: 'paused' }));
+    await assertFails(updateDoc(ref, { 'owner.displayName': 'Someone else' }));
+    await assertFails(updateDoc(ref, { 'stats.saveCount': 500 }));
   });
 
-  it('stops her creating a listing owned by someone else', async () => {
-    await assertFails(
-      createListingAs(MADDIE, 'listing-fake', listingDoc(ELLA, { id: 'listing-fake' })),
-    );
-  });
-
-  it('stops a new listing starting with a fake view count', async () => {
-    await assertFails(
-      createListingAs(
-        ELLA,
-        'listing-inflated',
-        listingDoc(ELLA, {
-          id: 'listing-inflated',
-          stats: { viewCount: 9999, saveCount: 0, tagCount: 0, completedRentals: 0 },
-        }),
-      ),
-    );
-  });
-
-  it('stops another student editing her listing', async () => {
+  it('stops another student editing her piece', async () => {
     await assertFails(updateDoc(doc(asMaddie(), 'listings', 'listing-1'), { name: 'Mine now' }));
   });
 
-  it('stops her hard-deleting a listing (history has to survive)', async () => {
+  it('stops her hard-deleting a piece (history has to survive)', async () => {
     await assertFails(deleteDoc(doc(asElla(), 'listings', 'listing-1')));
-  });
-
-  // An admin takes a piece down by setting status 'suspended'; removing
-  // one sets 'removed'. Either way the owner must not be able to flip
-  // it straight back to 'active' from her phone.
-  for (const status of ['suspended', 'removed']) {
-    it(`stops her putting a ${status} listing back up herself`, async () => {
-      await testEnv.withSecurityRulesDisabled(async (ctx) => {
-        await updateDoc(doc(ctx.firestore(), 'listings', 'listing-1'), { status });
-      });
-      await assertFails(updateDoc(doc(asElla(), 'listings', 'listing-1'), { status: 'active' }));
-      await assertFails(updateDoc(doc(asElla(), 'listings', 'listing-1'), { name: 'Back again' }));
-    });
-  }
-
-  it('still lets her pause and unpause her own listing', async () => {
-    await assertSucceeds(updateDoc(doc(asElla(), 'listings', 'listing-1'), { status: 'paused' }));
-    await assertSucceeds(updateDoc(doc(asElla(), 'listings', 'listing-1'), { status: 'active' }));
-  });
-
-  // --- Phase 2: the listing rules mirror validateListingDraft ----------
-
-  it('refuses a listing with no photos', async () => {
-    await assertFails(
-      createListingAs(
-        ELLA,
-        'listing-nophoto',
-        listingDoc(ELLA, { id: 'listing-nophoto', photos: [], coverUrl: null }),
-      ),
-    );
-  });
-
-  it('refuses a listing with no occasions — nobody could ever find it', async () => {
-    await assertFails(
-      createListingAs(
-        ELLA,
-        'listing-noocc',
-        listingDoc(ELLA, { id: 'listing-noocc', occasions: [] }),
-      ),
-    );
-  });
-
-  it('refuses a rentable listing with no price', async () => {
-    await assertFails(
-      createListingAs(
-        ELLA,
-        'listing-free',
-        listingDoc(ELLA, {
-          id: 'listing-free',
-          pricing: { threeDayCents: null, sevenDayCents: null },
-        }),
-      ),
-    );
-  });
-
-  it('refuses a rentable listing with no documented garment value', async () => {
-    // The value is what caps a damage claim later, so a rentable piece
-    // without one has no protection behind it.
-    await assertFails(
-      createListingAs(
-        ELLA,
-        'listing-novalue',
-        listingDoc(ELLA, { id: 'listing-novalue', garmentValueCents: 0 }),
-      ),
-    );
-  });
-
-  it('refuses a price that is not whole cents', async () => {
-    await assertFails(
-      createListingAs(
-        ELLA,
-        'listing-float',
-        listingDoc(ELLA, {
-          id: 'listing-float',
-          pricing: { threeDayCents: 25.5, sevenDayCents: 4000 },
-        }),
-      ),
-    );
-  });
-
-  it('refuses a for-sale listing with no sale price', async () => {
-    await assertFails(
-      createListingAs(
-        ELLA,
-        'listing-nosale',
-        listingDoc(ELLA, { id: 'listing-nosale', intent: 'sell', salePriceCents: null }),
-      ),
-    );
-  });
-
-  it('refuses a listing placed on another campus', async () => {
-    await assertFails(
-      createListingAs(
-        ELLA,
-        'listing-elsewhere',
-        listingDoc(ELLA, { id: 'listing-elsewhere', campusId: 'some-other-school' }),
-      ),
-    );
-  });
-
-  it('stops her faking the price on an existing listing’s counters', async () => {
-    await assertFails(
-      updateDoc(doc(asElla(), 'listings', 'listing-1'), { 'stats.saveCount': 500 }),
-    );
-  });
-
-  it('stops her marking her own listing removed — that goes through a function', async () => {
-    // Removing has to check for rental history first, which the app cannot
-    // see, so there is exactly one path and it is server-side.
-    await assertFails(updateDoc(doc(asElla(), 'listings', 'listing-1'), { status: 'removed' }));
-  });
-
-  it('lets her pause and unpause her own listing', async () => {
-    await assertSucceeds(updateDoc(doc(asElla(), 'listings', 'listing-1'), { status: 'paused' }));
-    await assertSucceeds(updateDoc(doc(asElla(), 'listings', 'listing-1'), { status: 'active' }));
-  });
-
-  it('stops her reassigning a listing to someone else', async () => {
-    await assertFails(updateDoc(doc(asElla(), 'listings', 'listing-1'), { ownerUid: MADDIE }));
-  });
-
-  it('stops a suspended account listing anything', async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'users', MADDIE), userDoc(MADDIE, { status: 'suspended' }));
-    });
-    await assertFails(
-      createListingAs(MADDIE, 'listing-x', listingDoc(MADDIE, { id: 'listing-x' })),
-    );
-  });
-
-  it('stops an unverified student listing anything', async () => {
-    await testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'users', MADDIE), userDoc(MADDIE, { isVerified: false }));
-    });
-    await assertFails(
-      createListingAs(MADDIE, 'listing-y', listingDoc(MADDIE, { id: 'listing-y' })),
-    );
   });
 });
 
-describe('listingQuotas — the hourly ceiling on new pieces', () => {
-  const quotaDoc = (db: Firestore, uid = ELLA) => doc(db, 'listingQuotas', uid);
-  const seedQuota = (data: Record<string, unknown>) =>
+describe('listingQuotas — retired in run 40', () => {
+  const seedQuota = () =>
     testEnv.withSecurityRulesDisabled(async (ctx) => {
-      await setDoc(doc(ctx.firestore(), 'listingQuotas', ELLA), data);
+      await setDoc(doc(ctx.firestore(), 'listingQuotas', ELLA), {
+        windowStart: new Date(),
+        count: 3,
+      });
     });
 
-  it('refuses a new listing that does not tick her counter', async () => {
+  it('keeps an old counter readable by her alone', async () => {
+    await seedQuota();
+    await assertSucceeds(getDoc(doc(asElla(), 'listingQuotas', ELLA)));
+    await assertFails(getDoc(doc(asMaddie(), 'listingQuotas', ELLA)));
+  });
+
+  it('refuses every write from the phone', async () => {
     await assertFails(
-      setDoc(doc(asElla(), 'listings', 'lq-plain'), listingDoc(ELLA, { id: 'lq-plain' })),
+      setDoc(doc(asElla(), 'listingQuotas', ELLA), { windowStart: serverTimestamp(), count: 1 }),
     );
-  });
-
-  it('counts new listings one at a time', async () => {
-    await assertSucceeds(createListingAs(ELLA, 'lq-1', listingDoc(ELLA, { id: 'lq-1' })));
-    await assertSucceeds(createListingAs(ELLA, 'lq-2', listingDoc(ELLA, { id: 'lq-2' })));
-  });
-
-  it('refuses the 61st new listing in an hour', async () => {
-    await seedQuota({ windowStart: new Date(), count: 60 });
-    await assertFails(createListingAs(ELLA, 'lq-61', listingDoc(ELLA, { id: 'lq-61' })));
-  });
-
-  it('starts a fresh hour once the old one is over', async () => {
-    await seedQuota({ windowStart: new Date(Date.now() - 2 * 3_600_000), count: 60 });
-    const ella = asElla();
-    const batch = writeBatch(ella);
-    batch.set(doc(ella, 'listings', 'lq-fresh'), listingDoc(ELLA, { id: 'lq-fresh' }));
-    batch.set(quotaDoc(ella), { windowStart: serverTimestamp(), count: 1 });
-    await assertSucceeds(batch.commit());
-  });
-
-  it('does not count edits to a piece she already has', async () => {
-    await seedQuota({ windowStart: new Date(), count: 60 });
-    await assertSucceeds(
-      updateDoc(doc(asElla(), 'listings', 'listing-1'), { name: 'Still the same dress' }),
-    );
-  });
-
-  it('refuses resetting, lowering or jumping her counter', async () => {
-    await seedQuota({ windowStart: new Date(), count: 10 });
-    await assertFails(setDoc(quotaDoc(asElla()), { windowStart: serverTimestamp(), count: 1 }));
-    await assertFails(updateDoc(quotaDoc(asElla()), { count: 1 }));
-    await assertFails(updateDoc(quotaDoc(asElla()), { count: 12 }));
-    await assertFails(deleteDoc(quotaDoc(asElla())));
-  });
-
-  it('keeps her counter private and hers alone', async () => {
-    await seedQuota({ windowStart: new Date(), count: 10 });
-    await assertSucceeds(getDoc(quotaDoc(asElla())));
-    await assertFails(getDoc(quotaDoc(asMaddie(), ELLA)));
-    await assertFails(
-      setDoc(quotaDoc(asMaddie(), ELLA), { windowStart: serverTimestamp(), count: 1 }),
-    );
+    await seedQuota();
+    await assertFails(updateDoc(doc(asElla(), 'listingQuotas', ELLA), { count: 4 }));
+    await assertFails(deleteDoc(doc(asElla(), 'listingQuotas', ELLA)));
   });
 });
 
@@ -1065,8 +859,9 @@ describe('listing availability', () => {
     await assertFails(updateDoc(doc(asElla(), 'listings', 'listing-1'), { bookedDates: [] }));
   });
 
-  it('lets an owner set her own blocked dates', async () => {
-    await assertSucceeds(
+  it('sends blocked dates through setBlockedDates, not a direct write', async () => {
+    // The app has always used the function; since run 40 the rules say so.
+    await assertFails(
       updateDoc(doc(asElla(), 'listings', 'listing-1'), { blackoutDates: ['2026-11-01'] }),
     );
   });
@@ -1856,7 +1651,7 @@ describe('suspension', () => {
     });
 
     await assertFails(
-      createListingAs(ELLA, 'listing-sus', listingDoc(ELLA, { id: 'listing-sus' })),
+      setDoc(doc(asElla(), 'listings', 'listing-sus'), listingDoc(ELLA, { id: 'listing-sus' })),
     );
     await assertFails(
       sendAs(asElla(), 'chat-s', 'm-sus', {

@@ -35,7 +35,6 @@ import {
   getDoc,
   getDocs,
   getFirestore,
-  increment,
   limit,
   orderBy,
   query,
@@ -128,7 +127,10 @@ interface Student {
 async function signUp(appName: string, username: string): Promise<Student> {
   const app = initializeApp(WEB, appName);
   const fns = getFunctions(app, 'us-central1');
-  const r = (await httpsCallable(fns, 'createAccount')({
+  const r = (await httpsCallable(
+    fns,
+    'createAccount',
+  )({
     firstName: username.slice(0, 10),
     email: `${username}@email.sc.edu`,
     password: 'loane1234',
@@ -195,22 +197,15 @@ async function main(): Promise<void> {
     }
   });
 
-  const listingBody = (
+  // What Add to Closet sends. Saved by the writeListing function, which
+  // copies her name from her profile and checks the photo is her upload.
+  const listingInput = (
     id: string,
     photo: Awaited<ReturnType<typeof upload>>,
-    status: string,
+    availableNow: boolean,
   ) => ({
-    id,
-    campusId: lender.campusId,
-    ownerUid: lender.uid,
-    owner: {
-      uid: lender.uid,
-      username: LENDER,
-      displayName: 'Core Lender',
-      photoUrl: null,
-      campusId: lender.campusId,
-      isVerified: true,
-    },
+    listingId: id,
+    isNew: true,
     name: 'Core flow dress',
     description: 'a garment for the end to end check',
     brand: null,
@@ -219,21 +214,17 @@ async function main(): Promise<void> {
     shoeSize: null,
     condition: 'like_new',
     occasions: ['formal'],
-    colorNames: [],
-    photos: [photo],
-    coverUrl: photo.url,
     intent: 'rent',
-    status,
-    pricing: { threeDayCents: 2000, sevenDayCents: 2500 },
+    oneDayCents: 1500,
+    threeDayCents: 2000,
+    sevenDayCents: 2500,
     salePriceCents: null,
     garmentValueCents: 5900,
-    requiresApproval: true,
-    blackoutDates: [],
-    suspendedReason: null,
-    removedAt: null,
-    stats: { viewCount: 0, saveCount: 0, tagCount: 0, completedRentals: 0 },
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
+    cleaningFeeCents: null,
+    photos: [photo],
+    flatPhoto: null,
+    sameDay: false,
+    availableNow,
   });
 
   // Both toggle states: "Available now" off writes status paused, which
@@ -242,15 +233,9 @@ async function main(): Promise<void> {
     await step(`add to closet — Available now ${status === 'active' ? 'ON' : 'OFF'}`, async () => {
       const listingRef = doc(collection(lender.db, 'listings'));
       const photo = await upload(lender, `users/${lender.uid}/listings/${listingRef.id}/0.jpg`);
-      // Batched with a tick of her hourly new-piece counter, exactly as
-      // the app does it (listingQuotas) — the rules refuse it otherwise.
-      const quotaRef = doc(lender.db, 'listingQuotas', lender.uid);
-      const quota = await getDoc(quotaRef);
-      const batch = writeBatch(lender.db);
-      batch.set(listingRef, listingBody(listingRef.id, photo, status));
-      if (quota.exists()) batch.update(quotaRef, { count: increment(1) });
-      else batch.set(quotaRef, { windowStart: serverTimestamp(), count: 1 });
-      await batch.commit();
+      await lender.call('writeListing')(listingInput(listingRef.id, photo, status === 'active'));
+      const saved = await getDoc(listingRef);
+      if (saved.data()?.status !== status) throw new Error(`saved as ${saved.data()?.status}`);
       listings.push(listingRef.id);
       if (status === 'active') listingId = listingRef.id;
       return listingRef.id;
@@ -267,7 +252,9 @@ async function main(): Promise<void> {
     postId = r.data.postId;
     posts.push(postId);
     const saved = await admin.collection('posts').doc(postId).get();
-    if (!((saved.data() as { taggedListingIds: string[] }).taggedListingIds ?? []).includes(listingId)) {
+    if (
+      !((saved.data() as { taggedListingIds: string[] }).taggedListingIds ?? []).includes(listingId)
+    ) {
       throw new Error('the tag did not reach the post');
     }
   });
@@ -301,8 +288,11 @@ async function main(): Promise<void> {
 
   await step('the lender is told', async () => {
     const n = await admin
-      .collection('users').doc(lender.uid).collection('notifications')
-      .where('type', '==', 'rental_requested').get();
+      .collection('users')
+      .doc(lender.uid)
+      .collection('notifications')
+      .where('type', '==', 'rental_requested')
+      .get();
     if (n.empty) throw new Error('no notification reached the lender');
   });
 
@@ -314,7 +304,8 @@ async function main(): Promise<void> {
         orderBy('createdAt', 'desc'),
       ),
     );
-    if (!mine.docs.some((d) => d.id === bookingId)) throw new Error('missing from the lending query');
+    if (!mine.docs.some((d) => d.id === bookingId))
+      throw new Error('missing from the lending query');
   });
 
   await step('the lender accepts', async () => {
@@ -326,8 +317,11 @@ async function main(): Promise<void> {
 
   await step('the renter is told it was accepted', async () => {
     const n = await admin
-      .collection('users').doc(renter.uid).collection('notifications')
-      .where('type', 'in', ['rental_accepted', 'booking_confirmed']).get();
+      .collection('users')
+      .doc(renter.uid)
+      .collection('notifications')
+      .where('type', 'in', ['rental_accepted', 'booking_confirmed'])
+      .get();
     if (n.empty) throw new Error('no notification reached the renter');
   });
 
@@ -356,11 +350,17 @@ async function main(): Promise<void> {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      batch.set(doc(who.db, 'messageQuotas', who.uid), { windowStart: serverTimestamp(), count: 1 });
+      batch.set(doc(who.db, 'messageQuotas', who.uid), {
+        windowStart: serverTimestamp(),
+        count: 1,
+      });
       await batch.commit();
     }
     const msgs = await admin
-      .collection('conversations').doc(conversationId).collection('messages').get();
+      .collection('conversations')
+      .doc(conversationId)
+      .collection('messages')
+      .get();
     if (msgs.size < 2) throw new Error(`only ${msgs.size} messages landed`);
   });
 
@@ -381,9 +381,16 @@ async function main(): Promise<void> {
     if (d.status !== 'completed') throw new Error(`expected completed, got ${d.status}`);
     if (!d.handoff.lenderConfirmedReturnAt) throw new Error('lenderConfirmedReturnAt was not set');
     const asked = await Promise.all(
-      [lender.uid, renter.uid].map(async (uid) =>
-        (await admin.collection('users').doc(uid).collection('notifications')
-          .where('type', '==', 'review_requested').get()).size,
+      [lender.uid, renter.uid].map(
+        async (uid) =>
+          (
+            await admin
+              .collection('users')
+              .doc(uid)
+              .collection('notifications')
+              .where('type', '==', 'review_requested')
+              .get()
+          ).size,
       ),
     );
     if (!asked[0] || !asked[1]) throw new Error(`review prompts: ${asked.join(' / ')}`);
@@ -425,9 +432,12 @@ async function main(): Promise<void> {
 
   await step('the sweep runs clean and expires an old request', async () => {
     const id = await freshRequest(40);
-    await admin.collection('bookings').doc(id).update({
-      expiresAt: Timestamp.fromDate(new Date(Date.now() - 60_000)),
-    });
+    await admin
+      .collection('bookings')
+      .doc(id)
+      .update({
+        expiresAt: Timestamp.fromDate(new Date(Date.now() - 60_000)),
+      });
 
     const record = await adminAuth().createUser({
       email: ADMIN_EMAIL,
@@ -441,7 +451,10 @@ async function main(): Promise<void> {
     await signInWithEmailAndPassword(getAuth(adminApp), ADMIN_EMAIL, ADMIN_PASSWORD);
     // Deliberately NOT swallowed. The sweep throwing is how the missing
     // notifications index hid for weeks.
-    const r = (await httpsCallable(getFunctions(adminApp, 'us-central1'), 'runBookingSweep')({})) as {
+    const r = (await httpsCallable(
+      getFunctions(adminApp, 'us-central1'),
+      'runBookingSweep',
+    )({})) as {
       data: Record<string, number>;
     };
 
@@ -452,38 +465,92 @@ async function main(): Promise<void> {
 
   // --- clean up ---------------------------------------------------------
   console.warn('\nCleaning up');
-  for (const id of bookings) await admin.collection('bookings').doc(id).delete().catch(() => {});
-  for (const id of listings) await admin.collection('listings').doc(id).delete().catch(() => {});
-  for (const id of posts) await admin.collection('posts').doc(id).delete().catch(() => {});
+  for (const id of bookings)
+    await admin
+      .collection('bookings')
+      .doc(id)
+      .delete()
+      .catch(() => {});
+  for (const id of listings)
+    await admin
+      .collection('listings')
+      .doc(id)
+      .delete()
+      .catch(() => {});
+  for (const id of posts)
+    await admin
+      .collection('posts')
+      .doc(id)
+      .delete()
+      .catch(() => {});
   if (conversationId) {
     const msgs = await admin
-      .collection('conversations').doc(conversationId).collection('messages').get();
+      .collection('conversations')
+      .doc(conversationId)
+      .collection('messages')
+      .get();
     for (const m of msgs.docs) await m.ref.delete();
-    await admin.collection('conversations').doc(conversationId).delete().catch(() => {});
+    await admin
+      .collection('conversations')
+      .doc(conversationId)
+      .delete()
+      .catch(() => {});
   }
   for (const uid of [lender?.uid, renter?.uid].filter(Boolean) as string[]) {
     for (const sub of ['notifications', 'private', 'blocked']) {
       const s = await admin.collection('users').doc(uid).collection(sub).get();
       for (const d of s.docs) await d.ref.delete();
     }
-    await admin.collection('messageQuotas').doc(uid).delete().catch(() => {});
-    await admin.collection('listingQuotas').doc(uid).delete().catch(() => {});
-    const [files] = await adminStorage().bucket().getFiles({ prefix: `users/${uid}/` });
+    await admin
+      .collection('messageQuotas')
+      .doc(uid)
+      .delete()
+      .catch(() => {});
+    await admin
+      .collection('listingQuotas')
+      .doc(uid)
+      .delete()
+      .catch(() => {});
+    const [files] = await adminStorage()
+      .bucket()
+      .getFiles({ prefix: `users/${uid}/` });
     for (const f of files) await f.delete().catch(() => {});
     for (const [c, field] of [
-      ['reviews', 'authorUid'], ['reviews', 'subjectUid'], ['events', 'uid'],
-      ['likes', 'uid'], ['postSaves', 'uid'], ['saves', 'uid'], ['follows', 'followerUid'],
+      ['reviews', 'authorUid'],
+      ['reviews', 'subjectUid'],
+      ['events', 'uid'],
+      ['likes', 'uid'],
+      ['postSaves', 'uid'],
+      ['saves', 'uid'],
+      ['follows', 'followerUid'],
     ] as [string, string][]) {
-      const q = await admin.collection(c).where(field, '==', uid).get().catch(() => null);
+      const q = await admin
+        .collection(c)
+        .where(field, '==', uid)
+        .get()
+        .catch(() => null);
       if (q) for (const d of q.docs) await d.ref.delete();
     }
-    await admin.collection('users').doc(uid).delete().catch(() => {});
-    await adminAuth().deleteUser(uid).catch(() => {});
+    await admin
+      .collection('users')
+      .doc(uid)
+      .delete()
+      .catch(() => {});
+    await adminAuth()
+      .deleteUser(uid)
+      .catch(() => {});
   }
   for (const u of [LENDER, RENTER]) {
-    await admin.collection('usernames').doc(u).delete().catch(() => {});
+    await admin
+      .collection('usernames')
+      .doc(u)
+      .delete()
+      .catch(() => {});
   }
-  if (adminUid) await adminAuth().deleteUser(adminUid).catch(() => {});
+  if (adminUid)
+    await adminAuth()
+      .deleteUser(adminUid)
+      .catch(() => {});
 
   console.warn(`\n${passed} passed, ${failures.length} failed`);
   if (failures.length > 0) {

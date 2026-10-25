@@ -17,6 +17,8 @@
  *                        shared records under "Deleted account"
  *   - follow / unfollow  the only way follower counts ever move
  *   - save / unsave      the only way a listing's save count ever moves
+ *   - writeListing       Add to Closet / Edit Listing: checks the photos are
+ *                        her own uploads and copies her name from her profile
  *   - removeListing      hides a listing, never deletes it, and refuses
  *                        while a rental is in flight
  *   - createPost         validates tags, derives the flattened ids and
@@ -84,6 +86,7 @@ export { checkUsername } from './auth/checkUsername';
 export { changeUsername } from './auth/changeUsername';
 export { follow, unfollow } from './social/follow';
 export { removeListing } from './listings/removeListing';
+export { writeListing } from './listings/writeListing';
 export { saveListing, unsaveListing } from './social/save';
 export { createPost } from './posts/createPost';
 export { publishScheduledPosts } from './posts/schedule';
