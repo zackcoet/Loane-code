@@ -31,6 +31,35 @@ export function addDays(value: IsoDate, days: number): IsoDate {
   return toIsoDate(d);
 }
 
+/**
+ * The time zone a student's "today" is in.
+ *
+ * Rental dates are calendar dates, but WHICH calendar day it is right
+ * now depends on where you stand. Columbia is on Eastern time; the
+ * server's clock is UTC, which flips to tomorrow at 8 PM there. Anything
+ * that says "today" to her — a "Drop off today" reminder — must use her
+ * day, not the server's. Every campus is Eastern until one isn't; then
+ * this becomes a field on the campus.
+ */
+export const CAMPUS_TIME_ZONE = 'America/New_York';
+
+/** Today's date and the hour (0–23) on campus at the given moment. */
+export function campusClock(
+  nowMs: number = Date.now(),
+  timeZone: string = CAMPUS_TIME_ZONE,
+): { today: IsoDate; hour: number } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date(nowMs));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  return { today: `${get('year')}-${get('month')}-${get('day')}`, hour: Number(get('hour')) };
+}
+
 /** Whole days between two dates. `endDate` minus `startDate`. */
 export function daysBetween(startDate: IsoDate, endDate: IsoDate): number {
   const ms = fromIsoDate(endDate).getTime() - fromIsoDate(startDate).getTime();

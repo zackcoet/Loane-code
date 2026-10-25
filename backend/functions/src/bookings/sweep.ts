@@ -1,10 +1,13 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onCall } from '../lib/callable';
 import { logger } from 'firebase-functions';
-import { COLLECTIONS, type Booking, type Timestampish } from '@loane/shared';
+import { COLLECTIONS, addDays, campusClock, type Booking, type Timestampish } from '@loane/shared';
 import { db, now, Timestamp } from '../lib/admin';
 import { requireAdmin } from '../lib/guards';
 import { completeBooking, notify, pieceName } from './transitions';
+import { isReminderHour, remindersDue } from './reminders';
+
+type RemindableBooking = Booking & { remindersSent?: Record<string, boolean> };
 
 /** How long before a request expires we nudge the lender. */
 const EXPIRY_NUDGE_HOURS = 6;
@@ -47,7 +50,8 @@ export function stillSettled(
  *
  *   1. A request nobody answered goes stale and is declined.
  *   2. A return nobody complained about becomes completed.
- *   3. Reminders: starts tomorrow, due back today, overdue.
+ *   3. Reminders: starts tomorrow, due back today, overdue — only
+ *      between 8 AM and 9 PM on campus.
  *   4. Read alerts older than 30 days are deleted.
  *
  * Both run hourly. Hourly rather than by the minute because neither is
@@ -66,7 +70,7 @@ interface SweepResult {
   alertsPurged: number;
 }
 
-async function sweep(): Promise<SweepResult> {
+async function sweep(byHand: boolean): Promise<SweepResult> {
   const nowTs = Timestamp.now();
   let expired = 0;
   let completed = 0;
@@ -150,122 +154,73 @@ async function sweep(): Promise<SweepResult> {
   }
 
   // --- 3. Reminders -------------------------------------------------------
-  // Three nudges, each sent once. `remindersSent` on the booking is what
-  // stops the hourly run turning one reminder into twenty-four.
-  const today = new Date().toISOString().slice(0, 10);
-  const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
-
-  const live = await db()
-    .collection(COLLECTIONS.bookings)
-    .where('status', 'in', ['confirmed', 'with_renter'])
-    .limit(300)
-    .get();
-
-  for (const doc of live.docs) {
-    const booking = doc.data() as Booking & { remindersSent?: Record<string, boolean> };
-    const sent = booking.remindersSent ?? {};
-
-    const due: { key: string; uid: string; title: string; body: string }[] = [];
-
-    if (booking.status === 'confirmed' && booking.startDate === tomorrow && !sent.startsTomorrow) {
-      due.push({
-        key: 'startsTomorrow',
-        uid: booking.renterUid,
-        title: 'Your rental starts tomorrow',
-        body: `${pieceName(booking)} from ${booking.lender.username}. Sort out the handoff.`,
-      });
-      due.push({
-        key: 'startsTomorrow',
-        uid: booking.lenderUid,
-        title: 'You are lending tomorrow',
-        body: `${pieceName(booking)} goes to ${booking.renter.username}.`,
-      });
-    }
+  // Each sent once. `remindersSent` on the booking is what stops the
+  // hourly run turning one reminder into twenty-four. What is due is
+  // decided in `remindersDue` (reminders.ts), on the CAMPUS date.
+  const clock = campusClock();
+  if (byHand || isReminderHour(clock.hour)) {
+    const today = clock.today;
+    const tomorrow = addDays(today, 1);
 
     /*
-      THE LENDER'S SIDE OF THE HANDOFF.
+      ONLY THE BOOKINGS A REMINDER COULD BE FOR.
 
-      "Starts tomorrow" told her it was coming. This one lands on the
-      morning it has to happen, which is the reminder somebody actually
-      acts on — a rental that falls over usually falls over because one
-      of them forgot the day of.
+      This used to read the first 300 confirmed or live rentals in no
+      particular order. Past 300, some rentals would never be reminded
+      at all — and which ones would change from hour to hour. These two
+      reads only take rentals starting today or tomorrow, and rentals
+      due back by tomorrow (or late by up to a week), which is a small set however big Loane gets.
     */
-    if (booking.status === 'confirmed' && booking.startDate === today && !sent.dropoffToday) {
-      due.push({
-        key: 'dropoffToday',
-        uid: booking.lenderUid,
-        title: 'Drop off today',
-        body: `${pieceName(booking)} goes to ${booking.renter.displayName} today.`,
-      });
-      due.push({
-        key: 'dropoffToday',
-        uid: booking.renterUid,
-        title: 'Pick up today',
-        body: `${pieceName(booking)} from ${booking.lender.displayName} is yours today.`,
-      });
-    }
+    const [starting, dueBack] = await Promise.all([
+      db()
+        .collection(COLLECTIONS.bookings)
+        .where('status', '==', 'confirmed')
+        .where('startDate', '>=', today)
+        .where('startDate', '<=', tomorrow)
+        .limit(500)
+        .get(),
+      db()
+        .collection(COLLECTIONS.bookings)
+        .where('status', '==', 'with_renter')
+        // A week back is room for "overdue" to go out even after a few
+        // missed runs, without long-lost rentals crowding the read.
+        .where('endDate', '>=', addDays(today, -7))
+        .where('endDate', '<=', tomorrow)
+        .limit(500)
+        .get(),
+    ]);
 
-    // A day's warning beats finding out on the morning.
-    if (booking.status === 'with_renter' && booking.endDate === tomorrow && !sent.dueTomorrow) {
-      due.push({
-        key: 'dueTomorrow',
-        uid: booking.renterUid,
-        title: 'Due back tomorrow',
-        body: `Return ${pieceName(booking)} to ${booking.lender.displayName} tomorrow.`,
-      });
-    }
+    for (const doc of [...starting.docs, ...dueBack.docs]) {
+      /*
+        RE-READ, INSIDE A TRANSACTION, like the two steps above. If she
+        handed it back since the list was read, "Due back today" would
+        land after the fact; and two sweeps at once would each send it.
+      */
+      const sentCount = await db().runTransaction(async (tx) => {
+        const snap = await tx.get(doc.ref);
+        if (!snap.exists) return 0;
+        const booking = { ...(snap.data() as RemindableBooking), id: doc.id };
+        const due = remindersDue(booking, today);
+        if (due.length === 0) return 0;
 
-    if (booking.status === 'with_renter' && booking.endDate === today && !sent.dueToday) {
-      due.push({
-        key: 'dueToday',
-        uid: booking.renterUid,
-        title: 'Due back today',
-        body: `Time to return ${pieceName(booking)} to ${booking.lender.username}.`,
+        for (const item of due) {
+          notify(tx, {
+            uid: item.uid,
+            type: item.type,
+            title: item.title,
+            body: item.body,
+            bookingId: doc.id,
+          });
+        }
+        const keys = [...new Set(due.map((d) => d.key))];
+        tx.update(doc.ref, {
+          ...Object.fromEntries(keys.map((k) => [`remindersSent.${k}`, true])),
+          updatedAt: now(),
+        });
+        return due.length;
       });
+      reminders += sentCount;
     }
-
-    if (
-      booking.status === 'with_renter' &&
-      booking.endDate &&
-      booking.endDate < today &&
-      !sent.overdue
-    ) {
-      due.push({
-        key: 'overdue',
-        uid: booking.renterUid,
-        title: 'This is overdue',
-        body: `${pieceName(booking)} was due back on ${booking.endDate}.`,
-      });
-      due.push({
-        key: 'overdue',
-        uid: booking.lenderUid,
-        title: 'A rental is overdue',
-        body: `${booking.renter.username} still has ${pieceName(booking)}.`,
-      });
-    }
-
-    if (due.length === 0) continue;
-
-    const batch = db().batch();
-    for (const item of due) {
-      notify(batch, {
-        uid: item.uid,
-        type:
-          item.key === 'dueToday' || item.key === 'dueTomorrow' || item.key === 'overdue'
-            ? 'return_reminder'
-            : 'rental_upcoming',
-        title: item.title,
-        body: item.body,
-        bookingId: doc.id,
-      });
-    }
-    const keys = [...new Set(due.map((d) => d.key))];
-    batch.update(doc.ref, {
-      remindersSent: { ...sent, ...Object.fromEntries(keys.map((k) => [k, true])) },
-      updatedAt: now(),
-    });
-    await batch.commit();
-    reminders += due.length;
   }
 
   // --- 4. Old read alerts --------------------------------------------------
@@ -303,23 +258,27 @@ async function sweep(): Promise<SweepResult> {
     .get();
 
   for (const doc of expiring.docs) {
-    const booking = doc.data() as Booking & { remindersSent?: Record<string, boolean> };
-    if (booking.remindersSent?.expiringSoon) continue;
-
-    const batch = db().batch();
-    notify(batch, {
-      uid: booking.lenderUid,
-      type: 'rental_requested',
-      title: 'A request is about to expire',
-      body: `${booking.renter.displayName} is waiting on ${pieceName(booking)}. Answer before it declines itself.`,
-      bookingId: booking.id,
+    // Re-read: if she answered in the moment since the list was read,
+    // "about to expire" would nag her about something already done.
+    const nudged = await db().runTransaction(async (tx) => {
+      const snap = await tx.get(doc.ref);
+      const booking = snap.data() as RemindableBooking | undefined;
+      if (!booking || booking.status !== 'requested' || booking.remindersSent?.expiringSoon) {
+        return false;
+      }
+      notify(tx, {
+        uid: booking.lenderUid,
+        type: 'rental_requested',
+        title: 'A request is about to expire',
+        body: `${booking.renter.displayName} is waiting on ${pieceName(booking)}. Answer before it declines itself.`,
+        // The document's own id. `booking.id` is not always saved inside
+        // it, and an alert with no booking opens nothing when tapped.
+        bookingId: doc.id,
+      });
+      tx.update(doc.ref, { 'remindersSent.expiringSoon': true, updatedAt: now() });
+      return true;
     });
-    batch.update(doc.ref, {
-      remindersSent: { ...(booking.remindersSent ?? {}), expiringSoon: true },
-      updatedAt: now(),
-    });
-    await batch.commit();
-    reminders += 1;
+    if (nudged) reminders += 1;
   }
 
   if (expired || completed || reminders || alertsPurged) {
@@ -331,7 +290,7 @@ async function sweep(): Promise<SweepResult> {
 export const sweepBookings = onSchedule(
   { schedule: 'every 60 minutes', region: 'us-central1' },
   async () => {
-    await sweep();
+    await sweep(false);
   },
 );
 
@@ -345,6 +304,8 @@ export const runBookingSweep = onCall<Record<string, never>, Promise<SweepResult
   { region: 'us-central1' },
   async (request) => {
     requireAdmin(request);
-    return sweep();
+    // By hand means now: an admin running it wants the reminders out,
+    // whatever the hour on campus.
+    return sweep(true);
   },
 );

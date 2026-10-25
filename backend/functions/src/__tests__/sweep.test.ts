@@ -11,10 +11,10 @@
  */
 
 import { initializeApp, deleteApp, type App } from 'firebase-admin/app';
-import { getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestore';
+import { FieldValue, getFirestore, Timestamp, type Firestore } from 'firebase-admin/firestore';
 import type { CallableRequest } from 'firebase-functions/v2/https';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { COLLECTIONS, addDays, toIsoDate } from '@loane/shared';
+import { COLLECTIONS, addDays, campusClock, toIsoDate } from '@loane/shared';
 
 const PROJECT = 'demo-loane';
 const CAMPUS = 'university-of-south-carolina';
@@ -145,7 +145,8 @@ describe('returns nobody flagged', () => {
 
 describe('reminders', () => {
   it('"starts tomorrow" goes out once, however often the sweep runs', async () => {
-    const today = toIsoDate(new Date());
+    // Campus time, the same "today" the sweep uses.
+    const today = campusClock().today;
     await booking('soon', {
       status: 'confirmed',
       startDate: addDays(today, 1),
@@ -157,6 +158,62 @@ describe('reminders', () => {
 
     expect(await alerts(HARPER, 'Your rental starts tomorrow')).toBe(1);
     expect(await alerts(ELLA, 'You are lending tomorrow')).toBe(1);
+  });
+});
+
+describe('reminders, continued', () => {
+  it('"due back today" goes out once, and never after she has handed it back', async () => {
+    const today = campusClock().today;
+    await booking('due', { status: 'with_renter', startDate: addDays(today, -2), endDate: today });
+    await booking('handed', { status: 'returned', startDate: addDays(today, -2), endDate: today });
+
+    await runBookingSweep(admin);
+    await runBookingSweep(admin);
+
+    expect(await alerts(HARPER, 'Due back today')).toBe(1);
+    expect((await read('due')).remindersSent).toEqual({ dueToday: true });
+    expect((await read('handed')).remindersSent).toBeUndefined();
+  });
+
+  it('overdue tells both girls once', async () => {
+    const today = campusClock().today;
+    await booking('late', {
+      status: 'with_renter',
+      startDate: addDays(today, -5),
+      endDate: addDays(today, -1),
+    });
+    await runBookingSweep(admin);
+    await runBookingSweep(admin);
+    expect(await alerts(HARPER, 'This is overdue')).toBe(1);
+    expect(await alerts(ELLA, 'A rental is overdue')).toBe(1);
+  });
+
+  it('a rental weeks away gets nothing yet', async () => {
+    await booking('later', { status: 'confirmed' }); // starts in 10 days
+    await runBookingSweep(admin);
+    expect((await read('later')).remindersSent).toBeUndefined();
+  });
+});
+
+describe('a request about to expire', () => {
+  it('nudges the lender once, and the alert opens the request', async () => {
+    await booking('ticking', { status: 'requested', expiresAt: hoursFromNow(3) });
+    // Not every saved booking carries its own id inside it.
+    await db.doc(`${COLLECTIONS.bookings}/ticking`).update({ id: FieldValue.delete() });
+
+    await runBookingSweep(admin);
+    await runBookingSweep(admin);
+
+    const snap = await db.collection(`${COLLECTIONS.users}/${ELLA}/notifications`).get();
+    const nudges = snap.docs.filter((d) => d.data().title === 'A request is about to expire');
+    expect(nudges).toHaveLength(1);
+    expect(nudges[0]!.data().deepLink).toBe('/rental/ticking');
+  });
+
+  it('leaves a request with plenty of time alone', async () => {
+    await booking('fresh', { status: 'requested', expiresAt: hoursFromNow(20) });
+    await runBookingSweep(admin);
+    expect(await alerts(ELLA, 'A request is about to expire')).toBe(0);
   });
 });
 
