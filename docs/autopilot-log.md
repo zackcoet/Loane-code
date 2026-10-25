@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 39 (only when you next deploy): one small database rules change — a profile photo must be her own upload. Normal deploy, nothing to switch on. The live core-flow check after deploying uploads a real profile photo, so it proves this works on the live project.
 - From run 38 (only when you next deploy): server fixes to posting and deleting a look, and to scheduled looks. Normal deploy, nothing to switch on. After deploying, the usual live core-flow check covers it (it posts a real look).
 - From run 37 (only when you next deploy): server fixes to the dashboard's take-down, suspend and dispute buttons, plus one tiny database rules addition. Normal deploy, nothing to switch on.
 - From run 36 (only when you next deploy): server fixes to sharing into chats and to closing Contact us messages in the dashboard. Normal deploy, nothing to switch on.
@@ -31,6 +32,35 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-25 (run 39, ~midnight Central) — Profile photos must be her own
+
+**Plan:** The backlog is still waiting on you (F7), on payments (B8) or on a real phone (G8, H5). So this run took H7: make sure a piece's photos and a profile photo are files she actually uploaded to Loane (looks got this in run 38), in the database rules, with tests.
+
+**Built / Fixed (what a student would notice):**
+- **A profile photo has to be one she uploaded to Loane.** Before, a tampered app could set her profile picture to any picture on the internet, or to another girl's photo — and it shows next to her name everywhere (feed, comments, chats). Now it must be a file in her own folder in Loane's storage. The real app already works this way, so nobody notices. An old photo never stops her editing her bio.
+
+**What to tap to see it:**
+- Nothing looks different — Profile → Edit Profile → change your photo; it works as before.
+
+**Skipped / blocked:**
+- **Piece photos: built, then taken back out.** The same check for a piece's photos worked in every test except a piece with all 8 photos plus a "Try it on" photo — the database's rule checker has a hard limit on how much work one save may do, and that piece went over it, even after three slimmer rewrites. Shipping it would have broken Add to Closet for anyone using 8 photos, so I removed it. The right fix is to save pieces through the server (the way looks are saved), where there's no such limit — that's a bigger job, left on the backlog (H7) for a future run.
+- The overnight machine still can't start the test database. Passed here: type checks, lint, the index check, 312 shared tests, 102 server tests that don't need the database. The database tests run on GitHub — result below.
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing urgent. Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** H7 the proper way — move saving a piece into a server function, then add the photo check there (and stamp her name/photo on the piece, H8). Or keep sweeping untested server code (H1): editing a look, the feature-switch panel.
+
+**Commits:**
+- Pieces and profile photos: every new photo must be her own upload (first try)
+- Three tries at making the piece check fit the database's limit (didn't fit)
+- Profile photo must be her own upload; piece-photo check taken back out; tests
+- Autopilot log for run 39
+- GitHub checks on the final code push (full set, database tests included): **all green ✅** (the three in-between pushes were red on the one 8-photo test — that is why the piece check came out)
 
 ---
 
