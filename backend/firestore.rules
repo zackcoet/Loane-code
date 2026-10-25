@@ -510,7 +510,7 @@ service cloud.firestore {
       // chips under the look both read them. Limits match createPost.
       allow update: if isActive()
         && resource.data.authorUid == uid()
-        && resource.data.status in ['active', 'scheduled']
+        && resource.data.get('status', 'active') in ['active', 'scheduled']
         && onlyChanges(['caption', 'occasions', 'updatedAt'])
         && request.resource.data.caption is string
         && request.resource.data.caption.size() <= 1000

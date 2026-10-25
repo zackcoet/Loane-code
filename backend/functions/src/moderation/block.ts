@@ -80,30 +80,46 @@ export const blockUser = onCall<BlockInput, Promise<{ ok: true }>>(
       transaction too (social/follow.ts), so a follow landing at the
       same instant as a block can't slip in after it.
     */
-    await db().runTransaction(async (tx) => {
-      const [target, ...existing] = await Promise.all([
-        tx.get(targetRef),
-        ...edges.map((ref) => tx.get(ref)),
-      ]);
-      if (!target.exists) throw notFound('We could not find that student.');
-
-      tx.set(blockRef, { blockedUid: targetUid, createdAt: now() });
-      // The reverse marker, so her app can hide him too.
-      tx.set(reverseRef, { blockerUid: me.uid, createdAt: now() });
-
-      // Following each other stops making sense the moment one blocks.
-      existing.forEach((snap, index) => {
-        if (!snap.exists) return;
-        tx.delete(edges[index]!);
-        const followerUid = index === 0 ? me.uid : targetUid;
-        const followingUid = index === 0 ? targetUid : me.uid;
-        tx.update(users.doc(followerUid), { 'stats.followingCount': FieldValue.increment(-1) });
-        tx.update(users.doc(followingUid), { 'stats.followerCount': FieldValue.increment(-1) });
-      });
-    });
+    try {
+      await blockOnce();
+    } catch (error) {
+      // Two taps at the same moment fight over the same documents and
+      // the database can give up on the loser (the emulator says
+      // "Transaction is invalid or closed"). If the block is in place
+      // and both follows are gone, the other tap did it — a success,
+      // not "Something went wrong". Same as deleting a look.
+      const done = await Promise.all([blockRef.get(), ...edges.map((ref) => ref.get())]).catch(
+        () => null,
+      );
+      if (!done || !done[0]!.exists || done.slice(1).some((snap) => snap.exists)) throw error;
+    }
 
     logger.info('User blocked', { by: me.uid, target: targetUid });
     return { ok: true };
+
+    async function blockOnce(): Promise<void> {
+      await db().runTransaction(async (tx) => {
+        const [target, ...existing] = await Promise.all([
+          tx.get(targetRef),
+          ...edges.map((ref) => tx.get(ref)),
+        ]);
+        if (!target.exists) throw notFound('We could not find that student.');
+
+        tx.set(blockRef, { blockedUid: targetUid, createdAt: now() });
+        // The reverse marker, so her app can hide him too.
+        tx.set(reverseRef, { blockerUid: me.uid, createdAt: now() });
+
+        // Following each other stops making sense the moment one blocks.
+        existing.forEach((snap, index) => {
+          if (!snap.exists) return;
+          tx.delete(edges[index]!);
+          const followerUid = index === 0 ? me.uid : targetUid;
+          const followingUid = index === 0 ? targetUid : me.uid;
+          tx.update(users.doc(followerUid), { 'stats.followingCount': FieldValue.increment(-1) });
+          tx.update(users.doc(followingUid), { 'stats.followerCount': FieldValue.increment(-1) });
+        });
+      });
+    }
   },
 );
 
