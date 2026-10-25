@@ -109,19 +109,25 @@ service cloud.firestore {
     }
 
     // One photo of a piece: a file in users/{her uid}/listings/{this
-    // piece}/, its link the download link for that exact file, and a
-    // real size — every phone lays the photo out from width and height,
-    // so a zero or a negative would break the piece on everyone's screen.
-    // 20000 matches MAX_PHOTO_SIDE in createPost. The file name may hold
-    // dots, which a pattern reads as "any letter", so they are escaped.
-    function isOwnListingPhoto(img, me, listingId) {
+    // piece}/ (pathRe), its link the download link for that exact file
+    // (urlRe + the file's own name), and a real size — every phone lays
+    // the photo out from width and height, so a zero or a negative would
+    // break the piece on everyone's screen. 20000 matches MAX_PHOTO_SIDE
+    // in createPost. The file name may hold dots, which a pattern reads
+    // as "any letter", so they are escaped. A size that is not a number
+    // cannot be compared, which refuses the write all the same.
+    //
+    // pathRe and urlRe are built once per piece by photosAreHers: every
+    // step counts against the 1000-step limit, and a full piece has nine
+    // photos to check.
+    function isOwnListingPhoto(img, pathRe, urlRe) {
       return img is map
         && img.path is string
-        && img.path.matches('users/' + me + '/listings/' + listingId + '/[A-Za-z0-9_-][A-Za-z0-9_.-]{0,99}')
-        && isLoaneDownloadUrl(img.url, 'users%2F' + me + '%2Flistings%2F' + listingId + '%2F'
-             + img.path.split('/')[4].replace('[.]', '[.]'))
-        && img.width is number && img.width > 0 && img.width <= 20000
-        && img.height is number && img.height > 0 && img.height <= 20000;
+        && img.path.matches(pathRe)
+        && img.url is string
+        && img.url.matches(urlRe + img.path.split('/')[4].replace('[.]', '[.]') + '([?].*)?')
+        && img.width > 0 && img.width <= 20000
+        && img.height > 0 && img.height <= 20000;
     }
 
     // Her profile photo: null, or a file in users/{her uid}/profile/.
@@ -554,8 +560,8 @@ service cloud.firestore {
       // checked. The cover is a copy of the first photo's link; a
       // different one would show the campus one picture in the grid and
       // another on the piece.
-      function photoOk(img, me, listingId, isNew) {
-        return isOwnListingPhoto(img, me, listingId)
+      function photoOk(img, pathRe, urlRe, isNew) {
+        return isOwnListingPhoto(img, pathRe, urlRe)
           || (!isNew && img is map
               && (img in resource.data.get('photos', [])
                   || img == resource.data.get('flatPhoto', null)));
@@ -564,21 +570,26 @@ service cloud.firestore {
       // Rules have no loops, hence one line per possible photo (max 8;
       // hasRequiredFields has already checked there are 1 to 8).
       function photosAreHers(listingId, isNew) {
-        let p = draft().photos;
-        let me = uid();
         return (!isNew && !changed().hasAny(['photos', 'coverUrl', 'flatPhoto']))
           || (isSafeName(listingId)
-              && photoOk(p[0], me, listingId, isNew)
-              && (p.size() < 2 || photoOk(p[1], me, listingId, isNew))
-              && (p.size() < 3 || photoOk(p[2], me, listingId, isNew))
-              && (p.size() < 4 || photoOk(p[3], me, listingId, isNew))
-              && (p.size() < 5 || photoOk(p[4], me, listingId, isNew))
-              && (p.size() < 6 || photoOk(p[5], me, listingId, isNew))
-              && (p.size() < 7 || photoOk(p[6], me, listingId, isNew))
-              && (p.size() < 8 || photoOk(p[7], me, listingId, isNew))
-              && draft().get('coverUrl', null) == p[0].url
-              && (draft().get('flatPhoto', null) == null
-                  || photoOk(draft().flatPhoto, me, listingId, isNew)));
+              && photosMatch(draft().photos,
+                   'users/' + uid() + '/listings/' + listingId + '/[A-Za-z0-9_-][A-Za-z0-9_.-]{0,99}',
+                   storageHost() + 'users%2F' + uid() + '%2Flistings%2F' + listingId + '%2F',
+                   isNew));
+      }
+
+      function photosMatch(p, pathRe, urlRe, isNew) {
+        return photoOk(p[0], pathRe, urlRe, isNew)
+          && (p.size() < 2 || photoOk(p[1], pathRe, urlRe, isNew))
+          && (p.size() < 3 || photoOk(p[2], pathRe, urlRe, isNew))
+          && (p.size() < 4 || photoOk(p[3], pathRe, urlRe, isNew))
+          && (p.size() < 5 || photoOk(p[4], pathRe, urlRe, isNew))
+          && (p.size() < 6 || photoOk(p[5], pathRe, urlRe, isNew))
+          && (p.size() < 7 || photoOk(p[6], pathRe, urlRe, isNew))
+          && (p.size() < 8 || photoOk(p[7], pathRe, urlRe, isNew))
+          && draft().get('coverUrl', null) == p[0].url
+          && (draft().get('flatPhoto', null) == null
+              || photoOk(draft().flatPhoto, pathRe, urlRe, isNew));
       }
 
       /** A price, in whole cents, inside the allowed range. */
