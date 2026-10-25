@@ -2,7 +2,8 @@
  * Request to rent.
  *
  * Pick 3 or 7 days, pick a start date, see what it costs, send the
- * request. The lender then has REQUEST_EXPIRY_HOURS to answer.
+ * request. The lender then has REQUEST_EXPIRY_HOURS to answer (fewer
+ * when the rental starts soon — see `requestExpiry`).
  *
  * ON PAYMENT: nothing is charged. During beta the two of them settle up
  * between themselves, and the screen says so plainly rather than
@@ -23,10 +24,12 @@ import {
 } from 'react-native';
 import {
   SAME_DAY_RESPONSE_HOURS,
-  toIsoDate,
+  campusToday,
   RENTAL_DURATIONS,
   WORDS,
   REQUEST_EXPIRY_HOURS,
+  hoursToAnswer,
+  requestExpiry,
   addDays,
   calculateFees,
   priceForDuration,
@@ -103,7 +106,12 @@ export default function RequestRental() {
     it. There is no separate mode to turn on — she already said when
     she wants it.
   */
-  const isSameDay = startDate === toIsoDate(new Date());
+  const isSameDay = startDate === campusToday();
+  // What she'll be told the lender has. Same rule the server uses, so a
+  // request for tomorrow says "9 hours", not a day it doesn't have.
+  const answerWithin = startDate
+    ? hoursToAnswer(requestExpiry(startDate, isSameDay, Date.now()).getTime() - Date.now())
+    : `${REQUEST_EXPIRY_HOURS} hours`;
   // Both the owner's yes AND the switchboard: same-day can be paused for
   // everyone without a new app build. The server checks both again.
   const sameDayOn = useFeatureFlags().sameDay;
@@ -180,7 +188,7 @@ export default function RequestRental() {
       });
       Alert.alert(
         'Request sent',
-        `${listing.owner.username} has ${REQUEST_EXPIRY_HOURS} hours to answer. You'll see it in Activity.`,
+        `${listing.owner.username} has ${answerWithin} to answer. You'll see it in Activity.`,
       );
       router.replace({ pathname: '/rental/[id]', params: { id: result.data.bookingId } });
     } catch (err) {
@@ -354,8 +362,7 @@ export default function RequestRental() {
           style={styles.send}
         />
         <Text variant="caption" tone="muted" style={styles.footnote}>
-          Nothing is booked until @{listing.owner.username} says yes. She has {REQUEST_EXPIRY_HOURS}{' '}
-          hours.
+          Nothing is booked until @{listing.owner.username} says yes. She has {answerWithin}.
         </Text>
       </ScrollView>
     </Screen>

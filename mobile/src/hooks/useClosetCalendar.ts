@@ -14,7 +14,7 @@
  */
 
 import { useMemo } from 'react';
-import { BLOCKING_BOOKING_STATUSES, addDays, toIsoDate, type Booking, type IsoDate } from '@loane/shared';
+import { BLOCKING_BOOKING_STATUSES, addDays, campusToday, type Booking, type IsoDate } from '@loane/shared';
 import { useMyBookings } from './useBookings';
 
 export interface DayActivity {
@@ -99,7 +99,7 @@ export function useClosetCalendar() {
     return [...map.values()];
   }, [held]);
 
-  const today = toIsoDate(new Date());
+  const today = campusToday();
 
   return {
     loading,

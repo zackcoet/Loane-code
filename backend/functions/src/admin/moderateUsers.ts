@@ -5,7 +5,7 @@ import {
   COLLECTIONS,
   isIsoDate,
   suspendBlockedReason,
-  toIsoDate,
+  campusToday,
   type User,
 } from '@loane/shared';
 import { db, now, Timestamp } from '../lib/admin';
@@ -58,7 +58,7 @@ function parseUntil(value: unknown): Timestamp | null {
   }
   const date = new Date(`${value}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) throw invalidArgument('That end date is not a real day.');
-  if (value <= toIsoDate(new Date())) throw invalidArgument('The end date has to be after today.');
+  if (value <= campusToday()) throw invalidArgument('The end date has to be after today.');
   return Timestamp.fromDate(date);
 }
 

@@ -48,16 +48,69 @@ export function campusClock(
   nowMs: number = Date.now(),
   timeZone: string = CAMPUS_TIME_ZONE,
 ): { today: IsoDate; hour: number } {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(new Date(nowMs));
-  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
-  return { today: `${get('year')}-${get('month')}-${get('day')}`, hour: Number(get('hour')) };
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      hourCycle: 'h23',
+    }).formatToParts(new Date(nowMs));
+    const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+    const today = `${get('year')}-${get('month')}-${get('day')}`;
+    const hour = Number(get('hour'));
+    if (isIsoDate(today) && Number.isInteger(hour) && hour >= 0 && hour <= 23) {
+      return { today, hour };
+    }
+  } catch {
+    // Fall through. Some phone JavaScript engines ship a thin Intl.
+  }
+  /*
+    The phone runs this too, and not every phone engine knows time
+    zones. Rather than quietly fall back to world time (the very bug
+    this exists to fix), work Eastern time out by hand: US daylight
+    time runs from 2 AM on the second Sunday of March to 2 AM on the
+    first Sunday of November.
+  */
+  const offsetHours = timeZone === CAMPUS_TIME_ZONE ? easternOffsetHours(nowMs) : 0;
+  const local = new Date(nowMs + offsetHours * 3_600_000);
+  return { today: toIsoDate(local), hour: local.getUTCHours() };
+}
+
+/** Today's date on campus — the "today" every rental date is measured from. */
+export function campusToday(nowMs: number = Date.now()): IsoDate {
+  return campusClock(nowMs).today;
+}
+
+/**
+ * The moment a calendar day begins on campus (midnight in Columbia),
+ * in milliseconds. Midnight is never skipped or repeated by US clock
+ * changes (they happen at 2 AM), so there is always exactly one.
+ */
+export function campusDayStartMs(date: IsoDate): number {
+  const utcMidnight = fromIsoDate(date).getTime();
+  for (const hoursBehind of [4, 5]) {
+    const ms = utcMidnight + hoursBehind * 3_600_000;
+    const clock = campusClock(ms);
+    if (clock.today === date && clock.hour === 0) return ms;
+  }
+  // Not an Eastern campus: fall back to world-time midnight.
+  return utcMidnight;
+}
+
+/** −4 in US daylight time, −5 otherwise. Only used when Intl can't say. */
+function easternOffsetHours(nowMs: number): number {
+  const year = new Date(nowMs).getUTCFullYear();
+  // nth Sunday of a month, as a UTC day-of-month.
+  const nthSunday = (month: number, n: number) => {
+    const firstDay = new Date(Date.UTC(year, month, 1)).getUTCDay();
+    return 1 + ((7 - firstDay) % 7) + 7 * (n - 1);
+  };
+  // 2 AM Eastern standard = 07:00 UTC; 2 AM Eastern daylight = 06:00 UTC.
+  const dstStart = Date.UTC(year, 2, nthSunday(2, 2), 7);
+  const dstEnd = Date.UTC(year, 10, nthSunday(10, 1), 6);
+  return nowMs >= dstStart && nowMs < dstEnd ? -4 : -5;
 }
 
 /** Whole days between two dates. `endDate` minus `startDate`. */

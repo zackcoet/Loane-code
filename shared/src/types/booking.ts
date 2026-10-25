@@ -145,8 +145,9 @@ export interface Booking extends BaseDoc, CampusScoped {
   declineReason: string | null;
 
   /**
-   * When an unanswered request goes stale. REQUEST_EXPIRY_HOURS after it
-   * the day before the rental starts, whichever comes first.
+   * When an unanswered request goes stale: REQUEST_EXPIRY_HOURS after it
+   * is made, or when the rental day begins on campus, whichever comes
+   * first (`requestExpiry`).
    */
   expiresAt: Timestampish | null;
 

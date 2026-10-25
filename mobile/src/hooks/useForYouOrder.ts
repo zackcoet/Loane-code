@@ -29,7 +29,7 @@ import {
   buildOccasionAffinity,
   withPickedOccasions,
   nextFeedOrder,
-  toIsoDate,
+  campusToday,
   type Listing,
   type Occasion,
   type Post,
@@ -126,7 +126,7 @@ export function useForYouOrder(posts: Post[], viewer: RankingViewerData | null) 
       },
       listings: (id) => listingCache.current.get(id) ?? undefined,
       nowMs: now.getTime(),
-      today: toIsoDate(now),
+      today: campusToday(now.getTime()),
     });
 
     const byId = new Map(posts.map((p) => [p.id, p]));

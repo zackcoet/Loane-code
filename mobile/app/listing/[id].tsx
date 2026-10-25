@@ -20,7 +20,7 @@ import {
 import { SkeletonDetail } from '../../src/components/Skeleton';
 import {
   addDays,
-  toIsoDate,
+  campusToday,
   type Listing,
   CATEGORY_LABELS,
   OCCASION_LABELS,
@@ -459,7 +459,7 @@ function Fact({ label, value }: { label: string; value: string }) {
 
 function AvailabilityStrip({ listing }: { listing: Listing }) {
   const unavailable = useUnavailableDates(listing);
-  const today = toIsoDate(new Date());
+  const today = campusToday();
   // Two weeks is the window a student actually plans in. Beyond that
   // the request screen's full calendar takes over.
   const days = Array.from({ length: 14 }, (_, i) => addDays(today, i));

@@ -9,7 +9,7 @@ import {
   ids,
   formatShortDate,
   isIsoDate,
-  toIsoDate,
+  campusToday,
   type Booking,
   type ImageRef,
   type Listing,
@@ -115,7 +115,7 @@ export const respondToBooking = onCall<
         booking,
         listingSnap.exists ? (listingSnap.data() as Listing) : null,
         holding.docs.map((doc) => doc.data() as Booking),
-        toIsoDate(new Date()),
+        campusToday(),
       );
       if (clash) throw alreadyTaken(clash);
 
@@ -541,7 +541,7 @@ export const setBlockedDates = onCall<
       requested: dates,
       existing: listing.blackoutDates ?? [],
       booked: booked.docs.map((doc) => doc.data() as Booking),
-      today: toIsoDate(new Date()),
+      today: campusToday(),
     });
     if (!plan.ok) {
       throw failed(`${formatShortDate(plan.clash)} is already booked. Cancel that rental first.`);

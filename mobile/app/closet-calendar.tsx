@@ -55,7 +55,7 @@ export default function ClosetCalendar() {
     for (let i = 0; i < first.getDay(); i += 1) days.push(null);
     const last = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
     for (let d = 1; d <= last; d += 1) {
-      days.push(toIsoDate(new Date(first.getFullYear(), first.getMonth(), d)));
+      days.push(toIsoDate(new Date(Date.UTC(first.getFullYear(), first.getMonth(), d))));
     }
     return {
       days,
@@ -113,8 +113,7 @@ export default function ClosetCalendar() {
         ))}
       </View>
 
-      <ScrollView
-        style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {view === 'month' ? (
           <>
             <View style={styles.monthBar}>
@@ -256,7 +255,13 @@ export default function ClosetCalendar() {
   );
 }
 
-function DayList({ label, items }: { label: string; items: { id: string; listing: { name: string }; renter: { displayName: string } }[] }) {
+function DayList({
+  label,
+  items,
+}: {
+  label: string;
+  items: { id: string; listing: { name: string }; renter: { displayName: string } }[];
+}) {
   if (items.length === 0) return null;
   return (
     <View style={styles.dayList}>

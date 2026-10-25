@@ -33,7 +33,7 @@ import {
   withPickedOccasions,
   occasionsOfSaved,
   rankListings,
-  toIsoDate,
+  campusToday,
   type Listing,
   type Save,
 } from '@loane/shared';
@@ -112,7 +112,7 @@ export function useDiscoverForYou(
         ),
       },
       now.getTime(),
-      toIsoDate(now),
+      campusToday(now.getTime()),
     );
     return new Map(order.map((id, i) => [id, i]));
     // Deliberately keyed on the SET of pieces and her likes, not on every

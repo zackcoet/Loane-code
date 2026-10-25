@@ -23,6 +23,8 @@ import {
   BOOKING_STATUS_LABELS,
   PLATFORM_FEE_BPS,
   REQUEST_EXPIRY_HOURS,
+  hoursToAnswer,
+  toMillis,
   RETURN_DISPUTE_WINDOW_HOURS,
   RETURN_PROBLEMS,
   RETURN_PROBLEM_LABELS,
@@ -551,12 +553,23 @@ function StatusBanner({ booking, isLender }: { booking: Booking; isLender: boole
   );
 }
 
+/**
+ * How long is left to answer. A request for tomorrow can have a few
+ * hours rather than a day, so read it off the request itself.
+ */
+function answerWindow(booking: Booking): string {
+  const expiresMs = toMillis(booking.expiresAt);
+  return expiresMs == null
+    ? `${REQUEST_EXPIRY_HOURS} hours`
+    : hoursToAnswer(expiresMs - Date.now());
+}
+
 /** What each step means on a sale — no dates, nothing comes back. */
 function saleCopy(booking: Booking, isLender: boolean): Record<string, string> {
   return {
     requested: isLender
-      ? `She’s asked to buy this. Accept or decline within ${REQUEST_EXPIRY_HOURS} hours.`
-      : `Waiting on an answer. She has ${REQUEST_EXPIRY_HOURS} hours.`,
+      ? `She’s asked to buy this. Accept or decline within ${answerWindow(booking)}.`
+      : `Waiting on an answer. She has ${answerWindow(booking)}.`,
     confirmed: booking.handoff.dropoffAt
       ? isLender
         ? 'Handed over. Waiting for her to confirm she has it.'
@@ -575,8 +588,8 @@ function saleCopy(booking: Booking, isLender: boolean): Record<string, string> {
 function rentalCopy(booking: Booking, isLender: boolean): Record<string, string> {
   return {
     requested: isLender
-      ? `She’s asked to rent this. Accept or decline within ${REQUEST_EXPIRY_HOURS} hours.`
-      : `Waiting on an answer. She has ${REQUEST_EXPIRY_HOURS} hours.`,
+      ? `She’s asked to rent this. Accept or decline within ${answerWindow(booking)}.`
+      : `Waiting on an answer. She has ${answerWindow(booking)}.`,
     confirmed: booking.handoff.dropoffAt
       ? isLender
         ? 'Dropped off. Waiting for her to confirm she has it.'

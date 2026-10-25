@@ -29,7 +29,7 @@ import {
   COLLECTIONS,
   REQUEST_EXPIRY_HOURS,
   calculateFees,
-  toIsoDate,
+  campusToday,
   type Booking,
   type Listing,
   type User,
@@ -101,7 +101,7 @@ export const requestPurchase = onCall<Input, Promise<{ bookingId: string }>>(
       );
       const clash = purchaseRentalClash(
         blocking.docs.map((d) => d.data() as Booking),
-        toIsoDate(new Date()),
+        campusToday(),
       );
       if (clash) throw failed(clash);
 

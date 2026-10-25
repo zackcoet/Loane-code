@@ -3,10 +3,8 @@ import { onCall } from '../lib/callable';
 import { logger } from 'firebase-functions';
 import type { Booking, DateRange, Listing, User } from '@loane/shared';
 import {
-  SAME_DAY_RESPONSE_HOURS,
   BLOCKING_BOOKING_STATUSES,
   COLLECTIONS,
-  REQUEST_EXPIRY_HOURS,
   calculateFees,
   priceForDuration,
   newBookingPayment,
@@ -14,7 +12,9 @@ import {
   formatRange,
   rangeHitsBlackout,
   rangesOverlap,
-  toIsoDate,
+  campusToday,
+  hoursToAnswer,
+  requestExpiry,
   validateDateRange,
 } from '@loane/shared';
 import { db, now, Timestamp } from '../lib/admin';
@@ -66,26 +66,6 @@ interface RequestBookingResult {
   status: Booking['status'];
 }
 
-/**
- * When an unanswered request goes stale: REQUEST_EXPIRY_HOURS from
- * now, or the day before the rental starts, whichever comes first. A
- * request for this Saturday should not sit unanswered until Saturday.
- */
-function requestExpiry(startDate: string, sameDay: boolean): Date {
-  /*
-    TWO HOURS FOR SAME DAY, not twenty-four.
-
-    A request for this afternoon that sits unanswered until tomorrow is
-    worse than a decline: she has spent the evening assuming she has a
-    dress. The short window is the whole promise of same-day.
-  */
-  const hours = sameDay ? SAME_DAY_RESPONSE_HOURS : REQUEST_EXPIRY_HOURS;
-  const deadline = new Date(Date.now() + hours * 3600_000);
-  const dayBeforeStart = new Date(`${startDate}T00:00:00Z`);
-  dayBeforeStart.setUTCDate(dayBeforeStart.getUTCDate() - 1);
-  return deadline < dayBeforeStart ? deadline : dayBeforeStart;
-}
-
 export const requestBooking = onCall<RequestBookingInput, Promise<RequestBookingResult>>(
   { region: 'us-central1' },
   async (request: CallableRequest<RequestBookingInput>): Promise<RequestBookingResult> => {
@@ -102,7 +82,7 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
     await rateLimit(renter.uid, 'rentalRequest');
 
     const range: DateRange = { startDate, endDate };
-    const dateCheck = validateDateRange(range, toIsoDate(new Date()));
+    const dateCheck = validateDateRange(range, campusToday());
     if (!dateCheck.ok) throw invalidArgument(dateCheck.error!);
 
     const listingSnapForBlock = await db().collection(COLLECTIONS.listings).doc(listingId).get();
@@ -180,7 +160,7 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
         Same day is the renter asking for it TODAY, and only possible
         on a listing whose owner said yes to that.
       */
-      const isSameDay = startDate === toIsoDate(new Date());
+      const isSameDay = startDate === campusToday();
       if (isSameDay && !listing.sameDay?.enabled) {
         throw failed('This piece is not available same day. Pick a later date.');
       }
@@ -212,6 +192,7 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
 
       // A request never auto-confirms at MVP — every one needs the lender's
       // approval. (`listing.requiresApproval` is forced true; see roadmap.)
+      const expiresAt = requestExpiry(startDate, isSameDay, Date.now());
       const booking: Omit<Booking, 'createdAt' | 'updatedAt'> = {
         id: bookingRef.id,
         kind: 'rental',
@@ -255,9 +236,9 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
         cancelledByUid: null,
         cancellationReason: null,
         declineReason: null,
-        // The lender has REQUEST_EXPIRY_HOURS, or until the day before
-        // starts, whichever comes first.
-        expiresAt: Timestamp.fromDate(requestExpiry(startDate, isSameDay)),
+        // The lender has REQUEST_EXPIRY_HOURS, or until the rental day
+        // begins on campus, whichever comes first (see requestExpiry).
+        expiresAt: Timestamp.fromDate(expiresAt),
         disputeWindowEndsAt: null,
         returnProblem: null,
         disputeResolution: null,
@@ -266,6 +247,8 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
       };
 
       tx.set(bookingRef, { ...booking, createdAt: now(), updatedAt: now() });
+      // Say the real window: a request for tomorrow has hours, not a day.
+      const answerWithin = hoursToAnswer(expiresAt.getTime() - Date.now());
 
       // Tell the lender, in the same transaction as the booking.
       //
@@ -280,8 +263,8 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
         title: `@${renter.username} wants to rent your ${listing.name}`,
         body:
           startDate && endDate
-            ? `${formatRange({ startDate, endDate })} — accept or decline within ${REQUEST_EXPIRY_HOURS} hours.`
-            : `Accept or decline within ${REQUEST_EXPIRY_HOURS} hours.`,
+            ? `${formatRange({ startDate, endDate })} — accept or decline within ${answerWithin}.`
+            : `Accept or decline within ${answerWithin}.`,
         bookingId: bookingRef.id,
         actor: { uid: renter.uid, username: renter.username, photoUrl: renter.photoUrl },
       });

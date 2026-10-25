@@ -234,8 +234,9 @@ export const TERMINAL_BOOKING_STATUSES: readonly BookingStatus[] = [
 /**
  * How long a lender or seller has to answer a request.
  *
- * 24 hours, or the day before the rental starts, whichever comes first —
- * a request for this Saturday should not sit unanswered until Saturday.
+ * 24 hours, or until the rental day begins on campus, whichever comes
+ * first — a request for this Saturday should not sit unanswered into
+ * Saturday. Never under SAME_DAY_RESPONSE_HOURS. See `requestExpiry`.
  *
  * Was 48. Ella's call: a day is long enough to be fair to someone with
  * classes, and two days is long enough for the renter to find something

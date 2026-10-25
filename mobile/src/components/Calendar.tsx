@@ -19,6 +19,7 @@ import {
   controls,
   radius,
   spacing,
+  campusToday,
   toIsoDate,
   type IsoDate,
 } from '@loane/shared';
@@ -45,7 +46,7 @@ export function Calendar({
   onSelect,
   horizonDays = 180,
 }: Props) {
-  const today = toIsoDate(new Date());
+  const today = campusToday();
   const [monthOffset, setMonthOffset] = useState(0);
 
   const { label, weeks, canGoBack, canGoForward } = useMemo(() => {
