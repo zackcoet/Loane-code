@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 45 (only when you next deploy, and use the new app build after): server fixes so rental dates go by Columbia's day, and so a request for today or tomorrow doesn't expire before the lender sees it. Normal deploy, nothing to switch on.
 - From run 44 (only when you next deploy): a server fix to the hourly rental reminders, plus one new database index. Normal deploy, nothing to switch on.
 - From run 43 (only when you next deploy, and use the new app build after): server fixes to buying a piece and the rental steps. Normal deploy, nothing to switch on.
 - From run 42 (only when you next deploy): server fixes to blocking dates, rental hand-over photos and blocking someone, plus a small database rules change to editing a look. Normal deploy, nothing to switch on.
@@ -37,6 +38,37 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-25 (run 45, ~6 AM Central) — "Today" means today in Columbia; requests for tomorrow stop vanishing
+
+**Plan:** The rest of the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run took H9, which run 44 flagged: the app worked out "today" on world time, which flips to tomorrow at 8 PM in Columbia. Make every rental date use Columbia's day, on the phone and the server, carefully and with tests.
+
+**Built / Fixed (what a student would notice):**
+- **After 8 PM, today is still today.** Before, from 8 PM on the rental calendar greyed out today, the two-week strip on a piece started tomorrow, and a same-day request was treated as an ordinary one for "tomorrow". Now the calendar, the strip, blocked dates, the closet calendar, same-day pickup and the server's checks (asking, saying yes, buying, blocking dates) all use Columbia's day.
+- **A request for today or tomorrow no longer disappears within the hour.** This was the big one, found on the way. The deadline for answering was set to "midnight the day before it starts" on world time — which, for anything starting today or tomorrow, was already in the past. So the hourly clock expired the request before the lender could answer it. Gameday tomorrow is the most common ask Loane will get. Now the lender gets 24 hours (2 for same day), but never past midnight as the rental day begins, and never less than 2 hours.
+- **Both girls are told the real time left.** "She has 9 hours" instead of always "24 hours" — on the request screen, in the "Request sent" message, in the lender's alert and on the rental page.
+- Phones whose software doesn't know time zones still get Columbia's day (worked out by hand, checked against the real answer every hour for two years).
+
+**What to tap to see it:**
+- After 8 PM: open any piece → Loane It. Today's date should be pickable (not greyed out), and if the lender offers same day it says "Same-day pickup".
+- Ask to rent something starting tomorrow. The footnote under Send says how many hours she has (e.g. "She has 9 hours"). Open Activity an hour later — the request should still be waiting, not "Expired".
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, 323 shared tests (11 new) and the 141 server tests that don't need the database. GitHub ran the full set, database tests included — **all green ✅**.
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: these server fixes. Deploy the server and send out the new app build together. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code (H1): the admin dispute screen with sales in mind and the remaining dashboard buttons. Or H2 (small tidy-ups).
+
+**Commits:**
+- Columbia's day everywhere for rental dates; requests for today or tomorrow no longer expire before the lender sees them; tests
+- Decisions and North Star notes; autopilot log for run 45
+- GitHub checks on the code push (full set, database tests included): **all green ✅**
 
 ---
 
