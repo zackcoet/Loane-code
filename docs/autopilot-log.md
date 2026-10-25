@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- **From run 40 (only when you next deploy) — deploy the server and database rules together, and use the new app build after.** Saving a piece now goes through the server. Once the new rules are live, an OLD copy of the app can't save pieces (it would say "Loane wouldn't accept that"). Normal deploy, nothing to switch on. The live core-flow check after deploying adds two real pieces, so it proves this works.
 - From run 39 (only when you next deploy): one small database rules change — a profile photo must be her own upload. Normal deploy, nothing to switch on. The live core-flow check after deploying uploads a real profile photo, so it proves this works on the live project.
 - From run 38 (only when you next deploy): server fixes to posting and deleting a look, and to scheduled looks. Normal deploy, nothing to switch on. After deploying, the usual live core-flow check covers it (it posts a real look).
 - From run 37 (only when you next deploy): server fixes to the dashboard's take-down, suspend and dispute buttons, plus one tiny database rules addition. Normal deploy, nothing to switch on.
@@ -32,6 +33,39 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-25 (run 40, ~1 AM Central) — Pieces are saved by the server
+
+**Plan:** The rest of the backlog waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run did the "bigger job" run 39 left: move saving a piece (Add to Closet and Edit Listing) onto the server, then check the photos there (H7) and stamp her name on the piece there (H8). Also fix whatever had turned GitHub's checks red.
+
+**Built / Fixed (what a student would notice):**
+- **A piece's photos have to be ones she uploaded to Loane.** Before, a tampered app could put any picture from the internet — or another girl's photo — on a piece in Discover. Now the server checks every new photo is in her own folder for that piece. Photos already on a piece are kept as they are, so older pieces (and the made-up seed pieces) still edit fine.
+- **Her name and photo on a piece always match her profile.** The app used to write its own copy and nothing checked it, so a piece could be shown under someone else's name. Now the server copies it from her profile every time she saves — editing a piece also refreshes it.
+- **One set of rules for a good piece.** The server runs the exact same checks as the form (prices, photos, occasions, sizes). The old database copy had drifted — it never required a 1-day price, which the form always did.
+- **Editing a piece no longer touches things the form doesn't show** — her blocked dates, saves count, same-day premium. Before, an edit could quietly overwrite blocked dates she'd just changed on another screen.
+- Still 60 new pieces an hour at most; edits don't count.
+- **Fixed: deleting a look with a quick double-tap could show "Something went wrong"** even though the look was deleted. Now the second tap just counts as done. This was the one thing turning GitHub's checks red since last run.
+
+**What to tap to see it:**
+- Nothing looks different. Profile → + → Add to My Closet → add a piece → it saves as before. Then open it → Edit → change the name → Save; it saves as before.
+- Profile → open one of your looks → "…" → Delete, tapping twice quickly → no error.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database. Passed here: type checks, lint, the index check, 312 shared tests, and the server tests that don't need the database (including 14 new ones for the piece checks). The database tests — including 17 new ones for saving pieces and 8 for the updated database rules — run on GitHub: **all green** (565 server tests, with the database).
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: server and database rules go out together, and use the new app build after (see the list at the top). Nothing to decide.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code (H1): editing a look, the feature-switch panel, blocked dates. Or H2 (small lint/TODO tidy-ups).
+
+**Commits:**
+- Pieces are saved by the server: photos must be her own uploads, her name comes from her profile
+- Docs: pieces saved by writeListing (decisions, audits)
+- Deleting a look: a second tap at the same moment no longer shows "Something went wrong"
 
 ---
 
