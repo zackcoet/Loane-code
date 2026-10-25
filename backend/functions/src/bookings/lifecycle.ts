@@ -20,6 +20,7 @@ import { requireActiveUser, requireHandoffReady } from '../lib/guards';
 import { isDocId } from '../lib/input';
 import { acceptClash, requestsLeftBehind } from './acceptClash';
 import { planBlockedDates } from './blockedDates';
+import { checkHandoffPhotos } from './handoffPhotos';
 import {
   assertCanTransition,
   completeBooking,
@@ -55,15 +56,6 @@ function checkNote(text: unknown): string {
   return text;
 }
 
-function checkPhotos(photos: unknown): ImageRef[] {
-  if (photos == null) return [];
-  if (!Array.isArray(photos)) throw invalidArgument('Those photos did not come through.');
-  if (photos.length > LIMITS.bookingPhotos.max) {
-    throw invalidArgument(`Up to ${LIMITS.bookingPhotos.max} photos.`);
-  }
-  return photos as ImageRef[];
-}
-
 // ---------------------------------------------------------------------------
 // Accept or decline
 // ---------------------------------------------------------------------------
@@ -84,7 +76,7 @@ export const respondToBooking = onCall<
 >({ region: 'us-central1' }, async (request) => {
   const user = await requireActiveUser(request);
   const { bookingId, accept } = request.data ?? {};
-  if (!bookingId) throw invalidArgument('Which rental?');
+  if (!isDocId(bookingId)) throw invalidArgument('Which rental?');
   const reason = checkNote(request.data?.reason);
 
   // Only when accepting. Declining needs nothing — somebody with an
@@ -245,8 +237,8 @@ export const recordDropoff = onCall<
 >({ region: 'us-central1' }, async (request) => {
   const user = await requireActiveUser(request);
   const bookingId = request.data?.bookingId;
-  if (!bookingId) throw invalidArgument('Which rental?');
-  const photos = checkPhotos(request.data?.photos);
+  if (!isDocId(bookingId)) throw invalidArgument('Which rental?');
+  const photos = checkHandoffPhotos(request.data?.photos, user.uid, bookingId);
   const notes = checkNote(request.data?.notes);
   if (photos.length === 0) {
     throw invalidArgument('Add a photo of the piece before you hand it over.');
@@ -283,7 +275,7 @@ export const confirmReceipt = onCall<{ bookingId: string }, Promise<{ ok: true }
   async (request) => {
     const user = await requireActiveUser(request);
     const bookingId = request.data?.bookingId;
-    if (!bookingId) throw invalidArgument('Which rental?');
+    if (!isDocId(bookingId)) throw invalidArgument('Which rental?');
 
     await db().runTransaction(async (tx) => {
       const { booking, actor, ref } = await loadBookingFor(bookingId, user.uid, tx);
@@ -324,8 +316,8 @@ export const confirmReturn = onCall<
 >({ region: 'us-central1' }, async (request) => {
   const user = await requireActiveUser(request);
   const bookingId = request.data?.bookingId;
-  if (!bookingId) throw invalidArgument('Which rental?');
-  const photos = checkPhotos(request.data?.photos);
+  if (!isDocId(bookingId)) throw invalidArgument('Which rental?');
+  const photos = checkHandoffPhotos(request.data?.photos, user.uid, bookingId);
 
   await db().runTransaction(async (tx) => {
     const { booking, actor, ref } = await loadBookingFor(bookingId, user.uid, tx);
@@ -389,9 +381,9 @@ export const flagReturnProblem = onCall<
 >({ region: 'us-central1' }, async (request) => {
   const user = await requireActiveUser(request);
   const { bookingId, problem } = request.data ?? {};
-  if (!bookingId) throw invalidArgument('Which rental?');
+  if (!isDocId(bookingId)) throw invalidArgument('Which rental?');
   const note = checkNote(request.data?.note);
-  const photos = checkPhotos(request.data?.photos);
+  const photos = checkHandoffPhotos(request.data?.photos, user.uid, bookingId);
   if (!(RETURN_PROBLEMS as readonly string[]).includes(problem)) {
     throw invalidArgument('Pick what went wrong.');
   }
@@ -437,7 +429,7 @@ export const cancelBooking = onCall<{ bookingId: string; reason: string }, Promi
   async (request) => {
     const user = await requireActiveUser(request);
     const bookingId = request.data?.bookingId;
-    if (!bookingId) throw invalidArgument('Which rental?');
+    if (!isDocId(bookingId)) throw invalidArgument('Which rental?');
     const reason = checkNote(request.data?.reason);
     if (!reason.trim()) throw invalidArgument('Say why, so the other person knows.');
 
