@@ -1893,3 +1893,9 @@ building the automatic lift is a small job if it's ever wanted.
 All of the dashboard's take-down and suspend buttons now run in one
 step (a transaction), so two admins clicking at once can't double-move
 a comment count or send her two notices.
+
+## 2026-10-25 — A look's photos must be her own uploads (autopilot run 38)
+
+`createPost` now refuses any photo whose path isn't in `users/{her uid}/posts/` or whose link isn't the download link for that exact file in this project's bucket (either `.firebasestorage.app` or `.appspot.com`). Without it, a tampered request could show any internet image, or another girl's photo, to the whole campus, and storage rules would never see it. On the emulators the host isn't checked, because a phone reaches the laptop by its wifi address.
+
+The scheduled-look sweep reads every scheduled look's time (not just the first 100), still with no composite index, and publishes each one only if nobody has touched it since the read (a write precondition), so a look deleted or taken down mid-sweep stays down. Pieces and profile photos are still direct writes with unchecked links; noted as NORTH_STAR H7.

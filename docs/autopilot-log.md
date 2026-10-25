@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 38 (only when you next deploy): server fixes to posting and deleting a look, and to scheduled looks. Normal deploy, nothing to switch on. After deploying, the usual live core-flow check covers it (it posts a real look).
 - From run 37 (only when you next deploy): server fixes to the dashboard's take-down, suspend and dispute buttons, plus one tiny database rules addition. Normal deploy, nothing to switch on.
 - From run 36 (only when you next deploy): server fixes to sharing into chats and to closing Contact us messages in the dashboard. Normal deploy, nothing to switch on.
 - From run 35 (only when you next deploy): server fixes to starting a chat, removing a piece, and Contact us. Normal deploy, nothing to switch on.
@@ -30,6 +31,40 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-25 (run 38, ~11 PM Central) — Posting and deleting a look, made solid
+
+**Plan:** The backlog is still waiting on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1: read posting a look, deleting a look, and the timer that puts scheduled looks up — none had tests — fix what was wrong, and add tests.
+
+**Built / Fixed (what a student would notice):**
+- **Every photo in a look has to be one she actually uploaded to Loane.** Before, a tampered app could post a look whose "photo" was a link to any picture on the internet, or a photo from another girl's folder — and her whole campus would see it, with none of our photo safety checks ever running. Now each photo must be in her own folder in Loane's storage, and the link must be that exact file. The real app already works this way, so nobody notices.
+- **Odd photo sizes can't break the feed.** A zero, negative or nonsense size on a photo would have broken that look on everyone's phone. Refused now.
+- **Deleting a look counts down exactly once.** A double-tap on Delete could lower her post count (and the "seen in looks" count on each tagged piece) twice. Now it happens once.
+- **Deleting a look always works.** If a piece tagged in it had been fully deleted (e.g. the account behind it was deleted), deleting the look failed with "something went wrong". Fixed.
+- **Scheduled looks always go up on time.** The timer only looked at the first 100 scheduled looks — if 100 looks were booked for later, one due now could sit waiting forever. It now checks all of them.
+- **A deleted look can't come back.** If she deleted a scheduled look (or an admin took it down) at the exact moment the timer ran, the timer could put it back on the feed. Now it only publishes a look nobody has touched since it checked.
+- **Junk input gets a clear answer** instead of a crash, and a broken post no longer uses up one of her hourly posts. Repeating an occasion twice now counts once in For You.
+
+**What to tap to see it:**
+- Nothing looks different — post a look, schedule one, delete one; it all works as before.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (86 searches, none missing), all 312 shared tests, and the 106 server tests that don't need the database (9 new). The 12 new database tests ran on GitHub — all green ✅.
+- Noticed, left alone: pieces (unlike looks) are saved straight from the phone, so a piece's photo link isn't checked the same way. Moving that check onto pieces and profile photos is a bigger change to the database rules — added as a suggestion (H7).
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing urgent. Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code (H1) — editing a look and the admin feature-switch panel — plus H2 (small cleanups), or H7.
+
+**Commits:**
+- Posting a look: every photo must be her own upload to Loane; junk input gets a clear answer; tests
+- Deleting a look gives counts back exactly once; scheduled looks past the first 100 go up, and a deleted one never comes back; tests
+- Autopilot log for run 38
+- GitHub checks on the code push (full set, database tests included): **553 passed, 0 failed ✅**
 
 ---
 
