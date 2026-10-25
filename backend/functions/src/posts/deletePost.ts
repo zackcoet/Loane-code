@@ -5,6 +5,7 @@ import { COLLECTIONS, type Post } from '@loane/shared';
 import { db, now, FieldValue } from '../lib/admin';
 import { invalidArgument, notFound, permissionDenied } from '../lib/errors';
 import { requireActiveUser } from '../lib/guards';
+import { isDocId, isPlainObject } from '../lib/input';
 
 /**
  * `deletePost`
@@ -20,34 +21,44 @@ import { requireActiveUser } from '../lib/guards';
  * write to somebody else's documents.
  */
 
-export const deletePost = onCall<{ postId: string }, Promise<{ ok: true }>>(
+export const deletePost = onCall<unknown, Promise<{ ok: true }>>(
   { region: 'us-central1' },
-  async (request: CallableRequest<{ postId: string }>): Promise<{ ok: true }> => {
+  async (request: CallableRequest<unknown>): Promise<{ ok: true }> => {
     const user = await requireActiveUser(request);
-    const postId = request.data?.postId;
-    if (!postId) throw invalidArgument('Which post do you want to delete?');
+    const postId = isPlainObject(request.data) ? request.data.postId : undefined;
+    if (!isDocId(postId)) throw invalidArgument('Which post do you want to delete?');
 
     const ref = db().collection(COLLECTIONS.posts).doc(postId);
-    const snap = await ref.get();
-    if (!snap.exists) throw notFound('That post is gone.');
 
-    const post = snap.data() as Post;
-    if (post.authorUid !== user.uid) throw permissionDenied("That's not your post.");
-    if (post.status === 'removed') return { ok: true };
+    // One step, so a double-tap (or two phones) can't both get past the
+    // "already removed?" check and give the counts back twice.
+    await db().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw notFound('That post is gone.');
 
-    const batch = db().batch();
-    batch.update(ref, { status: 'removed', removedAt: now(), updatedAt: now() });
-    batch.update(db().collection(COLLECTIONS.users).doc(user.uid), {
-      'stats.postCount': FieldValue.increment(-1),
-      updatedAt: now(),
-    });
-    // Hand back the tag count this post was holding.
-    for (const listingId of post.taggedListingIds ?? []) {
-      batch.update(db().collection(COLLECTIONS.listings).doc(listingId), {
-        'stats.tagCount': FieldValue.increment(-1),
+      const post = snap.data() as Post;
+      if (post.authorUid !== user.uid) throw permissionDenied("That's not your post.");
+      if (post.status === 'removed') return;
+
+      // A tagged piece can be gone entirely (its owner's account was
+      // deleted); updating a missing document would fail the whole
+      // delete, so only hand the count back to pieces that still exist.
+      const listingRefs = [...new Set(post.taggedListingIds ?? [])]
+        .filter(isDocId)
+        .map((id) => db().collection(COLLECTIONS.listings).doc(id));
+      const listingSnaps = listingRefs.length > 0 ? await tx.getAll(...listingRefs) : [];
+
+      tx.update(ref, { status: 'removed', removedAt: now(), updatedAt: now() });
+      tx.update(db().collection(COLLECTIONS.users).doc(user.uid), {
+        'stats.postCount': FieldValue.increment(-1),
+        updatedAt: now(),
       });
-    }
-    await batch.commit();
+      for (const listing of listingSnaps) {
+        if (listing.exists) {
+          tx.update(listing.ref, { 'stats.tagCount': FieldValue.increment(-1) });
+        }
+      }
+    });
 
     logger.info('Post removed', { postId, uid: user.uid });
     return { ok: true };
