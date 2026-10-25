@@ -124,73 +124,70 @@ export async function runPhotoCheck(
   imageBase64: string,
   mediaType = 'image/jpeg',
 ): Promise<PhotoCheckResult> {
-  if (imageBase64.length > MAX_BASE64_BYTES) {
-    // Not her problem to solve: let it through rather than asking her
-    // to understand a size limit.
-    return letThrough('image too large', imageBase64.length);
-  }
-
-  const key = ANTHROPIC_API_KEY.value();
-  if (!key) return letThrough('ANTHROPIC_API_KEY is not set');
-
-  let body: { content?: { type: string; text?: string }[] };
-  try {
-    const response = await fetch(API, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': ANTHROPIC_VERSION,
-      },
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 200,
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'image',
-                source: { type: 'base64', media_type: mediaType, data: imageBase64 },
-              },
-              { type: 'text', text: PROMPTS[kind] },
-            ],
-          },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      return letThrough(`anthropic returned ${response.status}`, await response.text());
+    if (imageBase64.length > MAX_BASE64_BYTES) {
+      // Not her problem to solve: let it through rather than asking her
+      // to understand a size limit.
+      return letThrough('image too large', imageBase64.length);
     }
-    body = (await response.json()) as typeof body;
-  } catch (error) {
-    return letThrough('anthropic call failed', (error as Error)?.message);
-  }
 
-  const text = body.content?.find((c) => c.type === 'text')?.text?.trim();
-  if (!text) return letThrough('no text in the reply');
+    const key = ANTHROPIC_API_KEY.value();
+    if (!key) return letThrough('ANTHROPIC_API_KEY is not set');
 
-  try {
-    // Tolerant of a model that wraps JSON in prose or a code fence,
-    // because the alternative is blocking her over punctuation.
-    const match = /\{[\s\S]*\}/.exec(text);
-    if (!match) return letThrough('no JSON in the reply', text);
+    let body: { content?: { type: string; text?: string }[] };
+    try {
+      const response = await fetch(API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': ANTHROPIC_VERSION,
+        },
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 200,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } },
+                { type: 'text', text: PROMPTS[kind] },
+              ],
+            },
+          ],
+        }),
+      });
 
-    const parsed = JSON.parse(match[0]) as { ok?: unknown; fix?: unknown };
-    if (parsed.ok === true) return { ok: true, fix: null, skipped: false };
-    if (parsed.ok === false) {
-      const fix = typeof parsed.fix === 'string' && parsed.fix.trim() ? parsed.fix.trim() : null;
-      // A failure we cannot explain is not a failure we should act
-      // on: "no" with no reason is the most frustrating screen there is.
-      if (!fix) return letThrough('rejected with no reason given', text);
-      return { ok: false, fix, skipped: false };
+      if (!response.ok) {
+        return letThrough(`anthropic returned ${response.status}`, await response.text());
+      }
+      body = (await response.json()) as typeof body;
+    } catch (error) {
+      return letThrough('anthropic call failed', (error as Error)?.message);
     }
-    return letThrough('reply had no ok field', text);
-  } catch (error) {
-    return letThrough('could not parse the reply', (error as Error)?.message);
-  }
+
+    const text = body.content?.find((c) => c.type === 'text')?.text?.trim();
+    if (!text) return letThrough('no text in the reply');
+
+    try {
+      // Tolerant of a model that wraps JSON in prose or a code fence,
+      // because the alternative is blocking her over punctuation.
+      const match = /\{[\s\S]*\}/.exec(text);
+      if (!match) return letThrough('no JSON in the reply', text);
+
+      const parsed = JSON.parse(match[0]) as { ok?: unknown; fix?: unknown };
+      if (parsed.ok === true) return { ok: true, fix: null, skipped: false };
+      if (parsed.ok === false) {
+        const fix = typeof parsed.fix === 'string' && parsed.fix.trim() ? parsed.fix.trim() : null;
+        // A failure we cannot explain is not a failure we should act
+        // on: "no" with no reason is the most frustrating screen there is.
+        if (!fix) return letThrough('rejected with no reason given', text);
+        return { ok: false, fix, skipped: false };
+      }
+      return letThrough('reply had no ok field', text);
+    } catch (error) {
+      return letThrough('could not parse the reply', (error as Error)?.message);
+    }
 }
 
 export const checkPhoto = onCall<Input, Promise<PhotoCheckResult>>(

@@ -205,12 +205,7 @@ export const generateTryOn = onCall<Input, Promise<GenerateResult>>(
           updatedAt: now(),
         } as unknown as TryOn;
         await ref.set(mine);
-        return {
-          tryOnId: ref.id,
-          imagePath: existing.imagePath,
-          cached: true,
-          remaining: Math.max(total - used, 0),
-        };
+        return { tryOnId: ref.id, imagePath: existing.imagePath, cached: true, remaining: Math.max(total - used, 0) };
       }
 
       return {

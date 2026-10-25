@@ -38,7 +38,9 @@ describe('storedPhoneHash — what Firestore holds', () => {
   });
 
   it('is not a plain hash of the number either', () => {
-    expect(storedPhoneHashFromE164(ELLA)).not.toBe(createHash('sha256').update(ELLA).digest('hex'));
+    expect(storedPhoneHashFromE164(ELLA)).not.toBe(
+      createHash('sha256').update(ELLA).digest('hex'),
+    );
   });
 
   it('is 64 hex characters, usable as a document id', () => {

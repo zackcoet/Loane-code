@@ -147,9 +147,7 @@ export const confirmVerificationCode = onCall<{ code?: string }, Promise<{ confi
     if (pending.codeHash !== hash(code, user.uid)) {
       await ref.update({ attempts: pending.attempts + 1 });
       const left = MAX_ATTEMPTS - pending.attempts - 1;
-      throw failed(
-        left > 0 ? `That code is not right. ${left} tries left.` : 'That code is not right.',
-      );
+      throw failed(left > 0 ? `That code is not right. ${left} tries left.` : 'That code is not right.');
     }
 
     // Both flags, and both for a reason — see User.emailConfirmed.
