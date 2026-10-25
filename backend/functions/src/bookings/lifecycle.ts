@@ -7,6 +7,7 @@ import {
   RETURN_PROBLEMS,
   LIMITS,
   ids,
+  formatShortDate,
   isIsoDate,
   toIsoDate,
   type Booking,
@@ -18,6 +19,7 @@ import { alreadyTaken, failed, invalidArgument } from '../lib/errors';
 import { requireActiveUser, requireHandoffReady } from '../lib/guards';
 import { isDocId } from '../lib/input';
 import { acceptClash, requestsLeftBehind } from './acceptClash';
+import { planBlockedDates } from './blockedDates';
 import {
   assertCanTransition,
   completeBooking,
@@ -479,9 +481,11 @@ export const cancelBooking = onCall<{ bookingId: string; reason: string }, Promi
  * Block or unblock days on a listing's calendar.
  *
  * This one could have been a direct write — blackoutDates is on the
- * listing and the rules already let an owner edit her own. It is here so
- * that blocking a day the renter has already been confirmed for is
- * refused rather than silently ignored.
+ * listing — but it is here so that blocking a day a renter has already
+ * been confirmed for is refused rather than silently ignored. The check
+ * and the save happen in one transaction, so a rental accepted at the
+ * same moment cannot slip in between them. What gets saved is worked
+ * out by planBlockedDates (past days dropped, see there).
  */
 export const setBlockedDates = onCall<
   { listingId: string; dates: string[] },
@@ -495,42 +499,39 @@ export const setBlockedDates = onCall<
   if (!Array.isArray(dates) || dates.some((d) => typeof d !== 'string' || !isIsoDate(d))) {
     throw invalidArgument('Those dates did not come through. Try again.');
   }
-  if (new Set(dates).size > LIMITS.blockedDates.max) {
-    throw invalidArgument(`You can block up to ${LIMITS.blockedDates.max} days at a time.`);
-  }
 
   const listingRef = db().collection(COLLECTIONS.listings).doc(listingId);
-  const snap = await listingRef.get();
-  if (!snap.exists) throw failed('That piece is no longer listed.');
-  if ((snap.data() as { ownerUid: string }).ownerUid !== user.uid) {
-    throw failed("That's not your listing.");
-  }
-
-  const booked = await db()
-    .collection(COLLECTIONS.bookings)
-    .where('listingId', '==', listingId)
-    .where('status', 'in', BLOCKING_BOOKING_STATUSES as string[])
-    .get();
-
-  const taken = new Set<string>();
-  for (const doc of booked.docs) {
-    const b = doc.data() as Booking;
-    if (!b.startDate || !b.endDate) continue;
-    for (let d = b.startDate; d < b.endDate;) {
-      taken.add(d);
-      const next = new Date(`${d}T00:00:00Z`);
-      next.setUTCDate(next.getUTCDate() + 1);
-      d = next.toISOString().slice(0, 10);
+  return db().runTransaction(async (tx) => {
+    const [snap, booked] = await Promise.all([
+      tx.get(listingRef),
+      tx.get(
+        db()
+          .collection(COLLECTIONS.bookings)
+          .where('listingId', '==', listingId)
+          .where('status', 'in', BLOCKING_BOOKING_STATUSES as string[]),
+      ),
+    ]);
+    if (!snap.exists) throw failed('That piece is no longer listed.');
+    const listing = snap.data() as Listing;
+    if (listing.ownerUid !== user.uid) throw failed("That's not your listing.");
+    if (listing.status === 'removed' || listing.status === 'suspended') {
+      throw failed('That piece is no longer listed.');
     }
-  }
 
-  const clash = dates.find((d) => taken.has(d));
-  if (clash) {
-    throw failed(`${clash} is already booked. Cancel that rental first.`);
-  }
+    const plan = planBlockedDates({
+      requested: dates,
+      existing: listing.blackoutDates ?? [],
+      booked: booked.docs.map((doc) => doc.data() as Booking),
+      today: toIsoDate(new Date()),
+    });
+    if (!plan.ok) {
+      throw failed(`${formatShortDate(plan.clash)} is already booked. Cancel that rental first.`);
+    }
+    if (plan.blocked.length > LIMITS.blockedDates.max) {
+      throw invalidArgument(`You can block up to ${LIMITS.blockedDates.max} days at a time.`);
+    }
 
-  const unique = [...new Set(dates)].sort();
-  await listingRef.update({ blackoutDates: unique, updatedAt: now() });
-
-  return { blocked: unique };
+    tx.update(listingRef, { blackoutDates: plan.blocked, updatedAt: now() });
+    return { blocked: plan.blocked };
+  });
 });

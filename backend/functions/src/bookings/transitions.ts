@@ -26,11 +26,7 @@ export interface TransitionContext {
 }
 
 /** Throws unless this actor may move this booking to this status. */
-export function assertCanTransition(
-  booking: Booking,
-  to: BookingStatus,
-  actor: Actor,
-): void {
+export function assertCanTransition(booking: Booking, to: BookingStatus, actor: Actor): void {
   const allowed = BOOKING_TRANSITIONS[booking.status] ?? [];
   const match = allowed.find(
     (t) => t.to === to && (t.by === actor || t.by === 'either' || actor === 'system'),
@@ -51,7 +47,11 @@ export async function loadBookingFor(
   bookingId: string,
   uid: string,
   tx?: Transaction,
-): Promise<{ booking: Booking; actor: Exclude<Actor, 'system'>; ref: FirebaseFirestore.DocumentReference }> {
+): Promise<{
+  booking: Booking;
+  actor: Exclude<Actor, 'system'>;
+  ref: FirebaseFirestore.DocumentReference;
+}> {
   const ref = db().collection(COLLECTIONS.bookings).doc(bookingId);
   const snap = tx ? await tx.get(ref) : await ref.get();
   if (!snap.exists) throw notFound('We could not find that rental.');
@@ -71,7 +71,10 @@ export async function loadBookingFor(
  */
 interface Writer {
   set(ref: FirebaseFirestore.DocumentReference, data: FirebaseFirestore.DocumentData): unknown;
-  update(ref: FirebaseFirestore.DocumentReference, data: FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>): unknown;
+  update(
+    ref: FirebaseFirestore.DocumentReference,
+    data: FirebaseFirestore.UpdateData<FirebaseFirestore.DocumentData>,
+  ): unknown;
 }
 
 export function notify(
@@ -96,11 +99,7 @@ export function notify(
     actor?: { uid: string; username: string; photoUrl: string | null };
   },
 ): void {
-  const ref = db()
-    .collection(COLLECTIONS.users)
-    .doc(params.uid)
-    .collection('notifications')
-    .doc();
+  const ref = db().collection(COLLECTIONS.users).doc(params.uid).collection('notifications').doc();
 
   tx.set(ref, {
     id: ref.id,

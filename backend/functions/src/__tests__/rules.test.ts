@@ -638,6 +638,43 @@ describe('posts', () => {
     );
   });
 
+  it('lets her edit a scheduled look before it goes up', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), 'posts', 'post-1'), { status: 'scheduled' });
+    });
+    await assertSucceeds(
+      updateDoc(doc(asElla(), 'posts', 'post-1'), {
+        caption: 'saturday',
+        updatedAt: serverTimestamp(),
+      }),
+    );
+  });
+
+  it('stops her editing a look an admin took down', async () => {
+    // "Put it back" must restore what was reviewed, not a rewrite.
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), 'posts', 'post-1'), { status: 'removed' });
+    });
+    await assertFails(updateDoc(doc(asElla(), 'posts', 'post-1'), { caption: 'clean now' }));
+  });
+
+  it('only takes real occasions, once each', async () => {
+    await assertFails(updateDoc(doc(asElla(), 'posts', 'post-1'), { occasions: ['brunch'] }));
+    await assertFails(updateDoc(doc(asElla(), 'posts', 'post-1'), { occasions: ['rush', 'rush'] }));
+    await assertSucceeds(
+      updateDoc(doc(asElla(), 'posts', 'post-1'), { occasions: ['rush', 'formal'] }),
+    );
+  });
+
+  it('stops her back-dating the edit time', async () => {
+    await assertFails(
+      updateDoc(doc(asElla(), 'posts', 'post-1'), {
+        caption: 'x',
+        updatedAt: new Date('2020-01-01'),
+      }),
+    );
+  });
+
   it('stops her editing someone else’s caption', async () => {
     await assertFails(updateDoc(doc(asMaddie(), 'posts', 'post-1'), { caption: 'mine now' }));
   });

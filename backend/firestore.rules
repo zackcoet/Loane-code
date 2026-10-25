@@ -502,13 +502,24 @@ service cloud.firestore {
 
       // She may fix the caption and the occasions. Nothing else — the
       // photos carry the tags, and changing those has to move counters.
+      //
+      // Only a look that is up (or waiting to go up): one an admin took
+      // down stays exactly as it was reported, so "put it back" never
+      // restores words nobody reviewed. Occasions MUST match OCCASIONS in
+      // shared/src/constants.ts, once each — the feed ranking and the
+      // chips under the look both read them. Limits match createPost.
       allow update: if isActive()
         && resource.data.authorUid == uid()
+        && resource.data.status in ['active', 'scheduled']
         && onlyChanges(['caption', 'occasions', 'updatedAt'])
         && request.resource.data.caption is string
         && request.resource.data.caption.size() <= 1000
         && request.resource.data.occasions is list
-        && request.resource.data.occasions.size() <= 8;
+        && request.resource.data.occasions.size() <= 8
+        && request.resource.data.occasions.toSet().size() == request.resource.data.occasions.size()
+        && request.resource.data.occasions.hasOnly(['gameday', 'going_out', 'formal', 'date_function',
+                                                    'rush', 'vacation', 'wedding', 'graduation'])
+        && (!('updatedAt' in changed()) || request.resource.data.updatedAt == request.time);
 
       // Taking a post down hands back the tag counts it was holding, so
       // that also goes through a function. Nothing is ever hard-deleted:
