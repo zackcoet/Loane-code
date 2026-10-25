@@ -25,11 +25,11 @@ does, with admin credentials, after its own checks.
 | `usernames` | Signed-in (to say "taken") | Nobody | usernames |
 | `rateLimits` | Nobody | Nobody | security review |
 | `messageQuotas` | Her and admins | +1 per message, can't reset early | conversations → the hourly message ceiling |
-| `listingQuotas` | Her and admins | +1 per new piece, can't reset early | listingQuotas |
+| `listingQuotas` | Her and admins | Never — retired in run 40 (new pieces are counted in `rateLimits` by `writeListing`) | listingQuotas |
 | `phoneHashes` | Nobody | Nobody — functions only (contact matching) | phone hashes |
 | `tryOns` | Her only | Her only (feature switched off) | try-ons |
 | `config` | Signed-in | Nobody, not even admins | the try-on switch |
-| `listings` | Signed-in | Her own, checked field by field; counters/booked dates never | listings; listing availability |
+| `listings` | Signed-in | Never from the phone — saved by `writeListing` (run 40), which checks every field, her photos and her name | listings; listing availability; `writeListing.test.ts` |
 | `posts` | Signed-in | Her own; counters never | posts; post counters |
 | `comments` | Signed-in | Functions only | comments |
 | `commentLikes` | Signed-in | Functions only | comment likes |

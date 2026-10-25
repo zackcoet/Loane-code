@@ -1909,3 +1909,15 @@ Profiles are saved straight from the phone, so the check run 38 put in `createPo
 **Pieces are not covered yet, on purpose.** The same check was built for a piece's photos (and its cover and "Try it on" photo) and every case passed except a full piece: 8 photos plus a "Try it on" photo ran past the 1,000-step limit Firestore rules have per write, through three slimmer rewrites. A rule that refuses a full piece would break the app for anyone who adds 8 photos, so it was taken back out. The proper fix is to save new and edited pieces through a Cloud Function (as looks already are), where the check is ordinary code with no step limit — NORTH_STAR H7.
 
 The small copy of her name and photo stamped on each new piece (`owner`) is also phone-written and unchecked; the same Cloud Function would stamp it — NORTH_STAR H8.
+
+## 2026-10-25 — Pieces are saved by a Cloud Function (autopilot run 40)
+
+Add to Closet and Edit Listing now call `writeListing` (`backend/functions/src/listings/writeListing.ts`) instead of writing the piece from the phone, and the database rules refuse every listing write from the phone. This closes NORTH_STAR H7 (photos) and H8 (name):
+
+- **Photos.** Each new photo must be in `users/{her uid}/listings/{this piece}/` and its link must be the download link for that exact file (the same check looks use, now shared in `lib/downloadUrl.ts`). A photo already on the piece — same path and link as stored — is kept as it is, so seeded pieces (inline photos) and older pieces stay editable.
+- **Her name and photo on the piece** (`owner`) are copied from her profile on every save, so editing a piece also refreshes them.
+- **One copy of the rules of a good piece.** The function runs `validateListingDraft`, the form's own check. The old rules copy had drifted: it never required a 1-day price, which the form always has.
+- **What an edit leaves alone:** counters, blocked and booked dates, her same-day premium, colours, created date and admin fields. Blocked dates were already their own function (`setBlockedDates`).
+- **New pieces:** the phone picks the id (the photo folder needs it before anything is saved); the function refuses an id that already exists. Sixty new pieces an hour, counted in `rateLimits` like every other limit; `listingQuotas` is retired (readable, never written).
+- **Trade-off:** the hourly limit is now checked after the photos upload, so the 61st piece in an hour leaves its photos in storage. Rare enough not to matter.
+- **Deploying:** the rules change and the app change must go out together — an older app would be refused when saving a piece. The function must be live before the new app is used.
