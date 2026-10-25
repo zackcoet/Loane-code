@@ -2060,7 +2060,10 @@ describe('post counters', () => {
 
   it('still lets her fix her own caption', async () => {
     await assertSucceeds(
-      updateDoc(doc(asElla(), 'posts', 'post-s'), { caption: 'formal szn', updatedAt: new Date() }),
+      updateDoc(doc(asElla(), 'posts', 'post-s'), {
+        caption: 'formal szn',
+        updatedAt: serverTimestamp(),
+      }),
     );
   });
 });
