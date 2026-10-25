@@ -83,24 +83,27 @@ service cloud.firestore {
     // plain http, so a local-network host is allowed — but ONLY with the
     // demo-loane bucket, and "demo-" projects cannot exist in the real
     // cloud, so nobody can host a real picture there.
-    function isLoaneStorageHost(prefix) {
-      return prefix.matches('https://firebasestorage[.]googleapis[.]com/v0/b/(loane-code|loane-dev)[.](firebasestorage[.]app|appspot[.]com)')
-        || prefix.matches('https?://(localhost|127[.]0[.]0[.]1|10([.][0-9]{1,3}){3}|192[.]168([.][0-9]{1,3}){2}|172[.](1[6-9]|2[0-9]|3[01])([.][0-9]{1,3}){2}|[A-Za-z0-9-]+[.]local)(:[0-9]{1,5})?/v0/b/demo-loane[.](firebasestorage[.]app|appspot[.]com)');
+    //
+    // Written as ONE pattern per link on purpose: a piece can have nine
+    // photos and rules stop after 1000 steps, so splitting the link up
+    // and checking the pieces (the first version) ran out on a full piece.
+    function storageHost() {
+      return '(https://firebasestorage[.]googleapis[.]com/v0/b/(loane-code|loane-dev)'
+        + '|https?://(localhost|127[.]0[.]0[.]1|10([.][0-9]{1,3}){3}|192[.]168([.][0-9]{1,3}){2}'
+        + '|172[.](1[6-9]|2[0-9]|3[01])([.][0-9]{1,3}){2}|[A-Za-z0-9-]+[.]local)(:[0-9]{1,5})?/v0/b/demo-loane)'
+        + '[.](firebasestorage[.]app|appspot[.]com)/o/';
     }
 
-    // The stored file a download link points at, still %-encoded, or ''
-    // when it is not a Loane download link at all.
-    function storedFileOf(url) {
-      let halves = url.split('/o/');
+    // Is `url` a Loane download link for a file matching `encodedFile`
+    // (a pattern, with %2F where the path has /)? The query string after
+    // ? (alt=media&token=…) is the app's business.
+    function isLoaneDownloadUrl(url, encodedFile) {
       return url is string && url.size() <= 2048
-          && halves.size() == 2 && isLoaneStorageHost(halves[0])
-        ? halves[1].split('[?]')[0]
-        : '';
+        && url.matches(storageHost() + encodedFile + '([?].*)?');
     }
 
-    // Folder and file names the app writes are letters, digits, - and _
-    // (file names add the dot). Anything else is refused, which also
-    // keeps them safe to put inside the patterns above.
+    // Folder names the app writes are letters, digits, - and _. Anything
+    // else is refused, which also keeps them safe inside a pattern.
     function isSafeName(s) {
       return s is string && s.matches('[A-Za-z0-9_-]{1,128}');
     }
@@ -109,13 +112,14 @@ service cloud.firestore {
     // piece}/, its link the download link for that exact file, and a
     // real size — every phone lays the photo out from width and height,
     // so a zero or a negative would break the piece on everyone's screen.
-    // 20000 matches MAX_PHOTO_SIDE in createPost.
-    function isOwnListingPhoto(img, listingId) {
+    // 20000 matches MAX_PHOTO_SIDE in createPost. The file name may hold
+    // dots, which a pattern reads as "any letter", so they are escaped.
+    function isOwnListingPhoto(img, me, listingId) {
       return img is map
         && img.path is string
-        && img.path.matches('users/' + uid() + '/listings/' + listingId + '/[A-Za-z0-9_.-]{1,100}')
-        && storedFileOf(img.url)
-             == 'users%2F' + uid() + '%2Flistings%2F' + listingId + '%2F' + img.path.split('/')[4]
+        && img.path.matches('users/' + me + '/listings/' + listingId + '/[A-Za-z0-9_-][A-Za-z0-9_.-]{0,99}')
+        && isLoaneDownloadUrl(img.url, 'users%2F' + me + '%2Flistings%2F' + listingId + '%2F'
+             + img.path.split('/')[4].replace('[.]', '[.]'))
         && img.width is number && img.width > 0 && img.width <= 20000
         && img.height is number && img.height > 0 && img.height <= 20000;
     }
@@ -124,7 +128,7 @@ service cloud.firestore {
     // Profiles store only the link, so the file name is checked from it.
     function isOwnProfilePhotoUrl(url) {
       return url == null
-        || storedFileOf(url).matches('users%2F' + uid() + '%2Fprofile%2F[A-Za-z0-9_.-]{1,100}');
+        || isLoaneDownloadUrl(url, 'users%2F' + uid() + '%2Fprofile%2F[A-Za-z0-9_-][A-Za-z0-9_.-]{0,99}');
     }
 
     // -----------------------------------------------------------------
@@ -550,8 +554,8 @@ service cloud.firestore {
       // checked. The cover is a copy of the first photo's link; a
       // different one would show the campus one picture in the grid and
       // another on the piece.
-      function photoOk(img, listingId, isNew) {
-        return isOwnListingPhoto(img, listingId)
+      function photoOk(img, me, listingId, isNew) {
+        return isOwnListingPhoto(img, me, listingId)
           || (!isNew && img is map
               && (img in resource.data.get('photos', [])
                   || img == resource.data.get('flatPhoto', null)));
@@ -561,19 +565,20 @@ service cloud.firestore {
       // hasRequiredFields has already checked there are 1 to 8).
       function photosAreHers(listingId, isNew) {
         let p = draft().photos;
+        let me = uid();
         return (!isNew && !changed().hasAny(['photos', 'coverUrl', 'flatPhoto']))
           || (isSafeName(listingId)
-              && photoOk(p[0], listingId, isNew)
-              && (p.size() < 2 || photoOk(p[1], listingId, isNew))
-              && (p.size() < 3 || photoOk(p[2], listingId, isNew))
-              && (p.size() < 4 || photoOk(p[3], listingId, isNew))
-              && (p.size() < 5 || photoOk(p[4], listingId, isNew))
-              && (p.size() < 6 || photoOk(p[5], listingId, isNew))
-              && (p.size() < 7 || photoOk(p[6], listingId, isNew))
-              && (p.size() < 8 || photoOk(p[7], listingId, isNew))
+              && photoOk(p[0], me, listingId, isNew)
+              && (p.size() < 2 || photoOk(p[1], me, listingId, isNew))
+              && (p.size() < 3 || photoOk(p[2], me, listingId, isNew))
+              && (p.size() < 4 || photoOk(p[3], me, listingId, isNew))
+              && (p.size() < 5 || photoOk(p[4], me, listingId, isNew))
+              && (p.size() < 6 || photoOk(p[5], me, listingId, isNew))
+              && (p.size() < 7 || photoOk(p[6], me, listingId, isNew))
+              && (p.size() < 8 || photoOk(p[7], me, listingId, isNew))
               && draft().get('coverUrl', null) == p[0].url
               && (draft().get('flatPhoto', null) == null
-                  || photoOk(draft().flatPhoto, listingId, isNew)));
+                  || photoOk(draft().flatPhoto, me, listingId, isNew)));
       }
 
       /** A price, in whole cents, inside the allowed range. */
