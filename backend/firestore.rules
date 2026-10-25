@@ -88,10 +88,7 @@ service cloud.firestore {
     // photos and rules stop after 1000 steps, so splitting the link up
     // and checking the pieces (the first version) ran out on a full piece.
     function storageHost() {
-      return '(https://firebasestorage[.]googleapis[.]com/v0/b/(loane-code|loane-dev)'
-        + '|https?://(localhost|127[.]0[.]0[.]1|10([.][0-9]{1,3}){3}|192[.]168([.][0-9]{1,3}){2}'
-        + '|172[.](1[6-9]|2[0-9]|3[01])([.][0-9]{1,3}){2}|[A-Za-z0-9-]+[.]local)(:[0-9]{1,5})?/v0/b/demo-loane)'
-        + '[.](firebasestorage[.]app|appspot[.]com)/o/';
+      return '(https://firebasestorage[.]googleapis[.]com/v0/b/(loane-code|loane-dev)|https?://(localhost|127[.]0[.]0[.]1|10([.][0-9]{1,3}){3}|192[.]168([.][0-9]{1,3}){2}|172[.](1[6-9]|2[0-9]|3[01])([.][0-9]{1,3}){2}|[A-Za-z0-9-]+[.]local)(:[0-9]{1,5})?/v0/b/demo-loane)[.](firebasestorage[.]app|appspot[.]com)/o/';
     }
 
     // Is `url` a Loane download link for a file matching `encodedFile`
@@ -571,14 +568,15 @@ service cloud.firestore {
       // hasRequiredFields has already checked there are 1 to 8).
       function photosAreHers(listingId, isNew) {
         return (!isNew && !changed().hasAny(['photos', 'coverUrl', 'flatPhoto']))
-          || (isSafeName(listingId)
-              && photosMatch(draft().photos,
-                   'users/' + uid() + '/listings/' + listingId + '/[A-Za-z0-9_-][A-Za-z0-9_.-]{0,99}',
-                   storageHost() + 'users%2F' + uid() + '%2Flistings%2F' + listingId + '%2F',
-                   isNew));
+          || (isSafeName(listingId) && photosMatch(listingId, isNew));
       }
 
-      function photosMatch(p, pathRe, urlRe, isNew) {
+      function photosMatch(listingId, isNew) {
+        let p = request.resource.data.photos;
+        let me = request.auth.uid;
+        let pathRe = 'users/' + me + '/listings/' + listingId + '/[A-Za-z0-9_-][A-Za-z0-9_.-]{0,99}';
+        let urlRe = storageHost() + 'users%2F' + me + '%2Flistings%2F' + listingId + '%2F';
+        let flat = request.resource.data.get('flatPhoto', null);
         return photoOk(p[0], pathRe, urlRe, isNew)
           && (p.size() < 2 || photoOk(p[1], pathRe, urlRe, isNew))
           && (p.size() < 3 || photoOk(p[2], pathRe, urlRe, isNew))
@@ -587,9 +585,8 @@ service cloud.firestore {
           && (p.size() < 6 || photoOk(p[5], pathRe, urlRe, isNew))
           && (p.size() < 7 || photoOk(p[6], pathRe, urlRe, isNew))
           && (p.size() < 8 || photoOk(p[7], pathRe, urlRe, isNew))
-          && draft().get('coverUrl', null) == p[0].url
-          && (draft().get('flatPhoto', null) == null
-              || photoOk(draft().flatPhoto, pathRe, urlRe, isNew));
+          && request.resource.data.get('coverUrl', null) == p[0].url
+          && (flat == null || photoOk(flat, pathRe, urlRe, isNew));
       }
 
       /** A price, in whole cents, inside the allowed range. */
