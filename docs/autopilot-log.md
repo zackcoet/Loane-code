@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 41 (only when you next deploy): server fixes to reporting, blocking and following. Normal deploy, nothing to switch on.
 - **From run 40 (only when you next deploy) — deploy the server and database rules together, and use the new app build after.** Saving a piece now goes through the server. Once the new rules are live, an OLD copy of the app can't save pieces (it would say "Loane wouldn't accept that"). Normal deploy, nothing to switch on. The live core-flow check after deploying adds two real pieces, so it proves this works.
 - From run 39 (only when you next deploy): one small database rules change — a profile photo must be her own upload. Normal deploy, nothing to switch on. The live core-flow check after deploying uploads a real profile photo, so it proves this works on the live project.
 - From run 38 (only when you next deploy): server fixes to posting and deleting a look, and to scheduled looks. Normal deploy, nothing to switch on. After deploying, the usual live core-flow check covers it (it posts a real look).
@@ -33,6 +34,39 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-25 (run 41, ~2 AM Central) — Reports and blocking, made solid
+
+**Plan:** The rest of the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1: read reporting and blocking — safety features Apple cares about, with no tests yet — fix what was wrong, and add tests.
+
+**Built / Fixed (what a student or you would notice):**
+- **A report always names the right girl.** The app told the server who was behind a reported comment, review or profile, and the server believed it. Your dashboard's one-click "warn" and "suspend" act on that name — so a tampered app could have got the wrong girl suspended. Now the server looks up who wrote the comment, review, look, piece or message itself.
+- **"Report" on someone from inside a chat now works in the dashboard.** Those reports were arriving with no student attached, so you couldn't warn or suspend from them ("This report has no student attached"). Fixed by the same change.
+- **Reported comments and reviews keep a copy of the words**, like reported messages already did — so if she deletes the comment before you look, you still see what was said.
+- **You can't report your own things**, and junk input gets a clear answer without using up one of her 20 reports a day.
+- **Reports can't carry photos for now.** The app never sends any, and there's nowhere in storage for them — so a "photo" could only be a link to any picture on the internet, shown in your dashboard. Noted for when report photos are built.
+- **Blocking someone takes the follows off exactly once.** Two quick taps on Block could lower both girls' follower counts twice.
+- **A follow can't sneak in at the same instant as a block** and survive it.
+
+**What to tap to see it:**
+- Nothing looks different on the phone. Open a chat → "…" → Report → pick a reason → Submit. Then in the dashboard → Reports, that report now shows the student, and Warn/Suspend work on it.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, all 312 shared tests, and the server tests that don't need the database. The 10 new database tests ran on GitHub — all green ✅.
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: server fixes to reporting, blocking and following. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code (H1): editing a look, the feature-switch panel, blocked dates on a piece. Or H2 (small tidy-ups).
+
+**Commits:**
+- Reports: the server finds who is behind them (not the phone); blocking counts follows down once; tests
+- Autopilot log for run 41
+- GitHub checks on the code push (full set, database tests included): **all green ✅**
 
 ---
 
