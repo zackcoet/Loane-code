@@ -17,6 +17,7 @@ import { rateLimit } from '../lib/rateLimit';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { requireVerifiedStudent } from '../lib/guards';
 import { queueAutoFlag } from '../moderation/autoFlag';
+import { isDocId, isPlainObject } from '../lib/input';
 
 /**
  * `createPost`
@@ -58,55 +59,34 @@ interface CreatePostInput {
   photos: PhotoInput[];
   caption: string;
   occasions: Occasion[];
-  settings?: {
+  settings: {
     hideLikeCount?: boolean;
     commentsDisabled?: boolean;
     sharingDisabled?: boolean;
     hideFromProfile?: boolean;
   };
-  scheduledAt?: string | null;
+  scheduledAt: string | null;
 }
 
 interface CreatePostResult {
   postId: string;
 }
 
-export const createPost = onCall<CreatePostInput, Promise<CreatePostResult>>(
+export const createPost = onCall<unknown, Promise<CreatePostResult>>(
   { region: 'us-central1' },
-  async (request: CallableRequest<CreatePostInput>): Promise<CreatePostResult> => {
+  async (request: CallableRequest<unknown>): Promise<CreatePostResult> => {
     const author = await requireVerifiedStudent(request);
+    // Checked before the rate limit, so a broken request doesn't use up
+    // one of her posts for the hour.
+    const { photos, caption, occasions, settings, scheduledAt } = parseInput(
+      request.data,
+      author.uid,
+    );
     await rateLimit(author.uid, 'post');
-    const {
-      photos = [],
-      caption = '',
-      occasions = [],
-      settings = {},
-      scheduledAt = null,
-    } = request.data ?? {};
     const publishAt = parseScheduledAt(scheduledAt);
     const isScheduled = publishAt !== null;
 
-    // --- Shape checks -----------------------------------------------------
-    if (photos.length < LIMITS.postPhotos.min) throw invalidArgument('Add at least one photo.');
-    if (photos.length > LIMITS.postPhotos.max) {
-      throw invalidArgument(`You can add up to ${LIMITS.postPhotos.max} photos.`);
-    }
-    if (caption.length > LIMITS.postCaption.max) {
-      throw invalidArgument(`Captions can be at most ${LIMITS.postCaption.max} characters.`);
-    }
-    if (occasions.some((o) => !isOccasion(o))) throw invalidArgument('Pick valid occasions.');
-
-    const allTags = photos.flatMap((photo) => photo.tags ?? []);
-    if (allTags.length > LIMITS.taggedListings.max) {
-      throw invalidArgument(`You can tag up to ${LIMITS.taggedListings.max} pieces.`);
-    }
-    for (const tag of allTags) {
-      // A coordinate outside the photo would render a dot in mid-air.
-      if (!(tag.x >= 0 && tag.x <= 1 && tag.y >= 0 && tag.y <= 1)) {
-        throw invalidArgument('A tag landed outside its photo. Try placing it again.');
-      }
-    }
-
+    const allTags = photos.flatMap((photo) => photo.tags);
     const uniqueIds = [...new Set(allTags.map((t) => t.listingId))];
 
     // --- Load the tagged listings and check they are hers ----------------
@@ -141,7 +121,7 @@ export const createPost = onCall<CreatePostInput, Promise<CreatePostResult>>(
       url: photo.url,
       width: photo.width,
       height: photo.height,
-      tags: (photo.tags ?? []).map((tag): PhotoTag => {
+      tags: photo.tags.map((tag): PhotoTag => {
         const listing = listings.get(tag.listingId)!;
         return {
           x: tag.x,
@@ -250,4 +230,134 @@ function parseScheduledAt(value: string | null | undefined): Date | null {
   }
 
   return parsed;
+}
+
+/** Big enough for any phone camera, small enough to catch nonsense. */
+const MAX_PHOTO_SIDE = 20_000;
+
+/**
+ * Everything the phone sent, checked, or a clear answer.
+ *
+ * A look's photos are shown to her whole campus, so each one has to be
+ * a photo SHE uploaded to Loane: in her own folder in our storage, and
+ * the link has to be that very file. Otherwise a tampered request could
+ * put a picture from anywhere on the internet — or from someone else's
+ * folder — in front of everyone, without the storage rules ever seeing
+ * it.
+ */
+export function parseInput(data: unknown, uid: string): CreatePostInput {
+  const input = isPlainObject(data) ? data : {};
+
+  const rawPhotos = input.photos ?? [];
+  if (!Array.isArray(rawPhotos)) throw invalidArgument('Add at least one photo.');
+  if (rawPhotos.length < LIMITS.postPhotos.min) throw invalidArgument('Add at least one photo.');
+  if (rawPhotos.length > LIMITS.postPhotos.max) {
+    throw invalidArgument(`You can add up to ${LIMITS.postPhotos.max} photos.`);
+  }
+  const photos = rawPhotos.map((photo) => parsePhoto(photo, uid));
+
+  const caption = input.caption ?? '';
+  if (typeof caption !== 'string') throw invalidArgument('That caption did not come through.');
+  if (caption.length > LIMITS.postCaption.max) {
+    throw invalidArgument(`Captions can be at most ${LIMITS.postCaption.max} characters.`);
+  }
+
+  const rawOccasions = input.occasions ?? [];
+  if (!Array.isArray(rawOccasions) || !rawOccasions.every(isOccasion)) {
+    throw invalidArgument('Pick valid occasions.');
+  }
+  // The same occasion twice would count twice in everyone's For You.
+  const occasions = [...new Set(rawOccasions as Occasion[])];
+
+  const rawSettings = input.settings ?? {};
+  if (!isPlainObject(rawSettings)) throw invalidArgument('Those settings did not come through.');
+
+  const scheduledAt = input.scheduledAt ?? null;
+  if (scheduledAt !== null && typeof scheduledAt !== 'string') {
+    throw invalidArgument('Pick a valid schedule time.');
+  }
+
+  if (photos.flatMap((p) => p.tags).length > LIMITS.taggedListings.max) {
+    throw invalidArgument(`You can tag up to ${LIMITS.taggedListings.max} pieces.`);
+  }
+
+  return { photos, caption, occasions, settings: rawSettings, scheduledAt };
+}
+
+function parsePhoto(value: unknown, uid: string): PhotoInput {
+  const photoProblem = 'One of your photos did not upload properly. Try adding it again.';
+  if (!isPlainObject(value)) throw invalidArgument(photoProblem);
+  const { path, url, width, height } = value;
+
+  if (
+    typeof path !== 'string' ||
+    path.length > 512 ||
+    !path.startsWith(`users/${uid}/posts/`) ||
+    path.split('/').some((part) => part === '' || part === '.' || part === '..')
+  ) {
+    throw invalidArgument(photoProblem);
+  }
+  if (typeof url !== 'string' || url.length > 2048 || !isDownloadUrlFor(url, path)) {
+    throw invalidArgument(photoProblem);
+  }
+  // Every phone lays the photo out from these, so a zero, a negative or
+  // a NaN would break the look on everyone's feed, not just hers.
+  for (const side of [width, height]) {
+    if (typeof side !== 'number' || !Number.isFinite(side) || side <= 0 || side > MAX_PHOTO_SIDE) {
+      throw invalidArgument(photoProblem);
+    }
+  }
+
+  const rawTags = value.tags ?? [];
+  if (!Array.isArray(rawTags)) throw invalidArgument('Those tags did not come through.');
+  const tags = rawTags.map((tag): TagInput => {
+    if (!isPlainObject(tag) || !isDocId(tag.listingId)) {
+      throw invalidArgument('One of the pieces you tagged did not come through. Tag it again.');
+    }
+    const { x, y } = tag;
+    // A coordinate outside the photo would render a dot in mid-air.
+    if (typeof x !== 'number' || typeof y !== 'number' || !(x >= 0 && x <= 1 && y >= 0 && y <= 1)) {
+      throw invalidArgument('A tag landed outside its photo. Try placing it again.');
+    }
+    return { listingId: tag.listingId, x, y };
+  });
+
+  return { path, url, width: width as number, height: height as number, tags };
+}
+
+/**
+ * Is `url` the download link for `path` in this project's own bucket?
+ *
+ * Download links look like
+ * `https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<path, encoded>?alt=media&token=…`.
+ * Both bucket spellings are accepted: projects made after late 2024 use
+ * `.firebasestorage.app`, older ones `.appspot.com`. On the emulators the
+ * host is the laptop (seen from a phone, its wifi address), so only the
+ * bucket and file are checked there.
+ */
+export function isDownloadUrlFor(url: string, path: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+
+  const onEmulator =
+    process.env.FUNCTIONS_EMULATOR === 'true' || !!process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+  if (onEmulator) {
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+  } else if (parsed.protocol !== 'https:' || parsed.hostname !== 'firebasestorage.googleapis.com') {
+    return false;
+  }
+
+  const projectId = process.env.GCLOUD_PROJECT ?? process.env.GCP_PROJECT;
+  const buckets = [
+    process.env.STORAGE_BUCKET,
+    `${projectId}.firebasestorage.app`,
+    `${projectId}.appspot.com`,
+  ].filter((b): b is string => !!b && !!projectId);
+  return buckets.some(
+    (bucket) => parsed.pathname === `/v0/b/${bucket}/o/${encodeURIComponent(path)}`,
+  );
 }

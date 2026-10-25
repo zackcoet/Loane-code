@@ -12,6 +12,7 @@ import {
 } from '@loane/shared';
 import { db, now, FieldValue } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
+import { isDocId } from '../lib/input';
 import { logAdminAction, requireAdminContext, requireReason } from './audit';
 import { notify } from '../bookings/transitions';
 
@@ -34,9 +35,7 @@ interface HideInput {
 
 /** A document id, or a clear answer if what came in isn't one. */
 function requireId(value: unknown, kind: string): string {
-  if (typeof value !== 'string' || !value.trim() || value.length > 128 || value.includes('/')) {
-    throw invalidArgument(`Which ${kind}?`);
-  }
+  if (!isDocId(value)) throw invalidArgument(`Which ${kind}?`);
   return value;
 }
 
