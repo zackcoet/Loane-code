@@ -32,35 +32,49 @@ export const deletePost = onCall<unknown, Promise<{ ok: true }>>(
 
     // One step, so a double-tap (or two phones) can't both get past the
     // "already removed?" check and give the counts back twice.
-    await db().runTransaction(async (tx) => {
-      const snap = await tx.get(ref);
-      if (!snap.exists) throw notFound('That post is gone.');
-
-      const post = snap.data() as Post;
-      if (post.authorUid !== user.uid) throw permissionDenied("That's not your post.");
-      if (post.status === 'removed') return;
-
-      // A tagged piece can be gone entirely (its owner's account was
-      // deleted); updating a missing document would fail the whole
-      // delete, so only hand the count back to pieces that still exist.
-      const listingRefs = [...new Set(post.taggedListingIds ?? [])]
-        .filter(isDocId)
-        .map((id) => db().collection(COLLECTIONS.listings).doc(id));
-      const listingSnaps = listingRefs.length > 0 ? await tx.getAll(...listingRefs) : [];
-
-      tx.update(ref, { status: 'removed', removedAt: now(), updatedAt: now() });
-      tx.update(db().collection(COLLECTIONS.users).doc(user.uid), {
-        'stats.postCount': FieldValue.increment(-1),
-        updatedAt: now(),
-      });
-      for (const listing of listingSnaps) {
-        if (listing.exists) {
-          tx.update(listing.ref, { 'stats.tagCount': FieldValue.increment(-1) });
-        }
-      }
-    });
+    try {
+      await removeOnce(ref, user.uid);
+    } catch (error) {
+      // Two deletes at the same moment fight over the same documents and
+      // the database can give up on the loser. If the look is down by
+      // now, the other tap did it — that is a success, not an error.
+      const after = await ref.get().catch(() => null);
+      const post = after?.data() as Post | undefined;
+      if (post?.authorUid !== user.uid || post.status !== 'removed') throw error;
+    }
 
     logger.info('Post removed', { postId, uid: user.uid });
     return { ok: true };
   },
 );
+
+/** Takes the look down and gives its counts back, once, in one step. */
+async function removeOnce(ref: FirebaseFirestore.DocumentReference, uid: string): Promise<void> {
+  await db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw notFound('That post is gone.');
+
+    const post = snap.data() as Post;
+    if (post.authorUid !== uid) throw permissionDenied("That's not your post.");
+    if (post.status === 'removed') return;
+
+    // A tagged piece can be gone entirely (its owner's account was
+    // deleted); updating a missing document would fail the whole
+    // delete, so only hand the count back to pieces that still exist.
+    const listingRefs = [...new Set(post.taggedListingIds ?? [])]
+      .filter(isDocId)
+      .map((id) => db().collection(COLLECTIONS.listings).doc(id));
+    const listingSnaps = listingRefs.length > 0 ? await tx.getAll(...listingRefs) : [];
+
+    tx.update(ref, { status: 'removed', removedAt: now(), updatedAt: now() });
+    tx.update(db().collection(COLLECTIONS.users).doc(uid), {
+      'stats.postCount': FieldValue.increment(-1),
+      updatedAt: now(),
+    });
+    for (const listing of listingSnaps) {
+      if (listing.exists) {
+        tx.update(listing.ref, { 'stats.tagCount': FieldValue.increment(-1) });
+      }
+    }
+  });
+}
