@@ -143,7 +143,8 @@ Goal: show each student what she's most likely to love **right now**, so the fee
 5. *(suggested)* Feel-check run 29's speed-up on a real phone: scroll the feed, type fast in a long chat. Overnight runs can't hold a phone.
 ✅ 6. *(suggested)* When a piece is sold, automatically say no to the other girls still waiting on a request for it, instead of leaving them to time out. Today the lender just can't accept them any more. *(Run 33: the moment she says yes to a buyer, every other open request for the piece — rentals too — is answered "Sold to someone else" and each girl gets an alert. A new rental request on a piece she's agreed to sell is refused up front. If that sale later falls through, those girls would have to ask again — rare, and noted in `docs/decisions.md`.)*
 
-7. *(suggested)* Check that a piece's photos and a profile photo are her own uploads to Loane, the way looks now are (run 38). Pieces and profiles are saved straight from the phone, so this is a database-rules change plus tests.
+7. *(suggested)* Check that a piece's photos and a profile photo are her own uploads to Loane, the way looks now are (run 38). Pieces and profiles are saved straight from the phone, so this is a database-rules change plus tests. *(Run 39: profile photo done. Pieces NOT done — the database rules ran out of steps on a piece with 8 photos, so this needs saving a piece to move into a Cloud Function first, like looks. That is a bigger job: the app's Add to Closet and Edit Listing save would call it instead of writing directly.)*
+8. *(suggested)* Stamp the little copy of her name and photo on each new piece (`owner`) on the server, the way looks are. Today the phone writes it and nothing checks it matches her profile, so a tampered app could show a piece under someone else's name.
 
 ---
 
