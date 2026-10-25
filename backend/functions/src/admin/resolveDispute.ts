@@ -30,67 +30,90 @@ export const resolveDispute = onCall<ResolveInput, Promise<{ ok: true }>>(
   { region: 'us-central1' },
   async (request) => {
     const admin = requireAdminContext(request);
-    const { bookingId, outcome, notes: rawNotes } = request.data ?? {};
-    if (!bookingId) throw invalidArgument('Which rental?');
-    if (!(DISPUTE_OUTCOMES as readonly string[]).includes(outcome)) {
+    const {
+      bookingId,
+      outcome,
+      notes: rawNotes,
+    } = (request.data ?? {}) as Partial<Record<keyof ResolveInput, unknown>>;
+    if (
+      typeof bookingId !== 'string' ||
+      !bookingId.trim() ||
+      bookingId.length > 128 ||
+      bookingId.includes('/')
+    ) {
+      throw invalidArgument('Which rental?');
+    }
+    if (typeof outcome !== 'string' || !(DISPUTE_OUTCOMES as readonly string[]).includes(outcome)) {
       throw invalidArgument('Pick an outcome.');
     }
     const notes = requireReason(rawNotes, 'Write what you decided and why.');
 
     const ref = db().collection(COLLECTIONS.bookings).doc(bookingId);
-    const snap = await ref.get();
-    if (!snap.exists) throw notFound('We could not find that rental.');
 
-    const booking = snap.data() as Booking;
-    if (booking.status !== 'disputed') throw failed('That rental is not disputed.');
+    // One step. As two separate steps, two admins deciding the same
+    // rental at once (or one double-click) both got through, and each
+    // added the rental to both girls' histories — counted twice.
+    await db().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) throw notFound('We could not find that rental.');
 
-    const batch = db().batch();
+      const booking = snap.data() as Booking;
+      if (booking.status !== 'disputed') {
+        throw failed(
+          booking.status === 'completed'
+            ? 'That rental was already decided.'
+            : 'That rental is not disputed.',
+        );
+      }
 
-    batch.update(ref, {
-      status: 'completed',
-      disputeResolution: {
-        outcome,
-        notes,
-        adminUid: admin.uid,
-        decidedAt: now(),
-      },
-      'timeline.completedAt': now(),
-      updatedAt: now(),
-    });
-
-    // The rental happened, so it counts in both their histories — the
-    // same bookkeeping the sweep does for an undisputed return.
-    batch.update(db().collection(COLLECTIONS.users).doc(booking.lenderUid), {
-      'stats.rentalsAsLender': FieldValue.increment(1),
-    });
-    batch.update(db().collection(COLLECTIONS.users).doc(booking.renterUid), {
-      'stats.rentalsAsRenter': FieldValue.increment(1),
-    });
-    batch.update(db().collection(COLLECTIONS.listings).doc(booking.listingId), {
-      'stats.completedRentals': FieldValue.increment(1),
-    });
-
-    for (const uid of [booking.lenderUid, booking.renterUid]) {
-      notify(batch, {
-        uid,
-        type: 'claim_resolved',
-        title: 'Loane reviewed your rental',
-        body: `${pieceName(booking)}: ${notes}`,
-        bookingId,
+      tx.update(ref, {
+        status: 'completed',
+        disputeResolution: {
+          outcome,
+          notes,
+          adminUid: admin.uid,
+          decidedAt: now(),
+        },
+        // Matches an undisputed finish (completeBooking): the window to
+        // flag a problem is closed for good.
+        disputeWindowEndsAt: null,
+        'timeline.completedAt': now(),
+        updatedAt: now(),
       });
-    }
 
-    logAdminAction(batch, {
-      admin,
-      action: 'resolve_dispute',
-      targetType: 'booking',
-      targetId: bookingId,
-      notes: `${outcome}: ${notes}`,
-      before: { status: 'disputed', problem: booking.returnProblem?.type ?? null },
-      after: { status: 'completed', outcome },
+      // The rental happened, so it counts in both their histories — the
+      // same bookkeeping the sweep does for an undisputed return.
+      tx.update(db().collection(COLLECTIONS.users).doc(booking.lenderUid), {
+        'stats.rentalsAsLender': FieldValue.increment(1),
+      });
+      tx.update(db().collection(COLLECTIONS.users).doc(booking.renterUid), {
+        'stats.rentalsAsRenter': FieldValue.increment(1),
+      });
+      tx.update(db().collection(COLLECTIONS.listings).doc(booking.listingId), {
+        'stats.completedRentals': FieldValue.increment(1),
+      });
+
+      for (const uid of [booking.lenderUid, booking.renterUid]) {
+        notify(tx, {
+          uid,
+          type: 'claim_resolved',
+          title: 'Loane reviewed your rental',
+          body: `${pieceName(booking)}: ${notes}`,
+          bookingId,
+        });
+      }
+
+      logAdminAction(tx, {
+        admin,
+        action: 'resolve_dispute',
+        targetType: 'booking',
+        targetId: bookingId,
+        notes: `${outcome}: ${notes}`,
+        before: { status: 'disputed', problem: booking.returnProblem?.type ?? null },
+        after: { status: 'completed', outcome },
+      });
     });
 
-    await batch.commit();
     logger.info('Dispute resolved', { bookingId, outcome, by: admin.uid });
     return { ok: true };
   },
