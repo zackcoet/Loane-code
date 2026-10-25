@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 42 (only when you next deploy): server fixes to blocking dates, rental hand-over photos and blocking someone, plus a small database rules change to editing a look. Normal deploy, nothing to switch on.
 - From run 41 (only when you next deploy): server fixes to reporting, blocking and following. Normal deploy, nothing to switch on.
 - **From run 40 (only when you next deploy) — deploy the server and database rules together, and use the new app build after.** Saving a piece now goes through the server. Once the new rules are live, an OLD copy of the app can't save pieces (it would say "Loane wouldn't accept that"). Normal deploy, nothing to switch on. The live core-flow check after deploying adds two real pieces, so it proves this works.
 - From run 39 (only when you next deploy): one small database rules change — a profile photo must be her own upload. Normal deploy, nothing to switch on. The live core-flow check after deploying uploads a real profile photo, so it proves this works on the live project.
@@ -34,6 +35,44 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-25 (run 42, ~3 AM Central) — Editing a look, blocked dates and hand-over photos, made solid
+
+**Plan:** The rest of the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1, taking the three things run 41 pointed at: editing a look, blocking dates on a piece, and (found on the way) the photos taken at drop-off and return. Read each, fix what was wrong, add tests. Also fix whatever turned GitHub's checks red.
+
+**Built / Fixed (what a student or you would notice):**
+- **A look you took down stays as it was reported.** Before, a girl could still change the caption of a look you'd removed — so if you later hit "put it back", you'd be restoring words nobody reviewed. Now a taken-down look can't be edited.
+- **A look's occasions have to be real ones** (Gameday, Formal…), once each. A tampered app could have put made-up tags under a look, which the feed ranking reads.
+- **Blocked dates can no longer get stuck.** If a lender blocked a day and then accepted a rental request for that same day (sent before she blocked it), she could never save her calendar again — every save said "already booked". Now that day is simply handled by the booking.
+- **Old blocked days clear themselves**, so years of past days can't fill up her limit of 366.
+- **Blocking a day and accepting a rental at the same moment can't both slip through.** Also the "already booked" message now says "Sat, Nov 7" instead of "2026-11-07".
+- **Drop-off, return and "problem" photos must be real photos she took in Loane for that rental.** These photos are the only proof in a damage complaint, and you decide complaints by looking at them. Before, a tampered app could send a link to any picture on the internet — or the other girl's own photo — as "proof". The real app already works this way, so nobody notices.
+- **Two quick taps on Block no longer show "Something went wrong"** — the second tap now just counts as done. This was what turned GitHub's checks red.
+
+**What to tap to see it:**
+- Profile → open a piece → Blocked dates → tap a day → Save. Works as before.
+- A rental → record drop-off with a photo → works as before.
+- Nothing else looks different.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, 312 shared tests, and the server tests that don't need the database (17 new ones). The new database tests (rules for editing a look, 4 for blocked dates) ran on GitHub — all green ✅.
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: server fixes plus one small database rules change. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code (H1): the rental steps — cancelling, drop-off, return, flagging a problem — and buying a piece (`requestPurchase`) still have no tests of their own.
+
+**Commits:**
+- Editing a look and blocking dates: real occasions only, taken-down looks stay as reported, blocked dates saved in one step and never trap her; tests
+- Rental photos: drop-off, return and problem photos must be her own uploads for that rental; tests
+- Block: a second tap at the same moment counts as done
+- Rules test fix; decisions and North Star notes
+- Autopilot log for run 42
+- GitHub checks on the final code push (full set, database tests included): **all green ✅** (the two pushes before it were red — first the old double-tap Block test, then one rules test still using the phone's clock; both fixed)
 
 ---
 
