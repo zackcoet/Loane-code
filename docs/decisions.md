@@ -1861,3 +1861,35 @@ campus, so that closet is one she could never borrow from.
 **The suggestion row reads 5 spares**, so a suspended account or
 someone who blocked her doesn't leave it short. The cost is up to 5
 more reads per call.
+
+## 2026-10-25 — Putting something back returns it to what it was (autopilot run 37)
+
+**A taken-down piece or look remembers its status.** "Put it back" in
+the dashboard always made it `active`. So a sold piece that was
+reported, taken down and then put back came back rentable and buyable —
+the same "sold twice" hole run 32 closed elsewhere. Now taking it down
+stores `statusBeforeSuspension` (server-only; the rules refuse the phone
+writing it) and putting it back returns it there: sold stays sold,
+paused stays paused, a scheduled look stays scheduled. Anything taken
+down before this existed comes back `active`, as before. The rules live
+in `shared/src/moderation.ts`.
+
+**Nothing its owner removed can be taken down.** There is nothing
+showing, and suspending it would let "Put it back" undo her own choice
+(a deleted look came back with its tag counts already handed back). A
+report's "take it down" on such a piece just closes the report.
+
+**A deleted account can't be suspended, and lifting a suspension only
+works on a suspended account.** `unsuspendUser` set ANY account to
+`active`, so suspending a "Deleted account" shell and then lifting it
+brought the account back to life. A report can't warn or suspend a
+deleted account either.
+
+**The optional "suspended until" date is checked but does nothing yet.**
+Nothing lifts a suspension on its own, and the dashboard doesn't send
+one. It stays because the field already exists on every account;
+building the automatic lift is a small job if it's ever wanted.
+
+All of the dashboard's take-down and suspend buttons now run in one
+step (a transaction), so two admins clicking at once can't double-move
+a comment count or send her two notices.

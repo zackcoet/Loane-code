@@ -198,3 +198,50 @@ describe('resolveReport — take the content down', () => {
     expect(convo?.lastMessage.body).toBe('reported you');
   });
 });
+
+describe('resolveReport — pieces, looks and accounts', () => {
+  beforeEach(async () => {
+    for (const id of ['rep-listing', 'rep-user']) await db.doc(`reports/${id}`).delete();
+    await db.doc('listings/l-rep').set({ id: 'l-rep', ownerUid: MADDIE, status: 'sold' });
+    await db.doc('reports/rep-listing').set(report('listing', 'l-rep', MADDIE));
+    await db.doc('reports/rep-user').set(report('user', MADDIE, MADDIE));
+  });
+
+  it('takes a sold piece down and remembers it was sold', async () => {
+    await run(
+      asAdmin({
+        reportId: 'rep-listing',
+        status: 'actioned',
+        action: 'content_removed',
+        notes: 'x',
+      }),
+    );
+    const data = (await db.doc('listings/l-rep').get()).data();
+    expect(data).toMatchObject({ status: 'suspended', statusBeforeSuspension: 'sold' });
+  });
+
+  it('closes the report but leaves alone a piece its owner already removed', async () => {
+    await db.doc('listings/l-rep').update({ status: 'removed' });
+    await run(
+      asAdmin({
+        reportId: 'rep-listing',
+        status: 'actioned',
+        action: 'content_removed',
+        notes: 'x',
+      }),
+    );
+    expect((await db.doc('listings/l-rep').get()).data()?.status).toBe('removed');
+    expect((await db.doc('reports/rep-listing').get()).data()?.status).toBe('actioned');
+  });
+
+  it('refuses suspending or warning a deleted account, and leaves it deleted', async () => {
+    await db.doc(`users/${MADDIE}`).update({ status: 'deactivated' });
+    for (const action of ['user_suspended', 'user_warned'] as const) {
+      expect(
+        await attempt(asAdmin({ reportId: 'rep-user', status: 'actioned', action, notes: 'x' })),
+      ).toMatch(/account is deleted/);
+    }
+    expect((await db.doc(`users/${MADDIE}`).get()).data()?.status).toBe('deactivated');
+    expect((await db.doc('reports/rep-user').get()).data()?.status).toBe('open');
+  });
+});

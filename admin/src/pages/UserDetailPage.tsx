@@ -115,7 +115,7 @@ export function UserDetailPage({ user, data, onBack }: Props) {
           {suspended ? (
             <button onClick={() => setDialog('unsuspend')}>Lift suspension</button>
           ) : (
-            <button disabled={protectedAccount} onClick={() => setDialog('suspend')}>
+            <button disabled={protectedAccount || deleted} onClick={() => setDialog('suspend')}>
               Suspend
             </button>
           )}
@@ -155,8 +155,15 @@ export function UserDetailPage({ user, data, onBack }: Props) {
           </p>
         </div>
         <div className="profile-actions">
-          <button className="outline-button" disabled title="Needs a Cloud Function">
-            {user.status === 'suspended' ? 'Unsuspend' : 'Suspend'}
+          {/* Same dialogs as the Moderation panel's buttons. This one sat
+              disabled with "Needs a Cloud Function" long after the
+              functions existed. */}
+          <button
+            className="outline-button"
+            disabled={deleted || (!suspended && protectedAccount)}
+            onClick={() => setDialog(suspended ? 'unsuspend' : 'suspend')}
+          >
+            {suspended ? 'Unsuspend' : 'Suspend'}
           </button>
           {/* The free allowance is five for life. This is how Ella and
               our testers are not the first people locked out of the

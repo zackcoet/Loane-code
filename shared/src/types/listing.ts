@@ -145,6 +145,13 @@ export interface Listing extends BaseDoc, CampusScoped {
 
   /** Set when an admin takes the listing down. */
   suspendedReason: string | null;
+  /**
+   * What it was before an admin took it down, so putting it back returns
+   * it there — a sold piece comes back sold, a paused one paused — rather
+   * than every restore making it rentable. Written only by the server.
+   * Absent on listings that were never taken down.
+   */
+  statusBeforeSuspension?: ListingStatus | null;
   removedAt: Timestampish | null;
 }
 

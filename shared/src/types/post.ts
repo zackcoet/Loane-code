@@ -153,6 +153,12 @@ export interface Post extends BaseDoc, CampusScoped {
   lastLiker: UserSummary | null;
 
   suspendedReason: string | null;
+  /**
+   * What it was before an admin took it down (a scheduled look comes
+   * back scheduled). Written only by the server; absent if never taken
+   * down. Same idea as on a listing.
+   */
+  statusBeforeSuspension?: PostStatus | null;
   removedAt: Timestampish | null;
 }
 

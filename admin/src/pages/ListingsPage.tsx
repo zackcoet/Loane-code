@@ -43,7 +43,8 @@ export function ListingsPage({ data, campusId }: { data: AdminData; campusId: st
     .filter((listing) => status === 'all' || listing.status === status)
     .filter((listing) => occasion === 'all' || listing.occasions.includes(occasion as Occasion))
     .filter((listing) => {
-      const text = `${listing.name} ${listing.brand ?? ''} ${listing.owner.displayName}`.toLowerCase();
+      const text =
+        `${listing.name} ${listing.brand ?? ''} ${listing.owner.displayName}`.toLowerCase();
       return text.includes(query.toLowerCase().trim());
     });
 
@@ -84,7 +85,7 @@ export function ListingsPage({ data, campusId }: { data: AdminData; campusId: st
             subtitle: `${listing.owner.displayName} · ${CATEGORY_LABELS[listing.category]}`,
             status: listing.status,
             meta: `${formatMoney(listing.pricing.threeDayCents)} / 3 days · ${listing.stats.viewCount} views`,
-            actionLabel: 'Hide listing',
+            actionLabel: listing.status === 'suspended' ? 'Put it back' : 'Hide listing',
           }))}
         />
       </Panel>

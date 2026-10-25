@@ -8,6 +8,7 @@ import {
   ratingFromVisible,
   REMOVED_MESSAGE_TEXT,
   SUBCOLLECTIONS,
+  takedownBlockedReason,
   type Comment,
   type Conversation,
   type Message,
@@ -138,19 +139,29 @@ export const resolveReport = onCall<ResolveInput, Promise<{ ok: true }>>(
         const targetRef = db().collection(collection).doc(report.targetId);
         const targetSnap = await targetRef.get();
         if (!targetSnap.exists) throw notFound('That content is already gone.');
+        const targetStatus = (targetSnap.data() as { status: string }).status;
 
-        batch.update(targetRef, {
-          status: 'suspended',
-          suspendedReason: notes,
-          updatedAt: now(),
-        });
-        logAdminAction(batch, {
-          admin,
-          action: `hide_${report.targetType}`,
-          targetType: report.targetType,
-          targetId: report.targetId,
-          notes: `From report ${reportId}: ${notes}`,
-        });
+        // Already down, or its owner already removed it: nothing to take
+        // down, and the report still closes. Suspending a removed one
+        // used to let "put it back" bring it to life.
+        if (!takedownBlockedReason(targetStatus)) {
+          batch.update(targetRef, {
+            status: 'suspended',
+            suspendedReason: notes,
+            // So putting it back returns a sold piece to sold.
+            statusBeforeSuspension: targetStatus,
+            updatedAt: now(),
+          });
+          logAdminAction(batch, {
+            admin,
+            action: `hide_${report.targetType}`,
+            targetType: report.targetType,
+            targetId: report.targetId,
+            notes: `From report ${reportId}: ${notes}`,
+            before: { status: targetStatus },
+            after: { status: 'suspended' },
+          });
+        }
       }
 
       if (action === 'user_suspended' || action === 'user_warned') {
@@ -163,6 +174,11 @@ export const resolveReport = onCall<ResolveInput, Promise<{ ok: true }>>(
         const user = userSnap.data() as User;
         if (report.targetUid === admin.uid) throw failed("You can't action yourself.");
         if (user.role === 'admin') throw failed('Admins cannot be suspended from here.');
+        // A deleted account has nobody to warn, and suspending it would
+        // let "Lift suspension" turn the shell back into a live account.
+        if (user.status === 'deactivated') {
+          throw failed('That account is deleted. Close the report without acting on her.');
+        }
 
         if (action === 'user_suspended') {
           batch.update(userRef, {

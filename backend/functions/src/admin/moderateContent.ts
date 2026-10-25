@@ -3,6 +3,8 @@ import { logger } from 'firebase-functions';
 import {
   COLLECTIONS,
   ratingFromVisible,
+  statusAfterRestore,
+  takedownBlockedReason,
   type Comment,
   type Listing,
   type Post,
@@ -30,14 +32,22 @@ interface HideInput {
   reason: string;
 }
 
+/** A document id, or a clear answer if what came in isn't one. */
+function requireId(value: unknown, kind: string): string {
+  if (typeof value !== 'string' || !value.trim() || value.length > 128 || value.includes('/')) {
+    throw invalidArgument(`Which ${kind}?`);
+  }
+  return value;
+}
+
 async function moderate(
   request: Parameters<typeof requireAdminContext>[0],
   kind: 'listing' | 'post',
   hide: boolean,
 ): Promise<{ ok: true }> {
   const admin = requireAdminContext(request);
-  const data = (request.data ?? {}) as HideInput;
-  if (!data.id) throw invalidArgument(`Which ${kind}?`);
+  const data = (request.data ?? {}) as Partial<Record<keyof HideInput, unknown>>;
+  const id = requireId(data.id, kind);
 
   const reason = requireReason(
     data.reason,
@@ -45,41 +55,59 @@ async function moderate(
   );
 
   const collection = kind === 'listing' ? COLLECTIONS.listings : COLLECTIONS.posts;
-  const ref = db().collection(collection).doc(data.id);
-  const snap = await ref.get();
-  if (!snap.exists) throw notFound(`We could not find that ${kind}.`);
+  const ref = db().collection(collection).doc(id);
 
-  const doc = snap.data() as Listing | Post;
-  const ownerUid = 'ownerUid' in doc ? doc.ownerUid : doc.authorUid;
+  // One step, so two admins acting at once can't both get through.
+  await db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw notFound(`We could not find that ${kind}.`);
 
-  if (hide && doc.status === 'suspended') throw failed('It is already down.');
-  if (!hide && doc.status !== 'suspended') throw failed('It is not suspended.');
+    const doc = snap.data() as Listing | Post;
+    const ownerUid = 'ownerUid' in doc ? doc.ownerUid : doc.authorUid;
 
-  const batch = db().batch();
-  batch.update(ref, {
-    status: hide ? 'suspended' : 'active',
-    suspendedReason: hide ? reason : null,
-    updatedAt: now(),
+    if (hide) {
+      const blocked = takedownBlockedReason(doc.status);
+      if (blocked) throw failed(blocked);
+    } else if (doc.status !== 'suspended') {
+      throw failed('It is not suspended.');
+    }
+
+    // Back to what it was — a sold piece stays sold — not always 'active'.
+    const next = hide
+      ? 'suspended'
+      : kind === 'listing'
+        ? statusAfterRestore('listing', doc.statusBeforeSuspension)
+        : statusAfterRestore('post', doc.statusBeforeSuspension);
+
+    tx.update(ref, {
+      status: next,
+      suspendedReason: hide ? reason : null,
+      statusBeforeSuspension: hide ? doc.status : null,
+      updatedAt: now(),
+    });
+    notify(tx, {
+      uid: ownerUid,
+      type: 'admin_notice',
+      title: hide ? `Your ${kind} was taken down` : `Your ${kind} is back up`,
+      body: hide
+        ? reason
+        : next === 'active'
+          ? 'It is visible on your campus again.'
+          : 'It is back the way you left it.',
+      bookingId: '',
+    });
+    logAdminAction(tx, {
+      admin,
+      action: hide ? `hide_${kind}` : `restore_${kind}`,
+      targetType: kind,
+      targetId: id,
+      notes: reason,
+      before: { status: doc.status },
+      after: { status: next },
+    });
   });
-  notify(batch, {
-    uid: ownerUid,
-    type: 'admin_notice',
-    title: hide ? `Your ${kind} was taken down` : `Your ${kind} is back up`,
-    body: hide ? reason : 'It is visible on your campus again.',
-    bookingId: '',
-  });
-  logAdminAction(batch, {
-    admin,
-    action: hide ? `hide_${kind}` : `restore_${kind}`,
-    targetType: kind,
-    targetId: data.id,
-    notes: reason,
-    before: { status: doc.status },
-    after: { status: hide ? 'suspended' : 'active' },
-  });
-  await batch.commit();
 
-  logger.info(`${kind} ${hide ? 'hidden' : 'restored'}`, { id: data.id, by: admin.uid });
+  logger.info(`${kind} ${hide ? 'hidden' : 'restored'}`, { id, by: admin.uid });
   return { ok: true };
 }
 
@@ -119,8 +147,10 @@ async function moderateReview(
   hide: boolean,
 ): Promise<{ ok: true }> {
   const admin = requireAdminContext(request);
-  const { id, reason: rawReason } = (request.data ?? {}) as HideInput;
-  if (!id) throw invalidArgument('Which review?');
+  const { id: rawId, reason: rawReason } = (request.data ?? {}) as Partial<
+    Record<keyof HideInput, unknown>
+  >;
+  const id = requireId(rawId, 'review');
   const reason = requireReason(
     rawReason,
     hide ? 'Say why it is coming down.' : 'Say why it is going back up.',
@@ -191,57 +221,62 @@ async function moderateComment(
   hide: boolean,
 ): Promise<{ ok: true }> {
   const admin = requireAdminContext(request);
-  const data = (request.data ?? {}) as HideInput;
-  if (!data.id) throw invalidArgument('Which comment?');
+  const data = (request.data ?? {}) as Partial<Record<keyof HideInput, unknown>>;
+  const id = requireId(data.id, 'comment');
 
   const reason = requireReason(
     data.reason,
     hide ? 'Say why it is coming down.' : 'Say why it is going back up.',
   );
 
-  const ref = db().collection(COLLECTIONS.comments).doc(data.id);
-  const snap = await ref.get();
-  if (!snap.exists) throw notFound('We could not find that comment.');
+  const ref = db().collection(COLLECTIONS.comments).doc(id);
 
-  const comment = snap.data() as Comment;
-  if (hide && comment.status !== 'active') throw failed('It is already down.');
-  if (!hide && comment.status !== 'suspended') throw failed('It is not suspended.');
+  // One step: the count under the look moves with the comment, so two
+  // admins acting at once must not both move it.
+  await db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw notFound('We could not find that comment.');
 
-  const batch = db().batch();
-  batch.update(ref, {
-    status: hide ? 'suspended' : 'active',
-    suspendedReason: hide ? reason : null,
-    updatedAt: now(),
-  });
+    const comment = snap.data() as Comment;
+    if (hide && comment.status !== 'active') throw failed('It is already down.');
+    if (!hide && comment.status !== 'suspended') throw failed('It is not suspended.');
 
-  // The count under the post has to follow the comment either way.
-  const postRef = db().collection(COLLECTIONS.posts).doc(comment.postId);
-  if ((await postRef.get()).exists) {
-    batch.update(postRef, {
-      'stats.commentCount': FieldValue.increment(hide ? -1 : 1),
+    const postRef = db().collection(COLLECTIONS.posts).doc(comment.postId);
+    const postExists = (await tx.get(postRef)).exists;
+
+    tx.update(ref, {
+      status: hide ? 'suspended' : 'active',
+      suspendedReason: hide ? reason : null,
       updatedAt: now(),
     });
-  }
 
-  notify(batch, {
-    uid: comment.authorUid,
-    type: 'admin_notice',
-    title: hide ? 'Your comment was taken down' : 'Your comment is back up',
-    body: hide ? reason : 'It is visible again.',
-    bookingId: '',
-  });
-  logAdminAction(batch, {
-    admin,
-    action: hide ? 'hide_comment' : 'restore_comment',
-    targetType: 'comment',
-    targetId: data.id,
-    notes: reason,
-    before: { status: comment.status },
-    after: { status: hide ? 'suspended' : 'active' },
-  });
-  await batch.commit();
+    // The count under the post has to follow the comment either way.
+    if (postExists) {
+      tx.update(postRef, {
+        'stats.commentCount': FieldValue.increment(hide ? -1 : 1),
+        updatedAt: now(),
+      });
+    }
 
-  logger.info(`comment ${hide ? 'hidden' : 'restored'}`, { id: data.id, by: admin.uid });
+    notify(tx, {
+      uid: comment.authorUid,
+      type: 'admin_notice',
+      title: hide ? 'Your comment was taken down' : 'Your comment is back up',
+      body: hide ? reason : 'It is visible again.',
+      bookingId: '',
+    });
+    logAdminAction(tx, {
+      admin,
+      action: hide ? 'hide_comment' : 'restore_comment',
+      targetType: 'comment',
+      targetId: id,
+      notes: reason,
+      before: { status: comment.status },
+      after: { status: hide ? 'suspended' : 'active' },
+    });
+  });
+
+  logger.info(`comment ${hide ? 'hidden' : 'restored'}`, { id, by: admin.uid });
   return { ok: true };
 }
 

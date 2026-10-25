@@ -4,7 +4,12 @@ import { EmptyState, ImageBlock, Pill } from './ui';
 
 export function Timeline({ events }: { events: AppEvent[] }) {
   if (events.length === 0) {
-    return <EmptyState title="No activity yet" body="This user's app events will appear here once tracking data exists." />;
+    return (
+      <EmptyState
+        title="No activity yet"
+        body="This user's app events will appear here once tracking data exists."
+      />
+    );
   }
   return (
     <ol className="timeline">
@@ -26,7 +31,8 @@ export function ThumbGrid({
 }: {
   items: Array<{ id: string; imageUrl: string | null; title: string; subtitle: string }>;
 }) {
-  if (items.length === 0) return <EmptyState title="Nothing here yet" body="Seeded or real content will appear here." />;
+  if (items.length === 0)
+    return <EmptyState title="Nothing here yet" body="Seeded or real content will appear here." />;
   return (
     <div className="thumb-grid">
       {items.map((item) => (
@@ -58,7 +64,10 @@ export function ModerationGrid({
   /** Opens the hide / restore dialog for one item. */
   onAction?: (id: string, status: Listing['status'] | Post['status']) => void;
 }) {
-  if (items.length === 0) return <EmptyState title={emptyTitle} body="Try clearing filters or running the seed script." />;
+  if (items.length === 0)
+    return (
+      <EmptyState title={emptyTitle} body="Try clearing filters or running the seed script." />
+    );
   return (
     <div className="moderation-list">
       {items.map((item) => (
@@ -79,7 +88,10 @@ export function ModerationGrid({
           <button
             className="outline-button"
             onClick={() => onAction?.(item.id, item.status)}
-            disabled={!onAction}
+            // Something its owner removed can't be taken down (the server
+            // refuses: there is nothing showing to take down).
+            disabled={!onAction || item.status === 'removed'}
+            title={item.status === 'removed' ? 'Its owner already removed it.' : undefined}
           >
             {item.actionLabel}
           </button>
