@@ -6,6 +6,31 @@ much as the answer.
 
 ---
 
+## 2026-10-25 — A sale ends when the buyer says "I have it" (autopilot run 43)
+
+**Decision:** on a purchase, `confirmReceipt` completes the booking
+(`completeBooking`: status completed, piece marked sold, both asked for
+a review). `confirmReturn` and `flagReturnProblem` refuse a purchase,
+except that `confirmReturn` finishes a purchase already sitting in
+`with_renter` (made before this change) so none is left stuck.
+
+**Why:** a purchase reused the rental lifecycle all the way through, so
+after "I have it" the buyer was told to "return it by the end date" of
+a sale with no dates, and the piece only became `sold` after somebody
+pressed "I've returned it" and the 48-hour window passed. The comment in
+`completeBooking` already said a sale should finish when *both* sides
+have spoken; the seller's drop-off photo plus the buyer's "I have it" is
+both. The transition table is unchanged — `confirmReceipt` still asks it
+for `with_renter` (renter, from confirmed) and then completes instead.
+
+**Also:** `requestPurchase` now writes a typed `Booking` through
+`newPurchaseBooking` (it was cast past the type checker and had drifted:
+no `timeline`, no `handoff.notes` — which made recording a drop-off on a
+sale without a note fail — and cancel fields under other names). A
+problem with a sale is a moderation report, not a return problem.
+
+---
+
 ## 2026-10-24 — Sign-ups: 30 an hour per address, and no address means no limit (autopilot run 30)
 
 **Decision:** `LIMITS.signUp` is 30 an hour per IP (was 5). When a

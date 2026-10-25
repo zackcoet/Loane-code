@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 43 (only when you next deploy, and use the new app build after): server fixes to buying a piece and the rental steps. Normal deploy, nothing to switch on.
 - From run 42 (only when you next deploy): server fixes to blocking dates, rental hand-over photos and blocking someone, plus a small database rules change to editing a look. Normal deploy, nothing to switch on.
 - From run 41 (only when you next deploy): server fixes to reporting, blocking and following. Normal deploy, nothing to switch on.
 - **From run 40 (only when you next deploy) — deploy the server and database rules together, and use the new app build after.** Saving a piece now goes through the server. Once the new rules are live, an OLD copy of the app can't save pieces (it would say "Loane wouldn't accept that"). Normal deploy, nothing to switch on. The live core-flow check after deploying adds two real pieces, so it proves this works.
@@ -35,6 +36,40 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-25 (run 43, ~4 AM Central) — Buying a piece now ends properly; rental steps tested
+
+**Plan:** The rest of the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1, taking what run 42 pointed at: the steps after a yes (drop-off, "I have it", return, flagging a problem, cancelling) and buying a piece (Own It). Read each, fix what was wrong, add tests.
+
+**Built / Fixed (what a student would notice):**
+- **A sale ends when the buyer taps "I have it".** Before, buying a piece went down the rental path: after she had it, the app told her to "return it by the end date" and showed an "I've returned it" button — for something she'd bought. The piece only showed as sold after someone pressed "returned". Now "I have it" finishes the sale: the piece shows as sold, and both girls are asked for a review.
+- **The rental page reads like a sale on a sale:** "She's asked to buy this", "Sold to her. Record the hand-over with a photo", "It's yours." / "Sold.", and "Cancel sale" instead of "Cancel rental".
+- **The seller can record the hand-over on a sale.** A sale was saved with a few parts missing, so "I've dropped it off" on a sale failed with "Something went wrong". Fixed, and the saved record now matches a rental's exactly.
+- **A piece that's late back with a renter can't be bought.** Before, a buyer could ask for it, the seller could never say yes, and the buyer waited a day for nothing. Now she's told "On Loane right now."
+- **The message with a rental or buy request is checked** (must be text, up to 500 characters), and junk gets a clear answer without using up one of her requests for the hour.
+- "Report a return problem" and returns are refused on a sale (nothing comes back). A problem with a sale goes through Report a problem, like anything else.
+- If any sale was already stuck at "she has it" from before, either girl gets a "Finish the sale" button.
+
+**What to tap to see it:**
+- On a piece that's for sale, as a second student: Own It → send. As the seller: Rental requests → open it → Accept → "I've dropped it off" (take a photo). As the buyer: open the rental → "I have it". It should say "It's yours." and the piece should show as sold in the seller's closet.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, 312 shared tests and 144 server tests that don't need the database (13 new). The 21 new database tests ran on GitHub — **all green ✅**.
+- B8 still waits on payments; F7 on your decision; G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: server fixes to buying and the rental steps. Deploy the server and send out the new app build together (an old app would still show "I've returned it" on a sale that is already finished — harmless, just confusing). Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code (H1): the hourly rental clock's reminders, the admin dispute screen with sales in mind, and the remaining dashboard buttons. Or H2 (small tidy-ups).
+
+**Commits:**
+- Sales end at "I have it"; purchase requests saved in the full booking shape; rental-step input checked; tests
+- Put back six unrelated files the formatter re-wrapped (layout only, no change)
+- Decisions and North Star notes; autopilot log for run 43
+- GitHub checks on the code push (full set, database tests included): **all green ✅**
 
 ---
 
