@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 47 (only when you next deploy): server fixes to how a new name or photo spreads across her looks and chats, and to the look view/tap counters. Normal deploy, nothing to switch on.
 - **From run 46 — the student count on each campus is wrong on the live project.** Sign-up never actually added new girls to it (deleting an account did take them off), so "Join 120+ girls at USC" and the dashboard's Campuses page read too low, maybe below zero. After you next deploy, run the recount once: `cd backend/functions && npx tsx scripts/recountCampusStudents.ts --project loane-code` shows what it would change; add `--write` to save. Normal deploy otherwise, nothing to switch on.
 - From run 45 (only when you next deploy, and use the new app build after): server fixes so rental dates go by Columbia's day, and so a request for today or tomorrow doesn't expire before the lender sees it. Normal deploy, nothing to switch on.
 - From run 44 (only when you next deploy): a server fix to the hourly rental reminders, plus one new database index. Normal deploy, nothing to switch on.
@@ -39,6 +40,34 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-26 (run 47, ~11 PM Central) — New names and photos spread properly; the "tapped a tagged piece" number stays honest
+
+**Plan:** Everything left on the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1, taking what run 46 pointed at: the background jobs that copy a girl's new name and photo onto her old looks, pieces, comments and chats, and the counters for look views, piece views and tagged-piece taps.
+
+**Built / Fixed (what a student would notice):**
+- **Changing your photo no longer shuffles everyone's Messages.** Every chat she was in jumped to the top of her inbox *and* the other girl's, above chats with real new messages. Now chats only move when someone writes.
+- **A quick double rename ends on the newest name.** Change your username twice fast and the old one could win and stay on all your looks and chats. Now the newest always wins.
+- **Deleting a look while your new name is being copied doesn't stop the rest.** Before, that could leave her old name on a batch of looks and on every chat.
+- **The "tapped a tagged piece" number only counts real taps.** That's the number that tells us whether the social side drives rentals. A tap now only counts for the look that actually tags that piece. Junk sent by a phone is ignored instead of crashing the counter.
+
+**What to tap to see it:** Open two chats with different people so one is on top, then change your profile photo (Profile → Edit profile). The order in Messages stays the same, and your new photo shows in both chats. Change your username, then open one of your old looks: it shows the new @handle.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, 330 shared tests and 135 server tests that don't need the database (8 new). The 11 new database tests ran on GitHub with the full set: **all green ✅**.
+- B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: these server fixes. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code (H1): the jobs that keep a look's tagged-piece labels and a piece's "available" status up to date (refreshTagLabels, syncListingAvailability), and the message-sent trigger. Or H2 (small tidy-ups).
+
+**Commits:**
+- Name and photo changes: newest profile wins, chats stay in place in the inbox, a deleted look no longer stops the rest; tag taps only credit the look that tags the piece; tests
+- Decisions and North Star notes; autopilot log for run 47
 
 ---
 
