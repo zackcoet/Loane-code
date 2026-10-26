@@ -6,6 +6,37 @@ much as the answer.
 
 ---
 
+## 2026-10-26 — A phone number two accounts both saved matches neither (autopilot run 49)
+
+**Decision:** `phoneHashes/{hash}` now records everyone who has that
+number saved (`uids`) and the one account it matches (`uid`, null when
+more than one holds it). `matchContacts` only shows someone when exactly
+one account holds the number (`lib/phoneHolders.ts`). Older rows with
+only `uid` read as a list of one, so nothing needs backfilling.
+
+`syncPhoneHash` now works inside a transaction from the number saved in
+her settings *now*, not the one the event remembers. Every other number
+the event mentions is let go of, and letting go only takes HER off it.
+
+**Why:** nobody proves a phone number is theirs; she types it in
+Settings. Before, the last girl to save a number took it over — type
+Ella's number into your own settings and Ella's friends found you, not
+her, under "Find friends from contacts". And when either girl removed
+it, the hash was deleted outright, so neither matched. Separately, two
+quick edits handled out of order could leave her matched by a number
+she had already replaced.
+
+**The trade-off we chose:** a squatter can still *hide* Ella from her
+friends' contacts (two claims match nobody), but can never be shown in
+her place. Being hidden is the smaller harm. The real fix is proving the
+number with a text message, which costs money — a later decision.
+
+**Also:** sign-up's first name and @username, and a changed @username,
+now go past the word filter like captions and bios. A match files a
+report for an admin; it never stops the sign-up or the change.
+
+---
+
 ## 2026-10-26 — Background summaries only move forward, on the server's clock (autopilot run 48)
 
 **Decision:** `onMessageCreated` and `onMessageLiked` write the inbox

@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 49 (only when you next deploy): server fixes to "Find friends from contacts" and to the word filter at sign-up. Normal deploy, nothing to switch on, nothing to recount.
 - From run 48 (only when you next deploy): server fixes to the inbox preview, tag labels and booked dates, plus one small database rules change (a message's time is set by the server). The current app already works with it. Normal deploy, nothing to switch on.
 - From run 47 (only when you next deploy): server fixes to how a new name or photo spreads across her looks and chats, and to the look view/tap counters. Normal deploy, nothing to switch on.
 - **From run 46 — the student count on each campus is wrong on the live project.** Sign-up never actually added new girls to it (deleting an account did take them off), so "Join 120+ girls at USC" and the dashboard's Campuses page read too low, maybe below zero. After you next deploy, run the recount once: `cd backend/functions && npx tsx scripts/recountCampusStudents.ts --project loane-code` shows what it would change; add `--write` to save. Normal deploy otherwise, nothing to switch on.
@@ -41,6 +42,36 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-26 (run 49, ~1 AM Central) — "Find friends from contacts" can't be hijacked; sign-up names go past the word filter
+
+**Plan:** Everything left on the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1, taking what run 48 pointed at: the jobs that run edited captions, piece text and bios past the word filter, and the job behind "Find friends from contacts".
+
+**Built / Fixed (what a student would notice):**
+- **Nobody can borrow your phone number to be found as you.** Nobody proves a number is theirs — she just types it in Settings. Before, if Anna typed Ella's number into her own settings, Ella's friends would find *Anna* under "Find friends from contacts", and stop finding Ella. Now a number two accounts have both saved finds neither, until one of them removes it.
+- **Removing your number only removes you.** Before, if Anna then deleted that number, it wiped it for Ella too, so Ella vanished from her friends' contacts.
+- **Changing your number twice fast ends on the right one.** Before, the older change could finish last and leave her old number still finding her.
+- **Sign-up names and @usernames are checked by the word filter now.** Captions, comments, messages and bios always were, but the name and @username she signs up with (and a later @username change) never were. A match puts a report in the dashboard's Reports queue for you to look at. It never stops her signing up.
+- The word-filter jobs for edited captions, pieces and bios now have tests (they already worked).
+
+**What to tap to see it:** On the emulators, sign up with the username `test.go.die` → open the dashboard → Reports: there's one from "the content filter" about her. For contacts: give two test accounts the same phone number in Settings, then on a third account tap Find friends from contacts with that number saved in the phone — neither shows. Remove it from one account and try again: the other one shows.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, 335 shared tests and the server tests that don't need the database (10 new). The 11 new database tests ran on GitHub with the full set: **all green ✅**.
+- B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: these server fixes. Normal deploy, nothing to switch on.
+- Worth knowing, not urgent: someone can still *hide* a girl from her friends' contacts by saving her number too. The only real fix is texting a code to prove the number is hers, which costs money per text — your call, whenever.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** The last untested server pieces outside Try-On (H1): the "is this username free?" check on sign-up (checkUsername) and the push-alert sender (sendToEach). Then H2 (small tidy-ups).
+
+**Commits:**
+- Contact matching: a number two accounts save matches neither, letting go only removes her, and quick edits end on her current number; sign-up names and new usernames go past the word filter; tests for the edited-text filter jobs
+- Decisions and North Star notes; autopilot log for run 49
 
 ---
 
