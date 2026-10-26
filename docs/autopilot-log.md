@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 51 (only when you next deploy): server fixes to publishing and accepting Terms/Privacy. Normal deploy, nothing to switch on. No legal wording changed.
 - From run 50 (only when you next deploy, and use the new app build after): server fixes so chats only move in the inbox when someone writes. Normal deploy, nothing to switch on.
 - From run 49 (only when you next deploy): server fixes to "Find friends from contacts" and to the word filter at sign-up. Normal deploy, nothing to switch on, nothing to recount.
 - From run 48 (only when you next deploy): server fixes to the inbox preview, tag labels and booked dates, plus one small database rules change (a message's time is set by the server). The current app already works with it. Normal deploy, nothing to switch on.
@@ -43,6 +44,37 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-26 (run 51, ~3 AM Central) — Publishing Terms and Privacy is safe from double-clicks and typos
+
+**Plan:** Everything left on the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1 with the last server pieces that had no tests at all: publishing Terms/Privacy from the dashboard, a student accepting them, and private admin notes.
+
+**Built / Fixed (what you or a student would notice):**
+- **Two people pressing Publish on the Terms at the same moment can't put two new versions live.** Before, one of you got "something went wrong" — or, worse, both versions could go out back to back. Now one wins and the other is told "Someone just published a new version. Reload and check it before publishing."
+- **The "effective date" must be a real day.** Before, a typo like 2026-13-45 was accepted and would have shown at the top of the Terms.
+- **Saving a draft again keeps the date you started it.**
+- **Accepting the Terms only records a real answer.** A tampered app could send junk and still be marked as agreeing; and a deleted account could be stamped as agreeing today. Both are refused now, so the "she agreed on…" date stays trustworthy.
+- Private admin notes on a student (dashboard → Users → a student → note) now have tests. They already worked.
+- No legal wording was changed.
+
+**What to tap to see it:** On the emulators, open the dashboard → Legal → type an effective date of 2026-02-30 → Publish: it says to use a real date. Open the dashboard in two browser tabs, write a change in both, and press Publish in each at the same time: only one new version appears.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, 335 shared tests and 160 server tests that don't need the database. The 15 new database tests ran on GitHub with the full set: **all green ✅**.
+- B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: these server fixes. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Every server function outside Try-On now has tests. Next runs keep sweeping (H1) by re-reading older functions for the same kinds of slips. Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- Terms and Privacy: two admins publishing at once can't make two new versions; effective date must be a real day; a draft keeps when it was started; accepting refuses non-numbers and missing or deleted accounts; tests
+- Tests for private admin notes on a student
+- Decisions and North Star notes; autopilot log for run 51
 
 ---
 

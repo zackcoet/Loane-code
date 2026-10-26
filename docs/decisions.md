@@ -2068,3 +2068,11 @@ The inbox is sorted by a chat's `updatedAt`. Run 47 stopped a profile change tou
 Left as they are on purpose: a heart on a message (A9 made "Liked a message" a real inbox event, as on Instagram), and a rental being accepted onto a chat for the first time (the chat is now where they arrange the handoff).
 
 `checkUsername` stays open to callers with no account (the sign-up screen asks before one exists) and has no rate limit: a limit costs a database write per check, more than the one read it would protect. It now treats non-text input as empty instead of crashing.
+
+## 2026-10-26 — Publishing and accepting Terms/Privacy (autopilot run 51)
+
+- **`publishLegalDoc` fixes the version number before it starts, then checks inside one transaction that it is still the next one.** Two admins pressing Publish together used to both pick the same number; the second crashed into "something went wrong". A plain transaction would have been worse: its automatic retry would quietly publish the second admin's text as the version after the first, so two new Terms went live back to back, neither written against the other. Now the second admin is told "Someone just published a new version" and nothing is published for her.
+- **The effective date must be a real day** (`isIsoDate`), not just the right shape — "2026-13-45" would have been printed as the date the Terms took effect.
+- **Saving a draft again keeps its `createdAt`.**
+- **`acceptLegalDocs` takes only real numbers** (it used `Number()`, so `true` counted as version 1) and refuses a missing or deleted account with "We could not find your account." A deleted shell must not gain a fresh acceptance date — that date is the record of when she agreed.
+- No change to legal text, and the published Terms v1 are untouched.
