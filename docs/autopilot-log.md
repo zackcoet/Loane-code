@@ -58,7 +58,7 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 **What to tap to see it:** Open a chat and send two messages fast, one after the other. Go back to Messages: the second one shows as the preview. Then Profile → a piece you've tagged in a look → Edit → change the price twice quickly → open that look and tap the tag: it shows the newest price.
 
 **Skipped / blocked:**
-- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, 335 shared tests and 146 server tests that don't need the database (16 new). The 18 new database tests and 1 new rules test ran on GitHub with the full set: **all green ✅**.
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, 335 shared tests and 146 server tests that don't need the database (16 new). The 15 new database tests and 1 new rules test ran on GitHub with the full set: **all green ✅**.
 - One small thing left on purpose: if the server handles an *older* message twice after a newer one has already arrived, it still counts twice. Very rare, costs one extra unread. Explained in `docs/decisions.md`.
 - B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
 
