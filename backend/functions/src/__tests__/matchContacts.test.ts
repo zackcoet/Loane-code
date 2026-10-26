@@ -166,6 +166,20 @@ describe('matchContacts', () => {
     expect(await attempt(() => found([ANNA_PHONE]))).toMatch(/checked your contacts/);
   });
 
+  it('finds nobody behind a number two accounts have both saved', async () => {
+    // Beth typed Anna's number into her own settings. Neither is shown,
+    // so Beth can never be found in Anna's place.
+    await db
+      .doc(`${COLLECTIONS.phoneHashes}/${storedHash(ANNA_PHONE)}`)
+      .set({ uid: null, uids: [ANNA, BETH] });
+    expect(await found([ANNA_PHONE])).toEqual([]);
+    // A number held by one account (the new shape) still finds her.
+    await db
+      .doc(`${COLLECTIONS.phoneHashes}/${storedHash(ANNA_PHONE)}`)
+      .set({ uid: ANNA, uids: [ANNA] });
+    expect(await found([ANNA_PHONE])).toEqual([ANNA]);
+  });
+
   it('writes nothing about her address book', async () => {
     await found([ANNA_PHONE, BETH_PHONE, '+18035559999']);
     // Only the three numbers that were already on Loane.

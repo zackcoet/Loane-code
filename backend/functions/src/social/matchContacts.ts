@@ -34,6 +34,7 @@ import { COLLECTIONS, SUBCOLLECTIONS, type User, type UserSummary } from '@loane
 import { db } from '../lib/admin';
 import { requireVerifiedStudent } from '../lib/guards';
 import { CONTACT_MATCH_PEPPER, storedPhoneHash } from '../lib/phoneHash';
+import { matchedUid, type PhoneHashRow } from '../lib/phoneHolders';
 import { rateLimit } from '../lib/rateLimit';
 
 /**
@@ -108,7 +109,9 @@ export const matchContacts = onCall<Input, Promise<{ matches: ContactMatch[] }>>
       const refs = group.map((h) => hashes.doc(storedPhoneHash(h)));
       const docs = await db().getAll(...refs);
       for (const doc of docs) {
-        const uid = doc.get('uid') as string | undefined;
+        // A number two accounts have both saved matches neither — see
+        // lib/phoneHolders.ts.
+        const uid = matchedUid(doc.data() as PhoneHashRow | undefined);
         // Herself, obviously. Her own number is in plenty of address
         // books, including her own.
         if (uid && uid !== me.uid) uids.add(uid);

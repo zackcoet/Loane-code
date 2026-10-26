@@ -73,7 +73,12 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  for (const c of [COLLECTIONS.users, COLLECTIONS.usernames, COLLECTIONS.rateLimits]) {
+  for (const c of [
+    COLLECTIONS.users,
+    COLLECTIONS.usernames,
+    COLLECTIONS.rateLimits,
+    COLLECTIONS.reports,
+  ]) {
     await db.recursiveDelete(db.collection(c));
   }
   await student(ELLA, 'ellarename');
@@ -118,6 +123,18 @@ describe('changeUsername', () => {
       .set({ username: 'ellarename', uid: HARPER });
     await rename(as(ELLA, { username: 'ellanew' }));
     expect(await lockOwner('ellarename')).toBe(HARPER);
+  });
+
+  it('runs a new name past the word filter, and still changes it', async () => {
+    await rename(as(ELLA, { username: 'ellanew' }));
+    expect((await db.collection(COLLECTIONS.reports).get()).size).toBe(0);
+
+    expect(await attempt(() => rename(as(ELLA, { username: 'go.die.now' })))).toBe('ok');
+    expect(await usernameOf(ELLA)).toBe('go.die.now');
+    const report = (
+      await db.doc(`${COLLECTIONS.reports}/auto_user_${ELLA}_username_go.die.now`).get()
+    ).data();
+    expect(report).toMatchObject({ targetType: 'user', targetUid: ELLA, status: 'open' });
   });
 
   it('asking for the name she already has changes nothing', async () => {

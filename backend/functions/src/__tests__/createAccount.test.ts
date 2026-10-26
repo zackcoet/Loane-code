@@ -31,8 +31,16 @@ const EMAILS = [
   'signup-anna@g.furman-test.edu',
   'signup-taken@email.sc.edu',
   'signup-junk@gmail.com',
+  'signup-flag@email.sc.edu',
 ];
-const USERNAMES = ['signupella', 'signupkate', 'signupmary', 'signupanna', 'signuptaken'];
+const USERNAMES = [
+  'signupella',
+  'signupkate',
+  'signupmary',
+  'signupanna',
+  'signuptaken',
+  'signup.go.die',
+];
 const NEW_CAMPUSES = [
   'school-clemson-test-edu',
   'school-furman-test-edu',
@@ -82,6 +90,7 @@ async function cleanUp() {
   }
   for (const name of USERNAMES) await db.doc(`${COLLECTIONS.usernames}/${name}`).delete();
   for (const id of NEW_CAMPUSES) await db.doc(`${COLLECTIONS.campuses}/${id}`).delete();
+  await db.recursiveDelete(db.collection(COLLECTIONS.reports));
 }
 
 beforeAll(async () => {
@@ -139,6 +148,30 @@ describe('createAccount', () => {
     const campus = (await db.doc(`${COLLECTIONS.campuses}/${USC}`).get()).data();
     expect(campus?.stats.userCount).toBe(1);
     expect(campus?.name).toBe('University of South Carolina');
+  });
+
+  it('runs her name and @username past the word filter, and still lets her in', async () => {
+    const clean = await create(signUp(form('signup-ella@email.sc.edu', 'signupella')));
+    expect(
+      (await db.doc(`${COLLECTIONS.reports}/auto_user_${clean.uid}_signup`).get()).exists,
+    ).toBe(false);
+
+    const flagged = await create(signUp(form('signup-flag@email.sc.edu', 'signup.go.die')));
+    const report = (
+      await db.doc(`${COLLECTIONS.reports}/auto_user_${flagged.uid}_signup`).get()
+    ).data();
+    expect(report).toMatchObject({
+      targetType: 'user',
+      targetId: flagged.uid,
+      targetUid: flagged.uid,
+      campusId: USC,
+      status: 'open',
+    });
+    expect(report?.details).toContain('go die');
+    // A flag is for an admin to judge. The account is made all the same.
+    expect((await db.doc(`${COLLECTIONS.users}/${flagged.uid}`).get()).data()?.status).toBe(
+      'active',
+    );
   });
 
   it('puts a new school, and its sub-addresses, on one campus named after the school', async () => {

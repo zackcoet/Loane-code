@@ -6,6 +6,7 @@ import { db, now } from '../lib/admin';
 import { alreadyTaken, invalidArgument, notFound } from '../lib/errors';
 import { requireActiveUser } from '../lib/guards';
 import { rateLimit } from '../lib/rateLimit';
+import { queueAutoFlag } from '../moderation/autoFlag';
 
 /**
  * `changeUsername`
@@ -60,6 +61,16 @@ export const changeUsername = onCall<{ username: string }, Promise<{ username: s
         tx.delete(currentRef);
       }
       tx.update(userRef, { username: next, updatedAt: now() });
+      // A new @username goes past the word filter, like her bio does
+      // (flagProfileText). One report per name, so a retry files one.
+      queueAutoFlag(tx, {
+        targetType: 'user',
+        targetId: user.uid,
+        targetUid: user.uid,
+        campusId: user.campusId,
+        text: next,
+        idSuffix: `username_${next}`,
+      });
       return heldName;
     });
 

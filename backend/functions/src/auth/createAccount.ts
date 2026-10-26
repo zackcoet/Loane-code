@@ -23,6 +23,7 @@ import { auth, db, now, FieldValue } from '../lib/admin';
 import { callerIp, rateLimit } from '../lib/rateLimit';
 import { alreadyTaken, failed, internal, invalidArgument } from '../lib/errors';
 import { latestLegalVersions } from '../legal/legal';
+import { queueAutoFlag } from '../moderation/autoFlag';
 
 /**
  * `createAccount`
@@ -233,6 +234,18 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
           },
         };
         tx.set(privateRef, { ...settings, updatedAt: now() });
+
+        // Her name and @username are the first text anyone sees of her,
+        // and flagProfileText only checks later edits. A match files a
+        // report for an admin to look at; it never stops the sign-up.
+        queueAutoFlag(tx, {
+          targetType: 'user',
+          targetId: uid,
+          targetUid: uid,
+          campusId: campus.id,
+          text: `${firstName}\n${username}`,
+          idSuffix: 'signup',
+        });
 
         tx.set(
           campusRef,

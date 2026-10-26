@@ -1,4 +1,4 @@
-import type { WriteBatch } from 'firebase-admin/firestore';
+import type { Transaction, WriteBatch } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions';
 import {
   AUTO_FILTER_REPORTER_UID,
@@ -14,14 +14,14 @@ import { db, now } from '../lib/admin';
  * the word list (shared/src/contentFilter.ts). It lands in the same
  * admin Reports queue as a student's report, from "the content filter".
  *
- * Queued onto the caller's batch where there is one, so the report
- * exists exactly when the content does. Never throws on a match:
+ * Queued onto the caller's batch or transaction, so the report exists
+ * exactly when the content does. Never throws on a match:
  * flagging is for review, not refusal.
  *
  * Returns whether anything matched.
  */
 export function queueAutoFlag(
-  batch: WriteBatch,
+  batch: WriteBatch | Transaction,
   input: {
     targetType: ReportTargetType;
     targetId: string;
@@ -58,7 +58,10 @@ export function queueAutoFlag(
     status: 'open',
     resolution: { adminUid: null, action: null, notes: null, resolvedAt: null },
   };
-  batch.set(ref, { ...report, createdAt: now(), updatedAt: now() });
+  const row = { ...report, createdAt: now(), updatedAt: now() };
+  // Same call on both; TypeScript cannot call a union of overloads.
+  if ('commit' in batch) batch.set(ref, row);
+  else batch.set(ref, row);
   // The terms only, never the text — logs are read more widely than reports.
   logger.info('Content auto-flagged', { targetType: input.targetType, terms });
   return true;

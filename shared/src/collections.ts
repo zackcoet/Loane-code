@@ -30,8 +30,9 @@ export const COLLECTIONS = {
   /**
    * phoneHashes/{hash}
    *
-   * One document per student who has saved a phone number, keyed by a
-   * peppered hash of it. Holds a uid and nothing else — no number, no
+   * One document per saved phone number, keyed by a peppered hash of
+   * it. Holds who has that number saved (`uids`) and the one account it
+   * matches (`uid`, null when two accounts claim it) — no number, no
    * name. This is what makes "is this contact on Loane?" answerable
    * without anybody's address book being stored. See
    * backend/functions/src/lib/phoneHash.ts.
