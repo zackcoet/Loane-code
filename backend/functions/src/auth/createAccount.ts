@@ -243,8 +243,19 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
                   createdAt: now(),
                 }
               : {}),
-            'stats.userCount': FieldValue.increment(1),
-            'stats.verifiedUserCount': FieldValue.increment(1),
+            /*
+              A NESTED object, never 'stats.userCount'. With set(..., merge)
+              a dotted key is NOT a path: it wrote a separate field
+              literally named "stats.userCount", so the real count never
+              moved (and account deletion, which uses update, counted it
+              down below zero). Nested objects merge field by field.
+            */
+            stats: {
+              // A brand-new campus also needs its other counts at zero.
+              ...(!existingCampus.exists ? campus.stats : {}),
+              userCount: FieldValue.increment(1),
+              verifiedUserCount: FieldValue.increment(1),
+            },
             updatedAt: now(),
           },
           { merge: true },

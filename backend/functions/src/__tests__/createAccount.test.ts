@@ -147,6 +147,10 @@ describe('createAccount', () => {
     const campus = (await db.doc(`${COLLECTIONS.campuses}/school-clemson-test-edu`).get()).data();
     expect(campus?.emailDomains).toEqual(['clemson-test.edu']);
     expect(campus?.name).toBe('clemson-test.edu');
+    // A new campus starts with every count, not just the student count.
+    expect(campus?.stats).toMatchObject({ userCount: 1, listingCount: 0, postCount: 0 });
+    // The count lives in stats, never in a stray field named "stats.userCount".
+    expect(Object.keys(campus ?? {})).not.toContain('stats.userCount');
 
     const second = await create(signUp(form('signup-kate@clemson-test.edu', 'signupkate')));
     expect(second.campusId).toBe('school-clemson-test-edu');
