@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 52 (only when you next deploy): server fixes to account deletion and the dashboard's comment take-down. Normal deploy, nothing to switch on.
 - From run 51 (only when you next deploy): server fixes to publishing and accepting Terms/Privacy. Normal deploy, nothing to switch on. No legal wording changed.
 - From run 50 (only when you next deploy, and use the new app build after): server fixes so chats only move in the inbox when someone writes. Normal deploy, nothing to switch on.
 - From run 49 (only when you next deploy): server fixes to "Find friends from contacts" and to the word filter at sign-up. Normal deploy, nothing to switch on, nothing to recount.
@@ -44,6 +45,34 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-26 (run 52, ~4 AM Central) — A deleted girl's comments can't come back
+
+**Plan:** Everything left on the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1 by re-reading the dashboard's take-down buttons against "Delete my account", looking for the same kind of slip found on earlier nights.
+
+**Built / Fixed (what you or a student would notice):**
+- **Deleting an account now takes down comments you'd already hidden.** Before, only her visible comments came down. One you'd hidden in the dashboard stayed "hidden", so pressing "put it back" later would show a deleted girl's words under someone's look again.
+- **The dashboard won't put back a comment from a deleted account.** It says "Her account is deleted, so her comment cannot come back." This also covers accounts deleted before tonight's fix.
+- **Hiding a comment can't make a look's comment count go below zero.** Her own Delete already had this guard; the dashboard didn't.
+- Her looks and pieces were already safe — deleting an account takes those down whatever state they're in.
+
+**What to tap to see it:** On the emulators: dashboard → Reports (or a look's comments) → take down a comment → then delete that student's account → try "put it back": it refuses with the message above.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, 335 shared tests and 160 server tests that don't need the database. The 3 new database tests ran on GitHub with the full set: **all green ✅**.
+- B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: these server fixes. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping (H1) — next, re-read reviews and reports against account deletion the same way. Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- Deleting an account also takes down her admin-hidden comments; the dashboard won't bring back a deleted girl's comment; hiding a comment never takes a look's count below zero; tests
+- Decisions and North Star notes; autopilot log for run 52
 
 ---
 

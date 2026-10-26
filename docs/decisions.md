@@ -6,6 +6,23 @@ much as the answer.
 
 ---
 
+## 2026-10-26 — A deleted account's comments stay down, even ones an admin hid (autopilot run 52)
+
+**Decision:** deleting an account now sets her `suspended` comments to
+`removed` as well as her live ones; only live ones give back a look's
+comment count (a hidden one already did when it was hidden).
+`restoreComment` refuses when the author's account is deleted or
+missing — that covers accounts deleted before this fix. `hideComment`
+never takes a look's `commentCount` below zero, matching her own Delete.
+
+**Why:** account deletion only took down `active` comments. A comment an
+admin had hidden stayed `suspended`, so "put it back" in the dashboard
+would show a deleted girl's words under someone's look again, and add
+one to the count. Her looks and pieces were already safe: deletion
+takes those down whatever their status.
+
+---
+
 ## 2026-10-26 — A phone number two accounts both saved matches neither (autopilot run 49)
 
 **Decision:** `phoneHashes/{hash}` now records everyone who has that
