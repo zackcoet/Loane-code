@@ -286,6 +286,38 @@ describe('taking a comment down', () => {
   });
 });
 
+describe('private admin notes on a student', () => {
+  it('saves the note with who wrote it, and one audit row', async () => {
+    const { noteId } = (await fns.addAdminNote(
+      as(ADMIN, { uid: OWNER, note: '  Warned her about off-app payment  ' }),
+    )) as { noteId: string };
+    const note = (await db.doc(`${COLLECTIONS.users}/${OWNER}/adminNotes/${noteId}`).get()).data();
+    expect(note).toMatchObject({
+      uid: OWNER,
+      note: 'Warned her about off-app payment',
+      adminUid: ADMIN,
+    });
+    expect(await auditRows('add_admin_note')).toHaveLength(1);
+    // A private note never tells her anything.
+    expect(await notices(OWNER)).toHaveLength(0);
+  });
+
+  it('refuses a student, a missing account, and an empty or junk note', async () => {
+    expect(
+      await attempt(() => fns.addAdminNote(as(COMMENTER, { uid: OWNER, note: 'x' }, false))),
+    ).toMatch(/Admins only/);
+    expect(await attempt(() => fns.addAdminNote(as(ADMIN, { uid: 'ghost', note: 'x' })))).toMatch(
+      /could not find/,
+    );
+    for (const note of ['', '   ', 5, null]) {
+      expect(await attempt(() => fns.addAdminNote(as(ADMIN, { uid: OWNER, note })))).toMatch(
+        /Write the note/,
+      );
+    }
+    expect(await auditRows('add_admin_note')).toHaveLength(0);
+  });
+});
+
 describe('suspending a student', () => {
   async function ownerData() {
     return (await db.doc(`${COLLECTIONS.users}/${OWNER}`).get()).data();
