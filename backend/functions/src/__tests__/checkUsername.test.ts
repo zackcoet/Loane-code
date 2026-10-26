@@ -68,9 +68,7 @@ describe('checkUsername', () => {
     expect((await check({ username: 'ella p' })).reason).toMatch(/letters, numbers/);
     expect((await check({ username: '.ella' })).reason).toMatch(/start or end/);
     expect((await check({ username: 'admin' })).reason).toBe('That username is reserved.');
-    expect((await check({ username: 'deleted_abc123' })).reason).toBe(
-      'That username is reserved.',
-    );
+    expect((await check({ username: 'deleted_abc123' })).reason).toBe('That username is reserved.');
   });
 
   it('gives junk a clear answer, not a crash', async () => {
