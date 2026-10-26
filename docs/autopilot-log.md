@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 54 (only when you next deploy): a server fix to "Download my data". Normal deploy, nothing to switch on.
 - From run 53 (only when you next deploy, and use the new app build after): server fixes to account deletion, reviews and reports. Normal deploy, nothing to switch on. Accounts deleted before this deploy keep their name on old rentals; say the word and a later run can write a one-time clean-up for those.
 - From run 52 (only when you next deploy): server fixes to account deletion and the dashboard's comment take-down. Normal deploy, nothing to switch on.
 - From run 51 (only when you next deploy): server fixes to publishing and accepting Terms/Privacy. Normal deploy, nothing to switch on. No legal wording changed.
@@ -46,6 +47,33 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-26 (run 54, ~6 AM Central) — "Download my data" no longer gives away the other girl's chat settings
+
+**Plan:** Everything left on the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So, as run 53 suggested, this run re-read "Download my data" against account deletion and blocking (backlog H1).
+
+**Built / Fixed (what you or a student would notice):**
+- **Your data file now only shows your side of each chat.** Before, it also showed the other girl's side: whether she'd read your messages (even if she'd turned "Show read receipts" off), whether she'd muted the chat, and whether she'd deleted it from her inbox. The app never shows any of that, and Instagram's own data download doesn't either. Every message in the chat is still in the file, both sides, as before.
+- Checked and fine as it was: a deleted girl's leftovers, chats with someone you blocked (or who blocked you), and messages an admin took down (already blanked). Nothing in the file says who has blocked you.
+
+**What to tap to see it:** On the emulators: sign in as a student who has a chat → Settings → Download my data → in the file, under each chat, the unread count, "last read" and mute only list you.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, 335 shared tests and 178 server tests that don't need the database. The new database test ran on GitHub with the full set: **all green ✅**.
+- Not changed, on purpose: the two girls' phones can still read each other's side of a chat's settings behind the scenes (the badge and "Seen" need it). Only a tampered app could get at it; fixing that means rebuilding the inbox, which isn't worth it now. Noted in `docs/decisions.md`.
+- B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: this server fix. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping (H1) — next, re-read muting and hiding a user (B3) against deletion and blocking the same way. Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- Download my data shows only her side of a chat's unread counts, read times, mutes and deletes; tests
+- Decisions and North Star notes; autopilot log for run 54
 
 ---
 
