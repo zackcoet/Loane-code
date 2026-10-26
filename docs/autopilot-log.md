@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- **From run 46 — the student count on each campus is wrong on the live project.** Sign-up never actually added new girls to it (deleting an account did take them off), so "Join 120+ girls at USC" and the dashboard's Campuses page read too low, maybe below zero. After you next deploy, run the recount once: `cd backend/functions && npx tsx scripts/recountCampusStudents.ts --project loane-code` shows what it would change; add `--write` to save. Normal deploy otherwise, nothing to switch on.
 - From run 45 (only when you next deploy, and use the new app build after): server fixes so rental dates go by Columbia's day, and so a request for today or tomorrow doesn't expire before the lender sees it. Normal deploy, nothing to switch on.
 - From run 44 (only when you next deploy): a server fix to the hourly rental reminders, plus one new database index. Normal deploy, nothing to switch on.
 - From run 43 (only when you next deploy, and use the new app build after): server fixes to buying a piece and the rental steps. Normal deploy, nothing to switch on.
@@ -38,6 +39,41 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-26 (run 46, ~10 PM Central) — Sign-up counts properly; disputes and sales tidied up
+
+**Plan:** Everything left on the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1 (testing server code nobody had tested), as run 45 suggested: the dashboard's "Decide this dispute" button with sales in mind, then sign-up itself, which had no tests at all.
+
+**Built / Fixed (what a student would notice):**
+- **New girls now actually count on their campus.** Sign-up saved her +1 in the wrong place, so a campus's student count never went up (but deleting an account still took one off). That's the number behind "Join 120+ girls at USC" on the welcome screen and the Campuses page in the dashboard. Fixed. The live numbers need one recount (see NEEDS ZACK). The new sign-up tests caught this one.
+- **A girl on a school's second email address joins her school.** Many schools give out two kinds of address (clemson.edu and g.clemson.edu). Before, the first girl on g.clemson.edu got a "school" all to herself: empty feed, nobody to rent from. Now she joins Clemson, and a USC address like mailbox.sc.edu joins USC. Schools already made the old way are left alone. This doesn't change *who* can sign up; that's still your F7 decision.
+- **When an admin decides a dispute, both girls are asked for a review**, the same as any finished rental. Before, a decided dispute never asked.
+- **A finished sale never brings back a piece the admin took down.** If an admin took a piece down while a sale was going through, finishing the sale used to put it back up on her closet. Now it stays down, and if it's ever put back, it comes back as "sold". Old disputed sales (from before run 43) now end with the piece marked sold instead of buyable.
+- Dashboard: each "Decide" starts fresh at "Inconclusive" (it used to remember your last pick), and a disputed sale is labelled "Sale".
+- Junk sent to sign-up gets the form's normal answer instead of "Something went wrong".
+
+**What to tap to see it:**
+- Sign up a new test account on the emulators with any .edu email, then open the dashboard → Campuses. "Users" goes up by one.
+- Sign up with `someone@g.anyschool.edu`, then a second with `someone2@anyschool.edu`. Both land on the same campus.
+- Dashboard → Rentals → Needs review → Decide. Both girls get "Loane reviewed your rental" plus "How was renting…?" in Activity.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, 330 shared tests and 155 server tests. GitHub ran the full set, database tests included: **all green ✅** (650+ tests). One push went red first: that's how the count bug showed up. It was fixed in the next commit.
+- B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: these server fixes, then run the campus recount once (command at the top of this log). Nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code (H1): the background jobs that copy a girl's new name and photo onto her old posts and pieces, and the piece-view and look-engagement counters. Or H2 (small tidy-ups).
+
+**Commits:**
+- Deciding a dispute ends it like any finished rental; a finished sale never puts a taken-down piece back up; tests
+- Sign-up: girls on a school's other addresses join the same campus; junk sign-up input gets the form's answer; tests
+- Sign-up now really counts each new student on her campus; a recount script for the live counts
+- Decisions and North Star notes; autopilot log for run 46
 
 ---
 
