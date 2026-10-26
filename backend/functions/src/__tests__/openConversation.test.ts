@@ -8,6 +8,8 @@
  *   - The piece or rental the chat is "about" is kept only when it really
  *     belongs to these two; anything else is quietly dropped.
  *   - Junk input gets a clear answer, not a crash.
+ *   - Opening a chat they already have doesn't move it in either inbox —
+ *     only a message does.
  *
  * Run the emulators first:  npm run emulators
  */
@@ -175,5 +177,21 @@ describe('openConversation', () => {
     await open(ANNA, { withUid: ME, bookingId: 'b-first' });
     await open(ME, { withUid: ANNA, bookingId: 'b-second' });
     expect((await thread(ME, ANNA))?.bookingId).toBe('b-first');
+  });
+
+  it('opening a chat they already have does not move it up either inbox', async () => {
+    await open(ME, { withUid: ANNA });
+    const ref = db.doc(`${COLLECTIONS.conversations}/${ids.conversation(ME, ANNA)}`);
+    const stamp = new Date('2026-01-01T12:00:00Z');
+    await ref.update({ updatedAt: stamp });
+    await db.doc(`${COLLECTIONS.users}/${ANNA}`).update({ displayName: 'Anna New' });
+
+    await open(ME, { withUid: ANNA });
+    await open(ANNA, { withUid: ME });
+
+    const data = await thread(ME, ANNA);
+    expect(data?.updatedAt.toDate().toISOString()).toBe(stamp.toISOString());
+    // Her name on the thread is still kept up to date.
+    expect(data?.participants[ANNA].displayName).toBe('Anna New');
   });
 });

@@ -25,7 +25,10 @@ interface CheckUsernameResult {
 export const checkUsername = onCall<CheckUsernameInput, Promise<CheckUsernameResult>>(
   { region: 'us-central1' },
   async (request: CallableRequest<CheckUsernameInput>): Promise<CheckUsernameResult> => {
-    const raw = request.data?.username ?? '';
+    // Anything that isn't text counts as empty, so junk gets the form's
+    // own friendly answer instead of crashing on `.trim()`.
+    const given: unknown = request.data?.username;
+    const raw = typeof given === 'string' ? given : '';
     const check = validateUsername(raw);
     if (!check.ok) return { available: false, reason: check.error };
 

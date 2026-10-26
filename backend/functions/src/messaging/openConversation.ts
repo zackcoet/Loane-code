@@ -154,10 +154,15 @@ export async function ensureConversation(
     if (existing.exists) {
       // Keep the participant snapshots fresh, and attach the booking if
       // this is the first time the thread has had one.
+      //
+      // NOT `updatedAt`. The inbox is sorted by it, so touching it here
+      // floated the chat to the top of BOTH girls' inboxes just because
+      // one of them tapped "Message" on a profile and backed out — above
+      // chats with real new messages. Only a message moves a chat (see
+      // onMessageCreated); the same rule as a new profile photo.
       const patch: Record<string, unknown> = {
         [`participants.${me.uid}`]: summarizeUser(me),
         [`participants.${withUid}`]: summarizeUser(them),
-        updatedAt: now(),
       };
       if (bookingId && !(existing.data() as Conversation).bookingId) {
         patch.bookingId = bookingId;
