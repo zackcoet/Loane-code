@@ -1,6 +1,13 @@
 import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions';
-import { COLLECTIONS, isTryOnReady, type Listing, type Post, type PostPhoto } from '@loane/shared';
+import {
+  COLLECTIONS,
+  isTryOnReady,
+  type Listing,
+  type PhotoTag,
+  type Post,
+  type PostPhoto,
+} from '@loane/shared';
 import { db, now } from '../lib/admin';
 
 /**
@@ -17,8 +24,6 @@ import { db, now } from '../lib/admin';
  * changes, so an ordinary listing edit costs nothing.
  */
 
-const BATCH_SIZE = 400;
-
 export const refreshTagLabels = onDocumentUpdated(
   { document: `${COLLECTIONS.listings}/{listingId}`, region: 'us-central1' },
   async (event) => {
@@ -29,7 +34,7 @@ export const refreshTagLabels = onDocumentUpdated(
     const changed =
       before.name !== after.name ||
       before.coverUrl !== after.coverUrl ||
-      before.pricing.threeDayCents !== after.pricing.threeDayCents ||
+      before.pricing?.threeDayCents !== after.pricing?.threeDayCents ||
       before.salePriceCents !== after.salePriceCents ||
       before.owner.username !== after.owner.username ||
       /*
@@ -43,52 +48,92 @@ export const refreshTagLabels = onDocumentUpdated(
     if (!changed) return;
 
     const listingId = event.params.listingId;
-    const label = {
-      name: after.name,
-      coverUrl: after.coverUrl,
-      priceCents3Day: after.pricing.threeDayCents,
-      salePriceCents: after.salePriceCents,
-      ownerUsername: after.owner.username,
-      tryOnReady: isTryOnReady(after),
-    };
 
+    /*
+      THE PIECE AS IT IS NOW, not as this event remembers it. Change a
+      price twice in a row and two runs of this job start at once, in no
+      guaranteed order; copying the event's own version let the older
+      price win and stay on every look. Reading fresh, both write the
+      newest.
+    */
+    const fresh = await db().collection(COLLECTIONS.listings).doc(listingId).get();
+    if (!fresh.exists) return;
+    const label = labelOf(fresh.data() as Listing);
+
+    // index-check: one array-contains filter and no sort — no index needed.
     const snap = await db()
       .collection(COLLECTIONS.posts)
       .where('taggedListingIds', 'array-contains', listingId)
       .get();
-
     if (snap.empty) return;
 
-    for (let i = 0; i < snap.docs.length; i += BATCH_SIZE) {
-      const batch = db().batch();
-      for (const doc of snap.docs.slice(i, i + BATCH_SIZE)) {
-        const post = doc.data() as Post;
-
-        const photos: PostPhoto[] = (post.photos ?? []).map((photo) => ({
-          ...photo,
-          tags: (photo.tags ?? []).map((tag) =>
-            tag.listingId === listingId ? { ...tag, label } : tag,
-          ),
-        }));
-
-        // The summary row under the photo carries its own copy.
-        const taggedListings = (post.taggedListings ?? []).map((summary) =>
-          summary.listingId === listingId
-            ? {
-                ...summary,
-                name: after.name,
-                coverUrl: after.coverUrl,
-                priceCents3Day: after.pricing.threeDayCents,
-                salePriceCents: after.salePriceCents,
-              }
-            : summary,
-        );
-
-        batch.update(doc.ref, { photos, taggedListings, updatedAt: now() });
-      }
-      await batch.commit();
+    /*
+      ONE LOOK AT A TIME, each in its own transaction. This rewrites a
+      look's whole list of photos, so writing from a copy read a moment
+      earlier could undo an edit she made to that look in between — a
+      tag she moved, a photo she removed. And a look deleted meanwhile
+      is simply skipped, where in a shared batch it failed the update to
+      every other look beside it.
+    */
+    let refreshed = 0;
+    for (const doc of snap.docs) {
+      const done = await db().runTransaction(async (tx) => {
+        const current = await tx.get(doc.ref);
+        if (!current.exists) return false;
+        const patch = relabelPost(current.data() as Post, listingId, label);
+        if (!patch) return false;
+        tx.update(doc.ref, { ...patch, updatedAt: now() });
+        return true;
+      });
+      if (done) refreshed += 1;
     }
 
-    logger.info('Refreshed tag labels', { listingId, posts: snap.size });
+    logger.info('Refreshed tag labels', { listingId, posts: refreshed });
   },
 );
+
+type TagLabel = PhotoTag['label'];
+
+/** What a tag on a look shows for this piece. */
+export function labelOf(listing: Listing): TagLabel {
+  return {
+    name: listing.name,
+    coverUrl: listing.coverUrl,
+    priceCents3Day: listing.pricing?.threeDayCents ?? null,
+    salePriceCents: listing.salePriceCents ?? null,
+    ownerUsername: listing.owner.username,
+    tryOnReady: isTryOnReady(listing),
+  };
+}
+
+/**
+ * The look's photos and summary row with this piece's label swapped in,
+ * or null when the look no longer tags it (she edited it out since).
+ */
+export function relabelPost(
+  post: Post,
+  listingId: string,
+  label: TagLabel,
+): Pick<Post, 'photos' | 'taggedListings'> | null {
+  if (!(post.taggedListingIds ?? []).includes(listingId)) return null;
+
+  const photos: PostPhoto[] = (post.photos ?? []).map((photo) => ({
+    ...photo,
+    tags: (photo.tags ?? []).map((tag) => (tag.listingId === listingId ? { ...tag, label } : tag)),
+  }));
+
+  // The summary row under the photo carries its own copy.
+  const taggedListings = (post.taggedListings ?? []).map((summary) =>
+    summary.listingId === listingId
+      ? {
+          ...summary,
+          name: label.name,
+          coverUrl: label.coverUrl,
+          priceCents3Day: label.priceCents3Day,
+          salePriceCents: label.salePriceCents,
+        }
+      : summary,
+  );
+
+  return { photos, taggedListings };
+}

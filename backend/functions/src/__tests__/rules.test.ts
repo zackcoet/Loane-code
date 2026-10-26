@@ -194,7 +194,12 @@ async function sendAs(
   const quotaRef = doc(db, 'messageQuotas', senderUid);
   const quota = await getDoc(quotaRef).catch(() => null);
   const batch = writeBatch(db);
-  batch.set(doc(db, 'conversations', conversationId, 'messages', messageId), data);
+  // Stamped on the server's clock, as the app does, unless the test
+  // brings its own date to see it refused.
+  batch.set(doc(db, 'conversations', conversationId, 'messages', messageId), {
+    createdAt: serverTimestamp(),
+    ...data,
+  });
   if (quota?.exists()) batch.update(quotaRef, { count: increment(1) });
   else batch.set(quotaRef, { windowStart: serverTimestamp(), count: 1 });
   return batch.commit();
@@ -1176,6 +1181,15 @@ describe('conversations', () => {
         await setDoc(quotaDoc(ctx.firestore()), data);
       });
 
+    it('refuses a message dated by her phone instead of the server', async () => {
+      const nextYear = new Date(Date.now() + 365 * 86_400_000);
+      await assertFails(sendAs(asElla(), 'chat-1', 'q-date', { ...plain, createdAt: nextYear }));
+      await assertFails(
+        sendAs(asElla(), 'chat-1', 'q-date2', { ...plain, createdAt: new Date('2020-01-01') }),
+      );
+      await assertSucceeds(sendAs(asElla(), 'chat-1', 'q-date3', plain));
+    });
+
     it('refuses a message that does not tick her counter', async () => {
       await assertFails(setDoc(doc(asElla(), 'conversations', 'chat-1', 'messages', 'q1'), plain));
     });
@@ -1196,7 +1210,10 @@ describe('conversations', () => {
       // another Firestore instance, and asElla() makes a new one each call.
       const ella = asElla();
       const batch = writeBatch(ella);
-      batch.set(doc(ella, 'conversations', 'chat-1', 'messages', 'q5'), plain);
+      batch.set(doc(ella, 'conversations', 'chat-1', 'messages', 'q5'), {
+        ...plain,
+        createdAt: serverTimestamp(),
+      });
       batch.set(quotaDoc(ella), { windowStart: serverTimestamp(), count: 1 });
       await assertSucceeds(batch.commit());
     });

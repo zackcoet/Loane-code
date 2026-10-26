@@ -1,6 +1,12 @@
 import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
-import { COLLECTIONS, LIKED_MESSAGE_PREVIEW, likeInboxUpdate } from '@loane/shared';
-import { db, now, FieldValue } from '../lib/admin';
+import {
+  COLLECTIONS,
+  LIKED_MESSAGE_PREVIEW,
+  likeInboxUpdate,
+  previewMovesForward,
+} from '@loane/shared';
+import { db, now, FieldValue, Timestamp } from '../lib/admin';
+import { eventMillis } from '../lib/eventTime';
 import type { Conversation, Message } from '@loane/shared';
 
 /**
@@ -27,29 +33,38 @@ export const onMessageLiked = onDocumentUpdated(
     if (!likeInboxUpdate(before.likedBy, after.likedBy, after.senderUid, null)) return;
 
     const ref = db().collection(COLLECTIONS.conversations).doc(event.params.conversationId);
-    const snap = await ref.get();
-    if (!snap.exists) return;
-    const conversation = snap.data() as Conversation;
+    const likedMs = eventMillis(event.time);
 
-    const update = likeInboxUpdate(
-      before.likedBy,
-      after.likedBy,
-      after.senderUid,
-      conversation.lastMessage,
-    );
-    if (!update) return;
+    // In a transaction for the same reason as onMessageCreated: a heart
+    // and a new message a moment apart must not leave the older of the
+    // two as the preview.
+    await db().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists) return;
+      const conversation = snap.data() as Conversation;
 
-    const patch: Record<string, unknown> = {
-      lastMessage: {
-        body: LIKED_MESSAGE_PREVIEW,
-        senderUid: update.likerUid,
-        sentAt: now(),
-      },
-      updatedAt: now(),
-    };
-    if (update.bumpUnread) {
-      patch[`unreadCounts.${after.senderUid}`] = FieldValue.increment(1);
-    }
-    await ref.update(patch);
+      const update = likeInboxUpdate(
+        before.likedBy,
+        after.likedBy,
+        after.senderUid,
+        conversation.lastMessage,
+      );
+      if (!update) return;
+      // A message sent after the heart is already the preview: leave it.
+      if (!previewMovesForward(conversation.lastMessage, likedMs)) return;
+
+      const patch: Record<string, unknown> = {
+        lastMessage: {
+          body: LIKED_MESSAGE_PREVIEW,
+          senderUid: update.likerUid,
+          sentAt: Timestamp.fromMillis(likedMs),
+        },
+        updatedAt: now(),
+      };
+      if (update.bumpUnread) {
+        patch[`unreadCounts.${after.senderUid}`] = FieldValue.increment(1);
+      }
+      tx.update(ref, patch);
+    });
   },
 );

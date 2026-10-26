@@ -137,3 +137,25 @@ export function visibleAfterDelete(
   if (ms == null) return true;
   return ms > hiddenMs;
 }
+
+/**
+ * Whether something that happened at `incomingMs` should replace the
+ * inbox preview.
+ *
+ * Two messages sent a moment apart are summarized by two separate runs
+ * of the server job, in no guaranteed order. Each used to write its own
+ * preview, so when the first finished last the inbox showed the OLDER
+ * message under the newer one's time. Now a preview only ever moves
+ * forward: whatever happened later wins, whichever run finishes last.
+ *
+ * A preview with no time (old threads, or none yet) is always replaced.
+ */
+export function previewMovesForward(
+  current: Pick<NonNullable<Conversation['lastMessage']>, 'sentAt'> | null | undefined,
+  incomingMs: number,
+): boolean {
+  if (!current) return true;
+  const currentMs = toMillis(current.sentAt);
+  if (currentMs == null) return true;
+  return incomingMs >= currentMs;
+}

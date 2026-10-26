@@ -752,6 +752,11 @@ service cloud.firestore {
           && countedInQuota()
           && request.resource.data.senderUid == uid()
           && request.resource.data.isDeleted == false
+          // Stamped by the server's clock. A thread is sorted by this,
+          // and "Seen" compares it with when she last looked, so a
+          // message dated next year would sit at the bottom of the
+          // thread forever and never read as seen.
+          && request.resource.data.createdAt == request.time
           && (!('sharedPost' in request.resource.data)
               || request.resource.data.sharedPost == null)
           && (!('sharedListing' in request.resource.data)

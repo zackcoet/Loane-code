@@ -5,6 +5,7 @@ import {
   isMutedFor,
   isRequestFor,
   isWithBlocked,
+  previewMovesForward,
   splitInbox,
   visibleAfterDelete,
 } from '../inbox';
@@ -135,5 +136,30 @@ describe('visibleAfterDelete', () => {
     expect(visibleAfterDelete(t, ME, at(1500))).toBe(false);
     expect(visibleAfterDelete(t, ME, at(2500))).toBe(true);
     expect(visibleAfterDelete(t, ME, null)).toBe(true);
+  });
+});
+
+describe('previewMovesForward', () => {
+  it('lets a later message replace the preview', () => {
+    expect(previewMovesForward({ sentAt: at(1000) }, 2000)).toBe(true);
+  });
+
+  it('keeps the newer preview when an older message is summarized last', () => {
+    expect(previewMovesForward({ sentAt: at(2000) }, 1000)).toBe(false);
+  });
+
+  it('replaces a preview at the very same moment', () => {
+    expect(previewMovesForward({ sentAt: at(2000) }, 2000)).toBe(true);
+  });
+
+  it('always replaces no preview, or one with no time', () => {
+    expect(previewMovesForward(null, 1000)).toBe(true);
+    expect(previewMovesForward(undefined, 1000)).toBe(true);
+    expect(previewMovesForward({ sentAt: null as never }, 1000)).toBe(true);
+  });
+
+  it('reads a server timestamp the same way', () => {
+    const ts = { seconds: 2, nanoseconds: 0, toDate: () => new Date(2000) };
+    expect(previewMovesForward({ sentAt: ts }, 1500)).toBe(false);
   });
 });

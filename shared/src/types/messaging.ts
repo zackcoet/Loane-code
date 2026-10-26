@@ -20,7 +20,14 @@ export interface Conversation extends BaseDoc, CampusScoped {
   lastMessage: {
     body: string;
     senderUid: string;
+    /** When it was sent (or hearted), on the server's clock. */
     sentAt: Timestampish;
+    /**
+     * Which message the preview shows, so the server job that writes it
+     * can tell when it is being run twice for the same message. Absent
+     * on older threads and on a "Liked a message" preview.
+     */
+    messageId?: string;
   } | null;
 
   /** Unread count per uid, kept by a Cloud Function. */

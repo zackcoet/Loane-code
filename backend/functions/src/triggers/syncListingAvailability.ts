@@ -1,11 +1,6 @@
 import { onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions';
-import {
-  BLOCKING_BOOKING_STATUSES,
-  COLLECTIONS,
-  datesInRange,
-  type Booking,
-} from '@loane/shared';
+import { BLOCKING_BOOKING_STATUSES, COLLECTIONS, datesInRange, type Booking } from '@loane/shared';
 import { db, now } from '../lib/admin';
 
 /**
@@ -38,34 +33,51 @@ export const syncListingAvailability = onDocumentWritten(
     // matters. Editing a handoff note should not trigger a recompute.
     const wasBlocking = before ? BLOCKING_BOOKING_STATUSES.includes(before.status) : false;
     const isBlocking = after ? BLOCKING_BOOKING_STATUSES.includes(after.status) : false;
-    const datesMoved =
-      before?.startDate !== after?.startDate || before?.endDate !== after?.endDate;
+    const datesMoved = before?.startDate !== after?.startDate || before?.endDate !== after?.endDate;
 
     if (wasBlocking === isBlocking && !datesMoved) return;
 
-    const snap = await db()
-      .collection(COLLECTIONS.bookings)
-      .where('listingId', '==', listingId)
-      .where('status', 'in', BLOCKING_BOOKING_STATUSES as unknown as string[])
-      .get();
+    /*
+      IN A TRANSACTION. Two bookings on one piece changing at once — a
+      yes and a cancel a second apart — are two runs of this job. Each
+      used to read the bookings, then write its answer; the one that
+      read first could write last and put back a weekend that had just
+      been freed, or drop one that had just been taken. Inside a
+      transaction the read and the write are one step, so the last
+      write is always the true picture.
+    */
+    const listingRef = db().collection(COLLECTIONS.listings).doc(listingId);
+    const days = await db().runTransaction(async (tx) => {
+      const [listing, snap] = await Promise.all([
+        tx.get(listingRef),
+        tx.get(
+          db()
+            .collection(COLLECTIONS.bookings)
+            .where('listingId', '==', listingId)
+            .where('status', 'in', BLOCKING_BOOKING_STATUSES as unknown as string[]),
+        ),
+      ]);
+      // A removed piece has nobody left to show a calendar to.
+      if (!listing.exists) return null;
 
-    const booked = new Set<string>();
-    for (const doc of snap.docs) {
-      const booking = doc.data() as Booking;
-      if (!booking.startDate || !booking.endDate) continue;
-      for (const day of datesInRange({
-        startDate: booking.startDate,
-        endDate: booking.endDate,
-      })) {
-        booked.add(day);
-      }
-    }
+      const bookedDates = bookedDatesOf(snap.docs.map((d) => d.data() as Booking));
+      tx.update(listingRef, { bookedDates, updatedAt: now() });
+      return bookedDates.length;
+    });
 
-    await db()
-      .collection(COLLECTIONS.listings)
-      .doc(listingId)
-      .update({ bookedDates: [...booked].sort(), updatedAt: now() });
-
-    logger.debug('Synced listing availability', { listingId, days: booked.size });
+    logger.debug('Synced listing availability', { listingId, days });
   },
 );
+
+/** Every day any of these bookings holds the piece, sorted, no repeats. */
+export function bookedDatesOf(bookings: Pick<Booking, 'startDate' | 'endDate'>[]): string[] {
+  const booked = new Set<string>();
+  for (const booking of bookings) {
+    // A sale has no dates: it never greys out a day.
+    if (!booking.startDate || !booking.endDate) continue;
+    for (const day of datesInRange({ startDate: booking.startDate, endDate: booking.endDate })) {
+      booked.add(day);
+    }
+  }
+  return [...booked].sort();
+}
