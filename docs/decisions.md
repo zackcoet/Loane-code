@@ -2093,3 +2093,11 @@ Left as they are on purpose: a heart on a message (A9 made "Liked a message" a r
 - **Saving a draft again keeps its `createdAt`.**
 - **`acceptLegalDocs` takes only real numbers** (it used `Number()`, so `true` counted as version 1) and refuses a missing or deleted account with "We could not find your account." A deleted shell must not gain a fresh acceptance date — that date is the record of when she agreed.
 - No change to legal text, and the published Terms v1 are untouched.
+
+## 2026-10-26 — Past rentals lose her name; a deleted account can't be reviewed or profile-reported (autopilot run 53)
+
+- **`eraseAccount` overwrites her copy on every rental she was in** (`lender` or `renter`, whichever was her) with the "Deleted account" summary. The 2026-10-21 decision and Privacy Policy say past rentals are kept *without her name*, but a booking keeps its own copy of both girls' names and photos and `propagateProfileChanges` deliberately never touches bookings — so the other girl's My Rentals kept "@herhandle" and her photo link forever. Done in the deletion itself rather than in the trigger, so an ordinary rename still leaves rental records as they were. Money, dates, piece and the other girl's side are untouched. It reuses the bookings already read to check for open rentals, so no new query or index.
+- **`writeReview` refuses when the person being rated is `deactivated`**: "Her account was deleted, so this rental can't be reviewed." Nobody can see a deleted girl's stars, and the "You got a review" alert was being written into the alerts deletion had just erased. The rental screen hides "Review @…" once the other side is a deleted summary (true after the fix above). Reviews written before she left are untouched, and editing one inside the 48 hours still works.
+- **`submitReport` refuses a profile report on a deleted account** — the dashboard won't warn or suspend one, so the report could only sit open forever. Her rentals, reviews and messages can still be reported; those records stay and may still need an admin.
+- Not done, noted for later: other girls' Activity alerts that name her (e.g. "@her liked your look") keep her old handle until the 30-day clean-up removes them. Fixing that needs a search across every girl's alerts and a new index, which is a bigger change than the gap is worth while alerts expire on their own.
+

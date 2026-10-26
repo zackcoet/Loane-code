@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 53 (only when you next deploy, and use the new app build after): server fixes to account deletion, reviews and reports. Normal deploy, nothing to switch on. Accounts deleted before this deploy keep their name on old rentals; say the word and a later run can write a one-time clean-up for those.
 - From run 52 (only when you next deploy): server fixes to account deletion and the dashboard's comment take-down. Normal deploy, nothing to switch on.
 - From run 51 (only when you next deploy): server fixes to publishing and accepting Terms/Privacy. Normal deploy, nothing to switch on. No legal wording changed.
 - From run 50 (only when you next deploy, and use the new app build after): server fixes so chats only move in the inbox when someone writes. Normal deploy, nothing to switch on.
@@ -45,6 +46,34 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-26 (run 53, ~5 AM Central) — A deleted girl's name comes off old rentals
+
+**Plan:** Everything left on the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So, as run 52 suggested, this run re-read reviews and reports against "Delete my account" (backlog H1).
+
+**Built / Fixed (what you or a student would notice):**
+- **Deleting an account now takes her name and photo off past rentals.** Our Privacy Policy says old rentals are kept "without your name", but each rental keeps its own copy of both girls' names, and nothing was clearing it. So the girl she rented with still saw "@her" in My Rentals forever. Now it reads "Deleted account". The money, dates and piece stay exactly as they were.
+- **You can't review someone who deleted her account.** Before, it went through and quietly dropped a "You got a review" alert into the account we'd just emptied. The "Review @…" button now disappears, and an older app gets a clear message instead.
+- **You can't report a deleted account's (empty) profile.** The dashboard can't act on one anyway, so those reports would sit open forever. Her old rentals, reviews and messages can still be reported.
+
+**What to tap to see it:** On the emulators: finish a rental between two students → delete one account in Settings → sign in as the other girl → Profile → My Rentals → open that rental: it says "Deleted account" and there is no "Review" button.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, 335 shared tests and 160 server tests that don't need the database. The 3 new database tests ran on GitHub with the full set: **all green ✅**.
+- Not fixed, on purpose: other girls' Activity alerts that mention her ("@her liked your look") keep her old handle until they're cleared automatically after 30 days. Fixing it means searching everyone's alerts — a bigger change than it's worth.
+- B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: these server fixes. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping (H1) — next, re-read the data export ("Download my data") against deletion and blocking. Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- Deleting an account takes her name and photo off past rentals; a deleted girl can't be reviewed or reported as a profile; app hides the review button for her; tests
+- Decisions and North Star notes; autopilot log for run 53
 
 ---
 
