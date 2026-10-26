@@ -1,5 +1,6 @@
 import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions';
+import type { BulkWriter } from 'firebase-admin/firestore';
 import { COLLECTIONS, type User, type UserSummary } from '@loane/shared';
 import { db, now } from '../lib/admin';
 
@@ -18,32 +19,26 @@ import { db, now } from '../lib/admin';
  * new bio, a size — costs nothing.
  */
 
-/** Firestore allows 500 writes per batch; stay under it. */
-const BATCH_SIZE = 400;
-
 export const propagateProfileChanges = onDocumentUpdated(
   { document: `${COLLECTIONS.users}/{uid}`, region: 'us-central1' },
   async (event) => {
     const before = event.data?.before.data() as User | undefined;
     const after = event.data?.after.data() as User | undefined;
     if (!before || !after) return;
+    if (!summaryChanged(before, after)) return;
 
-    const changed =
-      before.username !== after.username ||
-      before.displayName !== after.displayName ||
-      before.photoUrl !== after.photoUrl ||
-      before.isVerified !== after.isVerified;
+    /*
+      THE PROFILE AS IT IS NOW, not as this event remembers it.
 
-    if (!changed) return;
-
-    const summary: UserSummary = {
-      uid: after.uid,
-      username: after.username,
-      displayName: after.displayName,
-      photoUrl: after.photoUrl,
-      campusId: after.campusId,
-      isVerified: after.isVerified,
-    };
+      Change her name twice in quick succession and two runs of this job
+      start at once, in no guaranteed order. Each used to copy the
+      version in its own event, so if the first run finished last, her
+      OLD name went back onto every look and chat and stayed there. Both
+      runs reading the document fresh means both write the newest name.
+    */
+    const fresh = await db().collection(COLLECTIONS.users).doc(event.params.uid).get();
+    if (!fresh.exists) return;
+    const summary = summaryOf(fresh.data() as User);
 
     /*
       EVERY COPY, not just the two that render in a grid.
@@ -58,60 +53,96 @@ export const propagateProfileChanges = onDocumentUpdated(
       record. A live one shows her current name because it reads the
       user document.
     */
-    const updated = {
-      listings: await rewrite(COLLECTIONS.listings, 'ownerUid', after.uid, { owner: summary }),
-      posts: await rewrite(COLLECTIONS.posts, 'authorUid', after.uid, { author: summary }),
-      comments: await rewrite(COLLECTIONS.comments, 'authorUid', after.uid, { author: summary }),
-      conversations: await rewriteConversations(after.uid, summary),
-    };
+    const writer = db().bulkWriter();
+    // A look or piece she deletes while this runs is simply skipped. In a
+    // plain batch, one vanished document failed all 400 writes beside it,
+    // and the chats (rewritten last) were never reached at all.
+    writer.onWriteError((error) => {
+      if (error.code !== GRPC_NOT_FOUND) {
+        logger.error('Could not refresh a profile copy', {
+          uid: summary.uid,
+          path: error.documentRef.path,
+          code: error.code,
+        });
+      }
+      return false;
+    });
 
-    logger.info('Refreshed denormalized profile copies', { uid: after.uid, ...updated });
+    const updated = {
+      listings: await rewrite(writer, COLLECTIONS.listings, 'ownerUid', summary.uid, {
+        owner: summary,
+        updatedAt: now(),
+      }),
+      posts: await rewrite(writer, COLLECTIONS.posts, 'authorUid', summary.uid, {
+        author: summary,
+        updatedAt: now(),
+      }),
+      comments: await rewrite(writer, COLLECTIONS.comments, 'authorUid', summary.uid, {
+        author: summary,
+        updatedAt: now(),
+      }),
+      /*
+        A chat stores both people's summaries under `participants`, keyed
+        by uid. NO `updatedAt` here: the inbox is sorted by it, so a new
+        profile photo used to float every chat she was in to the top of
+        her inbox AND the other girl's, above the chats with real new
+        messages in them.
+      */
+      conversations: await rewrite(
+        writer,
+        COLLECTIONS.conversations,
+        'participantUids',
+        summary.uid,
+        { [`participants.${summary.uid}`]: summary },
+        'array-contains',
+      ),
+    };
+    await writer.close();
+
+    logger.info('Refreshed denormalized profile copies', { uid: summary.uid, ...updated });
   },
 );
 
-/** Rewrites one field across every document owned by this user. */
-/**
- * A chat stores both people's summaries under `participants`, keyed by
- * uid, so the patch path is built per document rather than being one
- * fixed field.
- */
-async function rewriteConversations(uid: string, summary: UserSummary): Promise<number> {
-  const snap = await db()
-    .collection(COLLECTIONS.conversations)
-    .where('participantUids', 'array-contains', uid)
-    .get();
-  if (snap.empty) return 0;
+/** gRPC's "not found": the document was deleted after we read it. */
+const GRPC_NOT_FOUND = 5;
 
-  let written = 0;
-  for (let i = 0; i < snap.docs.length; i += BATCH_SIZE) {
-    const batch = db().batch();
-    for (const doc of snap.docs.slice(i, i + BATCH_SIZE)) {
-      batch.update(doc.ref, { [`participants.${uid}`]: summary, updatedAt: now() });
-      written += 1;
-    }
-    await batch.commit();
-  }
-  return written;
+/** Whether any of the fields copied onto her looks, pieces and chats moved. */
+export function summaryChanged(before: User, after: User): boolean {
+  return (
+    before.username !== after.username ||
+    before.displayName !== after.displayName ||
+    before.photoUrl !== after.photoUrl ||
+    before.isVerified !== after.isVerified ||
+    before.campusId !== after.campusId
+  );
 }
 
+export function summaryOf(user: User): UserSummary {
+  return {
+    uid: user.uid,
+    username: user.username,
+    displayName: user.displayName,
+    photoUrl: user.photoUrl ?? null,
+    campusId: user.campusId,
+    isVerified: user.isVerified,
+  };
+}
+
+/** Patches every document of hers in one collection. */
 async function rewrite(
+  writer: BulkWriter,
   collection: string,
   ownerField: string,
   uid: string,
   patch: Record<string, unknown>,
+  op: '==' | 'array-contains' = '==',
 ): Promise<number> {
-  // index-check: one == filter and no sort, whatever the field — no index needed.
-  const snap = await db().collection(collection).where(ownerField, '==', uid).get();
-  if (snap.empty) return 0;
-
-  let written = 0;
-  for (let i = 0; i < snap.docs.length; i += BATCH_SIZE) {
-    const batch = db().batch();
-    for (const doc of snap.docs.slice(i, i + BATCH_SIZE)) {
-      batch.update(doc.ref, { ...patch, updatedAt: now() });
-      written += 1;
-    }
-    await batch.commit();
+  // index-check: one equality/array-contains filter and no sort — no index needed.
+  const snap = await db().collection(collection).where(ownerField, op, uid).get();
+  for (const doc of snap.docs) {
+    // A failed write is already logged (or deliberately ignored) by
+    // onWriteError; this only stops it surfacing as an unhandled rejection.
+    writer.update(doc.ref, patch).catch(() => undefined);
   }
-  return written;
+  return snap.size;
 }

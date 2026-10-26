@@ -2,6 +2,7 @@ import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions';
 import { COLLECTIONS, type AppEvent, type Post } from '@loane/shared';
 import { db, FieldValue } from '../lib/admin';
+import { isDocId } from '../lib/input';
 
 /**
  * Moves the two post counters the app is not allowed to write.
@@ -31,15 +32,24 @@ export const countPostEngagement = onDocumentCreated(
     const isTagTap = data.type === 'tagged_item_tap';
     if (!isView && !isTagTap) return;
 
-    const postId = isView ? data.targetId : (data.meta?.postId as string | undefined);
-    if (!postId) return;
+    // Event rows are written by phones, so these ids are whatever she
+    // sent. A slash or a number would make `doc()` throw.
+    const postId: unknown = isView ? data.targetId : data.meta?.postId;
+    if (!isDocId(postId)) return;
 
     const ref = db().collection(COLLECTIONS.posts).doc(postId);
     const snap = await ref.get();
     if (!snap.exists) return;
 
     // The author browsing her own look is not engagement.
-    if ((snap.data() as Post).authorUid === data.uid) return;
+    const post = snap.data() as Post;
+    if (post.authorUid === data.uid) return;
+
+    // A tap only counts for the look that actually tags that piece. This
+    // is the number we steer the whole product by, so a stray tap (or a
+    // phone sending any post id it likes) must not credit a look with a
+    // rental lead it never gave.
+    if (isTagTap && !(post.taggedListingIds ?? []).includes(data.targetId ?? '')) return;
 
     await ref.update({
       [isView ? 'stats.viewCount' : 'stats.tagTapCount']: FieldValue.increment(1),

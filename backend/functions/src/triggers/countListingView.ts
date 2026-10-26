@@ -2,6 +2,7 @@ import { onDocumentCreated } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions';
 import { COLLECTIONS, type AppEvent, type Listing } from '@loane/shared';
 import { db, FieldValue } from '../lib/admin';
+import { isDocId } from '../lib/input';
 
 /**
  * Keeps `listing.stats.viewCount` moving.
@@ -27,8 +28,9 @@ export const countListingView = onDocumentCreated(
     const data = event.data?.data() as AppEvent | undefined;
     if (!data || data.type !== 'listing_view') return;
 
+    // Written by a phone: a slash in it would make `doc()` throw.
     const listingId = data.targetId;
-    if (!listingId) return;
+    if (!isDocId(listingId)) return;
 
     const ref = db().collection(COLLECTIONS.listings).doc(listingId);
     const snap = await ref.get();
