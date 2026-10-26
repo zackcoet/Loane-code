@@ -171,6 +171,8 @@ describe('resolveReport — take the content down', () => {
 
     const convo = (await db.doc(`conversations/${CONVO}`).get()).data();
     expect(convo?.lastMessage.body).toBe(REMOVED_MESSAGE_TEXT);
+    // A take-down is not a new message: the chat keeps its place in the inbox.
+    expect(convo?.updatedAt).toBeUndefined();
 
     // The words live on only where admins can see them.
     const audit = await db

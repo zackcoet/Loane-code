@@ -304,10 +304,9 @@ async function takeDownMessage(
 
   const conversation = conversationSnap.data() as Conversation | undefined;
   if (conversation && previewShowsMessage(conversation.lastMessage, message)) {
-    batch.update(conversationRef, {
-      'lastMessage.body': REMOVED_MESSAGE_TEXT,
-      updatedAt: now(),
-    });
+    // Not `updatedAt`: the inbox is sorted by it, and a take-down is not
+    // a new message — it should not float the chat above newer ones.
+    batch.update(conversationRef, { 'lastMessage.body': REMOVED_MESSAGE_TEXT });
   }
 
   logAdminAction(batch, {

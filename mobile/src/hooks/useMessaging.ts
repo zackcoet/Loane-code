@@ -391,7 +391,9 @@ export function useConversation(conversationId: string | undefined) {
       // With "Show read receipts" off, her badge clears but nobody is
       // told she has seen anything.
       ...(receiptsOn ? { [`lastReadAt.${uid}`]: serverTimestamp() } : {}),
-      updatedAt: serverTimestamp(),
+      // Not `updatedAt`: the inbox is sorted by it, so reading an older
+      // chat floated it above newer ones in BOTH inboxes. Only a new
+      // message moves a chat — the same as deleting or muting one.
     }).catch(() => {});
   }, [conversationId, uid, conversation, messages, receiptsOn]);
 
