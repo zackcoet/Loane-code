@@ -2057,3 +2057,14 @@ Any .edu can sign up (2026-10-12), and an unknown domain got its own campus matc
 - **A profile change no longer touches a chat's `updatedAt`.** The inbox is sorted by it, so a new photo floated every chat she was in to the top of both girls' inboxes, above chats with real new messages. Listings, posts and comments still get `updatedAt` (nothing sorts them by it).
 - **The copies are written with a BulkWriter that skips a document deleted mid-run** (gRPC NOT_FOUND) and logs any other failure. In a plain batch one vanished look failed the 400 writes beside it, and chats (rewritten last) were never reached. A campus change now also counts as a summary change, since `campusId` is in the copy.
 - **A tagged-piece tap credits the look only if the look really tags that piece** (`taggedListingIds`). `tagTapCount` is the headline metric; the post id rides in the event's `meta`, which a phone can fill with anything. Event ids that aren't a plain document id (a slash, a number) are ignored instead of crashing the trigger. Repeat views still count, as before.
+
+## 2026-10-26 — Only a new message moves a chat in the inbox (autopilot run 50)
+
+The inbox is sorted by a chat's `updatedAt`. Run 47 stopped a profile change touching it; three more places still did:
+- **`ensureConversation` on a chat they already had** (tapping "Message" on a profile or a piece, and every share). Opening a chat and backing out floated it to the top of BOTH girls' inboxes. It still refreshes both names and photos, and still attaches a first piece/rental, but no longer touches `updatedAt`. A share still moves the chat — the message it sends does that, through `onMessageCreated`.
+- **The phone's "mark as read"** (`useMessaging.markRead`). Reading an older chat floated it above newer ones, for both of them. Deleting and muting a chat already left `updatedAt` alone; reading now does too. The rules still allow the field, so an older app build keeps working.
+- **An admin taking down a message** that shows in the preview. A take-down is not a new message.
+
+Left as they are on purpose: a heart on a message (A9 made "Liked a message" a real inbox event, as on Instagram), and a rental being accepted onto a chat for the first time (the chat is now where they arrange the handoff).
+
+`checkUsername` stays open to callers with no account (the sign-up screen asks before one exists) and has no rate limit: a limit costs a database write per check, more than the one read it would protect. It now treats non-text input as empty instead of crashing.

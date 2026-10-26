@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 50 (only when you next deploy, and use the new app build after): server fixes so chats only move in the inbox when someone writes. Normal deploy, nothing to switch on.
 - From run 49 (only when you next deploy): server fixes to "Find friends from contacts" and to the word filter at sign-up. Normal deploy, nothing to switch on, nothing to recount.
 - From run 48 (only when you next deploy): server fixes to the inbox preview, tag labels and booked dates, plus one small database rules change (a message's time is set by the server). The current app already works with it. Normal deploy, nothing to switch on.
 - From run 47 (only when you next deploy): server fixes to how a new name or photo spreads across her looks and chats, and to the look view/tap counters. Normal deploy, nothing to switch on.
@@ -42,6 +43,37 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-26 (run 50, ~2 AM Central) — Chats only move in Messages when someone writes
+
+**Plan:** Everything left on the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run finished H1's last untested pieces outside Try-On — the "is this username free?" check and the helpers behind sharing into chats — and did H2 (small tidy-ups).
+
+**Built / Fixed (what a student would notice):**
+- **Opening a chat no longer shuffles Messages.** Tapping "Message" on someone's profile (or on a piece) and backing out moved that chat to the top of *both* girls' inboxes, above chats with real new messages. Now it stays where it was.
+- **Reading a chat no longer shuffles Messages either.** Opening an older chat to read it floated it above newer ones, for both of you. Now only a new message (or a heart on one) moves a chat — like Instagram.
+- **A message you take down in the dashboard doesn't bump the chat** to the top of their inboxes.
+- **The "is this username free?" check can't be crashed** by junk sent from a tampered app; it gives the normal "needs at least 3 characters" answer. It now has tests (free, taken in any capitals, reserved names, junk).
+- Small tidy-ups: no lint warnings left; every remaining "to do" note in the code waits on payments, real email checks or later phases, so H2 is done.
+
+**What to tap to see it:** Have chats with two people, where the older one is lower down. Tap the older one, read it, go back: it stays lower. Then go to that girl's profile → Message → back: Messages hasn't changed order. Send her something: now it jumps to the top.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, 335 shared tests and 160 server tests that don't need the database (5 new). The new database tests (4 for the username check, 1 for chats, 1 for take-downs) ran on GitHub with the full set: **all green ✅**.
+- B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: these server fixes, and use the new app build after. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** The backlog is now done except the items waiting on you or a phone. Next runs: keep sweeping (H1) — the Try-On and email-code functions are switched off, so the next useful sweep is re-reading older tested functions for the same kind of slip found tonight. Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- Opening a chat no longer floats it up both inboxes; the username check takes junk without crashing; tests for the username check and share input
+- Tidy: formatting in two test files
+- Reading a chat or a take-down no longer reorders the inbox; only a new message (or heart) moves a chat; test
+- Decisions and North Star notes; autopilot log for run 50
 
 ---
 
