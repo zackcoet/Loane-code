@@ -24,6 +24,7 @@ import {
   PLATFORM_FEE_BPS,
   REQUEST_EXPIRY_HOURS,
   hoursToAnswer,
+  isDeletedSummary,
   toMillis,
   RETURN_DISPUTE_WINDOW_HOURS,
   RETURN_PROBLEMS,
@@ -501,8 +502,11 @@ export default function RentalScreen() {
           ) : null}
 
           {/* Reviews open once the dispute window has closed. Reviewing
-              a rental that is about to be disputed helps nobody. */}
+              a rental that is about to be disputed helps nobody. Not
+              offered once she has deleted her account: the server
+              refuses it, and nobody would ever see the stars. */}
           {booking.status === 'completed' &&
+          !isDeletedSummary(them) &&
           !(isLender ? booking.reviews.lenderReviewId : booking.reviews.renterReviewId) ? (
             <Button label={`Review @${them.username}`} onPress={() => setReviewing(true)} />
           ) : null}

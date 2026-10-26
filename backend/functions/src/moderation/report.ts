@@ -15,6 +15,7 @@ import {
   type Report,
   type ReportReason,
   type ReportTargetType,
+  type User,
 } from '@loane/shared';
 import { db, now } from '../lib/admin';
 import { rateLimit } from '../lib/rateLimit';
@@ -109,6 +110,13 @@ export const submitReport = onCall<ReportInput, Promise<{ reportId: string }>>(
     if (targetType === 'user') {
       const snap = await db().collection(COLLECTIONS.users).doc(targetId).get();
       if (!snap.exists) throw invalidArgument('We could not find that student.');
+      // A deleted account has no profile left to judge, and the
+      // dashboard refuses to warn or suspend one — the report could
+      // only sit open forever. Her rentals, reviews and messages can
+      // still be reported; those records stay.
+      if ((snap.data() as User).status === 'deactivated') {
+        throw invalidArgument('That account has been deleted.');
+      }
       resolvedTargetUid = targetId;
     }
 

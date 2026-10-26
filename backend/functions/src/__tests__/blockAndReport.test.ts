@@ -251,6 +251,14 @@ describe('submitReport', () => {
     expect(await reports()).toHaveLength(0);
   });
 
+  it('refuses a profile report on a deleted account', async () => {
+    await db.doc(`${COLLECTIONS.users}/${HARPER}`).update({ status: 'deactivated' });
+    expect(
+      await attempt(() => submitReport(as(ELLA, report({ targetType: 'user', targetId: HARPER })))),
+    ).toMatch(/has been deleted/);
+    expect(await reports()).toHaveLength(0);
+  });
+
   it('a refused report does not use up one of her reports for the day', async () => {
     for (let i = 0; i < 25; i += 1) {
       await attempt(() => submitReport(as(ELLA, report({ targetType: 'post', targetId: 'a/b' }))));

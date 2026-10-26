@@ -146,6 +146,43 @@ describe('deleteMyAccount', () => {
     expect((await db.doc('bookings/b1').get()).exists).toBe(true);
   });
 
+  it('takes her name and photo off past rentals, on whichever side she was', async () => {
+    const harperCopy = { uid: HARPER, username: 'harperdelete', displayName: 'harperdelete' };
+    const ellaCopy = { uid: ELLA, username: 'elladelete', displayName: 'Ella', photoUrl: 'x' };
+    await db.doc('bookings/b1').set({
+      lenderUid: HARPER,
+      lender: harperCopy,
+      renterUid: ELLA,
+      renter: ellaCopy,
+      status: 'completed',
+      totalCents: 4500,
+    });
+    await db.doc('bookings/b2').set({
+      lenderUid: ELLA,
+      lender: ellaCopy,
+      renterUid: HARPER,
+      renter: harperCopy,
+      status: 'cancelled',
+    });
+    expect(await attempt(request(ELLA))).toBe('ok');
+
+    const b1 = (await db.doc('bookings/b1').get()).data();
+    expect(b1?.renter).toMatchObject({
+      uid: ELLA,
+      username: deletedUsername(ELLA),
+      displayName: DELETED_ACCOUNT_NAME,
+      photoUrl: null,
+    });
+    // Harper's side, the money and the record itself are untouched.
+    expect(b1?.lender).toEqual(harperCopy);
+    expect(b1?.totalCents).toBe(4500);
+    expect(b1?.status).toBe('completed');
+
+    const b2 = (await db.doc('bookings/b2').get()).data();
+    expect(b2?.lender.displayName).toBe(DELETED_ACCOUNT_NAME);
+    expect(b2?.renter).toEqual(harperCopy);
+  });
+
   it('removes what is hers and gives back other people’s counts', async () => {
     expect(await attempt(request(ELLA))).toBe('ok');
 

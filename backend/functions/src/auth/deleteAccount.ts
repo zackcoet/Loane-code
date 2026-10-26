@@ -35,7 +35,8 @@ import { deleteStorageFolder } from '../tryon/images';
  *     saves, follows, alerts, phone number, campus email, try-on photos,
  *     profile photo and her login.
  *   - Records that are also somebody else's stay, without her name:
- *     past rentals, reviews she wrote, and chats (the other person's
+ *     past rentals (their copy of her is overwritten here, because the
+ *     profile trigger does not touch rentals), reviews she wrote, and chats (the other person's
  *     copy of a conversation is hers too).
  *
  * WHY HER USER DOCUMENT SURVIVES AS A SHELL. Bookings and reviews point
@@ -98,7 +99,7 @@ export async function eraseAccount(
   withShell?: (batch: WriteBatch) => void,
 ): Promise<void> {
   const userRef = db().collection(COLLECTIONS.users).doc(uid);
-  await refuseIfRentalsOpen(uid);
+  const bookings = await refuseIfRentalsOpen(uid);
 
   const removed = {
     posts: await removePosts(uid),
@@ -111,6 +112,7 @@ export async function eraseAccount(
     follows: await removeFollows(uid),
     blocks: await removeBlocks(uid),
     reviews: await anonymizeReviews(uid, user.campusId),
+    bookings: await anonymizeBookings(bookings, uid, user.campusId),
   };
 
   // Her private subcollections: alerts, blocked, muted, dismissed
@@ -197,7 +199,11 @@ export async function eraseAccount(
 
 // ---------------------------------------------------------------------------
 
-async function refuseIfRentalsOpen(uid: string): Promise<void> {
+/**
+ * Refuses while any rental is still going, and otherwise hands back
+ * every rental she was ever part of, so they can lose her name.
+ */
+async function refuseIfRentalsOpen(uid: string): Promise<QueryDocumentSnapshot[]> {
   // Two single-field queries rather than one OR query: equality on one
   // field needs no composite index, so this cannot fail in production
   // the way the booking sweep once did.
@@ -210,6 +216,7 @@ async function refuseIfRentalsOpen(uid: string): Promise<void> {
     if (blocksAccountDeletion((doc.data() as Booking).status)) open.add(doc.id);
   }
   if (open.size > 0) throw failed(accountDeletionBlockedMessage(open.size));
+  return [...asLender.docs, ...asRenter.docs];
 }
 
 /** A change to somebody else's document, e.g. one fewer like on a look. */
@@ -426,5 +433,29 @@ async function anonymizeReviews(uid: string, campusId: string): Promise<number> 
   const author = deletedUserSummary(uid, campusId);
   return inBatches(snap.docs, (batch, doc) => {
     batch.update(doc.ref, { author, updatedAt: now() });
+  });
+}
+
+/**
+ * Past rentals stay — they are the other girl's history and a record we
+ * must keep — but without her name, as the Privacy Policy and the
+ * decision of 2026-10-21 promise. A rental keeps its own copy of each
+ * side's name and photo, and the profile trigger that renames her on
+ * looks, pieces and chats deliberately leaves rentals alone, so without
+ * this the other girl's My Rentals would show "@ellapetrick" and her
+ * face forever. Only HER side changes; the money, dates and piece stay.
+ */
+async function anonymizeBookings(
+  docs: QueryDocumentSnapshot[],
+  uid: string,
+  campusId: string,
+): Promise<number> {
+  const summary = deletedUserSummary(uid, campusId);
+  return inBatches(docs, (batch, doc) => {
+    const booking = doc.data() as Booking;
+    batch.update(doc.ref, {
+      [booking.lenderUid === uid ? 'lender' : 'renter']: summary,
+      updatedAt: now(),
+    });
   });
 }

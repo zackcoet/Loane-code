@@ -122,6 +122,17 @@ describe('writeReview', () => {
     ).toMatch(/not yours/);
   });
 
+  it('not once the other girl has deleted her account, and no alert reaches the shell', async () => {
+    await booking('b1');
+    await db.doc(`${COLLECTIONS.users}/${ELLA}`).update({ status: 'deactivated' });
+    expect(
+      await attempt(() => write(as(HARPER, { bookingId: 'b1', rating: 5, body: '' }))),
+    ).toMatch(/account was deleted/);
+    expect((await db.collection(COLLECTIONS.reviews).get()).empty).toBe(true);
+    const alerts = await db.collection(`${COLLECTIONS.users}/${ELLA}/notifications`).get();
+    expect(alerts.empty).toBe(true);
+  });
+
   it('not before the rental is finished', async () => {
     await booking('b1', 'active');
     expect(

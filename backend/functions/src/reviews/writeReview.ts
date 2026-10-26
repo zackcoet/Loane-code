@@ -10,6 +10,7 @@ import {
   ratingWithScore,
   type Booking,
   type Review,
+  type User,
 } from '@loane/shared';
 import { db, now } from '../lib/admin';
 import { failed, invalidArgument, notFound, permissionDenied } from '../lib/errors';
@@ -96,6 +97,12 @@ export const writeReview = onCall<WriteInput, Promise<{ reviewId: string }>>(
       const subjectRef = db().collection(COLLECTIONS.users).doc(subjectUid);
       const subjectSnap = await tx.get(subjectRef);
       if (!subjectSnap.exists) throw notFound('We could not find that student.');
+      // Her account was deleted after the rental. Nobody can see a
+      // deleted girl's rating, and the "You got a review" alert would
+      // write a fresh alert into the inbox deletion just erased.
+      if ((subjectSnap.data() as User).status === 'deactivated') {
+        throw failed('Her account was deleted, so this rental can’t be reviewed.');
+      }
       // Reads before writes: a transaction refuses a read after one.
       const existing = await reviewsOf(tx, subjectUid);
 
