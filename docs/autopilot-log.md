@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 48 (only when you next deploy): server fixes to the inbox preview, tag labels and booked dates, plus one small database rules change (a message's time is set by the server). The current app already works with it. Normal deploy, nothing to switch on.
 - From run 47 (only when you next deploy): server fixes to how a new name or photo spreads across her looks and chats, and to the look view/tap counters. Normal deploy, nothing to switch on.
 - **From run 46 — the student count on each campus is wrong on the live project.** Sign-up never actually added new girls to it (deleting an account did take them off), so "Join 120+ girls at USC" and the dashboard's Campuses page read too low, maybe below zero. After you next deploy, run the recount once: `cd backend/functions && npx tsx scripts/recountCampusStudents.ts --project loane-code` shows what it would change; add `--write` to save. Normal deploy otherwise, nothing to switch on.
 - From run 45 (only when you next deploy, and use the new app build after): server fixes so rental dates go by Columbia's day, and so a request for today or tomorrow doesn't expire before the lender sees it. Normal deploy, nothing to switch on.
@@ -40,6 +41,36 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-26 (run 48, ~12 AM Central) — The inbox always shows the newest message; prices on tags and booked dates stay right
+
+**Plan:** Everything left on the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So this run kept up H1, taking what run 47 pointed at: the background jobs that update the inbox when a message or heart arrives, copy a piece's name and price onto the looks that tag it, and grey out the days a piece is booked.
+
+**Built / Fixed (what a student would notice):**
+- **The inbox shows the newest message, always.** Send two messages a second apart and the inbox could show the *first* one as the latest. Same if a heart and a new message landed together. Now the newest one wins.
+- **One message counts as one unread.** If the server happened to handle the same message twice, her badge went up by two. Now it's one.
+- **A message's time comes from Loane, not the phone.** A tampered app could date a message next year, so it sat at the bottom of the chat forever and never showed "Seen". Now Loane refuses any time but its own. The real app already does it this way, so nothing changes for her.
+- **Prices on tagged pieces stay current.** Change a price twice in a row and the older one could end up on every look that tags the piece. Now the newest price wins. And if she edits a look while this happens, her edit is no longer undone.
+- **Booked days stay right.** If a rental was accepted and another cancelled at the same moment, the calendar could grey out a weekend that was free (or show a booked one as free). Asking to rent was always double-checked, so nobody could double-book, but now what she sees is right too.
+
+**What to tap to see it:** Open a chat and send two messages fast, one after the other. Go back to Messages: the second one shows as the preview. Then Profile → a piece you've tagged in a look → Edit → change the price twice quickly → open that look and tap the tag: it shows the newest price.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, 335 shared tests and 146 server tests that don't need the database (16 new). The 18 new database tests and 1 new rules test ran on GitHub with the full set: **all green ✅**.
+- One small thing left on purpose: if the server handles an *older* message twice after a newer one has already arrived, it still counts twice. Very rare, costs one extra unread. Explained in `docs/decisions.md`.
+- B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: these server fixes and the small rules change. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping untested server code (H1): the jobs that flag edited captions, piece descriptions and bios (flagEditedCaption, flagProfileAndListingText) and the phone-number matching job (syncPhoneHash). Or H2 (small tidy-ups).
+
+**Commits:**
+- Inbox preview never shows an older message over a newer one; a message counted once even if processed twice; message times set by the server; tag labels and booked dates always use the newest data; tests
+- Decisions and North Star notes; autopilot log for run 48
 
 ---
 

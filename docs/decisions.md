@@ -6,6 +6,39 @@ much as the answer.
 
 ---
 
+## 2026-10-26 — Background summaries only move forward, on the server's clock (autopilot run 48)
+
+**Decision:** `onMessageCreated` and `onMessageLiked` write the inbox
+preview inside a transaction, stamp `lastMessage.sentAt` with the
+event's own time (when Firestore saved the message or heart), and only
+replace the preview when that time is no earlier than the current one
+(`previewMovesForward` in `shared/src/inbox.ts`). The preview also
+carries `messageId`, so a second delivery of the same message is not
+counted unread twice. Unread counts still go up once per message even
+when an older message does not take the preview.
+
+`refreshTagLabels` re-reads the piece rather than trusting the event,
+and rewrites each look in its own transaction (skipping looks deleted
+or untagged since). `syncListingAvailability` reads the bookings and
+writes `bookedDates` in one transaction and skips a removed piece.
+
+The rules now require an app-written message's `createdAt` to equal
+`request.time`. The app has always sent `serverTimestamp()`, so no
+app build is affected.
+
+**Why:** each of these jobs read, then wrote from what it read. Two
+events a moment apart run at the same time in no guaranteed order, so
+the older one could finish last: an older message shown in the inbox,
+an old price back on every tag, a freed weekend greyed out again. And
+a phone-chosen `createdAt` could pin a message to the bottom of a
+thread forever and break "Seen".
+
+**Left as is:** a duplicate delivery of a message that is no longer the
+newest still counts twice. Catching that needs a marker per message;
+duplicates are rare and the cost is one extra unread.
+
+---
+
 ## 2026-10-25 — A sale ends when the buyer says "I have it" (autopilot run 43)
 
 **Decision:** on a purchase, `confirmReceipt` completes the booking
