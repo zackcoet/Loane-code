@@ -1,10 +1,10 @@
 import { onCall } from '../lib/callable';
 import { logger } from 'firebase-functions';
 import { COLLECTIONS, DISPUTE_OUTCOMES, type Booking } from '@loane/shared';
-import { db, now, FieldValue } from '../lib/admin';
+import { db, now } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
 import { logAdminAction, requireAdminContext, requireReason } from './audit';
-import { notify, pieceName } from '../bookings/transitions';
+import { completeBooking, notify, pieceName, readListingStatus } from '../bookings/transitions';
 
 /**
  * Deciding a flagged return.
@@ -66,38 +66,30 @@ export const resolveDispute = onCall<ResolveInput, Promise<{ ok: true }>>(
         );
       }
 
+      // Read before any write: a transaction refuses a read after one.
+      const listingStatus = await readListingStatus(tx, booking.listingId);
+
+      // The rental happened, so it ends exactly the way an undisputed
+      // one does — the same helper, so the two can't drift apart. Before,
+      // this was a hand-written copy that never asked either girl for a
+      // review and, on a sale, never marked the piece sold (so a sold
+      // piece stayed buyable).
+      completeBooking(tx, ref, { ...booking, id: bookingId }, listingStatus);
       tx.update(ref, {
-        status: 'completed',
         disputeResolution: {
           outcome,
           notes,
           adminUid: admin.uid,
           decidedAt: now(),
         },
-        // Matches an undisputed finish (completeBooking): the window to
-        // flag a problem is closed for good.
-        disputeWindowEndsAt: null,
-        'timeline.completedAt': now(),
-        updatedAt: now(),
-      });
-
-      // The rental happened, so it counts in both their histories — the
-      // same bookkeeping the sweep does for an undisputed return.
-      tx.update(db().collection(COLLECTIONS.users).doc(booking.lenderUid), {
-        'stats.rentalsAsLender': FieldValue.increment(1),
-      });
-      tx.update(db().collection(COLLECTIONS.users).doc(booking.renterUid), {
-        'stats.rentalsAsRenter': FieldValue.increment(1),
-      });
-      tx.update(db().collection(COLLECTIONS.listings).doc(booking.listingId), {
-        'stats.completedRentals': FieldValue.increment(1),
       });
 
       for (const uid of [booking.lenderUid, booking.renterUid]) {
         notify(tx, {
           uid,
           type: 'claim_resolved',
-          title: 'Loane reviewed your rental',
+          title:
+            booking.kind === 'purchase' ? 'Loane reviewed your sale' : 'Loane reviewed your rental',
           body: `${pieceName(booking)}: ${notes}`,
           bookingId,
         });

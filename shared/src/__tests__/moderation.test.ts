@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { statusAfterRestore, suspendBlockedReason, takedownBlockedReason } from '../moderation';
+import {
+  listingFieldsOnSale,
+  statusAfterRestore,
+  suspendBlockedReason,
+  takedownBlockedReason,
+} from '../moderation';
 
 describe('taking content down', () => {
   it('is allowed for anything still showing, sold pieces included', () => {
@@ -46,5 +51,18 @@ describe('suspending an account', () => {
   it('is refused when she is already suspended or the account is deleted', () => {
     expect(suspendBlockedReason('suspended')).toMatch(/already suspended/);
     expect(suspendBlockedReason('deactivated')).toMatch(/deleted/);
+  });
+});
+
+describe('a sale finishing', () => {
+  it('marks a live piece sold', () => {
+    expect(listingFieldsOnSale('active')).toEqual({ status: 'sold' });
+    expect(listingFieldsOnSale('paused')).toEqual({ status: 'sold' });
+    expect(listingFieldsOnSale(undefined)).toEqual({ status: 'sold' });
+  });
+
+  it('keeps a taken-down piece down, remembering it as sold', () => {
+    expect(listingFieldsOnSale('suspended')).toEqual({ statusBeforeSuspension: 'sold' });
+    expect(statusAfterRestore('listing', 'sold')).toBe('sold');
   });
 });

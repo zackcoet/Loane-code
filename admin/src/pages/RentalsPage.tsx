@@ -62,6 +62,7 @@ export function RentalsPage({ data, campusId }: { data: AdminData; campusId: str
                 <tr key={booking.id}>
                   <td>
                     <Pill tone="bad">{booking.returnProblem?.type ?? 'flagged'}</Pill>
+                    {booking.kind === 'purchase' ? <Pill tone="neutral">Sale</Pill> : null}
                     <div className="cell-note">{booking.returnProblem?.note}</div>
                   </td>
                   <td>{booking.listing.name}</td>
@@ -90,7 +91,16 @@ export function RentalsPage({ data, campusId }: { data: AdminData; campusId: str
                   </td>
                   <td>
                     <div className="row-actions">
-                      <button onClick={() => setDeciding(booking)}>Decide</button>
+                      <button
+                        onClick={() => {
+                          // Start each decision fresh — the last one's
+                          // pick must not carry over to a different girl.
+                          setOutcome('inconclusive');
+                          setDeciding(booking);
+                        }}
+                      >
+                        Decide
+                      </button>
                     </div>
                   </td>
                 </tr>

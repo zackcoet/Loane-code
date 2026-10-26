@@ -57,3 +57,18 @@ export function suspendBlockedReason(status: AccountStatus): string | null {
   if (status === 'deactivated') return 'That account is deleted. There is nobody to suspend.';
   return null;
 }
+
+/**
+ * What a finished sale writes on the piece.
+ *
+ * A sale takes the piece off the market (`sold`). But if an admin took
+ * the piece down while the sale was going through, writing `sold`
+ * straight onto it would quietly put a reported piece back up on her
+ * closet. So a taken-down piece stays down, and `sold` becomes what it
+ * returns to if it is ever put back.
+ */
+export function listingFieldsOnSale(
+  current: unknown,
+): { status: 'sold' } | { statusBeforeSuspension: 'sold' } {
+  return current === 'suspended' ? { statusBeforeSuspension: 'sold' } : { status: 'sold' };
+}

@@ -25,6 +25,7 @@ import { checkNote } from './note';
 import {
   assertCanTransition,
   completeBooking,
+  readListingStatus,
   loadBookingFor,
   notify,
   pieceName,
@@ -286,8 +287,9 @@ export const confirmReceipt = onCall<{ bookingId: string }, Promise<{ ok: true }
         piece only became sold after someone pressed "I've returned it".
       */
       if (booking.kind === 'purchase') {
+        const listingStatus = await readListingStatus(tx, booking.listingId);
         tx.update(ref, { 'handoff.renterConfirmedReceiptAt': now() });
-        completeBooking(tx, ref, booking);
+        completeBooking(tx, ref, booking, listingStatus);
         notify(tx, {
           uid: booking.lenderUid,
           type: 'booking_confirmed',
@@ -340,7 +342,7 @@ export const confirmReturn = onCall<
       // no way out but a "return". Let either side finish it, so none is
       // left stuck; anything else about a return makes no sense on a sale.
       if (booking.status !== 'with_renter') throw failed('Nothing comes back on a sale.');
-      completeBooking(tx, ref, booking);
+      completeBooking(tx, ref, booking, await readListingStatus(tx, booking.listingId));
       return;
     }
 
@@ -356,8 +358,9 @@ export const confirmReturn = onCall<
         ...(photos.length > 0 ? { 'handoff.returnPhotos': photos } : {}),
       });
       // Same helper the sweep uses, so confirming promptly and letting
-      // the window lapse leave identical state.
-      completeBooking(tx, ref, booking);
+      // the window lapse leave identical state. A rental (sales took
+      // the branch above), so the piece's status isn't touched.
+      completeBooking(tx, ref, booking, undefined);
       return;
     }
 

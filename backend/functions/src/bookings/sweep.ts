@@ -4,7 +4,7 @@ import { logger } from 'firebase-functions';
 import { COLLECTIONS, addDays, campusClock, type Booking, type Timestampish } from '@loane/shared';
 import { db, now, Timestamp } from '../lib/admin';
 import { requireAdmin } from '../lib/guards';
-import { completeBooking, notify, pieceName } from './transitions';
+import { completeBooking, notify, pieceName, readListingStatus } from './transitions';
 import { isReminderHour, remindersDue } from './reminders';
 
 type RemindableBooking = Booking & { remindersSent?: Record<string, boolean> };
@@ -147,7 +147,8 @@ async function sweep(byHand: boolean): Promise<SweepResult> {
       if (!booking || !stillSettled(booking, nowTs)) return false;
       // The same helper confirmReturn uses when the lender closes it by
       // hand, so the two endings cannot drift apart.
-      completeBooking(tx, doc.ref, { ...booking, id: doc.id });
+      const listingStatus = await readListingStatus(tx, booking.listingId);
+      completeBooking(tx, doc.ref, { ...booking, id: doc.id }, listingStatus);
       return true;
     });
     if (didComplete) completed += 1;

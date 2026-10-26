@@ -87,6 +87,8 @@ beforeEach(async () => {
     returnProblem: { type: 'damage', note: 'stain', photos: [] },
     disputeWindowEndsAt: new Date(),
     timeline: {},
+    lender: { username: 'lender' },
+    renter: { username: 'renter' },
   });
   const audit = await db
     .collection(COLLECTIONS.adminActions)
@@ -120,8 +122,33 @@ describe('resolveDispute', () => {
 
     for (const uid of [LENDER, RENTER]) {
       const notes = await db.collection(`${COLLECTIONS.users}/${uid}/notifications`).get();
-      expect(notes.docs.map((d) => d.data().body)).toEqual(['Red mini: Stain in the photos']);
+      const byType = Object.fromEntries(notes.docs.map((d) => [d.data().type, d.data()]));
+      expect(byType.claim_resolved?.body).toBe('Red mini: Stain in the photos');
+      // Ends like any finished rental: both are asked for a review.
+      expect(byType.review_requested).toBeDefined();
+      expect(notes.size).toBe(2);
     }
+    // A rental leaves the piece as it was.
+    expect((await db.doc(`${COLLECTIONS.listings}/l-dispute`).get()).data()?.status).toBe('active');
+  });
+
+  it('a disputed sale from before run 43 ends with the piece sold', async () => {
+    await db.doc(`${COLLECTIONS.bookings}/b1`).update({ kind: 'purchase' });
+    await resolve(as(ADMIN, GOOD));
+    expect((await db.doc(`${COLLECTIONS.listings}/l-dispute`).get()).data()?.status).toBe('sold');
+    const notes = await db.collection(`${COLLECTIONS.users}/${RENTER}/notifications`).get();
+    expect(notes.docs.map((d) => d.data().title)).toContain('Loane reviewed your sale');
+  });
+
+  it('a sale on a taken-down piece keeps it down, remembered as sold', async () => {
+    await db.doc(`${COLLECTIONS.bookings}/b1`).update({ kind: 'purchase' });
+    await db
+      .doc(`${COLLECTIONS.listings}/l-dispute`)
+      .update({ status: 'suspended', statusBeforeSuspension: 'active' });
+    await resolve(as(ADMIN, GOOD));
+    const piece = (await db.doc(`${COLLECTIONS.listings}/l-dispute`).get()).data();
+    expect(piece?.status).toBe('suspended');
+    expect(piece?.statusBeforeSuspension).toBe('sold');
   });
 
   it('counts it once when two admins decide at the same moment', async () => {

@@ -316,6 +316,21 @@ describe('"I have it"', () => {
     }
   });
 
+  it('a sale on a piece an admin took down keeps it down, remembered as sold', async () => {
+    await booking('s1', 'purchase', 'confirmed');
+    await db.doc(`${COLLECTIONS.bookings}/s1`).update({
+      'handoff.dropoffPhotos': [photo(ELLA, 's1')],
+    });
+    await db
+      .doc(`${COLLECTIONS.listings}/${LISTING}`)
+      .update({ status: 'suspended', statusBeforeSuspension: 'active' });
+    await fns.confirmReceipt(as(HARPER, { bookingId: 's1' }));
+    expect((await bookingDoc('s1')).status).toBe('completed');
+    const piece = await read(`${COLLECTIONS.listings}/${LISTING}`);
+    expect(piece.status).toBe('suspended');
+    expect(piece.statusBeforeSuspension).toBe('sold');
+  });
+
   it('waits for the drop-off photo, and is only the renter’s', async () => {
     await booking('r1', 'rental', 'confirmed');
     expect(await attempt(() => fns.confirmReceipt(as(HARPER, { bookingId: 'r1' })))).toBe(

@@ -1,6 +1,7 @@
 import {
   BOOKING_TRANSITIONS,
   COLLECTIONS,
+  listingFieldsOnSale,
   type Booking,
   type BookingStatus,
   type NotificationType,
@@ -149,11 +150,16 @@ export function pieceName(booking: Booking): string {
  * promptly would be quietly penalised for it.
  *
  * Takes a Writer, so a transaction and a batch can both use it.
+ *
+ * `listingStatus` is the piece's status read in the same transaction
+ * (`readListingStatus`, before any write). Only a sale uses it: see
+ * `listingFieldsOnSale` — a piece an admin took down stays down.
  */
 export function completeBooking(
   writer: Writer,
   bookingRef: FirebaseFirestore.DocumentReference,
   booking: Booking,
+  listingStatus: unknown,
 ): void {
   writer.update(bookingRef, {
     status: 'completed',
@@ -181,7 +187,7 @@ export function completeBooking(
       Done HERE rather than at handoff, because handoff is one person
       saying so and completion is both of them.
     */
-    ...(booking.kind === 'purchase' ? { status: 'sold' as const } : {}),
+    ...(booking.kind === 'purchase' ? listingFieldsOnSale(listingStatus) : {}),
   });
 
   // Asked for now, while it is fresh. Reviews are what makes a
@@ -203,4 +209,14 @@ export function completeBooking(
     body: 'Leave a review — it helps the next lender decide.',
     bookingId: booking.id,
   });
+}
+
+/**
+ * The piece's current status, for `completeBooking`. Read inside the
+ * transaction and before any write in it (a transaction refuses a read
+ * after a write).
+ */
+export async function readListingStatus(tx: Transaction, listingId: string): Promise<unknown> {
+  const snap = await tx.get(db().collection(COLLECTIONS.listings).doc(listingId));
+  return snap.data()?.status;
 }
