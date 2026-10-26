@@ -18,6 +18,9 @@
  *   - Admin notes about her, and an admin's private notes on reports she
  *     filed: those are our working notes. She still sees each report's
  *     status and what was done.
+ *   - The other girl's side of a chat's settings — her unread count,
+ *     when she last opened it, whether she muted or deleted it. See
+ *     ownSideOfConversation.
  *   - Photos themselves: the export lists their links. A zip of every
  *     photo is a later improvement if anybody asks.
  *
@@ -80,6 +83,34 @@ export function withoutAdminNotes(report: Record<string, unknown>): Record<strin
   };
 }
 
+/**
+ * A chat's settings, with only HER side of the per-person ones.
+ *
+ * A conversation keeps a few things per person: how many messages each
+ * has unread, when each last opened it, when each deleted it from her
+ * inbox, and who has muted it. The app never shows her the other girl's
+ * side of those, and it must not leak through the export either: a
+ * file saying she has 0 unread would tell you she read your message
+ * even with "Show read receipts" off, and Instagram never tells you
+ * that someone muted or deleted your chat. Her own side is her data,
+ * so it stays. The messages themselves are both sides, as before.
+ */
+export function ownSideOfConversation(
+  conversation: Record<string, unknown>,
+  uid: string,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...conversation };
+  for (const field of ['unreadCounts', 'lastReadAt', 'hiddenAt'] as const) {
+    const perPerson = conversation[field];
+    if (!perPerson || typeof perPerson !== 'object' || Array.isArray(perPerson)) continue;
+    const mine = (perPerson as Record<string, unknown>)[uid];
+    out[field] = mine === undefined ? {} : { [uid]: mine };
+  }
+  const muted = conversation.mutedUids;
+  if (Array.isArray(muted)) out.mutedUids = muted.filter((m) => m === uid);
+  return out;
+}
+
 export interface UserDataExport {
   format: number;
   exportedAt: string;
@@ -114,7 +145,7 @@ export async function collectUserData(uid: string): Promise<UserDataExport> {
         .get();
       return {
         id: c.id,
-        ...(toPlain(c.data()) as Record<string, unknown>),
+        ...ownSideOfConversation(toPlain(c.data()) as Record<string, unknown>, uid),
         messages: docs(messages.docs),
       };
     }),

@@ -106,6 +106,28 @@ describe('exportMyData', () => {
     expect(data.reportsFiled[0].resolution).toEqual({ action: 'none', resolvedAt: null });
   });
 
+  it('keeps only her side of a chat’s unread counts, read times, mutes and deletes', async () => {
+    const at = new Date('2026-10-20T15:00:00.000Z');
+    await db.doc(`conversations/${ELLA}_${HARPER}`).set(
+      {
+        unreadCounts: { [ELLA]: 2, [HARPER]: 0 },
+        lastReadAt: { [ELLA]: at, [HARPER]: at },
+        hiddenAt: { [HARPER]: at },
+        mutedUids: [HARPER],
+      },
+      { merge: true },
+    );
+
+    const convo = (await exportMine(as(ELLA, false, undefined))).conversations[0];
+
+    expect(convo.unreadCounts).toEqual({ [ELLA]: 2 });
+    expect(convo.lastReadAt).toEqual({ [ELLA]: at.toISOString() });
+    expect(convo.hiddenAt).toEqual({});
+    expect(convo.mutedUids).toEqual([]);
+    expect(convo.participantUids).toEqual([ELLA, HARPER]);
+    expect(convo.messages[0].text).toBe('hi');
+  });
+
   it('is limited to a few a day', async () => {
     for (let i = 0; i < 3; i++) await exportMine(as(ELLA, false, undefined));
     expect(await attempt(() => exportMine(as(ELLA, false, undefined)))).toMatch(/tomorrow/);
