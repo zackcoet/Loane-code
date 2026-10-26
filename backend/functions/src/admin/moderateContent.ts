@@ -9,6 +9,7 @@ import {
   type Listing,
   type Post,
   type Review,
+  type User,
 } from '@loane/shared';
 import { db, now, FieldValue } from '../lib/admin';
 import { failed, invalidArgument, notFound } from '../lib/errors';
@@ -240,8 +241,20 @@ async function moderateComment(
     if (hide && comment.status !== 'active') throw failed('It is already down.');
     if (!hide && comment.status !== 'suspended') throw failed('It is not suspended.');
 
+    // A deleted girl's comment stays down. Her account deletion now
+    // takes taken-down comments with it, but accounts deleted before
+    // that left them `suspended`, one click from coming back.
+    if (!hide) {
+      const author = await tx.get(db().collection(COLLECTIONS.users).doc(comment.authorUid));
+      if (!author.exists || (author.data() as User).status === 'deactivated') {
+        throw failed('Her account is deleted, so her comment cannot come back.');
+      }
+    }
+
     const postRef = db().collection(COLLECTIONS.posts).doc(comment.postId);
-    const postExists = (await tx.get(postRef)).exists;
+    const postSnap = await tx.get(postRef);
+    const postExists = postSnap.exists;
+    const count = (postSnap.data() as Post | undefined)?.stats?.commentCount ?? 0;
 
     tx.update(ref, {
       status: hide ? 'suspended' : 'active',
@@ -249,8 +262,9 @@ async function moderateComment(
       updatedAt: now(),
     });
 
-    // The count under the post has to follow the comment either way.
-    if (postExists) {
+    // The count under the post has to follow the comment either way —
+    // but never below zero, the same guard as her own Delete.
+    if (postExists && (!hide || count > 0)) {
       tx.update(postRef, {
         'stats.commentCount': FieldValue.increment(hide ? -1 : 1),
         updatedAt: now(),

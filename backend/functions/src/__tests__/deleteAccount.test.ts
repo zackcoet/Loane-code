@@ -165,6 +165,18 @@ describe('deleteMyAccount', () => {
     expect((await db.doc(`users/${ELLA}/private/settings`).get()).exists).toBe(false);
   });
 
+  it('also takes down a comment an admin had hidden, without moving the count twice', async () => {
+    // c2 was taken down by an admin earlier — its count already given back.
+    await db
+      .doc('comments/c2')
+      .set({ authorUid: ELLA, postId: 'post-harper', status: 'suspended' });
+    expect(await attempt(request(ELLA))).toBe('ok');
+
+    expect((await db.doc('comments/c2').get()).data()?.status).toBe('removed');
+    // Only c1 (live) moved the count: 1 → 0, not -1.
+    expect((await db.doc('posts/post-harper').get()).data()?.stats.commentCount).toBe(0);
+  });
+
   it('leaves a nameless shell, an anonymous review, and no login', async () => {
     expect(await attempt(request(ELLA))).toBe('ok');
 

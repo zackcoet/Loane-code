@@ -278,6 +278,29 @@ describe('taking a comment down', () => {
     expect((await notices(COMMENTER)).length).toBe(1);
   });
 
+  it('never takes the count under the look below zero', async () => {
+    await db.doc(`${COLLECTIONS.posts}/p1`).update({ 'stats.commentCount': 0 });
+    await fns.hideComment(as(ADMIN, { id: 'c1', reason: 'Rude' }));
+    expect(await commentCount()).toBe(0);
+  });
+
+  it('will not bring back a comment from a deleted account', async () => {
+    await fns.hideComment(as(ADMIN, { id: 'c1', reason: 'Rude' }));
+    await db.doc(`${COLLECTIONS.users}/${COMMENTER}`).update({ status: 'deactivated' });
+    expect(
+      await attempt(() => fns.restoreComment(as(ADMIN, { id: 'c1', reason: 'Context' }))),
+    ).toMatch(/account is deleted/);
+    expect((await db.doc(`${COLLECTIONS.comments}/c1`).get()).data()?.status).toBe('suspended');
+    expect(await commentCount()).toBe(2);
+
+    // Same if her account is gone altogether.
+    await db.doc(`${COLLECTIONS.users}/${COMMENTER}`).delete();
+    expect(
+      await attempt(() => fns.restoreComment(as(ADMIN, { id: 'c1', reason: 'Context' }))),
+    ).toMatch(/account is deleted/);
+    expect(await auditRows('restore_comment')).toHaveLength(0);
+  });
+
   it('gives junk a clear answer', async () => {
     expect(await attempt(() => fns.hideComment(as(ADMIN, { id: ['c1'], reason: 'x' })))).toMatch(
       /Which comment/,

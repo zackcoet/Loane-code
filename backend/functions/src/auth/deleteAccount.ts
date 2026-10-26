@@ -325,13 +325,24 @@ async function removeListings(uid: string): Promise<number> {
   return snap.size;
 }
 
-/** Her comments come down, giving back each look's comment count. */
+/**
+ * Her comments come down, giving back each look's comment count.
+ *
+ * One an admin had taken down (`suspended`) comes down too. Left as it
+ * was, the dashboard's "put it back" would bring a deleted girl's words
+ * back under someone's look. Its count was already given back when it
+ * was taken down, so only live ones move the count.
+ */
 async function removeComments(uid: string): Promise<number> {
   const snap = await db().collection(COLLECTIONS.comments).where('authorUid', '==', uid).get();
-  const live = snap.docs.filter((d) => (d.data() as { status: string }).status === 'active');
+  const live = snap.docs.filter((d) => {
+    const status = (d.data() as { status: string }).status;
+    return status === 'active' || status === 'suspended';
+  });
   return inBatches(live, (batch, doc) => {
-    const postId = (doc.data() as { postId: string }).postId;
+    const { postId, status } = doc.data() as { postId: string; status: string };
     batch.update(doc.ref, { status: 'removed', updatedAt: now() });
+    if (status !== 'active') return [];
     return [
       {
         ref: db().collection(COLLECTIONS.posts).doc(postId),
