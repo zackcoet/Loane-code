@@ -7,7 +7,9 @@ import {
   COLLECTIONS,
   color,
   emailDomain,
-  matchesCampusDomain,
+  findCampusForEmail,
+  newCampusId,
+  schoolDomain,
   newUserStripe,
   normalizeEmail,
   normalizeUsername,
@@ -84,24 +86,26 @@ export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountRes
     const ip = callerIp(request.rawRequest);
     if (ip) await rateLimit(ip, 'signUp');
 
-    const {
-      firstName: rawFirstName,
-      email: rawEmail,
-      password,
-      username: rawUsername,
-    } = request.data ?? {};
+    // Anything that isn't text counts as empty, so junk gets the form's
+    // own friendly answer instead of crashing on `.trim()`.
+    const data = (request.data ?? {}) as Partial<Record<keyof CreateAccountInput, unknown>>;
+    const text = (value: unknown): string => (typeof value === 'string' ? value : '');
+    const rawFirstName = text(data.firstName);
+    const rawEmail = text(data.email);
+    const password = text(data.password);
+    const rawUsername = text(data.username);
 
     // --- Validate everything before creating anything --------------------
-    const nameCheck = validateDisplayName(rawFirstName ?? '');
+    const nameCheck = validateDisplayName(rawFirstName);
     if (!nameCheck.ok) throw invalidArgument(nameCheck.error!);
 
-    const emailCheck = validateEmail(rawEmail ?? '');
+    const emailCheck = validateEmail(rawEmail);
     if (!emailCheck.ok) throw invalidArgument(emailCheck.error!);
 
-    const passwordCheck = validatePassword(password ?? '');
+    const passwordCheck = validatePassword(password);
     if (!passwordCheck.ok) throw invalidArgument(passwordCheck.error!);
 
-    const usernameCheck = validateUsername(rawUsername ?? '');
+    const usernameCheck = validateUsername(rawUsername);
     if (!usernameCheck.ok) throw invalidArgument(usernameCheck.error!);
 
     const firstName = rawFirstName.trim();
@@ -275,7 +279,7 @@ export const checkCampusEmail = onCall<
   { email: string },
   Promise<{ allowed: boolean; campusName?: string; reason?: string }>
 >({ region: 'us-central1' }, async (request) => {
-  const raw = request.data?.email ?? '';
+  const raw = typeof request.data?.email === 'string' ? request.data.email : '';
   const check = validateEmail(raw);
   if (!check.ok) return { allowed: false, reason: check.error };
 
@@ -295,17 +299,24 @@ async function campusForEmail(email: string): Promise<Campus> {
   if (!domain) throw invalidArgument('Enter a valid email address.');
 
   const campusSnap = await db().collection(COLLECTIONS.campuses).where('isLive', '==', true).get();
-  const seeded = campusSnap.docs
-    .map((d) => ({ ...(d.data() as Campus), id: d.id }))
-    .find((c) => matchesCampusDomain(email, c.emailDomains));
-  if (seeded) return seeded;
+  // Exact domain first, then a sub-address of a school's domain
+  // (`g.clemson.edu` joins Clemson) — see shared/src/campusMatch.ts.
+  const existing = findCampusForEmail(
+    email,
+    campusSnap.docs.map((d) => ({ ...(d.data() as Campus), id: d.id })),
+  );
+  if (existing) return existing;
 
-  const id = `school-${domain.replace(/[^a-z0-9]+/g, '-')}`;
+  // The first girl from her school. The campus is named after the
+  // school's own domain, never her sub-address, so the next girl —
+  // whichever address she has — lands in the same place.
+  const base = schoolDomain(domain);
+  const id = newCampusId(domain);
   return {
     id,
-    name: domain,
-    shortName: domain,
-    emailDomains: [domain],
+    name: base,
+    shortName: base,
+    emailDomains: [base],
     city: '',
     state: '',
     brandColor: color.campus.dotFallback,

@@ -43,4 +43,5 @@ export * from './socialProof';
 export * from './campusDemand';
 export * from './connection';
 export * from './moderation';
+export * from './campusMatch';
 export * from './requestExpiry';
