@@ -1,5 +1,12 @@
 import { onCall } from '../lib/callable';
-import { COLLECTIONS, type LegalDoc, type LegalDocKind, type LegalDraft } from '@loane/shared';
+import {
+  COLLECTIONS,
+  isIsoDate,
+  type LegalDoc,
+  type LegalDocKind,
+  type LegalDraft,
+  type User,
+} from '@loane/shared';
 import { db, now } from '../lib/admin';
 import { failed, invalidArgument, notFound, unauthenticated } from '../lib/errors';
 import { logAdminAction, requireAdminContext } from '../admin/audit';
@@ -27,7 +34,9 @@ function requireText(value: unknown): string {
 
 function requireEffectiveDate(value: unknown): string {
   const date = typeof value === 'string' ? value.trim() : '';
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+  // A real day, not just the right shape: "2026-13-45" would otherwise be
+  // printed at the top of the Terms as the date they took effect.
+  if (!isIsoDate(date)) {
     throw invalidArgument('Use an effective date like 2026-10-05.');
   }
   return date;
@@ -97,7 +106,15 @@ export const saveLegalDraft = onCall<
     updatedByEmail: admin.email,
   };
 
-  await ref.set({ ...draft, updatedAt: now(), createdAt: now() }, { merge: true });
+  // createdAt only the first time: saving the draft again should not make
+  // it look newly started.
+  const isNew = !(await ref.get()).exists;
+  await ref.set(
+    isNew ? { ...draft, createdAt: now(), updatedAt: now() } : { ...draft, updatedAt: now() },
+    {
+      merge: true,
+    },
+  );
   return { ok: true, nextVersion: version };
 });
 
@@ -110,40 +127,57 @@ export const publishLegalDoc = onCall<
   const text = requireText(request.data?.text);
   const effectiveDate = requireEffectiveDate(request.data?.effectiveDate);
   const significantChange = request.data?.significantChange === true;
-  const version = await nextVersion(kind);
-  const id = legalId(kind, version);
-  const ref = db().collection(COLLECTIONS.legalDocs).doc(id);
   const draftRef = db().collection(COLLECTIONS.legalDrafts).doc(kind);
 
-  const batch = db().batch();
-  const existing = await ref.get();
-  if (existing.exists) throw failed('That legal version already exists.');
+  // The number she is publishing is fixed before the step starts, and the
+  // step checks it is still the next one. Two admins pressing Publish at
+  // the same moment used to both pick the same number, and the second
+  // crashed into "something went wrong". Without the fixed number, a
+  // retried step would instead quietly publish her text as the version
+  // AFTER the other admin's — two new Terms in a row, neither read
+  // against the other. Now the second admin is told and nothing is lost.
+  const expected = await nextVersion(kind);
+  return db().runTransaction(async (tx) => {
+    const latestSnap = await tx.get(
+      db()
+        .collection(COLLECTIONS.legalDocs)
+        .where('kind', '==', kind)
+        .orderBy('version', 'desc')
+        .limit(1),
+    );
+    const latestVersion = (latestSnap.docs[0]?.data() as LegalDoc | undefined)?.version ?? 0;
+    const version = latestVersion + 1;
+    const id = legalId(kind, version);
+    const ref = db().collection(COLLECTIONS.legalDocs).doc(id);
+    if (version !== expected || (await tx.get(ref)).exists) {
+      throw failed('Someone just published a new version. Reload and check it before publishing.');
+    }
 
-  const doc: Omit<LegalDoc, 'createdAt' | 'updatedAt' | 'publishedAt'> = {
-    id,
-    kind,
-    title: TITLES[kind],
-    text,
-    version,
-    effectiveDate,
-    significantChange,
-    publishedByUid: admin.uid,
-    publishedByEmail: admin.email,
-  };
+    const doc: Omit<LegalDoc, 'createdAt' | 'updatedAt' | 'publishedAt'> = {
+      id,
+      kind,
+      title: TITLES[kind],
+      text,
+      version,
+      effectiveDate,
+      significantChange,
+      publishedByUid: admin.uid,
+      publishedByEmail: admin.email,
+    };
 
-  batch.create(ref, { ...doc, createdAt: now(), updatedAt: now(), publishedAt: now() });
-  batch.delete(draftRef);
-  logAdminAction(batch, {
-    admin,
-    action: 'publish_legal_doc',
-    targetType: 'legalDoc',
-    targetId: id,
-    notes: `${TITLES[kind]} v${version}${significantChange ? ' (significant change)' : ''}`,
-    after: { kind, version, effectiveDate, significantChange },
+    tx.create(ref, { ...doc, createdAt: now(), updatedAt: now(), publishedAt: now() });
+    tx.delete(draftRef);
+    logAdminAction(tx, {
+      admin,
+      action: 'publish_legal_doc',
+      targetType: 'legalDoc',
+      targetId: id,
+      notes: `${TITLES[kind]} v${version}${significantChange ? ' (significant change)' : ''}`,
+      after: { kind, version, effectiveDate, significantChange },
+    });
+
+    return { id, version };
   });
-  await batch.commit();
-
-  return { id, version };
 });
 
 export const acceptLegalDocs = onCall<
@@ -152,8 +186,8 @@ export const acceptLegalDocs = onCall<
 >({ region: 'us-central1' }, async (request) => {
   if (!request.auth?.uid) throw unauthenticated();
 
-  const termsVersion = Number(request.data?.termsVersion);
-  const privacyVersion = Number(request.data?.privacyVersion);
+  const termsVersion: unknown = request.data?.termsVersion;
+  const privacyVersion: unknown = request.data?.privacyVersion;
   if (!Number.isInteger(termsVersion) || !Number.isInteger(privacyVersion)) {
     throw invalidArgument('Review the latest legal documents first.');
   }
@@ -164,7 +198,17 @@ export const acceptLegalDocs = onCall<
     throw failed('Those legal documents changed. Review the latest version.');
   }
 
-  await db().collection(COLLECTIONS.users).doc(request.auth.uid).update({
+  // A missing or deleted account gets a clear answer rather than a crash
+  // (missing) or a deleted shell quietly gaining a fresh acceptance date
+  // (deleted) — the date is what we would point to if anyone asked when
+  // she agreed.
+  const userRef = db().collection(COLLECTIONS.users).doc(request.auth.uid);
+  const userSnap = await userRef.get();
+  if (!userSnap.exists || (userSnap.data() as User).status === 'deactivated') {
+    throw notFound('We could not find your account.');
+  }
+
+  await userRef.update({
     'legalAccepted.termsVersion': terms.version,
     'legalAccepted.termsAcceptedAt': now(),
     'legalAccepted.privacyVersion': privacy.version,
