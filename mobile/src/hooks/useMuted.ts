@@ -10,7 +10,7 @@
  * The security rules pin the shape (users/{uid}/muted/{otherUid}).
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   collection,
   deleteDoc,
@@ -25,12 +25,26 @@ import { useAuth } from '../auth/AuthProvider';
 import { logEvent } from '../analytics/events';
 import { assertOnline } from '../network/connection';
 
-/** Everyone she has muted, live. */
-export function useMutedUids(): { uids: Set<string>; list: string[]; loading: boolean } {
+/**
+ * Everyone she has muted, live.
+ *
+ * `failed` is for the Muted list, which must not say "Nobody muted" when
+ * it simply couldn't check. The feed ignores it: if the list can't load,
+ * the worst case is a muted girl's look showing, which is harmless.
+ */
+export function useMutedUids(): {
+  uids: Set<string>;
+  list: string[];
+  loading: boolean;
+  failed: boolean;
+  retry: () => void;
+} {
   const { profile } = useAuth();
   const uid = profile?.uid;
   const [list, setList] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!uid) {
@@ -39,21 +53,25 @@ export function useMutedUids(): { uids: Set<string>; list: string[]; loading: bo
       return;
     }
     setLoading(true);
+    setFailed(false);
     return onSnapshot(
       collection(db, COLLECTIONS.users, uid, SUBCOLLECTIONS.userMuted),
       (snap) => {
         setList(snap.docs.map((d) => d.id));
+        setFailed(false);
         setLoading(false);
       },
       () => {
         setList([]);
+        setFailed(true);
         setLoading(false);
       },
     );
-  }, [uid]);
+  }, [uid, attempt]);
 
   const uids = useMemo(() => new Set(list), [list]);
-  return { uids, list, loading };
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
+  return { uids, list, loading, failed, retry };
 }
 
 export async function setUserMuted(myUid: string, otherUid: string, muted: boolean): Promise<void> {

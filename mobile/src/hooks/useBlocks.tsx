@@ -9,7 +9,15 @@
  * See docs/security.md; the seam is real and written down.
  */
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { COLLECTIONS } from '@loane/shared';
 import { db } from '../firebase/config';
@@ -64,20 +72,49 @@ export function useHiddenUids(): Set<string> {
   return useContext(HiddenUidsContext);
 }
 
-/** Just the people she blocked, for a "Blocked" settings list. */
-export function useBlockedUids(): string[] {
+/**
+ * Just the people she blocked, for the "Blocked" settings list.
+ *
+ * Unlike the provider above, this says when it is still loading and
+ * when it failed, so the list can tell "nobody blocked" apart from
+ * "couldn't check" — saying "Nobody blocked" on a bad signal would
+ * make her think a block had come undone.
+ */
+export function useBlockedUids(): {
+  list: string[];
+  loading: boolean;
+  failed: boolean;
+  retry: () => void;
+} {
   const { profile } = useAuth();
   const uid = profile?.uid;
-  const [blocked, setBlocked] = useState<string[]>([]);
+  const [list, setList] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!uid) return;
+    if (!uid) {
+      setList([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setFailed(false);
     return onSnapshot(
       collection(db, COLLECTIONS.users, uid, 'blocked'),
-      (snap) => setBlocked(snap.docs.map((d) => d.id)),
-      () => setBlocked([]),
+      (snap) => {
+        setList(snap.docs.map((d) => d.id));
+        setFailed(false);
+        setLoading(false);
+      },
+      () => {
+        setFailed(true);
+        setLoading(false);
+      },
     );
-  }, [uid]);
+  }, [uid, attempt]);
 
-  return blocked;
+  const retry = useCallback(() => setAttempt((n) => n + 1), []);
+  return { list, loading, failed, retry };
 }

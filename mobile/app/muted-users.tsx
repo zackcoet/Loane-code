@@ -6,51 +6,34 @@
  * find again. This list is the reliable way back.
  */
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { doc, getDoc } from 'firebase/firestore';
-import { COLLECTIONS, color, controls, spacing, type User } from '@loane/shared';
+import { color, controls, spacing, type User } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { Button } from '../src/components/Button';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
+import { LoadError } from '../src/components/LoadError';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
-import { db } from '../src/firebase/config';
 import { useAuth } from '../src/auth/AuthProvider';
 import { setUserMuted, useMutedUids } from '../src/hooks/useMuted';
+import { usePeopleByUid } from '../src/hooks/usePeopleByUid';
 
 export default function MutedUsers() {
   const router = useRouter();
   const { profile } = useAuth();
-  const { list: mutedUids, loading: loadingUids } = useMutedUids();
-  const [people, setPeople] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const muted = useMutedUids();
+  const { people, loading, failed, retry } = usePeopleByUid(muted.list, !muted.loading);
   const [busy, setBusy] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    if (loadingUids) return;
-    if (mutedUids.length === 0) {
-      setPeople([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    Promise.all(mutedUids.map((uid) => getDoc(doc(db, COLLECTIONS.users, uid))))
-      .then((snaps) => {
-        if (cancelled) return;
-        setPeople(snaps.filter((s) => s.exists()).map((s) => s.data() as User));
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [mutedUids, loadingUids]);
+  // Either half failing means we can't honestly say who is muted.
+  const couldNotLoad = muted.failed || failed;
+  const tryAgain = () => {
+    if (muted.failed) muted.retry();
+    else retry();
+  };
 
   // No confirm: unmuting only brings her looks back, and is one tap to redo.
   const unmute = async (user: User) => {
@@ -69,7 +52,9 @@ export default function MutedUsers() {
     <Screen flush>
       <Header title="Muted" onBack={() => router.back()} />
 
-      {loading ? (
+      {couldNotLoad ? (
+        <LoadError what="your muted list" onRetry={tryAgain} />
+      ) : loading ? (
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>

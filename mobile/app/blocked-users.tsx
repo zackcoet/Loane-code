@@ -6,51 +6,35 @@
  * see, so an accidental block used to be permanent.
  */
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, FlatList, StyleSheet, View } from 'react-native';
-import { doc, getDoc } from 'firebase/firestore';
-import { COLLECTIONS, color, controls, spacing, type User } from '@loane/shared';
+import { color, controls, spacing, type User } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { Button } from '../src/components/Button';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
+import { LoadError } from '../src/components/LoadError';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
-import { db } from '../src/firebase/config';
 import { useBlockedUids } from '../src/hooks/useBlocks';
+import { usePeopleByUid } from '../src/hooks/usePeopleByUid';
 import { unblockUser } from '../src/firebase/callables';
 import { callableErrorMessage } from '../src/firebase/errors';
 import { logEvent } from '../src/analytics/events';
 
 export default function BlockedUsers() {
   const router = useRouter();
-  const blockedUids = useBlockedUids();
-  const [people, setPeople] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+  const blocked = useBlockedUids();
+  const { people, loading, failed, retry } = usePeopleByUid(blocked.list, !blocked.loading);
   const [busy, setBusy] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    if (blockedUids.length === 0) {
-      setPeople([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    Promise.all(blockedUids.map((uid) => getDoc(doc(db, COLLECTIONS.users, uid))))
-      .then((snaps) => {
-        if (cancelled) return;
-        setPeople(snaps.filter((s) => s.exists()).map((s) => s.data() as User));
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [blockedUids]);
+  // Either half failing means we can't honestly say who is blocked.
+  const couldNotLoad = blocked.failed || failed;
+  const tryAgain = () => {
+    if (blocked.failed) blocked.retry();
+    else retry();
+  };
 
   const unblock = (user: User) => {
     Alert.alert(`Unblock @${user.username}?`, 'You will see each other on Loane again.', [
@@ -80,7 +64,9 @@ export default function BlockedUsers() {
     <Screen flush>
       <Header title="Blocked" onBack={() => router.back()} />
 
-      {loading ? (
+      {couldNotLoad ? (
+        <LoadError what="your blocked list" onRetry={tryAgain} />
+      ) : loading ? (
         <View style={styles.loading}>
           <ActivityIndicator color={color.icon.default} />
         </View>
