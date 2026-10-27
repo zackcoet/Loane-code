@@ -6,6 +6,31 @@ much as the answer.
 
 ---
 
+## 2026-10-27 — The dashboard counts what is on Loane now, and counts campuses live (autopilot run 62)
+
+**Decision:** one set of rules in `shared/src/dashboardCounts.ts`. A
+"student" is a student account (never an admin) that is not deleted;
+suspended girls still count. Sign-ups, the activation funnel and
+retention keep deleted accounts (she did sign up) but never admins. A
+counted piece is active, paused or sold; a counted look is active. The
+Campuses page now asks Firestore to count each campus's pieces, looks
+and finished rentals/sales (`admin/src/data/campusCounts.ts`) instead
+of reading `campuses/{id}.stats`.
+
+**Why:** the Overview's "Total Users" included the admin account and
+every deleted account's shell, and "Listings"/"Posts" included removed
+ones, so they only ever went up. On the Campuses page, the listing,
+post and booking counts were never written by anything — every card
+said 0. Adding three more server counters means every create, delete,
+take-down and account deletion has to remember them (the student count
+already drifted once, run 46); a Firestore count is exact and costs
+about one read per thousand documents. The student number stays on the
+campus document because the server does keep that one and it is what
+the welcome screen shows girls. The unused `stats` fields are left in
+place (no data change).
+
+---
+
 ## 2026-10-26 — A deleted account's comments stay down, even ones an admin hid (autopilot run 52)
 
 **Decision:** deleting an account now sets her `suspended` comments to

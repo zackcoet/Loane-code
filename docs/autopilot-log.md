@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- Nothing new from run 62 to deploy (dashboard only — it picks the change up next time it's built).
 - Nothing new from run 61 to deploy (dashboard and app changes only). One small question: when an admin deletes an account, the audit log keeps her old @username on that one line (admins only see it). I left it — it's the record of who was deleted — but say if you'd rather it went too.
 - From run 60 (only when you next deploy): a server fix so deleting an account takes her name off her Contact us messages. Normal deploy, nothing to switch on, no new index.
 - Nothing new from run 59 (admin dashboard changes only — nothing to deploy to the server; the dashboard picks them up next time it's built).
@@ -54,6 +55,35 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-27 (run 62, ~5 AM Central) — The dashboard's numbers count real students, pieces and looks
+
+**Plan:** Everything left on the backlog still waits on you (F7, H10), on payments (B8) or on a real phone (G8, H5). So, as run 61 suggested, this run re-read the dashboard's Overview numbers and Campuses page against deleted and suspended accounts (backlog H1).
+
+**Built / Fixed (what you would notice):**
+- **"Total Users" is now "Students", and it's honest.** It used to count the admin login itself and every deleted account, so it could only ever go up. Now it counts girls who still have an account (suspended girls still count — they're paused, not gone). New sign-ups still include girls who later deleted (they did sign up) but never the admin.
+- **"Listings" and "Posts" on the Overview** no longer count pieces and looks that were removed or taken down — only what's on Loane today.
+- **Each campus card on the Campuses page said 0 pieces, 0 posts, 0 bookings — always.** Nothing had ever kept those three numbers up to date. Now the dashboard counts them exactly each time you open the page: Students, Pieces, Looks, and Rented or sold. While counting it shows a dash, not a fake 0.
+- **The Overview no longer says "Showing the latest limited emulator data"** — wrong once it points at the live project. It now says the numbers come from the newest 250 of each, and that Campuses has the exact totals.
+
+**What to tap to see it:** Laptop, emulators running: `npm run admin` → sign in as admin@joinloane.com → Overview: the first card says "Students". Then Campuses: the University of South Carolina card shows real numbers for Pieces, Looks and Rented or sold (from the seeded campus) instead of zeros.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, the dashboard build, and 360 shared tests (6 new). GitHub runs the full set, database tests included, on this push.
+- B8 still waits on payments, F7 and H10 on your decisions, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing to deploy from tonight (dashboard only).
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+- Still open from run 57: should a suspended girl's profile look "not found" to other students, or stay visible?
+
+**Next up:** Keep sweeping (H1) — next, re-read the dashboard's Users list and Listings/Posts pages against deleted accounts (can an admin act on a deleted girl's leftovers?). Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- Dashboard counts students, pieces and looks that are on Loane now; campus cards count live (they sat at 0); test
+- Decisions and North Star notes; autopilot log for run 62
 
 ---
 
