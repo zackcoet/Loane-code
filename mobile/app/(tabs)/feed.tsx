@@ -47,7 +47,7 @@ import { SuggestedClosets } from '../../src/components/SuggestedClosets';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
 import { WalkthroughTarget } from '../../src/components/WalkthroughTargets';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
-import { setUserMuted, useMutedUids } from '../../src/hooks/useMuted';
+import { muteErrorMessage, setUserMuted, useMutedUids } from '../../src/hooks/useMuted';
 import { logEvent } from '../../src/analytics/events';
 import { usePostImpressions } from '../../src/hooks/usePostImpressions';
 import { useForYouOrder } from '../../src/hooks/useForYouOrder';
@@ -173,7 +173,9 @@ export default function Feed() {
               "Her looks won't show in your feed. She won't be told. Undo it from her profile or Settings → Muted.",
             ),
           )
-          .catch(() => Alert.alert('Loane', 'Could not mute right now. Try again.'));
+          .catch((err) =>
+            Alert.alert('Loane', muteErrorMessage(err, 'Could not mute right now. Try again.')),
+          );
       };
       const muteLabel = `Mute @${post.author.username}`;
       if (Platform.OS === 'ios') {

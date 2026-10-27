@@ -23,7 +23,7 @@ import { COLLECTIONS, SUBCOLLECTIONS } from '@loane/shared';
 import { db } from '../firebase/config';
 import { useAuth } from '../auth/AuthProvider';
 import { logEvent } from '../analytics/events';
-import { assertOnline } from '../network/connection';
+import { assertOnline, OfflineError } from '../network/connection';
 
 /**
  * Everyone she has muted, live.
@@ -84,4 +84,13 @@ export async function setUserMuted(myUid: string, otherUid: string, muted: boole
     targetType: 'user',
     targetId: otherUid,
   });
+}
+
+/**
+ * What to tell her when muting or unmuting fails. With no signal the
+ * write is refused before it leaves the phone, and "try again" would
+ * send her tapping something only a signal will fix.
+ */
+export function muteErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof OfflineError ? error.message : fallback;
 }

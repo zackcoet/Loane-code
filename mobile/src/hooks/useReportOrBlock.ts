@@ -24,7 +24,7 @@ import { ActionSheetIOS, Alert, Platform } from 'react-native';
 import { blockUser } from '../firebase/callables';
 import { callableErrorMessage } from '../firebase/errors';
 import { useAuth } from '../auth/AuthProvider';
-import { setUserMuted, useMutedUids } from './useMuted';
+import { muteErrorMessage, setUserMuted, useMutedUids } from './useMuted';
 
 interface Options {
   uid: string;
@@ -60,7 +60,9 @@ export function useReportOrBlock({ uid, username, onReport, onBlocked, onShare }
             : 'Her looks will show in your feed again.',
         ),
       )
-      .catch(() => Alert.alert('Loane', 'Could not change that right now. Try again.'));
+      .catch((err) =>
+        Alert.alert('Loane', muteErrorMessage(err, 'Could not change that right now. Try again.')),
+      );
   }, [profile, uid, username, isMuted]);
 
   const confirmBlock = useCallback(() => {

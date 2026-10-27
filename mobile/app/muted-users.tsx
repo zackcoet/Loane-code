@@ -18,7 +18,7 @@ import { LoadError } from '../src/components/LoadError';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useAuth } from '../src/auth/AuthProvider';
-import { setUserMuted, useMutedUids } from '../src/hooks/useMuted';
+import { muteErrorMessage, setUserMuted, useMutedUids } from '../src/hooks/useMuted';
 import { usePeopleByUid } from '../src/hooks/usePeopleByUid';
 
 export default function MutedUsers() {
@@ -41,8 +41,8 @@ export default function MutedUsers() {
     setBusy(user.uid);
     try {
       await setUserMuted(profile.uid, user.uid, false);
-    } catch {
-      Alert.alert('Loane', 'Could not unmute right now. Try again.');
+    } catch (err) {
+      Alert.alert('Loane', muteErrorMessage(err, 'Could not unmute right now. Try again.'));
     } finally {
       setBusy(null);
     }
