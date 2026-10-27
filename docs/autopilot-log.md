@@ -68,7 +68,7 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 **What to tap to see it:** On your laptop with the emulators running: `npm run admin` → sign in as admin@joinloane.com → Reports: every row has a "Who" column — click the "About" name to jump to her page. On her page (Users → any student): scroll down to "Reports About Her", and "Private Notes" → Add a private note → it appears in the list straight away.
 
 **Skipped / blocked:**
-- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, the dashboard build, and 345 shared tests (6 new). Nothing on the server or database changed tonight; GitHub runs the full set on this push.
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, the dashboard build, and 345 shared tests (6 new). Nothing on the server or database changed tonight. GitHub ran the full set, database tests included: **all green ✅**.
 - B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
 
 **🚨 NEEDS ZACK:**
