@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- Nothing new from run 55 (phone-app changes only — nothing to deploy).
 - From run 54 (only when you next deploy): a server fix to "Download my data". Normal deploy, nothing to switch on.
 - From run 53 (only when you next deploy, and use the new app build after): server fixes to account deletion, reviews and reports. Normal deploy, nothing to switch on. Accounts deleted before this deploy keep their name on old rentals; say the word and a later run can write a one-time clean-up for those.
 - From run 52 (only when you next deploy): server fixes to account deletion and the dashboard's comment take-down. Normal deploy, nothing to switch on.
@@ -47,6 +48,35 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-27 (run 55, ~3 AM Central) — Blocked and Muted lists tell the truth
+
+**Plan:** Everything left on the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So, as run 54 suggested, this run re-read muting and hiding a user (B3) against account deletion and blocking (backlog H1).
+
+**Built / Fixed (what you or a student would notice):**
+- **Settings → Blocked and Settings → Muted no longer say "Nobody blocked" when they just couldn't check.** On a bad signal they used to show that for good, which looks like a block came undone. Now they say "Couldn't load your blocked list" with a Try again button. They also no longer flash "Nobody blocked" for a split second while opening.
+- **Deleted accounts no longer sit in those lists.** If a girl you'd blocked or muted deletes her account, you used to see "@deleted-… Deleted account" with an Unblock button that led nowhere. She's gone for good, so the row is gone too.
+- **Muting someone with no signal now says "No internet connection"** instead of "Could not mute right now. Try again."
+- Checked and fine as it was: a muted girl is never told, nobody can see who muted them (not even in "Download my data"), and deleting your account erases your own muted list.
+
+**What to tap to see it:** On the emulators: sign in as a student → block someone → sign in as that girl and delete her account → sign back in as the first student → Profile → ☰ → Settings → Blocked: the list is empty, not a "Deleted account" row. For the offline part: Airplane Mode → Settings → Blocked → "Couldn't load your blocked list" with Try again.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, 335 shared tests and 178 server tests that don't need the database. Tonight's changes are phone-app only, so no database tests were affected; GitHub runs the full set on this push.
+- B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing new — nothing to deploy from tonight.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping (H1) — next, re-read "Find friends from contacts" and suggested closets against muting (should a muted girl still be suggested?) and the Activity alerts that still show a deleted girl's old handle (noted in run 53). Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- Blocked and Muted lists: say "Couldn't load" with Try again instead of a false "Nobody blocked", no empty flash while loading, and leave out deleted accounts
+- Muting or unmuting with no signal says "no internet" instead of "try again"
+- Decisions and North Star notes; autopilot log for run 55
 
 ---
 
