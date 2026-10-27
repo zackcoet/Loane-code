@@ -1,5 +1,10 @@
 import { useState } from 'react';
-import { AUTO_FILTER_REPORTER_UID, type Report } from '@loane/shared';
+import {
+  AUTO_FILTER_REPORTER_UID,
+  reportPersonLabel,
+  type Report,
+  type ReportPersonLabel,
+} from '@loane/shared';
 import type { AdminData } from '../data/adminData';
 import { formatShortDate, humanize, matchesCampus } from '../data/adminData';
 import { EmptyState, Panel, Pill } from '../components/ui';
@@ -50,7 +55,16 @@ const STATUS_TONE: Record<string, 'good' | 'warn' | 'bad' | 'neutral'> = {
   dismissed: 'neutral',
 };
 
-export function ReportsPage({ data, campusId }: { data: AdminData; campusId: string }) {
+export function ReportsPage({
+  data,
+  campusId,
+  onOpenUser,
+}: {
+  data: AdminData;
+  campusId: string;
+  /** Opens her page under Users, where warning and suspending live too. */
+  onOpenUser: (uid: string) => void;
+}) {
   const reports = [...data.reports.filter((report) => matchesCampus(report, campusId))].sort(
     (a, b) => rank(a) - rank(b),
   );
@@ -90,6 +104,7 @@ export function ReportsPage({ data, campusId }: { data: AdminData; campusId: str
             <tr>
               <th>Status</th>
               <th>Target</th>
+              <th>Who</th>
               <th>Reason</th>
               <th>Details</th>
               <th>Created</th>
@@ -105,6 +120,24 @@ export function ReportsPage({ data, campusId }: { data: AdminData; campusId: str
                     <Pill tone={STATUS_TONE[report.status] ?? 'neutral'}>{report.status}</Pill>
                   </td>
                   <td>{report.targetType}</td>
+                  <td>
+                    {/* Looked up by account id every time, so a rename shows her
+                        current name and a deleted girl shows as deleted. */}
+                    <Person
+                      prefix="About"
+                      person={reportPersonLabel(report.targetUid, data.users)}
+                      onOpen={onOpenUser}
+                    />
+                    <Person
+                      prefix="From"
+                      person={reportPersonLabel(
+                        report.reporterUid,
+                        data.users,
+                        AUTO_FILTER_REPORTER_UID,
+                      )}
+                      onOpen={onOpenUser}
+                    />
+                  </td>
                   <td>
                     {humanize(report.reason)}
                     {/* Filed by the word list, not a student. See contentFilter.ts. */}
@@ -214,6 +247,30 @@ export function ReportsPage({ data, campusId }: { data: AdminData; campusId: str
         ) : null}
       </ActionDialog>
     </Panel>
+  );
+}
+
+function Person({
+  prefix,
+  person,
+  onOpen,
+}: {
+  prefix: string;
+  person: ReportPersonLabel;
+  onOpen: (uid: string) => void;
+}) {
+  const openUid = person.openUid;
+  return (
+    <div className="cell-note">
+      {prefix}{' '}
+      {openUid ? (
+        <button className="text-button" onClick={() => onOpen(openUid)}>
+          {person.label}
+        </button>
+      ) : (
+        person.label
+      )}
+    </div>
   );
 }
 

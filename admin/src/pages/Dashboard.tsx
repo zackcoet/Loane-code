@@ -60,6 +60,10 @@ export function Dashboard({ adminEmail }: { adminEmail: string | null }) {
             onDateRangeChange={setDateRange}
             onSelectUser={setSelectedUserId}
             onBackToUsers={() => setSelectedUserId(null)}
+            onOpenUser={(uid) => {
+              setPage('users');
+              setSelectedUserId(uid);
+            }}
           />
         </main>
       ) : null}
@@ -77,6 +81,7 @@ function CurrentPage({
   onDateRangeChange,
   onSelectUser,
   onBackToUsers,
+  onOpenUser,
 }: {
   data: AdminData;
   page: Page;
@@ -87,6 +92,7 @@ function CurrentPage({
   onDateRangeChange: (value: DateRangeKey) => void;
   onSelectUser: (uid: string) => void;
   onBackToUsers: () => void;
+  onOpenUser: (uid: string) => void;
 }) {
   if (page === 'overview') {
     return (
@@ -116,7 +122,9 @@ function CurrentPage({
   if (page === 'listings') return <ListingsPage data={data} campusId={campusId} />;
   if (page === 'posts') return <PostsPage data={data} campusId={campusId} />;
   if (page === 'comments') return <CommentsPage data={data} campusId={campusId} />;
-  if (page === 'reports') return <ReportsPage data={data} campusId={campusId} />;
+  if (page === 'reports') {
+    return <ReportsPage data={data} campusId={campusId} onOpenUser={onOpenUser} />;
+  }
   if (page === 'support') return <SupportPage data={data} campusId={campusId} />;
   if (page === 'claims') return <ClaimsPage data={data} campusId={campusId} />;
   if (page === 'campuses') return <CampusesPage campuses={data.campuses} />;
