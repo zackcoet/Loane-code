@@ -1,12 +1,21 @@
 import { useState } from 'react';
+import { POST_STATUSES, moderationButtonBlockedReason, reportPersonLabel } from '@loane/shared';
 import type { AdminData } from '../data/adminData';
-import { matchesCampus } from '../data/adminData';
+import { humanize, matchesCampus } from '../data/adminData';
 import { ModerationGrid } from '../components/media';
-import { Panel } from '../components/ui';
+import { Panel, Toolbar } from '../components/ui';
 import { ActionDialog } from '../components/ActionDialog';
 import { adminErrorMessage, hidePost, restorePost } from '../data/adminActions';
 
-export function PostsPage({ data, campusId }: { data: AdminData; campusId: string }) {
+export function PostsPage({
+  data,
+  campusId,
+  onSelectUser,
+}: {
+  data: AdminData;
+  campusId: string;
+  onSelectUser: (uid: string) => void;
+}) {
   // Taking something down and putting it back both need a reason,
   // because both write an audit row.
   const [target, setTarget] = useState<{ id: string; hide: boolean } | null>(null);
@@ -27,13 +36,43 @@ export function PostsPage({ data, campusId }: { data: AdminData; campusId: strin
     }
   };
 
-  const posts = data.posts.filter((post) => matchesCampus(post, campusId));
+  // Search and status, like Listings: finding one reported look among
+  // 250 by scrolling was the only way before.
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState('all');
+  const usersByUid = new Map(data.users.map((user) => [user.uid, user]));
+
+  const posts = data.posts
+    .filter((post) => matchesCampus(post, campusId))
+    .filter((post) => status === 'all' || post.status === status)
+    .filter((post) => {
+      const author = usersByUid.get(post.authorUid);
+      const text =
+        `${post.caption} ${post.author.displayName} ${author?.displayName ?? ''} ${author?.username ?? ''}`.toLowerCase();
+      return text.includes(query.toLowerCase().trim());
+    });
 
   return (
     <>
-      <Panel title="Posts" kicker={`${posts.length} loaded`}>
+      <Toolbar>
+        <input
+          className="search-input"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search caption or name"
+        />
+        <select value={status} onChange={(event) => setStatus(event.target.value)}>
+          <option value="all">All statuses</option>
+          {POST_STATUSES.map((item) => (
+            <option key={item} value={item}>
+              {humanize(item)}
+            </option>
+          ))}
+        </select>
+      </Toolbar>
+      <Panel title="Posts" kicker={`${posts.length} loaded and filtered`}>
         <ModerationGrid
-          emptyTitle="No posts yet"
+          emptyTitle="No posts match"
           items={posts.map((post) => ({
             id: post.id,
             imageUrl: post.photos[0]?.url ?? null,
@@ -42,7 +81,13 @@ export function PostsPage({ data, campusId }: { data: AdminData; campusId: strin
             status: post.status,
             meta: `${post.stats.viewCount} views · ${post.stats.likeCount} likes · ${post.stats.tagTapCount} tagged-item taps`,
             actionLabel: post.status === 'suspended' ? 'Put it back' : 'Hide post',
+            person: reportPersonLabel(post.authorUid, data.users),
+            blockedReason: moderationButtonBlockedReason(
+              post.status,
+              usersByUid.get(post.authorUid),
+            ),
           }))}
+          onOpenPerson={onSelectUser}
           // Without this the grid disables its own button — the dialog,
           // the state and the hidePost call below it were all wired up to
           // something that could never be clicked.

@@ -4,6 +4,8 @@ import {
   LISTING_STATUSES,
   OCCASION_LABELS,
   OCCASIONS,
+  moderationButtonBlockedReason,
+  reportPersonLabel,
   type Occasion,
 } from '@loane/shared';
 import type { AdminData } from '../data/adminData';
@@ -13,7 +15,15 @@ import { Panel, Toolbar } from '../components/ui';
 import { ActionDialog } from '../components/ActionDialog';
 import { adminErrorMessage, hideListing, restoreListing } from '../data/adminActions';
 
-export function ListingsPage({ data, campusId }: { data: AdminData; campusId: string }) {
+export function ListingsPage({
+  data,
+  campusId,
+  onSelectUser,
+}: {
+  data: AdminData;
+  campusId: string;
+  onSelectUser: (uid: string) => void;
+}) {
   // Taking something down and putting it back both need a reason,
   // because both write an audit row.
   const [target, setTarget] = useState<{ id: string; hide: boolean } | null>(null);
@@ -38,13 +48,17 @@ export function ListingsPage({ data, campusId }: { data: AdminData; campusId: st
   const [occasion, setOccasion] = useState('all');
   const [status, setStatus] = useState('all');
 
+  const usersByUid = new Map(data.users.map((user) => [user.uid, user]));
   const listings = data.listings
     .filter((listing) => matchesCampus(listing, campusId))
     .filter((listing) => status === 'all' || listing.status === status)
     .filter((listing) => occasion === 'all' || listing.occasions.includes(occasion as Occasion))
     .filter((listing) => {
+      // Her name and @username today as well as the piece's own copy,
+      // so a renamed girl is found by the name the admin knows her by.
+      const owner = usersByUid.get(listing.ownerUid);
       const text =
-        `${listing.name} ${listing.brand ?? ''} ${listing.owner.displayName}`.toLowerCase();
+        `${listing.name} ${listing.brand ?? ''} ${listing.owner.displayName} ${owner?.displayName ?? ''} ${owner?.username ?? ''}`.toLowerCase();
       return text.includes(query.toLowerCase().trim());
     });
 
@@ -77,6 +91,7 @@ export function ListingsPage({ data, campusId }: { data: AdminData; campusId: st
       <Panel title="Listings" kicker={`${listings.length} loaded and filtered`}>
         <ModerationGrid
           onAction={(id, status) => setTarget({ id, hide: status !== 'suspended' })}
+          onOpenPerson={onSelectUser}
           emptyTitle="No listings match"
           items={listings.map((listing) => ({
             id: listing.id,
@@ -86,6 +101,11 @@ export function ListingsPage({ data, campusId }: { data: AdminData; campusId: st
             status: listing.status,
             meta: `${formatMoney(listing.pricing.threeDayCents)} / 3 days · ${listing.stats.viewCount} views`,
             actionLabel: listing.status === 'suspended' ? 'Put it back' : 'Hide listing',
+            person: reportPersonLabel(listing.ownerUid, data.users),
+            blockedReason: moderationButtonBlockedReason(
+              listing.status,
+              usersByUid.get(listing.ownerUid),
+            ),
           }))}
         />
       </Panel>

@@ -64,7 +64,7 @@ export function UsersPage({ data, campusId, onCampusChange, onSelectUser }: Prop
         listings: user.stats.listingCount,
         posts: user.stats.postCount,
         rentals: user.stats.rentalsAsLender + user.stats.rentalsAsRenter,
-        status: user.status,
+        status: statusLabel(user.status),
         emailConfirmed: user.verificationMethod === 'email_confirmed' ? 'yes' : 'no',
       })),
     );
@@ -84,7 +84,7 @@ export function UsersPage({ data, campusId, onCampusChange, onSelectUser }: Prop
           <option value="all">All statuses</option>
           <option value="active">Active</option>
           <option value="suspended">Suspended</option>
-          <option value="deactivated">Deactivated</option>
+          <option value="deactivated">Deleted</option>
         </select>
         <select value={joined} onChange={(event) => setJoined(event.target.value as DateRangeKey)}>
           <option value="all">Any join date</option>
@@ -125,7 +125,11 @@ export function UsersPage({ data, campusId, onCampusChange, onSelectUser }: Prop
               </thead>
               <tbody>
                 {pageUsers.map((user) => (
-                  <tr key={user.uid} className="clickable-row" onClick={() => onSelectUser(user.uid)}>
+                  <tr
+                    key={user.uid}
+                    className="clickable-row"
+                    onClick={() => onSelectUser(user.uid)}
+                  >
                     <td>{user.displayName}</td>
                     <td>@{user.username}</td>
                     <td>{campusName(data.campuses, user.campusId)}</td>
@@ -145,24 +149,39 @@ export function UsersPage({ data, campusId, onCampusChange, onSelectUser }: Prop
                       )}
                     </td>
                     <td>
-                      <Pill tone={user.status === 'active' ? 'good' : 'warn'}>{user.status}</Pill>
+                      <Pill tone={user.status === 'active' ? 'good' : 'warn'}>
+                        {statusLabel(user.status)}
+                      </Pill>
                     </td>
                     <td>{user.verificationMethod === 'email_confirmed' ? 'Yes' : 'No'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <Pagination page={page} pageCount={pageCount} total={users.length} onPageChange={setPage} />
+            <Pagination
+              page={page}
+              pageCount={pageCount}
+              total={users.length}
+              onPageChange={setPage}
+            />
           </>
         ) : (
           <EmptyState
             title="No users match"
-            body="Try clearing a filter. Phase 1 account activity will make this list more useful."
+            body="Try clearing a filter or searching another name."
           />
         )}
       </Panel>
     </>
   );
+}
+
+/**
+ * "deactivated" is what deletion writes; to an admin it means "she
+ * deleted her account", so say that. (No one is deactivated any other way.)
+ */
+function statusLabel(status: User['status']): string {
+  return status === 'deactivated' ? 'deleted' : status;
 }
 
 export function campusName(campuses: Campus[], campusId: string) {

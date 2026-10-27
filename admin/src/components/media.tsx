@@ -1,6 +1,7 @@
-import type { AppEvent, Listing, Post } from '@loane/shared';
+import type { AppEvent, Listing, Post, ReportPersonLabel } from '@loane/shared';
 import { formatShortDate, humanize } from '../data/adminData';
 import { EmptyState, ImageBlock, Pill } from './ui';
+import { PersonLink } from './PersonLink';
 
 export function Timeline({ events }: { events: AppEvent[] }) {
   if (events.length === 0) {
@@ -50,6 +51,7 @@ export function ModerationGrid({
   items,
   emptyTitle,
   onAction,
+  onOpenPerson,
 }: {
   emptyTitle: string;
   items: Array<{
@@ -60,9 +62,15 @@ export function ModerationGrid({
     status: Listing['status'] | Post['status'];
     meta: string;
     actionLabel: string;
+    /** Whose it is, by her account today (moderationButtonBlockedReason's sibling). */
+    person?: ReportPersonLabel;
+    /** Why the button is greyed out, or null when it can be pressed. */
+    blockedReason?: string | null;
   }>;
   /** Opens the hide / restore dialog for one item. */
   onAction?: (id: string, status: Listing['status'] | Post['status']) => void;
+  /** Opens her page under Users. */
+  onOpenPerson?: (uid: string) => void;
 }) {
   if (items.length === 0)
     return (
@@ -77,6 +85,10 @@ export function ModerationGrid({
             <p className="label">{item.subtitle}</p>
             <h3>{item.title}</h3>
             <p className="muted">{item.meta}</p>
+            {item.person && onOpenPerson ? (
+              <PersonLink prefix="By" person={item.person} onOpen={onOpenPerson} />
+            ) : null}
+            {item.blockedReason ? <p className="cell-note">{item.blockedReason}</p> : null}
           </div>
           <Pill
             tone={
@@ -88,10 +100,14 @@ export function ModerationGrid({
           <button
             className="outline-button"
             onClick={() => onAction?.(item.id, item.status)}
-            // Something its owner removed can't be taken down (the server
-            // refuses: there is nothing showing to take down).
-            disabled={!onAction || item.status === 'removed'}
-            title={item.status === 'removed' ? 'Its owner already removed it.' : undefined}
+            // Something its owner removed can't be taken down, and a
+            // deleted girl's things can't be put back (the server refuses
+            // both). Say why rather than fail after a reason is typed.
+            disabled={!onAction || item.status === 'removed' || Boolean(item.blockedReason)}
+            title={
+              item.blockedReason ??
+              (item.status === 'removed' ? 'Its owner already removed it.' : undefined)
+            }
           >
             {item.actionLabel}
           </button>

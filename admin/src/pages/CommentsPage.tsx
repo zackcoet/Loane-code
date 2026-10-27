@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import type { Comment } from '@loane/shared';
+import { ownerRestoreBlockedReason, reportPersonLabel, type Comment } from '@loane/shared';
 import type { AdminData } from '../data/adminData';
 import { formatShortDate, matchesCampus } from '../data/adminData';
 import { EmptyState, Panel, Pill, Toolbar } from '../components/ui';
 import { ActionDialog } from '../components/ActionDialog';
+import { PersonLink } from '../components/PersonLink';
 import { adminErrorMessage, hideComment, restoreComment } from '../data/adminActions';
 
 /**
@@ -23,23 +24,37 @@ const STATUS_TONE: Record<Comment['status'], 'good' | 'warn' | 'neutral'> = {
   suspended: 'warn',
 };
 
-export function CommentsPage({ data, campusId }: { data: AdminData; campusId: string }) {
+export function CommentsPage({
+  data,
+  campusId,
+  onOpenUser,
+}: {
+  data: AdminData;
+  campusId: string;
+  onOpenUser: (uid: string) => void;
+}) {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
   const [target, setTarget] = useState<{ comment: Comment; hide: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const usersByUid = useMemo(
+    () => new Map(data.users.map((user) => [user.uid, user])),
+    [data.users],
+  );
   const comments = useMemo(
     () =>
       data.comments
         .filter((comment) => matchesCampus(comment, campusId))
         .filter((comment) => status === 'all' || comment.status === status)
         .filter((comment) => {
-          const text = `${comment.body} ${comment.author.username}`.toLowerCase();
+          // Her @username today too, so a renamed girl is still found.
+          const live = usersByUid.get(comment.authorUid)?.username ?? '';
+          const text = `${comment.body} ${comment.author.username} ${live}`.toLowerCase();
           return text.includes(query.toLowerCase().trim());
         }),
-    [data.comments, campusId, status, query],
+    [data.comments, campusId, status, query, usersByUid],
   );
 
   const apply = async (reason: string) => {
@@ -92,7 +107,14 @@ export function CommentsPage({ data, campusId }: { data: AdminData; campusId: st
                   <td>
                     <Pill tone={STATUS_TONE[comment.status]}>{comment.status}</Pill>
                   </td>
-                  <td>@{comment.author.username}</td>
+                  <td>
+                    {/* Her account today, not the comment's copy: a
+                        rename shows her new name, a deletion says so. */}
+                    <PersonLink
+                      person={reportPersonLabel(comment.authorUid, data.users)}
+                      onOpen={onOpenUser}
+                    />
+                  </td>
                   <td>
                     {comment.body}
                     {comment.suspendedReason ? (
@@ -110,9 +132,15 @@ export function CommentsPage({ data, campusId }: { data: AdminData; campusId: st
                         Take it down
                       </button>
                     ) : comment.status === 'suspended' ? (
-                      <button onClick={() => setTarget({ comment, hide: false })}>
-                        Put it back
-                      </button>
+                      <RestoreButton
+                        // Undefined (not loaded) lets the server decide.
+                        blocked={
+                          usersByUid.has(comment.authorUid)
+                            ? ownerRestoreBlockedReason(usersByUid.get(comment.authorUid))
+                            : null
+                        }
+                        onClick={() => setTarget({ comment, hide: false })}
+                      />
                     ) : (
                       <span className="cell-note">Deleted by her</span>
                     )}
@@ -148,4 +176,10 @@ export function CommentsPage({ data, campusId }: { data: AdminData; campusId: st
       />
     </>
   );
+}
+
+/** "Put it back", or why it can't be: a deleted girl's comment stays down. */
+function RestoreButton({ blocked, onClick }: { blocked: string | null; onClick: () => void }) {
+  if (blocked) return <span className="cell-note">{blocked}</span>;
+  return <button onClick={onClick}>Put it back</button>;
 }

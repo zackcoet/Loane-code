@@ -5,6 +5,9 @@ import {
   CATEGORY_LABELS,
   adminActionLabel,
   adminActionsAboutUser,
+  grantBlockedReason,
+  isCountedListing,
+  isCountedPost,
   reportPersonLabel,
   reportsAboutUser,
   type AdminAction,
@@ -190,7 +193,17 @@ export function UserDetailPage({ user, data, onBack }: Props) {
       <button className="text-button back-button" onClick={onBack}>
         Back to users
       </button>
-      <Panel title="Moderation" kicker={suspended ? 'Suspended' : 'Active'}>
+      <Panel
+        title="Moderation"
+        // A deleted account used to read "Active" here.
+        kicker={deleted ? 'Deleted account' : suspended ? 'Suspended' : 'Active'}
+      >
+        {deleted ? (
+          <p className="cell-note">
+            She deleted this account (or it was deleted for her). Her pieces and looks are down and
+            can't be put back; her rentals, reviews and reports stay as records.
+          </p>
+        ) : null}
         {suspended && user.suspendedReason ? (
           <p className="cell-note">Reason on file: {user.suspendedReason}</p>
         ) : null}
@@ -257,15 +270,30 @@ export function UserDetailPage({ user, data, onBack }: Props) {
           {/* The free allowance is five for life. This is how Ella and
               our testers are not the first people locked out of the
               thing they are meant to be judging. */}
-          <button className="outline-button" onClick={() => setDialog('grantTryOns')}>
+          <button
+            className="outline-button"
+            disabled={Boolean(grantBlockedReason(user.status))}
+            title={grantBlockedReason(user.status) ?? undefined}
+            onClick={() => setDialog('grantTryOns')}
+          >
             Give free try-ons
           </button>
         </div>
       </section>
 
       <section className="metric-grid four">
-        <MetricCard label="Listings" value={listings.length} detail="Closet items loaded" />
-        <MetricCard label="Posts" value={posts.length} detail="Looks shared" />
+        {/* On Loane now, the same rule as the Overview (run 62): removed
+            and taken-down ones are still listed below, not counted here. */}
+        <MetricCard
+          label="Listings"
+          value={listings.filter(isCountedListing).length}
+          detail="On her closet now"
+        />
+        <MetricCard
+          label="Posts"
+          value={posts.filter(isCountedPost).length}
+          detail="Looks up now"
+        />
         <MetricCard
           label="As lender"
           value={user.stats.rentalsAsLender}

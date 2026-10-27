@@ -119,9 +119,12 @@ function CurrentPage({
     );
   }
   if (page === 'rentals') return <RentalsPage data={data} campusId={campusId} />;
-  if (page === 'listings') return <ListingsPage data={data} campusId={campusId} />;
-  if (page === 'posts') return <PostsPage data={data} campusId={campusId} />;
-  if (page === 'comments') return <CommentsPage data={data} campusId={campusId} />;
+  if (page === 'listings')
+    return <ListingsPage data={data} campusId={campusId} onSelectUser={onOpenUser} />;
+  if (page === 'posts')
+    return <PostsPage data={data} campusId={campusId} onSelectUser={onOpenUser} />;
+  if (page === 'comments')
+    return <CommentsPage data={data} campusId={campusId} onOpenUser={onOpenUser} />;
   if (page === 'reports') {
     return <ReportsPage data={data} campusId={campusId} onOpenUser={onOpenUser} />;
   }
