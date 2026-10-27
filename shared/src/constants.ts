@@ -232,6 +232,20 @@ export const TERMINAL_BOOKING_STATUSES: readonly BookingStatus[] = [
 ];
 
 /**
+ * Rentals still going: a garment spoken for, out, on its way back, or
+ * under a claim someone is still deciding. `disputed` is here even though
+ * the booking machine calls it terminal, because both girls (and an
+ * admin) still need each other on the other end of it.
+ */
+export const OPEN_BOOKING_STATUSES: readonly BookingStatus[] = [
+  'requested',
+  'confirmed',
+  'with_renter',
+  'returned',
+  'disputed',
+];
+
+/**
  * How long a lender or seller has to answer a request.
  *
  * 24 hours, or until the rental day begins on campus, whichever comes

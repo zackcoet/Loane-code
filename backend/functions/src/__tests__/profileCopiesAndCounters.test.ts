@@ -3,7 +3,8 @@
  * emulator.
  *
  *   propagateProfileChanges: a new name or photo reaches her pieces,
- *   looks, comments and chats; uses the newest profile even when the
+ *   looks, comments, chats and rentals still going (finished ones keep
+ *   the name they had); uses the newest profile even when the
  *   event is stale; does not reorder anyone's inbox; and a look deleted
  *   mid-run does not stop the rest.
  *
@@ -94,6 +95,7 @@ beforeEach(async () => {
     COLLECTIONS.posts,
     COLLECTIONS.comments,
     COLLECTIONS.conversations,
+    COLLECTIONS.bookings,
   ]) {
     await db.recursiveDelete(db.collection(c));
   }
@@ -172,6 +174,69 @@ describe('propagateProfileChanges', () => {
     expect((await get(`${COLLECTIONS.posts}/p1`)).author.username).toBe('ellanew');
     const chat = await get(`${COLLECTIONS.conversations}/chat1`);
     expect(chat.participants[ELLA].username).toBe('ellanew');
+  });
+});
+
+describe('propagateProfileChanges on rentals', () => {
+  async function booking(id: string, status: string, ellaSide: 'lender' | 'renter') {
+    const old = user(ELLA, 'ellaold');
+    const harper = user(HARPER, 'harper');
+    const ellaLends = ellaSide === 'lender';
+    await db.doc(`${COLLECTIONS.bookings}/${id}`).set({
+      status,
+      listingId: 'piece1',
+      lenderUid: ellaLends ? ELLA : HARPER,
+      renterUid: ellaLends ? HARPER : ELLA,
+      lender: ellaLends ? old : harper,
+      renter: ellaLends ? harper : old,
+      startDate: '2026-11-07',
+      endDate: '2026-11-08',
+      updatedAt: OLD_TIME,
+    });
+    return old;
+  }
+
+  it('puts her new name on rentals still going, on whichever side she is', async () => {
+    const old = await booking('b-lend', 'confirmed', 'lender');
+    await booking('b-rent', 'with_renter', 'renter');
+    await booking('b-asked', 'requested', 'renter');
+    await booking('b-claim', 'disputed', 'lender');
+    const now = user(ELLA, 'ellanew');
+    await db.doc(`${COLLECTIONS.users}/${ELLA}`).set(now);
+    await propagate(updated(ELLA, old, now));
+
+    const lent = await get(`${COLLECTIONS.bookings}/b-lend`);
+    expect(lent.lender.username).toBe('ellanew');
+    expect(lent.renter.username).toBe('harper');
+    expect((await get(`${COLLECTIONS.bookings}/b-rent`)).renter.username).toBe('ellanew');
+    expect((await get(`${COLLECTIONS.bookings}/b-asked`)).renter.username).toBe('ellanew');
+    expect((await get(`${COLLECTIONS.bookings}/b-claim`)).lender.username).toBe('ellanew');
+  });
+
+  it('leaves finished rentals with the name they had', async () => {
+    const old = await booking('b-done', 'completed', 'lender');
+    await booking('b-off', 'cancelled', 'renter');
+    await booking('b-no', 'declined', 'renter');
+    const now = user(ELLA, 'ellanew');
+    await db.doc(`${COLLECTIONS.users}/${ELLA}`).set(now);
+    await propagate(updated(ELLA, old, now));
+
+    expect((await get(`${COLLECTIONS.bookings}/b-done`)).lender.username).toBe('ellaold');
+    expect((await get(`${COLLECTIONS.bookings}/b-off`)).renter.username).toBe('ellaold');
+    expect((await get(`${COLLECTIONS.bookings}/b-no`)).renter.username).toBe('ellaold');
+  });
+
+  it('changes only her copy: not the status, dates or when it last moved', async () => {
+    const old = await booking('b-lend', 'confirmed', 'lender');
+    const now = user(ELLA, 'ellaold', { photoUrl: 'https://example.com/new.jpg' });
+    await db.doc(`${COLLECTIONS.users}/${ELLA}`).set(now);
+    await propagate(updated(ELLA, old, now));
+
+    const b = await get(`${COLLECTIONS.bookings}/b-lend`);
+    expect(b.lender.photoUrl).toBe('https://example.com/new.jpg');
+    expect(b.status).toBe('confirmed');
+    expect(b.startDate).toBe('2026-11-07');
+    expect((b.updatedAt as Timestamp).toMillis()).toBe(OLD_TIME.toMillis());
   });
 });
 

@@ -1,4 +1,4 @@
-import type { BookingStatus } from './constants';
+import { OPEN_BOOKING_STATUSES, type BookingStatus } from './constants';
 import type { UserSummary } from './types';
 
 /**
@@ -65,13 +65,7 @@ export function isDeletedAccount(user: { status: string; deletedAt?: unknown }):
  * terminal: a claim is still being decided, and the other student needs
  * someone on the other end of it.
  */
-export const BOOKING_STATUSES_BLOCKING_DELETION: readonly BookingStatus[] = [
-  'requested',
-  'confirmed',
-  'with_renter',
-  'returned',
-  'disputed',
-];
+export const BOOKING_STATUSES_BLOCKING_DELETION: readonly BookingStatus[] = OPEN_BOOKING_STATUSES;
 
 export function blocksAccountDeletion(status: BookingStatus): boolean {
   return BOOKING_STATUSES_BLOCKING_DELETION.includes(status);

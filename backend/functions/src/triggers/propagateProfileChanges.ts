@@ -1,7 +1,7 @@
 import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { logger } from 'firebase-functions';
 import type { BulkWriter } from 'firebase-admin/firestore';
-import { COLLECTIONS, type User, type UserSummary } from '@loane/shared';
+import { COLLECTIONS, OPEN_BOOKING_STATUSES, type User, type UserSummary } from '@loane/shared';
 import { db, now } from '../lib/admin';
 
 /**
@@ -48,10 +48,9 @@ export const propagateProfileChanges = onDocumentUpdated(
       every chat she was in — the two places a name is read most often.
       changeUsername carried a TODO saying exactly this.
 
-      Bookings are deliberately NOT rewritten: a completed rental is a
-      record of what happened, and the name on it then is part of that
-      record. A live one shows her current name because it reads the
-      user document.
+      Rentals still going get her new name too (see rewriteOpenBookings).
+      A finished rental is a record of what happened, and the name on it
+      then is part of that record, so it is left alone.
     */
     const writer = db().bulkWriter();
     // A look or piece she deletes while this runs is simply skipped. In a
@@ -96,6 +95,7 @@ export const propagateProfileChanges = onDocumentUpdated(
         { [`participants.${summary.uid}`]: summary },
         'array-contains',
       ),
+      bookings: await rewriteOpenBookings(writer, summary),
     };
     await writer.close();
 
@@ -145,4 +145,37 @@ async function rewrite(
     writer.update(doc.ref, patch).catch(() => undefined);
   }
   return snap.size;
+}
+
+/**
+ * Her copy on every rental still going, as lender or renter.
+ *
+ * The rental screen, My Rentals and Rental requests all show the other
+ * girl from the booking's own copy of her. This job used to skip
+ * bookings on the belief that a live rental read the profile instead;
+ * it never did. So after a rename, a girl arranging a handoff saw
+ * "Renting from @oldname" on the rental while the chat beside it showed
+ * the new one, and could not find her by the name she was shown.
+ *
+ * Only her own side is patched, and nothing else — no `updatedAt`,
+ * status or dates — so it cannot move a rental in a list or wake the
+ * calendar job (syncListingAvailability ignores changes that leave the
+ * status and dates alone). Finished rentals keep the name they had.
+ */
+async function rewriteOpenBookings(writer: BulkWriter, summary: UserSummary): Promise<number> {
+  const open = OPEN_BOOKING_STATUSES as unknown as string[];
+  const bookings = db().collection(COLLECTIONS.bookings);
+  // index-check: == on lenderUid / renterUid plus `in` on status, no sort —
+  // served by the (lenderUid|renterUid, status, startDate) indexes.
+  const [asLender, asRenter] = await Promise.all([
+    bookings.where('lenderUid', '==', summary.uid).where('status', 'in', open).get(),
+    bookings.where('renterUid', '==', summary.uid).where('status', 'in', open).get(),
+  ]);
+  for (const doc of asLender.docs) {
+    writer.update(doc.ref, { lender: summary }).catch(() => undefined);
+  }
+  for (const doc of asRenter.docs) {
+    writer.update(doc.ref, { renter: summary }).catch(() => undefined);
+  }
+  return asLender.size + asRenter.size;
 }
