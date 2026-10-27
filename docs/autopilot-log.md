@@ -66,7 +66,7 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 **What to tap to see it:** On the emulators: sign in as girl A → ask to rent one of girl B's pieces → sign in as B → Profile → Edit profile → change her @username → back as A: My Rentals → open the rental: "Renting from" shows B's new name. For reviews: finish a rental, have A review B, then rename A → open B's Reviews: the review shows A's new name.
 
 **Skipped / blocked:**
-- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (no new index needed), 339 shared tests and 164 server tests that don't need the database. The four new database tests run on GitHub with this push.
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (no new index needed), 339 shared tests and 164 server tests that don't need the database. The four new database tests ran on GitHub with the full set: **all green ✅**.
 - B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
 
 **🚨 NEEDS ZACK:**
