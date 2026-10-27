@@ -162,10 +162,16 @@ export default function Chat() {
     [profile?.uid, them],
   );
 
-  const startReply = useCallback((message: Message) => {
-    setReplyingTo(message);
-    inputRef.current?.focus();
-  }, []);
+  // A deleted account's chat has no composer, so a swipe or "Reply"
+  // would open a quote with nowhere to type under it.
+  const startReply = useCallback(
+    (message: Message) => {
+      if (themDeleted) return;
+      setReplyingTo(message);
+      inputRef.current?.focus();
+    },
+    [themDeleted],
+  );
 
   /*
     Tapping a quote scrolls up to the original, if it is loaded.
@@ -291,11 +297,19 @@ export default function Chat() {
               >
                 <Avatar url={them.photoUrl} name={them.displayName} size={32} />
               </Pressable>
-              <IconButton
-                name="ellipsis-horizontal"
-                accessibilityLabel="Report or block"
-                onPress={reportOrBlock.open}
-              />
+              {/*
+                Not for a deleted account: there is nobody left to block
+                or mute, and the server refuses a report on a profile
+                that is gone. Her messages can still be reported one at
+                a time (press and hold), because those records stay.
+              */}
+              {themDeleted ? null : (
+                <IconButton
+                  name="ellipsis-horizontal"
+                  accessibilityLabel="Report or block"
+                  onPress={reportOrBlock.open}
+                />
+              )}
             </View>
           ) : null
         }
@@ -376,7 +390,7 @@ export default function Chat() {
                   likedByMe={!!profile?.uid && (item.likedBy ?? []).includes(profile.uid)}
                   onLike={likeMessage}
                   router={router}
-                  onReplyTo={startReply}
+                  onReplyTo={themDeleted ? undefined : startReply}
                   onReportMessage={
                     item.senderUid !== profile?.uid ? setReportingMessage : undefined
                   }
@@ -423,7 +437,7 @@ export default function Chat() {
           </View>
         ) : null}
 
-        {replyingTo ? (
+        {replyingTo && !themDeleted ? (
           <View style={styles.replyBar}>
             <View style={styles.replyBarText}>
               <Text variant="caption" tone="muted">
@@ -534,7 +548,8 @@ const Bubble = memo(function Bubble({
   likedByMe: boolean;
   onLike: (messageId: string, on: boolean) => void;
   router: ReturnType<typeof useRouter>;
-  onReplyTo: (message: Message) => void;
+  /** Absent when she can't reply (the other girl deleted her account). */
+  onReplyTo?: (message: Message) => void;
   /** Report this one message. Only offered on theirs, never her own. */
   onReportMessage?: (message: Message) => void;
   onJumpTo: (messageId: string) => void;
@@ -544,7 +559,7 @@ const Bubble = memo(function Bubble({
   quoteGone: boolean;
 }) {
   const onSetLiked = (on: boolean) => onLike(message.id, on);
-  const onReply = () => onReplyTo(message);
+  const onReply = onReplyTo ? () => onReplyTo(message) : undefined;
   const onReport = onReportMessage ? () => onReportMessage(message) : undefined;
   const hearts = (message.likedBy ?? []).length;
   const likeLabel = likedByMe ? 'Unlike' : 'Like';
@@ -568,22 +583,22 @@ const Bubble = memo(function Bubble({
   // discovers the swipe or the double-tap.
   const onLongPress = () => {
     const toggleLike = () => onSetLiked(!likedByMe);
+    const actions = [
+      ...(onReply ? [{ text: 'Reply', onPress: onReply }] : []),
+      { text: likeLabel, onPress: toggleLike },
+      ...(onReport ? [{ text: 'Report', onPress: onReport }] : []),
+    ];
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ['Cancel', 'Reply', likeLabel, ...(onReport ? ['Report'] : [])],
+          options: ['Cancel', ...actions.map((a) => a.text)],
           cancelButtonIndex: 0,
-          destructiveButtonIndex: onReport ? 3 : undefined,
+          destructiveButtonIndex: onReport ? actions.length : undefined,
         },
-        (i) => (i === 1 ? onReply() : i === 2 ? toggleLike() : i === 3 ? onReport?.() : undefined),
+        (i) => (i > 0 ? actions[i - 1]?.onPress() : undefined),
       );
     } else {
-      Alert.alert('Message', undefined, [
-        { text: 'Reply', onPress: onReply },
-        { text: likeLabel, onPress: toggleLike },
-        ...(onReport ? [{ text: 'Report', onPress: onReport }] : []),
-        { text: 'Cancel', style: 'cancel' as const },
-      ]);
+      Alert.alert('Message', undefined, [...actions, { text: 'Cancel', style: 'cancel' as const }]);
     }
   };
 
@@ -620,12 +635,12 @@ const Bubble = memo(function Bubble({
           hearts > 0 ? { text: hearts === 1 ? '1 heart' : '2 hearts' } : undefined
         }
         accessibilityActions={[
-          { name: 'reply', label: 'Reply' },
+          ...(onReply ? [{ name: 'reply', label: 'Reply' }] : []),
           { name: 'like', label: likeLabel },
           ...(onReport ? [{ name: 'report', label: 'Report' }] : []),
         ]}
         onAccessibilityAction={(e) => {
-          if (e.nativeEvent.actionName === 'reply') onReply();
+          if (e.nativeEvent.actionName === 'reply') onReply?.();
           if (e.nativeEvent.actionName === 'like') onSetLiked(!likedByMe);
           if (e.nativeEvent.actionName === 'report') onReport?.();
         }}

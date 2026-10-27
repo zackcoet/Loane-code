@@ -28,14 +28,19 @@ const THRESHOLD = 56;
 const MAX_DRAG = 72;
 
 interface Props {
-  onReply: () => void;
+  /** Absent when she can't reply here: the bubble then doesn't move. */
+  onReply?: () => void;
   children: ReactNode;
 }
 
+const noop = () => undefined;
+
 export function SwipeToReply({ onReply, children }: Props) {
   const offset = useSharedValue(0);
+  const reply = onReply ?? noop;
 
   const pan = Gesture.Pan()
+    .enabled(Boolean(onReply))
     // Only a rightward drag of 12pt starts it; any real vertical
     // movement first hands the touch back to the list so it scrolls.
     .activeOffsetX(12)
@@ -44,7 +49,7 @@ export function SwipeToReply({ onReply, children }: Props) {
       offset.value = Math.max(0, Math.min(MAX_DRAG, e.translationX));
     })
     .onEnd(() => {
-      if (offset.value >= THRESHOLD) runOnJS(onReply)();
+      if (offset.value >= THRESHOLD) runOnJS(reply)();
       offset.value = withTiming(0, { duration: 160 });
     })
     .onFinalize(() => {
