@@ -136,3 +136,87 @@ export function reportsAboutUser<T extends { targetUid: string | null; status: s
     .filter((report) => report.targetUid === uid)
     .sort((a, b) => Number(open(b)) - Number(open(a)));
 }
+
+/**
+ * The dashboard's Activity Log in plain words.
+ *
+ * An audit row stores a code (`suspend_user`, `report_dismissed`,
+ * `hide_post`) because the code is what never changes. Admins read
+ * words, so the log translates them here. A code nobody has taught this
+ * list yet is shown humanized rather than hidden: an audit log must
+ * never drop a row just because it is new.
+ */
+const ADMIN_ACTION_LABELS: Record<string, string> = {
+  suspend_user: 'Suspended her account',
+  unsuspend_user: 'Lifted her suspension',
+  add_admin_note: 'Added a private note',
+  user_account_deleted: 'Deleted her account',
+  user_data_exported: 'Exported her data',
+  tryon_granted: 'Gave her extra try-ons',
+  report_reviewing: 'Marked a report as being looked at',
+  report_actioned: 'Acted on a report',
+  report_dismissed: 'Dismissed a report',
+  hide_listing: 'Took a piece down',
+  restore_listing: 'Put a piece back',
+  hide_post: 'Took a look down',
+  restore_post: 'Put a look back',
+  hide_comment: 'Hid a comment',
+  restore_comment: 'Put a comment back',
+  hide_review: 'Hid a review',
+  restore_review: 'Put a review back',
+  hide_message: 'Hid a message',
+  resolve_dispute: 'Decided a rental dispute',
+  resolve_support_request: 'Closed a Contact us message',
+  publish_legal_doc: 'Published new Terms or Privacy',
+  feature_flag_changed: 'Changed a feature switch',
+};
+
+export function adminActionLabel(action: string): string {
+  const known = ADMIN_ACTION_LABELS[action];
+  if (known) return known;
+  const words = action.replace(/_/g, ' ').trim();
+  return words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Unknown action';
+}
+
+const ADMIN_TARGET_NAMES: Record<string, string> = {
+  user: 'Student',
+  listing: 'Piece',
+  post: 'Look',
+  booking: 'Rental',
+  message: 'Message',
+  comment: 'Comment',
+  review: 'Review',
+  campus: 'Campus',
+  claim: 'Claim',
+  report: 'Report',
+  supportRequest: 'Contact us message',
+  legalDoc: 'Terms / Privacy',
+  config: 'Feature switches',
+};
+
+/**
+ * What an audit row acted on, for anything that is not a student (a
+ * student is shown by her current name with `reportPersonLabel`). Ids
+ * are cut short: enough to search for, not a wall of characters. A
+ * message's id is `conversationId/messageId`, so the short form keeps
+ * the message part.
+ */
+export function adminTargetLabel(targetType: string, targetId: string): string {
+  const name = ADMIN_TARGET_NAMES[targetType] ?? targetType;
+  if (targetType === 'config' || !targetId) return name;
+  if (targetType === 'legalDoc') return `${name} · ${targetId}`;
+  const last = targetId.split('/').pop() ?? targetId;
+  const short = last.length > 8 ? `${last.slice(0, 8)}…` : last;
+  return `${name} · ${short}`;
+}
+
+/** Audit rows about one student, newest first. */
+export function adminActionsAboutUser<T extends { targetType: string; targetId: string }>(
+  actions: readonly T[],
+  uid: string,
+  time: (row: T) => number,
+): T[] {
+  return actions
+    .filter((row) => row.targetType === 'user' && row.targetId === uid)
+    .sort((a, b) => time(b) - time(a));
+}

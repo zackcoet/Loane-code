@@ -61,6 +61,8 @@ export interface AdminNote extends BaseDoc {
  */
 export interface AdminAction extends BaseDoc {
   adminUid: string;
+  /** Her sign-in email when she acted, from her admin token. Older rows may lack it. */
+  adminEmail?: string | null;
   action: string;
   targetType:
     | ReportTargetType

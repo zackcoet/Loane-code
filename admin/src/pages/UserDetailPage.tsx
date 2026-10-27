@@ -3,14 +3,17 @@ import {
   AUTO_FILTER_REPORTER_UID,
   COLLECTIONS,
   CATEGORY_LABELS,
+  adminActionLabel,
+  adminActionsAboutUser,
   reportPersonLabel,
   reportsAboutUser,
+  type AdminAction,
   type AdminNote,
   type AppEvent,
   type User,
   type UserPrivate,
 } from '@loane/shared';
-import { collection, doc, getDoc, getDocs, limit, orderBy, query } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import type { AdminData } from '../data/adminData';
 import { formatShortDate, humanize, toDate } from '../data/adminData';
@@ -100,6 +103,44 @@ export function UserDetailPage({ user, data, onBack }: Props) {
     return loadNotes();
   }, [loadNotes]);
 
+  // What admins have done to her account: suspensions, notes, exports,
+  // try-on grants. The Activity Log only loads the latest 100 actions
+  // across everyone, so an old suspension would fall off it; this reads
+  // hers fresh. One equality filter, so no new index: her account id is a
+  // row's targetId only when the action was on her account (the type is
+  // checked again below). Unordered, so the cap is generous and the rows
+  // are sorted newest first here.
+  const [actions, setActions] = useState<AdminAction[] | null>(null);
+  const [actionsError, setActionsError] = useState(false);
+  const loadActions = useCallback(() => {
+    let live = true;
+    setActionsError(false);
+    void getDocs(
+      query(
+        collection(db, COLLECTIONS.adminActions),
+        where('targetId', '==', user.uid),
+        limit(ACTIONS_SHOWN),
+      ),
+    )
+      .then((snap) => {
+        if (!live) return;
+        const rows = snap.docs.map((d) => ({ ...(d.data() as AdminAction), id: d.id }));
+        setActions(
+          adminActionsAboutUser(rows, user.uid, (row) => toDate(row.createdAt)?.getTime() ?? 0),
+        );
+      })
+      .catch(() => {
+        if (live) setActionsError(true);
+      });
+    return () => {
+      live = false;
+    };
+  }, [user.uid]);
+  useEffect(() => {
+    setActions(null);
+    return loadActions();
+  }, [loadActions]);
+
   const [dialog, setDialog] = useState<Dialog>(null);
   const [busy, setBusy] = useState(false);
   /** How many extra try-ons this grant gives. Five is another full free run. */
@@ -135,6 +176,8 @@ export function UserDetailPage({ user, data, onBack }: Props) {
         await adminDeleteAccount({ uid: user.uid, reason, confirmUsername: confirmName });
       }
       setDialog(null);
+      // Every one of these writes an audit row; show it straight away.
+      loadActions();
     } catch (err) {
       setError(adminErrorMessage(err, 'Could not do that.'));
     } finally {
@@ -379,6 +422,47 @@ export function UserDetailPage({ user, data, onBack }: Props) {
         <p className="cell-note">Resolve a message from Support.</p>
       </Panel>
 
+      <Panel title="Admin Actions On Her Account" kicker="From the audit log">
+        {actionsError ? (
+          <p className="cell-note">
+            Couldn't load the actions on her account.{' '}
+            <button className="text-button" onClick={() => loadActions()}>
+              Try again
+            </button>
+          </p>
+        ) : actions === null ? (
+          <p className="muted">Loading actions...</p>
+        ) : actions.length === 0 ? (
+          <EmptyState
+            title="No admin actions on her account"
+            body="Suspensions, notes, data exports and try-on grants on her account show here, with who did them and why."
+          />
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Action</th>
+                <th>Admin</th>
+                <th>Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              {actions.map((action) => (
+                <tr key={action.id}>
+                  <td>{formatShortDate(action.createdAt)}</td>
+                  <td>{adminActionLabel(action.action)}</td>
+                  <td>
+                    {action.adminEmail ?? reportPersonLabel(action.adminUid, data.users).label}
+                  </td>
+                  <td>{action.notes ?? 'No notes'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </Panel>
+
       <ActionDialog
         open={dialog !== null}
         title={
@@ -453,6 +537,9 @@ export function UserDetailPage({ user, data, onBack }: Props) {
     </>
   );
 }
+
+/** Admin actions on her account shown; plenty for one student's history. */
+const ACTIONS_SHOWN = 200;
 
 /** Her newest private notes shown; plenty for one student's history. */
 const NOTES_SHOWN = 50;

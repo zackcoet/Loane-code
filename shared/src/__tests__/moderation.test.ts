@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  adminActionLabel,
+  adminActionsAboutUser,
+  adminTargetLabel,
   listingFieldsOnSale,
   personLabelWithCopy,
   reportPersonLabel,
@@ -145,5 +148,38 @@ describe('who a Contact us message is from, in the dashboard', () => {
 
   it('copes with no copy at all', () => {
     expect(personLabelWithCopy('far-away', users, null).label).toMatch(/not loaded/);
+  });
+});
+
+describe('the Activity Log in plain words', () => {
+  it('names every action the server writes', () => {
+    expect(adminActionLabel('suspend_user')).toBe('Suspended her account');
+    expect(adminActionLabel('report_dismissed')).toBe('Dismissed a report');
+    expect(adminActionLabel('hide_post')).toBe('Took a look down');
+    expect(adminActionLabel('restore_listing')).toBe('Put a piece back');
+    expect(adminActionLabel('resolve_support_request')).toBe('Closed a Contact us message');
+  });
+
+  it('still shows an action it has not been taught, never hides the row', () => {
+    expect(adminActionLabel('freeze_campus')).toBe('Freeze campus');
+    expect(adminActionLabel('')).toBe('Unknown action');
+  });
+
+  it('says what was acted on with a short id', () => {
+    expect(adminTargetLabel('post', 'abcdefghijklmnop')).toBe('Look · abcdefgh…');
+    expect(adminTargetLabel('message', 'conv123/msg45')).toBe('Message · msg45');
+    expect(adminTargetLabel('config', 'features')).toBe('Feature switches');
+    expect(adminTargetLabel('legalDoc', 'terms-v2')).toBe('Terms / Privacy · terms-v2');
+    expect(adminTargetLabel('somethingNew', 'x1')).toBe('somethingNew · x1');
+  });
+
+  it('lists only the actions on one student, newest first', () => {
+    const rows = [
+      { id: 'a', targetType: 'user', targetId: 'u1', t: 1 },
+      { id: 'b', targetType: 'report', targetId: 'u1', t: 5 },
+      { id: 'c', targetType: 'user', targetId: 'u2', t: 3 },
+      { id: 'd', targetType: 'user', targetId: 'u1', t: 9 },
+    ];
+    expect(adminActionsAboutUser(rows, 'u1', (r) => r.t).map((r) => r.id)).toEqual(['d', 'a']);
   });
 });
