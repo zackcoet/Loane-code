@@ -1,16 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
+  AUTO_FILTER_REPORTER_UID,
   COLLECTIONS,
   CATEGORY_LABELS,
+  reportPersonLabel,
+  reportsAboutUser,
+  type AdminNote,
   type AppEvent,
   type User,
   type UserPrivate,
 } from '@loane/shared';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, limit, orderBy, query } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import type { AdminData } from '../data/adminData';
-import { toDate } from '../data/adminData';
-import { Avatar, MetricCard, Panel } from '../components/ui';
+import { formatShortDate, humanize, toDate } from '../data/adminData';
+import { Avatar, EmptyState, MetricCard, Panel, Pill } from '../components/ui';
 import { ActionDialog } from '../components/ActionDialog';
 import {
   addAdminNote,
@@ -57,6 +61,41 @@ export function UserDetailPage({ user, data, onBack }: Props) {
     };
   }, [user.uid]);
 
+  const reports = reportsAboutUser(data.reports, user.uid);
+  const openReports = reports.filter(
+    (report) => report.status === 'open' || report.status === 'reviewing',
+  ).length;
+
+  // Notes used to be write-only: "Add a private note" saved one, and the
+  // panel that should list them sat disabled saying "Backend needed".
+  // Read fresh for the one student on screen, newest first.
+  const [notes, setNotes] = useState<AdminNote[] | null>(null);
+  const [notesError, setNotesError] = useState(false);
+  const loadNotes = useCallback(() => {
+    let live = true;
+    setNotesError(false);
+    void getDocs(
+      query(
+        collection(db, COLLECTIONS.users, user.uid, 'adminNotes'),
+        orderBy('createdAt', 'desc'),
+        limit(NOTES_SHOWN),
+      ),
+    )
+      .then((snap) => {
+        if (live) setNotes(snap.docs.map((d) => ({ ...(d.data() as AdminNote), id: d.id })));
+      })
+      .catch(() => {
+        if (live) setNotesError(true);
+      });
+    return () => {
+      live = false;
+    };
+  }, [user.uid]);
+  useEffect(() => {
+    setNotes(null);
+    return loadNotes();
+  }, [loadNotes]);
+
   const [dialog, setDialog] = useState<Dialog>(null);
   const [busy, setBusy] = useState(false);
   /** How many extra try-ons this grant gives. Five is another full free run. */
@@ -76,7 +115,10 @@ export function UserDetailPage({ user, data, onBack }: Props) {
     try {
       if (dialog === 'suspend') await suspendUser({ uid: user.uid, reason });
       if (dialog === 'unsuspend') await unsuspendUser({ uid: user.uid, reason });
-      if (dialog === 'note') await addAdminNote({ uid: user.uid, note: reason });
+      if (dialog === 'note') {
+        await addAdminNote({ uid: user.uid, note: reason });
+        loadNotes();
+      }
       if (dialog === 'grantTryOns') await grantTryOns({ uid: user.uid, count: grantCount, reason });
       if (dialog === 'exportData') {
         const { data: exported } = await adminExportUserData({ uid: user.uid, reason });
@@ -216,14 +258,86 @@ export function UserDetailPage({ user, data, onBack }: Props) {
         <Panel title="Activity Timeline" kicker="Recent app events">
           <Timeline events={events} />
         </Panel>
-        <Panel title="Internal Admin Notes" kicker="Backend needed">
-          <textarea
-            disabled
-            value="Admin notes need a private collection plus audit rules before this can save."
-            readOnly
-          />
+        <Panel title="Private Notes" kicker="Only admins can read these">
+          {notesError ? (
+            <p className="cell-note">
+              Couldn't load her notes.{' '}
+              <button className="text-button" onClick={() => loadNotes()}>
+                Try again
+              </button>
+            </p>
+          ) : notes === null ? (
+            <p className="muted">Loading notes...</p>
+          ) : notes.length === 0 ? (
+            <EmptyState
+              title="No notes yet"
+              body="Write down anything the next admin should know, like a warning you gave her."
+            />
+          ) : (
+            <ul className="note-list">
+              {notes.map((note) => (
+                <li key={note.id}>
+                  <p>{note.note}</p>
+                  <p className="cell-note">
+                    {formatShortDate(note.createdAt)} · {note.adminEmail ?? 'An admin'}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="row-actions" style={{ marginTop: 12 }}>
+            <button onClick={() => setDialog('note')}>Add a private note</button>
+          </div>
         </Panel>
       </section>
+
+      <Panel
+        title="Reports About Her"
+        kicker={`${openReports} need attention · ${reports.length} total`}
+      >
+        {reports.length === 0 ? (
+          <EmptyState
+            title="No reports about her"
+            body="Anything students report about her posts, pieces, comments, messages or profile shows here."
+          />
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>What</th>
+                <th>Reason</th>
+                <th>From</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reports.map((report) => (
+                <tr key={report.id}>
+                  <td>
+                    <Pill tone={report.status === 'open' ? 'bad' : 'neutral'}>{report.status}</Pill>
+                  </td>
+                  <td>
+                    {report.targetType}
+                    {report.snapshot ? <div className="cell-note">“{report.snapshot}”</div> : null}
+                  </td>
+                  <td>{humanize(report.reason)}</td>
+                  <td>
+                    {
+                      reportPersonLabel(report.reporterUid, data.users, AUTO_FILTER_REPORTER_UID)
+                        .label
+                    }
+                  </td>
+                  <td>{formatShortDate(report.createdAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <p className="cell-note">
+          Act on a report from Reports, where closing it and acting happen together.
+        </p>
+      </Panel>
 
       <ActionDialog
         open={dialog !== null}
@@ -299,6 +413,9 @@ export function UserDetailPage({ user, data, onBack }: Props) {
     </>
   );
 }
+
+/** Her newest private notes shown; plenty for one student's history. */
+const NOTES_SHOWN = 50;
 
 /** Saves a JSON object as a file, from the browser. */
 function downloadJson(filename: string, data: unknown) {

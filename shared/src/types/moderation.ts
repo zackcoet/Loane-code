@@ -41,6 +41,19 @@ export interface Report extends BaseDoc, CampusScoped {
 }
 
 /**
+ * `users/{uid}/adminNotes/{noteId}`
+ *
+ * A private note on a student, written only by the `addAdminNote`
+ * function and readable only by admins. She never sees it.
+ */
+export interface AdminNote extends BaseDoc {
+  uid: string;
+  note: string;
+  adminUid: string;
+  adminEmail: string | null;
+}
+
+/**
  * `adminActions/{actionId}`
  *
  * An append-only audit log. Every admin action writes one of these so we can
