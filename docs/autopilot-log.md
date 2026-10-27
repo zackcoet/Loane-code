@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 58 (only when you next deploy): a server fix so a new @username reaches rentals still going and reviews she wrote. Normal deploy, nothing to switch on, no new index.
 - Nothing new from run 57 (phone-app changes only — nothing to deploy).
 - From run 56 (only when you next deploy): two server fixes and one new database index (deploy the index with them). Normal deploy, nothing to switch on.
 - Nothing new from run 55 (phone-app changes only — nothing to deploy).
@@ -50,6 +51,35 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-27 (run 58, ~1 AM Central) — A new @username reaches her rentals and reviews
+
+**Plan:** Everything left on the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So, as run 57 suggested, this run re-read rentals and Activity alerts against a girl renaming herself (backlog H1).
+
+**Built / Fixed (what you or a student would notice):**
+- **A rental in progress now shows the other girl's current @name.** Before, if she changed her username mid-rental, the rental screen, My Rentals and Rental requests kept saying "Renting from @oldname" while the chat beside it showed the new one — confusing right when two girls are arranging a handoff. Finished rentals (done, cancelled, declined) keep the name they had, as a record of what happened.
+- **Reviews she wrote now follow her new name.** Before, a review kept her old @name forever. Since an old name is freed when she renames, another girl could take it — and the review then looked like it was written by her. The review's words, stars and date don't change.
+- Checked and fine as it was: tapping an Activity alert already opens the right girl even after a rename. The alert's words keep the old @name, but they clear after 30 days.
+
+**What to tap to see it:** On the emulators: sign in as girl A → ask to rent one of girl B's pieces → sign in as B → Profile → Edit profile → change her @username → back as A: My Rentals → open the rental: "Renting from" shows B's new name. For reviews: finish a rental, have A review B, then rename A → open B's Reviews: the review shows A's new name.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (no new index needed), 339 shared tests and 164 server tests that don't need the database. The four new database tests run on GitHub with this push.
+- B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: this server fix. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+- Still open from run 57: should a suspended girl's profile look "not found" to other students, or stay visible?
+
+**Next up:** Keep sweeping (H1) — next, re-read the admin dashboard's Users and Reports pages against renames and deleted accounts (they show copies of names too). Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- A girl's new name reaches the rentals she has going (finished ones keep the old one); tests
+- Reviews she wrote follow her new name, so an old handle someone else takes never sits on her review; test
+- Decisions and North Star notes; autopilot log for run 58
 
 ---
 
