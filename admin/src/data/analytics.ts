@@ -1,4 +1,12 @@
-import { onboardingFunnel, type AppEvent, type User } from '@loane/shared';
+import {
+  isCountedListing,
+  isCountedPost,
+  isCurrentStudent,
+  isStudentAccount,
+  onboardingFunnel,
+  type AppEvent,
+  type User,
+} from '@loane/shared';
 import {
   type AdminData,
   type DateWindow,
@@ -31,8 +39,12 @@ export function scopeData(data: AdminData, campusId: string): AdminData {
 }
 
 export function makeOverviewMetrics(data: AdminData, window: DateWindow) {
-  const usersInWindow = data.users.filter((user) => isInWindow(user.createdAt, window));
-  const usersPrevious = data.users.filter((user) => isInPreviousWindow(user.createdAt, window));
+  // Sign-ups are student accounts, deleted ones included (she did sign
+  // up); "right now" totals drop deleted accounts, removed pieces and
+  // removed looks. Admin accounts are never either. See dashboardCounts.
+  const signups = data.users.filter(isStudentAccount);
+  const usersInWindow = signups.filter((user) => isInWindow(user.createdAt, window));
+  const usersPrevious = signups.filter((user) => isInPreviousWindow(user.createdAt, window));
   const listingsInWindow = data.listings.filter((listing) => isInWindow(listing.createdAt, window));
   const listingsPrevious = data.listings.filter((listing) =>
     isInPreviousWindow(listing.createdAt, window),
@@ -58,8 +70,8 @@ export function makeOverviewMetrics(data: AdminData, window: DateWindow) {
   return {
     headlines: [
       {
-        label: 'Total Users',
-        value: data.users.length,
+        label: 'Students',
+        value: data.users.filter(isCurrentStudent).length,
         detail: changeLabel(usersInWindow.length, usersPrevious.length, allTime),
       },
       {
@@ -79,12 +91,12 @@ export function makeOverviewMetrics(data: AdminData, window: DateWindow) {
       },
       {
         label: 'Listings',
-        value: data.listings.length,
+        value: data.listings.filter(isCountedListing).length,
         detail: changeLabel(listingsInWindow.length, listingsPrevious.length, allTime),
       },
       {
         label: 'Posts',
-        value: data.posts.length,
+        value: data.posts.filter(isCountedPost).length,
         detail: changeLabel(postsInWindow.length, postsPrevious.length, allTime),
       },
       {
@@ -124,7 +136,7 @@ export function makeOverviewMetrics(data: AdminData, window: DateWindow) {
       },
     ],
     signupsChart: seriesByDay(
-      data.users.map((user) => user.createdAt),
+      signups.map((user) => user.createdAt),
       window,
     ),
     activeUsersChart: activeSeries(data.events, window),
@@ -140,7 +152,9 @@ export function makeOverviewMetrics(data: AdminData, window: DateWindow) {
 }
 
 export function makeFunnel(data: AdminData, window: DateWindow) {
-  const users = data.users.filter((user) => isInWindow(user.createdAt, window));
+  const users = data.users.filter(
+    (user) => isStudentAccount(user) && isInWindow(user.createdAt, window),
+  );
   const userIds = new Set(users.map((user) => user.uid));
   const listed = new Set(
     data.listings.filter((listing) => userIds.has(listing.ownerUid)).map((item) => item.ownerUid),
@@ -173,7 +187,7 @@ export function makeFunnel(data: AdminData, window: DateWindow) {
 
 export function makeRetention(users: User[], events: AppEvent[]) {
   const cohorts = new Map<string, User[]>();
-  users.forEach((user) => {
+  users.filter(isStudentAccount).forEach((user) => {
     const key = weekKey(user.createdAt);
     cohorts.set(key, [...(cohorts.get(key) ?? []), user]);
   });

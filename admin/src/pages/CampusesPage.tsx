@@ -1,10 +1,17 @@
 import { campusDemand, type Campus } from '@loane/shared';
 import { EmptyState, MiniStat, Panel } from '../components/ui';
+import { useCampusCounts, type CampusCountsState } from '../data/campusCounts';
 
 export function CampusesPage({ campuses }: { campuses: Campus[] }) {
+  const counts = useCampusCounts(campuses);
   return (
     <>
       <OtherSchools campuses={campuses} />
+      {counts.status === 'error' ? (
+        <p className="muted">
+          Couldn't count pieces, looks and rentals just now. Refresh the page to try again.
+        </p>
+      ) : null}
       <section className="card-grid">
         {campuses.map((campus) => (
           <article key={campus.id} className="panel">
@@ -12,10 +19,15 @@ export function CampusesPage({ campuses }: { campuses: Campus[] }) {
             <h2>{campus.name}</h2>
             <p className="muted">{campus.emailDomains.join(' · ')}</p>
             <div className="campus-stats">
-              <MiniStat label="Users" value={campus.stats.userCount} />
-              <MiniStat label="Listings" value={campus.stats.listingCount} />
-              <MiniStat label="Posts" value={campus.stats.postCount} />
-              <MiniStat label="Bookings" value={campus.stats.bookingCount} />
+              <MiniStat label="Students" value={Math.max(0, campus.stats?.userCount ?? 0)} />
+              <CountStat label="Pieces" counts={counts} campusId={campus.id} pick="listings" />
+              <CountStat label="Looks" counts={counts} campusId={campus.id} pick="posts" />
+              <CountStat
+                label="Rented or sold"
+                counts={counts}
+                campusId={campus.id}
+                pick="completedBookings"
+              />
             </div>
           </article>
         ))}
@@ -68,4 +80,31 @@ function OtherSchools({ campuses }: { campuses: Campus[] }) {
       )}
     </Panel>
   );
+}
+
+/**
+ * One live-counted number on a campus card. While counting (or if it
+ * failed) it shows a dash, never a 0 that looks like a real answer.
+ */
+function CountStat({
+  label,
+  counts,
+  campusId,
+  pick,
+}: {
+  label: string;
+  counts: CampusCountsState;
+  campusId: string;
+  pick: 'listings' | 'posts' | 'completedBookings';
+}) {
+  const value = counts.status === 'ready' ? counts.byCampus[campusId]?.[pick] : undefined;
+  if (value === undefined) {
+    return (
+      <div>
+        <strong>–</strong>
+        <span className="label">{label}</span>
+      </div>
+    );
+  }
+  return <MiniStat label={label} value={value} />;
 }

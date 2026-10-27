@@ -46,3 +46,4 @@ export * from './connection';
 export * from './moderation';
 export * from './campusMatch';
 export * from './requestExpiry';
+export * from './dashboardCounts';

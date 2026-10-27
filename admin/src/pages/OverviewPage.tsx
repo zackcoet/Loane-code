@@ -121,5 +121,12 @@ export function OverviewPage({
 
 function LoadedNotice({ campuses }: { campuses: Campus[] }) {
   const label = campuses.length === 1 ? campuses[0]?.name : 'all campuses';
-  return <span className="muted">Showing the latest limited emulator data for {label}.</span>;
+  // These numbers come from the newest 250 of each kind the dashboard
+  // loads; the Campuses page has exact counts. (This line used to say
+  // "emulator data", which was wrong once it pointed at the live project.)
+  return (
+    <span className="muted">
+      Based on the newest 250 accounts, pieces and looks for {label} — Campuses has exact totals.
+    </span>
+  );
 }
