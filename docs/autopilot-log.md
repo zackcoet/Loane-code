@@ -69,7 +69,7 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 **What to tap to see it:** Dashboard (laptop, emulators running): `npm run admin` → sign in as admin@joinloane.com → suspend any student from her page with a reason → Activity Log: the top row says "Suspended her account" on her @name → click her name → scroll to "Admin Actions On Her Account". Phone: ☰ → Help → scroll to "Past reports".
 
 **Skipped / blocked:**
-- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, the dashboard build, and 354 shared tests (5 new). GitHub runs the full set on push — see below.
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, the dashboard build, and 354 shared tests (5 new). GitHub ran the full set, database tests included: **all green ✅**.
 - B8 still waits on payments, F7 and H10 on your decisions, and G8 and H5 need a real phone.
 
 **🚨 NEEDS ZACK:**
