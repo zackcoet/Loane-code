@@ -125,8 +125,12 @@ function CurrentPage({
   if (page === 'reports') {
     return <ReportsPage data={data} campusId={campusId} onOpenUser={onOpenUser} />;
   }
-  if (page === 'support') return <SupportPage data={data} campusId={campusId} />;
-  if (page === 'claims') return <ClaimsPage data={data} campusId={campusId} />;
+  if (page === 'support') {
+    return <SupportPage data={data} campusId={campusId} onOpenUser={onOpenUser} />;
+  }
+  if (page === 'claims') {
+    return <ClaimsPage data={data} campusId={campusId} onOpenUser={onOpenUser} />;
+  }
   if (page === 'campuses') return <CampusesPage campuses={data.campuses} />;
   if (page === 'founding') return <FoundingClosetsPage data={data} campusId={campusId} />;
   if (page === 'legal') return <LegalPage data={data} />;

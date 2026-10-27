@@ -1,5 +1,5 @@
 import type { AccountStatus, ListingStatus, PostStatus } from './constants';
-import { DELETED_ACCOUNT_NAME, isDeletedAccount } from './accountDeletion';
+import { DELETED_ACCOUNT_NAME, isDeletedAccount, isDeletedSummary } from './accountDeletion';
 
 /**
  * The rules for an admin taking a listing or a look down and putting it
@@ -106,6 +106,24 @@ export function reportPersonLabel(
   if (isDeletedAccount(user)) return { label: DELETED_ACCOUNT_NAME, openUid: uid };
   const suffix = user.status === 'suspended' ? ' (suspended)' : '';
   return { label: `@${user.username}${suffix}`, openUid: uid };
+}
+
+/**
+ * The same label for a record that also keeps its own copy of her name
+ * (a Contact us message). The live account wins whenever the dashboard
+ * has it loaded, so a rename shows her name today; the copy is only the
+ * fallback for an account outside the loaded list, marked "as sent" so
+ * nobody mistakes a possibly old handle for her current one.
+ */
+export function personLabelWithCopy(
+  uid: string | null | undefined,
+  users: readonly { uid: string; username: string; status: string; deletedAt?: unknown }[],
+  copy: { username: string } | null | undefined,
+): ReportPersonLabel {
+  const live = reportPersonLabel(uid, users);
+  if (live.openUid || !uid || !copy) return live;
+  if (isDeletedSummary(copy)) return { label: DELETED_ACCOUNT_NAME, openUid: null };
+  return { label: `@${copy.username} (as sent)`, openUid: null };
 }
 
 /** Reports about one girl, open ones first, otherwise in the order given (newest first). */

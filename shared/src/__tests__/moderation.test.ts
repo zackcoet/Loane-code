@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   listingFieldsOnSale,
+  personLabelWithCopy,
   reportPersonLabel,
   reportsAboutUser,
   statusAfterRestore,
@@ -110,5 +111,39 @@ describe('who a report is about, in the dashboard', () => {
       { id: 'd', targetUid: 'ella', status: 'actioned' },
     ];
     expect(reportsAboutUser(reports, 'ella').map((r) => r.id)).toEqual(['c', 'a', 'd']);
+  });
+});
+
+describe('who a Contact us message is from, in the dashboard', () => {
+  const users = [
+    { uid: 'ella', username: 'ella_new', status: 'active' },
+    { uid: 'gone', username: 'deleted_gone', status: 'deactivated', deletedAt: 123 },
+  ];
+
+  it('prefers her live account over the copy the message kept', () => {
+    expect(personLabelWithCopy('ella', users, { username: 'ella_old' })).toEqual({
+      label: '@ella_new',
+      openUid: 'ella',
+    });
+    expect(personLabelWithCopy('gone', users, { username: 'ella_old' }).label).toBe(
+      'Deleted account',
+    );
+  });
+
+  it('falls back to the copy, marked as sent, when her account is not loaded', () => {
+    expect(personLabelWithCopy('far-away', users, { username: 'maya' })).toEqual({
+      label: '@maya (as sent)',
+      openUid: null,
+    });
+  });
+
+  it('never shows a deleted copy as a handle', () => {
+    expect(personLabelWithCopy('far-away', users, { username: 'deleted_far-away' }).label).toBe(
+      'Deleted account',
+    );
+  });
+
+  it('copes with no copy at all', () => {
+    expect(personLabelWithCopy('far-away', users, null).label).toMatch(/not loaded/);
   });
 });

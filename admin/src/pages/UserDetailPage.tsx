@@ -62,6 +62,10 @@ export function UserDetailPage({ user, data, onBack }: Props) {
   }, [user.uid]);
 
   const reports = reportsAboutUser(data.reports, user.uid);
+  // Matched by account id, so messages she sent before a rename still show.
+  const supportRequests = data.supportRequests
+    .filter((request) => request.requesterUid === user.uid)
+    .sort((a, b) => Number(a.status === 'resolved') - Number(b.status === 'resolved'));
   const openReports = reports.filter(
     (report) => report.status === 'open' || report.status === 'reviewing',
   ).length;
@@ -337,6 +341,42 @@ export function UserDetailPage({ user, data, onBack }: Props) {
         <p className="cell-note">
           Act on a report from Reports, where closing it and acting happen together.
         </p>
+      </Panel>
+
+      <Panel
+        title="Her Contact Us Messages"
+        kicker={`${supportRequests.filter((r) => r.status === 'open').length} open · ${supportRequests.length} total`}
+      >
+        {supportRequests.length === 0 ? (
+          <EmptyState
+            title="No messages from her"
+            body="Anything she sends through Help → Contact us shows here."
+          />
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Topic</th>
+                <th>Message</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {supportRequests.map((request) => (
+                <tr key={request.id}>
+                  <td>
+                    <Pill tone={request.status === 'open' ? 'bad' : 'good'}>{request.status}</Pill>
+                  </td>
+                  <td>{humanize(request.topic)}</td>
+                  <td>{request.message}</td>
+                  <td>{formatShortDate(request.createdAt)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <p className="cell-note">Resolve a message from Support.</p>
       </Panel>
 
       <ActionDialog

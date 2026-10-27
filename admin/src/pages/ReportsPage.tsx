@@ -1,13 +1,9 @@
 import { useState } from 'react';
-import {
-  AUTO_FILTER_REPORTER_UID,
-  reportPersonLabel,
-  type Report,
-  type ReportPersonLabel,
-} from '@loane/shared';
+import { AUTO_FILTER_REPORTER_UID, reportPersonLabel, type Report } from '@loane/shared';
 import type { AdminData } from '../data/adminData';
 import { formatShortDate, humanize, matchesCampus } from '../data/adminData';
 import { EmptyState, Panel, Pill } from '../components/ui';
+import { PersonLink } from '../components/PersonLink';
 import { ActionDialog } from '../components/ActionDialog';
 import { adminErrorMessage, resolveReport } from '../data/adminActions';
 
@@ -123,12 +119,12 @@ export function ReportsPage({
                   <td>
                     {/* Looked up by account id every time, so a rename shows her
                         current name and a deleted girl shows as deleted. */}
-                    <Person
+                    <PersonLink
                       prefix="About"
                       person={reportPersonLabel(report.targetUid, data.users)}
                       onOpen={onOpenUser}
                     />
-                    <Person
+                    <PersonLink
                       prefix="From"
                       person={reportPersonLabel(
                         report.reporterUid,
@@ -247,30 +243,6 @@ export function ReportsPage({
         ) : null}
       </ActionDialog>
     </Panel>
-  );
-}
-
-function Person({
-  prefix,
-  person,
-  onOpen,
-}: {
-  prefix: string;
-  person: ReportPersonLabel;
-  onOpen: (uid: string) => void;
-}) {
-  const openUid = person.openUid;
-  return (
-    <div className="cell-note">
-      {prefix}{' '}
-      {openUid ? (
-        <button className="text-button" onClick={() => onOpen(openUid)}>
-          {person.label}
-        </button>
-      ) : (
-        person.label
-      )}
-    </div>
   );
 }
 

@@ -1,15 +1,25 @@
 import { useState } from 'react';
-import type { SupportRequest } from '@loane/shared';
+import { personLabelWithCopy, type SupportRequest } from '@loane/shared';
 import type { AdminData } from '../data/adminData';
 import { formatShortDate, humanize, matchesCampus } from '../data/adminData';
 import { ActionDialog } from '../components/ActionDialog';
 import { EmptyState, Panel, Pill } from '../components/ui';
+import { PersonLink } from '../components/PersonLink';
 import { adminErrorMessage, resolveSupportRequest } from '../data/adminActions';
 
-export function SupportPage({ data, campusId }: { data: AdminData; campusId: string }) {
-  const requests = [...data.supportRequests.filter((request) => matchesCampus(request, campusId))].sort(
-    (a, b) => Number(a.status === 'resolved') - Number(b.status === 'resolved'),
-  );
+export function SupportPage({
+  data,
+  campusId,
+  onOpenUser,
+}: {
+  data: AdminData;
+  campusId: string;
+  /** Opens her page under Users. */
+  onOpenUser: (uid: string) => void;
+}) {
+  const requests = [
+    ...data.supportRequests.filter((request) => matchesCampus(request, campusId)),
+  ].sort((a, b) => Number(a.status === 'resolved') - Number(b.status === 'resolved'));
   const open = requests.filter((request) => request.status === 'open').length;
 
   const [resolving, setResolving] = useState<SupportRequest | null>(null);
@@ -51,8 +61,16 @@ export function SupportPage({ data, campusId }: { data: AdminData; campusId: str
                   <Pill tone={request.status === 'open' ? 'bad' : 'good'}>{request.status}</Pill>
                 </td>
                 <td>
-                  {request.requester.displayName}
-                  <div className="cell-note">@{request.requester.username}</div>
+                  {/* Her account as it is today, looked up by id: the message's own
+                      copy of her name is from the day she wrote it. */}
+                  <PersonLink
+                    person={personLabelWithCopy(
+                      request.requesterUid,
+                      data.users,
+                      request.requester,
+                    )}
+                    onOpen={onOpenUser}
+                  />
                 </td>
                 <td>{humanize(request.topic)}</td>
                 <td>{request.message}</td>
