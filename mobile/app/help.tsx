@@ -9,6 +9,7 @@ import {
   color,
   controls,
   formatRange,
+  myReportStatusLabel,
   radius,
   spacing,
   type Booking,
@@ -330,6 +331,13 @@ export default function Help() {
                 Couldn&apos;t load your past reports. Tap to try again.
               </Text>
             </Pressable>
+          ) : (reports.loading && reports.reports.length === 0) ||
+            (support.loading && support.requests.length === 0) ? (
+            // Before, "will appear here" showed while they were still
+            // loading, so for a moment it looked like her reports were gone.
+            <Text variant="bodySmall" tone="secondary">
+              Loading your past reports…
+            </Text>
           ) : reports.reports.length === 0 && support.requests.length === 0 ? (
             <Text variant="bodySmall" tone="secondary">
               Your submitted reports and support messages will appear here.
@@ -341,7 +349,7 @@ export default function Help() {
                   key={`report-${report.id}`}
                   title={report.targetType === 'booking' ? 'Rental report' : 'Report'}
                   detail={humanize(report.reason)}
-                  status={humanize(report.status)}
+                  status={myReportStatusLabel(report.status)}
                 />
               ))}
               {support.requests.map((request) => (
@@ -349,7 +357,7 @@ export default function Help() {
                   key={`support-${request.id}`}
                   title="Support message"
                   detail={humanize(request.topic)}
-                  status={humanize(request.status)}
+                  status={myReportStatusLabel(request.status)}
                 />
               ))}
             </View>

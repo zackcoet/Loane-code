@@ -4,6 +4,7 @@ import {
   adminActionsAboutUser,
   adminTargetLabel,
   listingFieldsOnSale,
+  myReportStatusLabel,
   personLabelWithCopy,
   reportPersonLabel,
   reportsAboutUser,
@@ -181,5 +182,16 @@ describe('the Activity Log in plain words', () => {
       { id: 'd', targetType: 'user', targetId: 'u1', t: 9 },
     ];
     expect(adminActionsAboutUser(rows, 'u1', (r) => r.t).map((r) => r.id)).toEqual(['d', 'a']);
+  });
+});
+
+describe('the status she sees on her own reports', () => {
+  it('never tells her a report was "dismissed"', () => {
+    expect(myReportStatusLabel('open')).toBe('Sent');
+    expect(myReportStatusLabel('reviewing')).toBe('Being looked at');
+    expect(myReportStatusLabel('actioned')).toBe('Handled');
+    expect(myReportStatusLabel('dismissed')).toBe('Closed');
+    expect(myReportStatusLabel('resolved')).toBe('Closed');
+    expect(myReportStatusLabel('something_new')).toBe('Sent');
   });
 });

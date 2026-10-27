@@ -220,3 +220,22 @@ export function adminActionsAboutUser<T extends { targetType: string; targetId: 
     .filter((row) => row.targetType === 'user' && row.targetId === uid)
     .sort((a, b) => time(b) - time(a));
 }
+
+/**
+ * The status a girl sees on her own past reports and Contact us messages
+ * (Help → Past reports). The stored words are the admin's — "actioned",
+ * "dismissed" — and "Dismissed" reads to the girl who reported something
+ * as "we didn't believe you". Instagram says the report was received
+ * and later that it was reviewed; this does the same.
+ */
+const MY_REPORT_STATUS_LABELS: Record<string, string> = {
+  open: 'Sent',
+  reviewing: 'Being looked at',
+  actioned: 'Handled',
+  dismissed: 'Closed',
+  resolved: 'Closed',
+};
+
+export function myReportStatusLabel(status: string): string {
+  return MY_REPORT_STATUS_LABELS[status] ?? 'Sent';
+}
