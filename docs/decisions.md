@@ -2116,3 +2116,11 @@ Left as they are on purpose: a heart on a message (A9 made "Liked a message" a r
 - **Muting with no signal says so** ("No internet connection…") instead of "Could not mute right now. Try again."
 - Checked and fine as it was: a muted girl is never told; her own muted list is erased with her account and is in her data export; nobody's export shows who muted them; the rules pin the mute's shape, refuse muting yourself and refuse a suspended account. Mute stays a phone-side filter on the feed only, as decided when it was built.
 - Not changed: re-tapping Mute on someone already muted is refused by the rules (no updates allowed). The app only offers Mute when she isn't muted, so this needs the list to have failed to load first; harmless, and the message says to try again.
+
+## 2026-10-27 — Suggestions skip muted girls; deletion clears alerts that name her (autopilot run 56)
+
+- **`suggestedClosets` leaves out everyone she has muted**, and the feed's "Closets you might like" row drops anyone she blocks or mutes while it is on screen (the row is fetched once per sign-in). Muting says she doesn't want this girl's looks; offering "Follow" for them argues with her. Being muted BY someone changes nothing — the server never reads other girls' mute lists, so a mute still can't be detected.
+- **Contacts and search still find a muted girl**, on purpose. Those are her looking someone up, not Loane recommending; "Find friends from contacts" already lists people she follows. Instagram behaves the same way.
+- **`eraseAccount` deletes every alert she caused in other girls' Activity** (collection-group query on `notifications.actorUid`, one new single-field override in `firestore.indexes.json`). Closes the gap noted in run 53: "@her liked your look" kept her old handle and photo for up to 30 days. Deleted rather than reworded — the handle is baked into each alert's words, the like/follow/comment behind most of them is already gone, and any rental they mention is finished and shows "Deleted account" in My Rentals. Unread ones go too: "never delete an unread alert" (the hourly sweep) protects alerts that are still true. `adminDeleteAccount` gets this through `eraseAccount`.
+- Accounts deleted before this deploys keep their alerts until the 30-day clean-up; not worth a one-off script.
+

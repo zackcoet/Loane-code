@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 56 (only when you next deploy): two server fixes and one new database index (deploy the index with them). Normal deploy, nothing to switch on.
 - Nothing new from run 55 (phone-app changes only — nothing to deploy).
 - From run 54 (only when you next deploy): a server fix to "Download my data". Normal deploy, nothing to switch on.
 - From run 53 (only when you next deploy, and use the new app build after): server fixes to account deletion, reviews and reports. Normal deploy, nothing to switch on. Accounts deleted before this deploy keep their name on old rentals; say the word and a later run can write a one-time clean-up for those.
@@ -48,6 +49,35 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-27 (run 56, ~11 PM Central) — Muted girls stop being suggested; a deleted girl's name leaves other girls' Activity
+
+**Plan:** Everything left on the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So, as run 55 suggested, this run re-read suggested closets and "Find friends from contacts" against muting, and fixed the leftover alerts noted in run 53 (backlog H1).
+
+**Built / Fixed (what you or a student would notice):**
+- **A girl you've muted no longer shows up in "Closets you might like".** Muting means "I don't want her looks", so suggesting you follow her made no sense. If you mute or block someone while the row is on screen, she drops out of it straight away. She is never told, and being muted by someone doesn't change what you see — so nobody can work out they were muted.
+- **When a girl deletes her account, the alerts she caused in other girls' Activity go too** ("@her liked your look", "@her started following you"). Before, those kept her old @name and photo for up to a month, even though the Privacy Policy says she's gone. Her past rentals were already relabelled "Deleted account" in run 53; this finishes the job. Works the same when an admin deletes the account from the dashboard.
+- Checked and left as it is, on purpose: "Find friends from contacts" and search still find a girl you've muted. That's you looking her up, not Loane recommending her — Instagram does the same.
+
+**What to tap to see it:** On the emulators: sign in as a student → on a look in the feed, "…" → Mute → scroll to "Closets you might like": she isn't in it. For the alerts: as girl A, like girl B's look → sign in as A → Settings → Delete my account → sign in as B → Activity: no alert naming A.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (it caught that the new alert clean-up needed an index, which is now added), 335 shared tests and 164 server tests that don't need the database. The two new database tests run on GitHub with this push.
+- Alerts from accounts deleted before this goes live stay until the normal 30-day clean-up — not worth a one-off script.
+- B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: these two server fixes plus one new database index. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+
+**Next up:** Keep sweeping (H1) — next, re-read Discover's people search and the profile screen against muting and deletion (e.g. what a girl sees opening a deleted account from an old chat or comment). Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- Suggested closets leave out girls she has muted (server and the feed row); test
+- Deleting an account also removes other girls' Activity alerts that name her; one new index; test
+- Decisions and North Star notes; autopilot log for run 56
 
 ---
 
