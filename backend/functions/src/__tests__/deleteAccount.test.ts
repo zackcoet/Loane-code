@@ -214,6 +214,37 @@ describe('deleteMyAccount', () => {
     expect((await db.doc('posts/post-harper').get()).data()?.stats.commentCount).toBe(0);
   });
 
+  it("takes down other girls' alerts that name her, and nobody else's", async () => {
+    const alerts = `users/${HARPER}/notifications`;
+    await db.doc(`${alerts}/from-ella-read`).set({
+      uid: HARPER,
+      actorUid: ELLA,
+      actorUsername: 'elladelete',
+      title: '@elladelete liked your look',
+      readAt: new Date(),
+    });
+    await db.doc(`${alerts}/from-ella-unread`).set({
+      uid: HARPER,
+      actorUid: ELLA,
+      actorUsername: 'elladelete',
+      title: '@elladelete started following you',
+      readAt: null,
+    });
+    await db.doc(`${alerts}/from-someone-else`).set({
+      uid: HARPER,
+      actorUid: 'uid-someone-else',
+      actorUsername: 'someoneelse',
+      title: '@someoneelse liked your look',
+      readAt: null,
+    });
+    await db.doc(`${alerts}/from-loane`).set({ uid: HARPER, actorUid: null, readAt: null });
+
+    expect(await attempt(request(ELLA))).toBe('ok');
+
+    const left = (await db.collection(alerts).get()).docs.map((d) => d.id).sort();
+    expect(left).toEqual(['from-loane', 'from-someone-else']);
+  });
+
   it('leaves a nameless shell, an anonymous review, and no login', async () => {
     expect(await attempt(request(ELLA))).toBe('ok');
 

@@ -113,6 +113,7 @@ export async function eraseAccount(
     blocks: await removeBlocks(uid),
     reviews: await anonymizeReviews(uid, user.campusId),
     bookings: await anonymizeBookings(bookings, uid, user.campusId),
+    alerts: await removeAlertsSheCaused(uid),
   };
 
   // Her private subcollections: alerts, blocked, muted, dismissed
@@ -421,6 +422,30 @@ async function removeBlocks(uid: string): Promise<number> {
   });
   await db().recursiveDelete(userRef.collection('blockedBy'));
   return count;
+}
+
+/**
+ * Other girls' Activity alerts that she caused — "@ella liked your
+ * look", "@ella started following you", "@ella asked to rent…". Each
+ * one has her old @handle and photo written into its words, so without
+ * this they would keep naming her for up to a month after the Privacy
+ * Policy says she is gone. Deleted rather than reworded: the like,
+ * follow or comment behind most of them was removed above, and any
+ * rental they mention is finished (refuseIfRentalsOpen) and still in
+ * My Rentals under "Deleted account". Unread ones go too — the general
+ * rule of never deleting an unread alert is about alerts that are still
+ * true, and these are not.
+ */
+async function removeAlertsSheCaused(uid: string): Promise<number> {
+  // index-check: collection-group == on actorUid — single-field
+  // override in firestore.indexes.json.
+  const snap = await db()
+    .collectionGroup(SUBCOLLECTIONS.userNotifications)
+    .where('actorUid', '==', uid)
+    .get();
+  return inBatches(snap.docs, (batch, doc) => {
+    batch.delete(doc.ref);
+  });
 }
 
 /**
