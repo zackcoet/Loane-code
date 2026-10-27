@@ -142,9 +142,17 @@ export default function Feed() {
     () => (tab === 'following' ? caughtUpIndex(visible, postCreatedMs, Date.now()) : -1),
     [tab, visible],
   );
+  // The row is fetched once per sign-in, so someone she blocks or mutes
+  // while scrolling would otherwise stay in it. Muting says she doesn't
+  // want this girl's looks; offering "Follow" for them right after
+  // contradicts her. (The server leaves both out on the next fetch.)
+  const suggestedShown = useMemo(
+    () => suggested.closets.filter((c) => !hidden.has(c.uid) && !mutedUids.has(c.uid)),
+    [suggested.closets, hidden, mutedUids],
+  );
   const listExtra = useMemo(
-    () => ({ closets: suggested.closets, caughtUpAt }),
-    [suggested.closets, caughtUpAt],
+    () => ({ closets: suggestedShown, caughtUpAt }),
+    [suggestedShown, caughtUpAt],
   );
   // While a fetched page's pieces are still being read its looks wait
   // off-screen; treat that like a page still loading.
@@ -398,9 +406,9 @@ export default function Feed() {
                 because a second row of the same faces further down
                 reads as a bug, not a suggestion.
               */}
-              {index === suggestionsIndex(visible.length) && suggested.closets.length > 0 ? (
+              {index === suggestionsIndex(visible.length) && suggestedShown.length > 0 ? (
                 <SuggestedClosets
-                  closets={suggested.closets}
+                  closets={suggestedShown}
                   onFollow={(uid) => void suggested.follow(uid)}
                   onDismiss={(uid) => void suggested.dismiss(uid)}
                   onOpen={(username) => router.push(`/u/${username}?from=suggested`)}

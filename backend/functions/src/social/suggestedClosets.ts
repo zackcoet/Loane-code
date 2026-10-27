@@ -79,7 +79,7 @@ export const suggestedClosets = onCall<Input, Promise<{ closets: SuggestedCloset
     const pool = limit + SPARES;
 
     // --- Who she already follows, and who she will never be shown ------
-    const [followingSnap, blockedSnap, dismissedSnap] = await Promise.all([
+    const [followingSnap, blockedSnap, dismissedSnap, mutedSnap] = await Promise.all([
       db().collection(COLLECTIONS.follows).where('followerUid', '==', me.uid).get(),
       db().collection(COLLECTIONS.users).doc(me.uid).collection(SUBCOLLECTIONS.userBlocked).get(),
       db()
@@ -87,6 +87,12 @@ export const suggestedClosets = onCall<Input, Promise<{ closets: SuggestedCloset
         .doc(me.uid)
         .collection(SUBCOLLECTIONS.userDismissedSuggestions)
         .get(),
+      // Muting says she doesn't want this girl's looks in her feed, so
+      // "Follow her" would argue with her. Muting is never told to the
+      // other girl, and leaving her out of a suggestion row tells her
+      // nothing either. (Contacts and search still find her: those are
+      // her looking someone up, not us recommending.)
+      db().collection(COLLECTIONS.users).doc(me.uid).collection(SUBCOLLECTIONS.userMuted).get(),
     ]);
 
     const following = followingSnap.docs.map((d) => d.get('followingUid') as string);
@@ -95,6 +101,7 @@ export const suggestedClosets = onCall<Input, Promise<{ closets: SuggestedCloset
       ...following,
       ...blockedSnap.docs.map((d) => d.id),
       ...dismissedSnap.docs.map((d) => d.id),
+      ...mutedSnap.docs.map((d) => d.id),
     ]);
 
     // --- Friends of friends, tallied ------------------------------------

@@ -3,8 +3,8 @@
  *
  *   - Friends of friends come first, most mutuals first, with the count.
  *   - Topped up with the most-followed closets on her campus.
- *   - Never herself, anyone she follows, has blocked, has dismissed, or
- *     who has blocked her; never a deleted, suspended or other-campus account.
+ *   - Never herself, anyone she follows, has blocked, has dismissed, has
+ *     muted, or who has blocked her; never a deleted, suspended or other-campus account.
  *   - A girl who falls out at the last step doesn't leave the row short.
  *   - A strange `limit` gets the default instead of an error.
  *
@@ -120,6 +120,18 @@ describe('suggestedClosets', () => {
       .set({});
     await db.doc(`${COLLECTIONS.users}/${POPULAR}/${SUBCOLLECTIONS.userBlocked}/${ME}`).set({});
     expect((await suggest()).map((c) => c.uid)).toEqual([QUIET]);
+  });
+
+  it('leaves out anyone she has muted, but not the people who muted her', async () => {
+    await db
+      .doc(`${COLLECTIONS.users}/${ME}/${SUBCOLLECTIONS.userMuted}/${MUTUAL_2}`)
+      .set({ mutedUid: MUTUAL_2 });
+    // The other direction changes nothing: a mute is never told, so
+    // being muted by POPULAR must not quietly take POPULAR off her row.
+    await db
+      .doc(`${COLLECTIONS.users}/${POPULAR}/${SUBCOLLECTIONS.userMuted}/${ME}`)
+      .set({ mutedUid: ME });
+    expect((await suggest()).map((c) => c.uid)).toEqual([MUTUAL_1, POPULAR, QUIET]);
   });
 
   it('leaves out deleted, suspended and other-campus accounts', async () => {
