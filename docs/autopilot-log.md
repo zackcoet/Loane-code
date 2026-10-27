@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- Nothing new from run 57 (phone-app changes only — nothing to deploy).
 - From run 56 (only when you next deploy): two server fixes and one new database index (deploy the index with them). Normal deploy, nothing to switch on.
 - Nothing new from run 55 (phone-app changes only — nothing to deploy).
 - From run 54 (only when you next deploy): a server fix to "Download my data". Normal deploy, nothing to switch on.
@@ -49,6 +50,36 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-27 (run 57, ~12 AM Central) — Tapping a name always opens the right girl
+
+**Plan:** Everything left on the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So, as run 56 suggested, this run re-read the profile screen and chats against renaming and account deletion (backlog H1).
+
+**Built / Fixed (what you or a student would notice):**
+- **Tapping a girl's name or photo now always opens her — even after she changes her @username.** Before, most taps (on a review, comment, look, piece, chat, liker list, search result, suggestion, Trending) looked her up by her @name. Reviews never update the name they show, so after a rename those taps said "Closet not found" — or, if someone else had since taken her old @name, opened that other girl's closet instead. Now every tap uses her account number, which never changes.
+- **A chat with a girl who deleted her account is now properly read-only.** The "…" (Report or block) is gone — there's nobody left to block, and Loane already refuses reports on a deleted profile. Swiping or pressing "Reply" on her old messages used to open a reply box with nowhere to type; that's gone too. Pressing and holding one of her messages still lets you Like or Report it.
+- Checked and fine as it was: people search and Find friends never show deleted accounts; follower and "liked by" lists hide blocked girls; a deleted girl's profile says "Account deleted"; and nobody can ever take a deleted girl's @name.
+
+**What to tap to see it:** On the emulators: sign in as a student → leave a review for someone → as the reviewer, Profile → Edit profile → change your @username → as the other girl, open her Reviews → tap the reviewer: her closet opens (it used to say "Closet not found"). For the chat: message someone → sign in as her and delete her account → back as the first girl, open that chat: no "…" at the top, and holding a message shows only Like and Report.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, 339 shared tests (4 new) and 192 server tests that don't need the database. Tonight's changes are phone-app only, so no database tests were affected; GitHub runs the full set on this push.
+- A suspended girl's profile still opens normally, with Follow and Message buttons that then say "not available". That's a moderation choice, so I added it to the backlog as a suggestion rather than changing it.
+- B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing new — nothing to deploy from tonight.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+- New, no rush: should a suspended girl's profile look "not found" to other students (like Instagram), or stay visible? Reply either way.
+
+**Next up:** Keep sweeping (H1) — next, re-read rentals and the Activity alerts against renames (a rental shows a copy of each girl's name too). Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- Every tap on a name opens her by account id, so a renamed or deleted girl never opens the wrong closet; test
+- A chat with a deleted account: no Report-or-block menu and no Reply that leads nowhere; her messages can still be reported
+- Decisions and North Star notes; autopilot log for run 57
 
 ---
 
