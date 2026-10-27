@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- Nothing new from run 59 (admin dashboard changes only — nothing to deploy to the server; the dashboard picks them up next time it's built).
 - From run 58 (only when you next deploy): a server fix so a new @username reaches rentals still going and reviews she wrote. Normal deploy, nothing to switch on, no new index.
 - Nothing new from run 57 (phone-app changes only — nothing to deploy).
 - From run 56 (only when you next deploy): two server fixes and one new database index (deploy the index with them). Normal deploy, nothing to switch on.
@@ -51,6 +52,36 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-27 (run 59, ~2 AM Central) — The dashboard shows who a report is about
+
+**Plan:** Everything left on the backlog still waits on you (F7), on payments (B8) or on a real phone (G8, H5). So, as run 58 suggested, this run re-read the admin dashboard's Reports and Users pages against renames and deleted accounts (backlog H1).
+
+**Built / Fixed (what you would notice in the dashboard):**
+- **Reports now say WHO.** Each report shows "About @her" and "From @her" — her name today, not an old one. Before, a report only said "post" or "message", so pressing "Suspend her" meant acting on someone you couldn't see. Click her name to open her page. A deleted account says "Deleted account"; an already-suspended girl says "(suspended)"; reports from the word filter say "Automatic filter".
+- **A student's page now lists the reports about her**, open ones first, with what was reported and who reported it — so you can see "third report this month" at a glance before deciding.
+- **Private notes can now be read.** "Add a private note" has saved notes for weeks, but the box meant to show them was greyed out saying "Backend needed", so no admin ever saw a note again. Now her page lists her notes, newest first, with who wrote each and when, and an "Add a private note" button right there.
+- Checked and fine as it was: the dashboard's Rentals, Comments, Listings and Posts pages already show current names (earlier runs keep those copies up to date).
+
+**What to tap to see it:** On your laptop with the emulators running: `npm run admin` → sign in as admin@joinloane.com → Reports: every row has a "Who" column — click the "About" name to jump to her page. On her page (Users → any student): scroll down to "Reports About Her", and "Private Notes" → Add a private note → it appears in the list straight away.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, the dashboard build, and 345 shared tests (6 new). Nothing on the server or database changed tonight; GitHub runs the full set on this push.
+- B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing new — nothing to deploy from tonight.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+- Still open from run 57: should a suspended girl's profile look "not found" to other students, or stay visible?
+
+**Next up:** Keep sweeping (H1) — next, re-read the dashboard's Support (Contact us) and Claims pages against deleted accounts and renames. Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- Dashboard reports show who they are about and who filed them, by current name; deleted accounts say so; test
+- A student's dashboard page lists her private notes and the reports about her (notes were write-only)
+- Decisions and North Star notes; autopilot log for run 59
 
 ---
 
