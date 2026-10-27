@@ -38,6 +38,8 @@ import {
   radius,
   spacing,
   type,
+  profileHref,
+  type ProfileRef,
 } from '@loane/shared';
 import { Chip } from '../../src/components/Chip';
 import { RecentSearches, SearchSuggestions } from '../../src/components/DiscoverSearchExtras';
@@ -197,9 +199,9 @@ export default function Discover() {
       params: { id: listingId, from: 'trending' satisfies ListingEntryPoint },
     });
   const openOwner = useCallback(
-    (username: string) => {
+    (person: ProfileRef) => {
       rememberSearch();
-      router.push(`/u/${username}`);
+      router.push(profileHref(person));
     },
     [rememberSearch, router],
   );
@@ -356,7 +358,7 @@ export default function Discover() {
         <SearchSuggestions
           people={visiblePeople}
           occasions={occasionMatches}
-          onPickPerson={(person) => openOwner(person.username)}
+          onPickPerson={openOwner}
           onPickOccasion={(occasion) => {
             // "formal" typed in the box means the Formal occasion: switch
             // to the chip and clear the words, so pieces tagged Formal

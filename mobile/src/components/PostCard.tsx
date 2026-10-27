@@ -23,6 +23,7 @@ import {
   spacing,
   timeAgo,
   type Post,
+  type ProfileRef,
 } from '@loane/shared';
 import { Avatar } from './Avatar';
 import { Icon } from './Icon';
@@ -38,7 +39,7 @@ const CAPTION_PREVIEW_CHARS = 120;
 interface Props {
   post: Post;
   onPressTag: (listingId: string) => void;
-  onPressAuthor: (username: string) => void;
+  onPressAuthor: (person: ProfileRef) => void;
   onPressComments: () => void;
   onPressSend: () => void;
   onPressLikes: () => void;
@@ -160,7 +161,7 @@ export function PostCard({
           style={styles.author}
           accessibilityRole="button"
           accessibilityLabel={`Open @${post.author.username}'s closet`}
-          onPress={() => onPressAuthor(post.author.username)}
+          onPress={() => onPressAuthor(post.author)}
         >
           <Avatar url={post.author.photoUrl} name={post.author.displayName} size={36} />
           {/* Her name, not her handle. A feed of @handles reads like a
@@ -306,7 +307,7 @@ export function PostCard({
             <Text
               style={styles.strong}
               accessibilityRole="button"
-              onPress={() => onPressAuthor(post.author.username)}
+              onPress={() => onPressAuthor(post.author)}
             >
               @{post.author.username}{' '}
             </Text>

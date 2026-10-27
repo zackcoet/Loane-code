@@ -15,7 +15,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { color, controls, spacing } from '@loane/shared';
+import { color, controls, spacing, profileHref } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
@@ -78,7 +78,7 @@ export default function PostLikes() {
           }
           renderItem={({ item }) => (
             <Pressable
-              onPress={() => router.push(`/u/${item.username}`)}
+              onPress={() => router.push(profileHref(item))}
               accessibilityRole="button"
               accessibilityLabel={`Open @${item.username}'s closet`}
               style={({ pressed }) => [styles.row, pressed && styles.pressed]}

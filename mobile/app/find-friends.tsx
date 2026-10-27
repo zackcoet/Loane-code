@@ -15,7 +15,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { fonts, color, controls, radius, spacing, type, type UserSummary } from '@loane/shared';
+import {
+  fonts,
+  color,
+  controls,
+  radius,
+  spacing,
+  type,
+  type UserSummary,
+  profileHref,
+} from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
@@ -127,7 +136,7 @@ export default function FindFriends() {
             )
           }
           renderItem={({ item }) => (
-            <PersonRow person={item} onPress={() => router.push(`/u/${item.username}`)} />
+            <PersonRow person={item} onPress={() => router.push(profileHref(item))} />
           )}
         />
       )}

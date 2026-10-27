@@ -30,6 +30,7 @@ import {
   spacing,
   type Condition,
   listingEntryPoint,
+  profileHref,
 } from '@loane/shared';
 import { Avatar } from '../../src/components/Avatar';
 import { Button } from '../../src/components/Button';
@@ -298,7 +299,7 @@ export default function ListingDetail() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Open @${listing.owner.username}'s closet`}
-            onPress={() => router.push(`/u/${listing.owner.username}`)}
+            onPress={() => router.push(profileHref(listing.owner))}
             style={({ pressed }) => [styles.lender, pressed && styles.lenderPressed]}
           >
             <Avatar url={listing.owner.photoUrl} name={listing.owner.displayName} size={48} />

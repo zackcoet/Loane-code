@@ -40,6 +40,7 @@ import {
   type,
   type Message,
   type MessageReply,
+  profileHref,
 } from '@loane/shared';
 import { Avatar } from '../../src/components/Avatar';
 import { EmptyState } from '../../src/components/EmptyState';
@@ -282,7 +283,7 @@ export default function Chat() {
             // not only from a profile.
             <View style={styles.headerRight}>
               <Pressable
-                onPress={() => router.push(`/u/${them.username}`)}
+                onPress={() => router.push(profileHref(them))}
                 hitSlop={8}
                 accessibilityRole="button"
                 accessibilityLabel={`Open @${them.username}'s closet`}

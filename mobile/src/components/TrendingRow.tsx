@@ -8,7 +8,7 @@
  */
 
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { type Listing, spacing } from '@loane/shared';
+import { type Listing, type ProfileRef, spacing } from '@loane/shared';
 import { ListingCard } from './ListingCard';
 import { Text } from './Text';
 
@@ -20,7 +20,7 @@ interface Props {
   campusShortName: string | null;
   cardWidth: number;
   onPress: (listingId: string) => void;
-  onPressOwner: (username: string) => void;
+  onPressOwner: (person: ProfileRef) => void;
 }
 
 export function TrendingRow({

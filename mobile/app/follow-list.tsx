@@ -14,7 +14,7 @@
 import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { color, controls, radius, spacing } from '@loane/shared';
+import { color, controls, radius, spacing, profileHref } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
@@ -122,7 +122,7 @@ export default function FollowListScreen() {
           renderItem={({ item }) => (
             <View style={styles.row}>
               <Pressable
-                onPress={() => router.push(`/u/${item.username}`)}
+                onPress={() => router.push(profileHref(item))}
                 accessibilityRole="button"
                 accessibilityLabel={`Open @${item.username}'s closet`}
                 style={({ pressed }) => [styles.who, pressed && styles.pressed]}

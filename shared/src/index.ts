@@ -37,6 +37,7 @@ export * from './trending';
 export * from './mentions';
 export * from './recentSearches';
 export * from './notificationGroups';
+export * from './profileLink';
 export * from './onboarding';
 export * from './mySize';
 export * from './socialProof';

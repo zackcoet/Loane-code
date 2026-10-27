@@ -21,7 +21,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native';
-import { caughtUpIndex, color, controls, spacing, type Post } from '@loane/shared';
+import { caughtUpIndex, color, controls, spacing, type Post, profileHref } from '@loane/shared';
 import { CampusChip } from '../../src/components/CampusChip';
 import { CaughtUpMarker } from '../../src/components/CaughtUpMarker';
 import { EmptyState } from '../../src/components/EmptyState';
@@ -231,7 +231,7 @@ export default function Feed() {
   const rowActions = useMemo<FeedPostActions>(
     () => ({
       onPressTag,
-      onPressAuthor: (username) => router.push(`/u/${username}?from=feed`),
+      onPressAuthor: (person) => router.push(profileHref(person, 'feed')),
       onPressComments: (post) =>
         router.push({
           pathname: '/comments',
@@ -411,7 +411,7 @@ export default function Feed() {
                   closets={suggestedShown}
                   onFollow={(uid) => void suggested.follow(uid)}
                   onDismiss={(uid) => void suggested.dismiss(uid)}
-                  onOpen={(username) => router.push(`/u/${username}?from=suggested`)}
+                  onOpen={(person) => router.push(profileHref(person, 'suggested'))}
                 />
               ) : null}
               {index === caughtUpAt ? <CaughtUpMarker /> : null}

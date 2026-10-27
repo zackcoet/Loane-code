@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { color, controls, spacing, type User } from '@loane/shared';
+import { color, controls, spacing, type User, profileHref } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { Button } from '../src/components/Button';
 import { EmptyState } from '../src/components/EmptyState';
@@ -77,7 +77,7 @@ export default function MutedUsers() {
           renderItem={({ item }) => (
             <View style={styles.row}>
               <Pressable
-                onPress={() => router.push(`/u/${item.username}`)}
+                onPress={() => router.push(profileHref(item))}
                 accessibilityRole="button"
                 accessibilityLabel={`Open @${item.username}'s closet`}
                 style={styles.person}

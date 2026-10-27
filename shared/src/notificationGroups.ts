@@ -14,6 +14,7 @@
 
 import type { NotificationType } from './constants';
 import type { Notification } from './types';
+import { profileHref } from './profileLink';
 
 const VERB: Partial<Record<NotificationType, string>> = {
   post_liked: 'liked your look',
@@ -87,9 +88,7 @@ export function notificationTarget(n: Notification): string | null {
     // Her account id rides along, because the @username on the alert is
     // a copy from the day she followed: if she renames herself later,
     // the name alone opens "Closet not found" — or whoever took it.
-    return n.actorUid
-      ? `/u/${encodeURIComponent(n.actorUsername)}?uid=${encodeURIComponent(n.actorUid)}`
-      : `/u/${encodeURIComponent(n.actorUsername)}`;
+    return profileHref({ username: n.actorUsername, uid: n.actorUid });
   }
   if (n.refs?.postId) {
     // Comment alerts open the comments, where the thing to answer is.

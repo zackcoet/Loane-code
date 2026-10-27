@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SkeletonRows } from '../src/components/Skeleton';
-import { color, spacing, timeAgo, type Review } from '@loane/shared';
+import { color, spacing, timeAgo, type Review, profileHref } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { EmptyState } from '../src/components/EmptyState';
 import { LoadError } from '../src/components/LoadError';
@@ -72,7 +72,7 @@ export default function Reviews() {
             <View style={styles.review}>
               <View style={styles.head}>
                 <Pressable
-                  onPress={() => router.push(`/u/${item.author.username}`)}
+                  onPress={() => router.push(profileHref(item.author))}
                   accessibilityRole="button"
                   accessibilityLabel={`Open @${item.author.username}'s closet`}
                   style={styles.who}

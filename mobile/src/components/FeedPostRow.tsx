@@ -15,13 +15,13 @@
  */
 
 import { memo } from 'react';
-import type { Post } from '@loane/shared';
+import type { Post, ProfileRef } from '@loane/shared';
 import { PostCard } from './PostCard';
 
 /** Everything a feed card can do, built once by the feed screen. */
 export interface FeedPostActions {
   onPressTag: (listingId: string, postId: string) => void;
-  onPressAuthor: (username: string) => void;
+  onPressAuthor: (person: ProfileRef) => void;
   onPressComments: (post: Post) => void;
   onPressSend: (post: Post) => void;
   onPressLikes: (post: Post) => void;

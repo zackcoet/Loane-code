@@ -37,6 +37,7 @@ import {
   type,
   type Comment,
   type UserSummary,
+  profileHref,
 } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { EmptyState } from '../src/components/EmptyState';
@@ -241,7 +242,7 @@ export default function Comments() {
                 liked={isLiked(item.comment.id)}
                 likeCount={likeCountOf(item.comment)}
                 onToggleLike={() => onToggleLike(item.comment)}
-                onOpenAuthor={() => router.push(`/u/${item.comment.author.username}`)}
+                onOpenAuthor={() => router.push(profileHref(item.comment.author))}
                 onOpenHandle={(handle) => router.push(`/u/${handle}`)}
                 onDelete={() => onDelete(item.comment)}
                 onReport={() => setReporting(item.comment)}

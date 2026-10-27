@@ -11,7 +11,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SkeletonDetail } from '../../src/components/Skeleton';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { COLLECTIONS, docPresence, spacing, type Post } from '@loane/shared';
+import { COLLECTIONS, docPresence, spacing, type Post, profileHref } from '@loane/shared';
 import { useState } from 'react';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
@@ -105,7 +105,7 @@ export default function PostScreen() {
               });
               router.push({ pathname: '/listing/[id]', params: { id: listingId } });
             }}
-            onPressAuthor={(username) => router.push(`/u/${username}`)}
+            onPressAuthor={(person) => router.push(profileHref(person))}
             onPressComments={() =>
               router.push({
                 pathname: '/comments',

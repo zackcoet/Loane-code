@@ -29,7 +29,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { color, controls, spacing } from '@loane/shared';
+import { color, controls, spacing, profileHref } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { Button } from '../src/components/Button';
 import { Card } from '../src/components/Card';
@@ -162,7 +162,7 @@ export default function ContactsScreen() {
           renderItem={({ item }) => (
             <View style={styles.person}>
               <Pressable
-                onPress={() => router.push(`/u/${item.username}`)}
+                onPress={() => router.push(profileHref(item))}
                 accessibilityRole="button"
                 accessibilityLabel={`Open @${item.username}'s closet`}
                 style={({ pressed }) => [styles.identity, pressed && styles.pressed]}

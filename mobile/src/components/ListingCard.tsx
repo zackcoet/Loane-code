@@ -14,6 +14,7 @@ import {
   radius,
   spacing,
   type,
+  type ProfileRef,
 } from '@loane/shared';
 import { isTryOnEligible } from '../hooks/useTryOn';
 import { Icon } from './Icon';
@@ -26,7 +27,7 @@ interface Props {
   /** Card width, worked out by the grid. */
   width: number;
   onPress?: (listingId: string) => void;
-  onPressOwner?: (username: string) => void;
+  onPressOwner?: (person: ProfileRef) => void;
   /** Hides the heart, e.g. on her own closet. */
   hideSave?: boolean;
   /**
@@ -114,7 +115,7 @@ export const ListingCard = memo(function ListingCard({
       <Text
         style={styles.owner}
         numberOfLines={1}
-        onPress={() => onPressOwner?.(listing.owner.username)}
+        onPress={() => onPressOwner?.(listing.owner)}
         suppressHighlighting
       >
         @{listing.owner.username}

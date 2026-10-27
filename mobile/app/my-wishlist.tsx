@@ -13,7 +13,7 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { FlatList, Image, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { SkeletonGrid } from '../src/components/Skeleton';
-import { color, controls, radius, spacing, type TryOn } from '@loane/shared';
+import { color, controls, radius, spacing, type TryOn, profileHref } from '@loane/shared';
 import { EmptyState } from '../src/components/EmptyState';
 import { LoadError } from '../src/components/LoadError';
 import { Header } from '../src/components/Header';
@@ -165,7 +165,7 @@ export default function MyWishlist() {
                   listing={item}
                   width={cardWidth}
                   onTryOn={tryOnOn ? openFittingRoom : undefined}
-                  onPressOwner={(username) => router.push(`/u/${username}`)}
+                  onPressOwner={(person) => router.push(profileHref(person))}
                   onPress={(listingId) =>
                     router.push({ pathname: '/listing/[id]', params: { id: listingId } })
                   }

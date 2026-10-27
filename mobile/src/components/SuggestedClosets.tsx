@@ -12,7 +12,7 @@
  */
 
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
-import { color, radius, spacing } from '@loane/shared';
+import { color, type ProfileRef, radius, spacing } from '@loane/shared';
 import { Avatar } from './Avatar';
 import { Button } from './Button';
 import { Icon } from './Icon';
@@ -23,7 +23,7 @@ interface Props {
   closets: SuggestedCloset[];
   onFollow: (uid: string) => void;
   onDismiss: (uid: string) => void;
-  onOpen: (username: string) => void;
+  onOpen: (person: ProfileRef) => void;
 }
 
 export function SuggestedClosets({ closets, onFollow, onDismiss, onOpen }: Props) {
@@ -54,7 +54,7 @@ export function SuggestedClosets({ closets, onFollow, onDismiss, onOpen }: Props
             </Pressable>
 
             <Pressable
-              onPress={() => onOpen(item.username)}
+              onPress={() => onOpen(item)}
               accessibilityRole="button"
               accessibilityLabel={`Open @${item.username}'s closet`}
               style={styles.identity}
