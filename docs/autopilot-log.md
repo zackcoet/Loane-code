@@ -64,7 +64,7 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 **What to tap to see it:** On the emulators: sign in as a student → on a look in the feed, "…" → Mute → scroll to "Closets you might like": she isn't in it. For the alerts: as girl A, like girl B's look → sign in as A → Settings → Delete my account → sign in as B → Activity: no alert naming A.
 
 **Skipped / blocked:**
-- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (it caught that the new alert clean-up needed an index, which is now added), 335 shared tests and 164 server tests that don't need the database. The two new database tests run on GitHub with this push.
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check (it caught that the new alert clean-up needed an index, which is now added), 335 shared tests and 164 server tests that don't need the database. The two new database tests ran on GitHub with the full set: **all green ✅**.
 - Alerts from accounts deleted before this goes live stay until the normal 30-day clean-up — not worth a one-off script.
 - B8 still waits on payments, F7 on your decision, and G8 and H5 need a real phone.
 
