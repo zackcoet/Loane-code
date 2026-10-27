@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 63 (only when you next deploy): a server fix so a deleted girl's taken-down pieces and looks can't be put back, and she can't be given free try-ons. Normal deploy, nothing to switch on, no new index.
 - Nothing new from run 62 to deploy (dashboard only — it picks the change up next time it's built).
 - Nothing new from run 61 to deploy (dashboard and app changes only). One small question: when an admin deletes an account, the audit log keeps her old @username on that one line (admins only see it). I left it — it's the record of who was deleted — but say if you'd rather it went too.
 - From run 60 (only when you next deploy): a server fix so deleting an account takes her name off her Contact us messages. Normal deploy, nothing to switch on, no new index.
@@ -55,6 +56,38 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-27 (run 63, ~6 AM Central) — The dashboard can't bring back a deleted girl's things
+
+**Plan:** Everything left on the backlog still waits on you (F7, H10), on payments (B8) or on a real phone (G8, H5). So, as run 62 suggested, this run re-read the dashboard's Users, Listings, Posts and Comments pages against deleted accounts (backlog H1).
+
+**Built / Fixed (what you would notice):**
+- **A deleted girl's taken-down piece or look could be put back up.** If an admin had taken one down and she later deleted her account, "Put it back" would show it on campus again under "Deleted account". The server now refuses, the same way it already did for her comments, and the button is greyed out with the reason written under it.
+- **An admin could give a deleted account free try-ons** — it quietly rebuilt part of the data deletion had erased. Now refused, and the button is greyed out.
+- **A deleted account's dashboard page said "Active".** It now says "Deleted account" with one line on what's left (rentals, reviews and reports stay as records). The Users list says "deleted" instead of the techy "deactivated".
+- **Listings, Posts and Comments now say whose each thing is by her name today**, and you can click it to open her page. Before, they showed the name copied onto the item, not clickable. Searching finds her by her current name too.
+- **Posts got a search box and a status filter**, like Listings and Comments already had.
+- On a student's page, "Listings" and "Posts" count what's up now (removed ones are still listed underneath).
+
+**What to tap to see it:** Laptop, emulators running: `npm run admin` → sign in as admin@joinloane.com → Posts: type a name in the search box; each look says "By @her" — click it to open her page. Listings: same "By @her" line. To see the lock: take a piece down, delete that test account from her page (Users → her → Delete this account), then back on Listings the piece shows "Her account is deleted, so it cannot come back."
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, the dashboard build, and 363 shared tests (3 new). GitHub ran the full set, database tests included (4 new): **all green ✅**.
+- B8 still waits on payments, F7 and H10 on your decisions, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: the server fix above. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+- Still open from run 57: should a suspended girl's profile look "not found" to other students, or stay visible?
+
+**Next up:** Keep sweeping (H1) — next, re-read the dashboard's Rentals page and Founding Closets against renamed and deleted accounts. Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- A deleted girl's taken-down piece or look can't be put back; no free try-ons for a deleted account; tests
+- Dashboard Listings, Posts and Comments name the owner live and grey out what the server would refuse; a deleted account's page says so
+- Decisions and North Star notes; autopilot log for run 63
 
 ---
 
