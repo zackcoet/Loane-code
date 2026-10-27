@@ -92,6 +92,7 @@ beforeEach(async () => {
     COLLECTIONS.bookings,
     COLLECTIONS.reviews,
     COLLECTIONS.comments,
+    COLLECTIONS.supportRequests,
     COLLECTIONS.adminActions,
   ]) {
     await db.recursiveDelete(db.collection(c));
@@ -260,6 +261,35 @@ describe('deleteMyAccount', () => {
     expect(review?.author.displayName).toBe(DELETED_ACCOUNT_NAME);
 
     await expect(getAuth(app).getUser(ELLA)).rejects.toBeTruthy();
+  });
+
+  it('keeps her Contact us messages for the team, without her name', async () => {
+    const mine = { username: 'elladelete', displayName: 'Ella', photoUrl: 'https://x/ella.jpg' };
+    await db.doc('supportRequests/s1').set({
+      requesterUid: ELLA,
+      requester: { uid: ELLA, ...mine },
+      message: 'Someone was rude at a handoff',
+      status: 'open',
+    });
+    await db.doc('supportRequests/s2').set({
+      requesterUid: HARPER,
+      requester: { uid: HARPER, username: 'harperdelete', displayName: 'Harper', photoUrl: null },
+      message: 'Hi',
+      status: 'open',
+    });
+
+    expect(await attempt(request(ELLA))).toBe('ok');
+
+    const hers = (await db.doc('supportRequests/s1').get()).data();
+    expect(hers?.requester.displayName).toBe(DELETED_ACCOUNT_NAME);
+    expect(hers?.requester.username).toBe(deletedUsername(ELLA));
+    expect(hers?.requester.photoUrl).toBeNull();
+    // Still in the inbox, still open, words kept for whoever handles it.
+    expect(hers?.status).toBe('open');
+    expect(hers?.message).toBe('Someone was rude at a handoff');
+
+    const harpers = (await db.doc('supportRequests/s2').get()).data();
+    expect(harpers?.requester.username).toBe('harperdelete');
   });
 
   it('takes her out of her campus student count', async () => {

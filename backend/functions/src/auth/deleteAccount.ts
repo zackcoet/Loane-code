@@ -113,6 +113,7 @@ export async function eraseAccount(
     blocks: await removeBlocks(uid),
     reviews: await anonymizeReviews(uid, user.campusId),
     bookings: await anonymizeBookings(bookings, uid, user.campusId),
+    supportRequests: await anonymizeSupportRequests(uid, user.campusId),
     alerts: await removeAlertsSheCaused(uid),
   };
 
@@ -458,6 +459,25 @@ async function anonymizeReviews(uid: string, campusId: string): Promise<number> 
   const author = deletedUserSummary(uid, campusId);
   return inBatches(snap.docs, (batch, doc) => {
     batch.update(doc.ref, { author, updatedAt: now() });
+  });
+}
+
+/**
+ * Her Contact us messages stay — an open one may still need an admin
+ * (a safety worry, a problem with a rental) — but without her name.
+ * Each one keeps its own copy of her name and photo for the dashboard's
+ * Support inbox, and nothing else renames it, so without this the inbox
+ * would show "@ellapetrick" after the Privacy Policy says she is gone.
+ * Reports she filed need nothing: they store only her account id.
+ */
+async function anonymizeSupportRequests(uid: string, campusId: string): Promise<number> {
+  const snap = await db()
+    .collection(COLLECTIONS.supportRequests)
+    .where('requesterUid', '==', uid)
+    .get();
+  const requester = deletedUserSummary(uid, campusId);
+  return inBatches(snap.docs, (batch, doc) => {
+    batch.update(doc.ref, { requester, updatedAt: now() });
   });
 }
 
