@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 60 (only when you next deploy): a server fix so deleting an account takes her name off her Contact us messages. Normal deploy, nothing to switch on, no new index.
 - Nothing new from run 59 (admin dashboard changes only — nothing to deploy to the server; the dashboard picks them up next time it's built).
 - From run 58 (only when you next deploy): a server fix so a new @username reaches rentals still going and reviews she wrote. Normal deploy, nothing to switch on, no new index.
 - Nothing new from run 57 (phone-app changes only — nothing to deploy).
@@ -52,6 +53,36 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-27 (run 60, ~3 AM Central) — Contact us messages and claims show the right girl
+
+**Plan:** Everything left on the backlog still waits on you (F7, H10), on payments (B8) or on a real phone (G8, H5). So, as run 59 suggested, this run re-read the admin dashboard's Support (Contact us) and Claims pages against renames and deleted accounts (backlog H1).
+
+**Built / Fixed (what you would notice in the dashboard):**
+- **Deleting an account now takes her name off her Contact us messages.** Before, every message she'd sent kept her name, @handle and photo forever — the Privacy Policy says her personal info is deleted or anonymized. Now they say "Deleted account". The message itself stays, so an open one (say, a safety worry) can still be handled.
+- **The Support inbox shows who sent each message by her name today**, clickable to her page. Before, it showed the name from the day she wrote — after a rename that could be a handle someone else now owns.
+- **Damage Claims now say who** — "Lender @her / Renter @her", each clickable. Before, a claim showed only an amount and a description. (Claims stay empty until payments are on; the page is ready for then.)
+- **A student's page now lists her Contact us messages**, open ones first, under the reports about her — so you see everything about her in one place.
+
+**What to tap to see it:** On your laptop with the emulators running: `npm run admin` → sign in as admin@joinloane.com → Support: the "From" column shows each girl's current @name — click it to open her page. Users → any student → scroll to "Her Contact Us Messages". To see the deletion fix: in the app, a student sends Help → Contact us, then deletes her account → in Support that message now says "Deleted account".
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, the dashboard build, and 349 shared tests (4 new). GitHub ran the full set, the new deletion test and database tests included: **all green ✅**.
+- B8 still waits on payments, F7 and H10 on your decisions, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: this server fix. Normal deploy, nothing to switch on.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+- Still open from run 57: should a suspended girl's profile look "not found" to other students, or stay visible?
+
+**Next up:** Keep sweeping (H1) — next, re-read "Contact us" itself on the phone (Help screen) and the dashboard's Activity Log page against deleted accounts. Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- Deleting an account takes her name off her Contact us messages (they kept it); test
+- Dashboard Support and Claims show who by current name, clickable; her page lists her Contact us messages; test
+- Decisions and North Star notes; autopilot log for run 60
 
 ---
 
