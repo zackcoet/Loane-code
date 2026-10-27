@@ -48,7 +48,8 @@ export const propagateProfileChanges = onDocumentUpdated(
       every chat she was in — the two places a name is read most often.
       changeUsername carried a TODO saying exactly this.
 
-      Rentals still going get her new name too (see rewriteOpenBookings).
+      Reviews she wrote and rentals still going get her new name too
+      (see rewriteOpenBookings).
       A finished rental is a record of what happened, and the name on it
       then is part of that record, so it is left alone.
     */
@@ -95,6 +96,15 @@ export const propagateProfileChanges = onDocumentUpdated(
         { [`participants.${summary.uid}`]: summary },
         'array-contains',
       ),
+      /*
+        Reviews she wrote. Without this a review kept her old @name
+        forever, and once someone else took that name the review read
+        as theirs. No `updatedAt`: a new name is not an edit of what
+        she wrote.
+      */
+      reviews: await rewrite(writer, COLLECTIONS.reviews, 'authorUid', summary.uid, {
+        author: summary,
+      }),
       bookings: await rewriteOpenBookings(writer, summary),
     };
     await writer.close();

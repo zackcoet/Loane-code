@@ -466,7 +466,8 @@ async function anonymizeReviews(uid: string, campusId: string): Promise<number> 
  * must keep — but without her name, as the Privacy Policy and the
  * decision of 2026-10-21 promise. A rental keeps its own copy of each
  * side's name and photo, and the profile trigger that renames her on
- * looks, pieces and chats deliberately leaves rentals alone, so without
+ * looks, pieces and chats leaves finished rentals alone (only rentals
+ * still going follow a rename, and those stop deletion), so without
  * this the other girl's My Rentals would show "@ellapetrick" and her
  * face forever. Only HER side changes; the money, dates and piece stay.
  */

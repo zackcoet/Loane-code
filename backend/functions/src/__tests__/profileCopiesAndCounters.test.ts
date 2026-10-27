@@ -3,7 +3,7 @@
  * emulator.
  *
  *   propagateProfileChanges: a new name or photo reaches her pieces,
- *   looks, comments, chats and rentals still going (finished ones keep
+ *   looks, comments, reviews, chats and rentals still going (finished ones keep
  *   the name they had); uses the newest profile even when the
  *   event is stale; does not reorder anyone's inbox; and a look deleted
  *   mid-run does not stop the rest.
@@ -96,6 +96,7 @@ beforeEach(async () => {
     COLLECTIONS.comments,
     COLLECTIONS.conversations,
     COLLECTIONS.bookings,
+    COLLECTIONS.reviews,
   ]) {
     await db.recursiveDelete(db.collection(c));
   }
@@ -174,6 +175,37 @@ describe('propagateProfileChanges', () => {
     expect((await get(`${COLLECTIONS.posts}/p1`)).author.username).toBe('ellanew');
     const chat = await get(`${COLLECTIONS.conversations}/chat1`);
     expect(chat.participants[ELLA].username).toBe('ellanew');
+  });
+});
+
+describe('propagateProfileChanges on reviews', () => {
+  it('puts her new name on reviews she wrote, without marking them edited', async () => {
+    const old = user(ELLA, 'ellaold');
+    await db.doc(`${COLLECTIONS.reviews}/r1`).set({
+      authorUid: ELLA,
+      author: old,
+      subjectUid: HARPER,
+      rating: 5,
+      body: 'Lovely',
+      updatedAt: OLD_TIME,
+    });
+    // A review ABOUT her is somebody else's words and copy.
+    await db.doc(`${COLLECTIONS.reviews}/r2`).set({
+      authorUid: HARPER,
+      author: user(HARPER, 'harper'),
+      subjectUid: ELLA,
+      rating: 4,
+      body: 'Nice',
+    });
+    const now = user(ELLA, 'ellanew');
+    await db.doc(`${COLLECTIONS.users}/${ELLA}`).set(now);
+    await propagate(updated(ELLA, old, now));
+
+    const mine = await get(`${COLLECTIONS.reviews}/r1`);
+    expect(mine.author.username).toBe('ellanew');
+    expect(mine.body).toBe('Lovely');
+    expect((mine.updatedAt as Timestamp).toMillis()).toBe(OLD_TIME.toMillis());
+    expect((await get(`${COLLECTIONS.reviews}/r2`)).author.username).toBe('harper');
   });
 });
 
