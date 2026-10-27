@@ -2,6 +2,7 @@ import { onCall } from '../lib/callable';
 import { logger } from 'firebase-functions';
 import {
   COLLECTIONS,
+  ownerRestoreBlockedReason,
   ratingFromVisible,
   statusAfterRestore,
   takedownBlockedReason,
@@ -68,8 +69,13 @@ async function moderate(
     if (hide) {
       const blocked = takedownBlockedReason(doc.status);
       if (blocked) throw failed(blocked);
-    } else if (doc.status !== 'suspended') {
-      throw failed('It is not suspended.');
+    } else {
+      if (doc.status !== 'suspended') throw failed('It is not suspended.');
+      // A deleted girl's piece or look stays down, the same as her
+      // comments: putting it back would show a "Deleted account" closet.
+      const owner = await tx.get(db().collection(COLLECTIONS.users).doc(ownerUid));
+      const blocked = ownerRestoreBlockedReason(owner.exists ? (owner.data() as User) : null);
+      if (blocked) throw failed(blocked);
     }
 
     // Back to what it was — a sold piece stays sold — not always 'active'.
@@ -246,9 +252,8 @@ async function moderateComment(
     // that left them `suspended`, one click from coming back.
     if (!hide) {
       const author = await tx.get(db().collection(COLLECTIONS.users).doc(comment.authorUid));
-      if (!author.exists || (author.data() as User).status === 'deactivated') {
-        throw failed('Her account is deleted, so her comment cannot come back.');
-      }
+      const blocked = ownerRestoreBlockedReason(author.exists ? (author.data() as User) : null);
+      if (blocked) throw failed(blocked);
     }
 
     const postRef = db().collection(COLLECTIONS.posts).doc(comment.postId);

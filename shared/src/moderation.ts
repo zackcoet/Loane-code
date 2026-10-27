@@ -59,6 +59,50 @@ export function suspendBlockedReason(status: AccountStatus): string | null {
   return null;
 }
 
+/** Why something of hers can't be put back, or a grant can't be given. */
+export const DELETED_OWNER_REASON = 'Her account is deleted, so it cannot come back.';
+
+/**
+ * Can a taken-down listing, look or comment be put back, given who owns
+ * it? Not once she has deleted her account (or her account is missing):
+ * putting it back would show a "Deleted account" closet again, or bring
+ * back words the Privacy Policy says go with her.
+ *
+ * Deletion already marks her things `removed`, which the restore checks
+ * refuse on their own. This is the second lock: accounts deleted before
+ * that sweep covered taken-down things, or a restore landing in the
+ * same moment as her deletion, must not slip through.
+ */
+export function ownerRestoreBlockedReason(
+  owner: { status: string } | null | undefined,
+): string | null {
+  if (!owner || owner.status === 'deactivated') return DELETED_OWNER_REASON;
+  return null;
+}
+
+/**
+ * Why the dashboard's take-down / put-back button on one listing or look
+ * is greyed out, or null when it can be pressed. `owner` is her account
+ * if the dashboard has it loaded; `undefined` means it doesn't (outside
+ * the newest 250) and the server decides.
+ */
+export function moderationButtonBlockedReason(
+  status: string,
+  owner: { status: string } | undefined,
+): string | null {
+  if (status === 'removed') return 'Its owner already removed it.';
+  if (status === 'suspended' && owner) return ownerRestoreBlockedReason(owner);
+  return null;
+}
+
+/**
+ * Can an admin give free try-ons to this account? Not a deleted one:
+ * the grant would recreate her private settings, which deletion erased.
+ */
+export function grantBlockedReason(status: AccountStatus): string | null {
+  return status === 'deactivated' ? 'That account is deleted.' : null;
+}
+
 /**
  * What a finished sale writes on the piece.
  *

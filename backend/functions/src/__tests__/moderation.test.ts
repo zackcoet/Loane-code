@@ -10,6 +10,8 @@
  *   - Suspending: never yourself, never an admin, never a deleted account.
  *   - Lifting a suspension only works on a suspended account — it used
  *     to turn a deleted account back into a live one.
+ *   - A deleted girl's piece, look or comment stays down, and she gets
+ *     no free try-ons (that would recreate her erased settings).
  *   - Every action writes one audit row and one notice to her.
  *
  * Run the emulators first:  npm run emulators
@@ -41,6 +43,7 @@ const NAMES = [
   'suspendUser',
   'unsuspendUser',
   'addAdminNote',
+  'grantTryOns',
 ] as const;
 const fns = {} as Record<(typeof NAMES)[number], Fn>;
 
@@ -115,6 +118,7 @@ beforeAll(async () => {
   const mods = {
     ...(await import('../admin/moderateContent')),
     ...(await import('../admin/moderateUsers')),
+    ...(await import('../tryon/admin')),
   } as unknown as Record<string, { run: Fn }>;
   for (const name of NAMES) {
     const runnable = mods[name];
@@ -220,6 +224,39 @@ describe('taking a piece down and putting it back', () => {
     expect((await db.doc(`${COLLECTIONS.posts}/p1`).get()).data()?.status).toBe('suspended');
     await fns.restorePost(as(ADMIN, { id: 'p1', reason: 'Fine' }));
     expect((await db.doc(`${COLLECTIONS.posts}/p1`).get()).data()?.status).toBe('scheduled');
+  });
+
+  it("will not put back a deleted girl's piece or look", async () => {
+    await listing('active');
+    await post('active');
+    await fns.hideListing(as(ADMIN, { id: 'l1', reason: 'Reported' }));
+    await fns.hidePost(as(ADMIN, { id: 'p1', reason: 'Reported' }));
+    await db.doc(`${COLLECTIONS.users}/${OWNER}`).update({ status: 'deactivated' });
+
+    expect(await attempt(() => fns.restoreListing(as(ADMIN, { id: 'l1', reason: 'x' })))).toMatch(
+      /account is deleted/,
+    );
+    expect(await attempt(() => fns.restorePost(as(ADMIN, { id: 'p1', reason: 'x' })))).toMatch(
+      /account is deleted/,
+    );
+    expect(await listingStatus()).toBe('suspended');
+    expect((await db.doc(`${COLLECTIONS.posts}/p1`).get()).data()?.status).toBe('suspended');
+
+    // Same if her account is gone altogether.
+    await db.doc(`${COLLECTIONS.users}/${OWNER}`).delete();
+    expect(await attempt(() => fns.restoreListing(as(ADMIN, { id: 'l1', reason: 'x' })))).toMatch(
+      /account is deleted/,
+    );
+    expect(await auditRows('restore_listing')).toHaveLength(0);
+    expect(await auditRows('restore_post')).toHaveLength(0);
+  });
+
+  it("still puts back a suspended girl's piece", async () => {
+    await listing('active');
+    await fns.hideListing(as(ADMIN, { id: 'l1', reason: 'Reported' }));
+    await db.doc(`${COLLECTIONS.users}/${OWNER}`).update({ status: 'suspended' });
+    await fns.restoreListing(as(ADMIN, { id: 'l1', reason: 'Fine' }));
+    expect(await listingStatus()).toBe('active');
   });
 
   it('refuses a student, a missing piece, and junk', async () => {
@@ -426,5 +463,24 @@ describe('suspending a student', () => {
       );
     }
     expect((await ownerData())?.status).toBe('active');
+  });
+});
+
+describe('free try-ons', () => {
+  const settings = () => db.doc(`${COLLECTIONS.users}/${OWNER}/private/settings`);
+
+  it('gives them to a student, with an audit row', async () => {
+    await fns.grantTryOns(as(ADMIN, { uid: OWNER, count: 5, reason: 'Tester' }));
+    expect((await settings().get()).data()?.tryOn?.bonusGranted).toBe(5);
+    expect(await auditRows('tryon_granted')).toHaveLength(1);
+  });
+
+  it('refuses a deleted account and writes nothing', async () => {
+    await db.doc(`${COLLECTIONS.users}/${OWNER}`).update({ status: 'deactivated' });
+    expect(
+      await attempt(() => fns.grantTryOns(as(ADMIN, { uid: OWNER, count: 5, reason: 'Tester' }))),
+    ).toMatch(/account is deleted/);
+    expect((await settings().get()).exists).toBe(false);
+    expect(await auditRows('tryon_granted')).toHaveLength(0);
   });
 });

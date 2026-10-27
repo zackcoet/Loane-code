@@ -18,11 +18,12 @@ import {
   COLLECTIONS,
   SUBCOLLECTIONS,
   TRYON_FREE_LIFETIME,
+  grantBlockedReason,
   type User,
   type UserPrivate,
 } from '@loane/shared';
 import { db, now } from '../lib/admin';
-import { invalidArgument, notFound } from '../lib/errors';
+import { failed, invalidArgument, notFound } from '../lib/errors';
 import { logAdminAction, requireAdminContext, requireReason } from '../admin/audit';
 import { writeFeatureFlags } from '../lib/featureFlags';
 
@@ -54,6 +55,9 @@ export const grantTryOns = onCall<GrantInput, Promise<{ total: number }>>(
       const userSnap = await tx.get(userRef);
       if (!userSnap.exists) throw notFound('No student with that id.');
       const user = userSnap.data() as User;
+      // Deletion erased her private settings; a grant would recreate them.
+      const blocked = grantBlockedReason(user.status);
+      if (blocked) throw failed(blocked);
 
       const privateSnap = await tx.get(privateRef);
       const settings = privateSnap.data() as UserPrivate | undefined;

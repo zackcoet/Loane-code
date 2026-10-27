@@ -3,8 +3,11 @@ import {
   adminActionLabel,
   adminActionsAboutUser,
   adminTargetLabel,
+  grantBlockedReason,
   listingFieldsOnSale,
+  moderationButtonBlockedReason,
   myReportStatusLabel,
+  ownerRestoreBlockedReason,
   personLabelWithCopy,
   reportPersonLabel,
   reportsAboutUser,
@@ -193,5 +196,31 @@ describe('the status she sees on her own reports', () => {
     expect(myReportStatusLabel('dismissed')).toBe('Closed');
     expect(myReportStatusLabel('resolved')).toBe('Closed');
     expect(myReportStatusLabel('something_new')).toBe('Sent');
+  });
+});
+
+describe("a deleted girl's things stay down", () => {
+  it('refuses to put back anything of a deleted or missing account', () => {
+    expect(ownerRestoreBlockedReason({ status: 'deactivated' })).toMatch(/deleted/);
+    expect(ownerRestoreBlockedReason(null)).toMatch(/deleted/);
+    expect(ownerRestoreBlockedReason({ status: 'active' })).toBeNull();
+    expect(ownerRestoreBlockedReason({ status: 'suspended' })).toBeNull();
+  });
+
+  it('greys out the dashboard button only when the server would refuse', () => {
+    const deleted = { status: 'deactivated' };
+    expect(moderationButtonBlockedReason('removed', { status: 'active' })).toMatch(/removed/);
+    expect(moderationButtonBlockedReason('suspended', deleted)).toMatch(/deleted/);
+    expect(moderationButtonBlockedReason('suspended', { status: 'active' })).toBeNull();
+    // Not loaded in the dashboard: let the server decide.
+    expect(moderationButtonBlockedReason('suspended', undefined)).toBeNull();
+    // Taking down a live piece of hers is never blocked by her status.
+    expect(moderationButtonBlockedReason('active', deleted)).toBeNull();
+  });
+
+  it('gives no free try-ons to a deleted account', () => {
+    expect(grantBlockedReason('deactivated')).toMatch(/deleted/);
+    expect(grantBlockedReason('active')).toBeNull();
+    expect(grantBlockedReason('suspended')).toBeNull();
   });
 });
