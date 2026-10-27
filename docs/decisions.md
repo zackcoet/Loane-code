@@ -2150,3 +2150,11 @@ Left as they are on purpose: a heart on a message (A9 made "Liked a message" a r
 - **Claims show Lender and Renter**, looked up live (a claim stores only ids). Claims are Phase 5 and empty today; this is so the page is ready when payments go on.
 - **A student's dashboard page lists her Contact us messages**, open first, next to the reports about her. Resolving stays on Support.
 - `PersonLink` is now one component shared by Reports, Support and Claims.
+
+## 2026-10-27 — The Activity Log reads in words and names people live; Past reports speak her language (autopilot run 61)
+
+- **The dashboard's Activity Log shows words, not codes.** `adminActionLabel` (`shared/src/moderation.ts`) turns `suspend_user`, `report_dismissed`, `hide_post` into "Suspended her account", "Dismissed a report", "Took a look down". A code it has not been taught is shown humanized, never dropped: an audit log must not lose a row because the row is new. Admins are shown by the email on the row (written since the log began, now in the `AdminAction` type), falling back to a live lookup.
+- **A row about a student shows who, by her account today** (`reportPersonLabel`, clickable through `PersonLink`), the same way Reports and Support do since runs 59–60. Audit rows store only her account id, so a rename shows her current @name and a deleted account says "Deleted account". Rows are never rewritten: the log stays append-only.
+- **A student's dashboard page lists "Admin actions on her account"** — suspensions, notes, exports, try-on grants — read fresh with one equality filter on `targetId` (no new index), up to 200, sorted newest first in the dashboard. The Activity Log only loads the newest 100 across everyone, so an old suspension fell off it.
+- Left alone: when an admin deletes an account, that audit row's `before` snapshot keeps her @username. It is admin-only, it is the record of who was erased and by whom, and the log is append-only by design. Flagged in the log for Zack rather than changed.
+- **Help → Past reports** shows "Loading your past reports…" until both lists answer (it said "will appear here" for a moment, as if they were gone), and statuses read Sent / Being looked at / Handled / Closed (`myReportStatusLabel`). "Dismissed" is the admin's word; to the girl who reported something it reads as "we didn't believe you".

@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- Nothing new from run 61 to deploy (dashboard and app changes only). One small question: when an admin deletes an account, the audit log keeps her old @username on that one line (admins only see it). I left it — it's the record of who was deleted — but say if you'd rather it went too.
 - From run 60 (only when you next deploy): a server fix so deleting an account takes her name off her Contact us messages. Normal deploy, nothing to switch on, no new index.
 - Nothing new from run 59 (admin dashboard changes only — nothing to deploy to the server; the dashboard picks them up next time it's built).
 - From run 58 (only when you next deploy): a server fix so a new @username reaches rentals still going and reviews she wrote. Normal deploy, nothing to switch on, no new index.
@@ -53,6 +54,36 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-27 (run 61, ~4 AM Central) — The dashboard's Activity Log says what happened, and to whom
+
+**Plan:** Everything left on the backlog still waits on you (F7, H10), on payments (B8) or on a real phone (G8, H5). So, as run 60 suggested, this run re-read the dashboard's Activity Log and the phone's Help → Contact us against renames and deleted accounts (backlog H1).
+
+**Built / Fixed (what you would notice):**
+- **The Activity Log now reads in plain words.** Before, a row said things like "suspend_user" on "user · 8f3kq2…" by an admin shown as a long code — so nobody could actually tell who got suspended or who did it. Now it says "Suspended her account", on "@her" (her name today, clickable to her page — "Deleted account" if she's gone), by "admin@joinloane.com". Its empty message no longer says the moderation tools "don't exist yet" (they've existed for weeks).
+- **A student's dashboard page now lists every admin action on her account** — suspensions, notes, data exports, try-on grants — with who did it and why. The Activity Log only shows the latest 100 actions across everyone, so an old suspension used to fall off and be forgotten.
+- **In the app, Help → Past reports** no longer flashes "Your reports will appear here" while it's still loading (for a second it looked like her reports were gone). Statuses now read **Sent / Being looked at / Handled / Closed** instead of the admin's words — a girl who reported someone never sees "Dismissed".
+
+**What to tap to see it:** Dashboard (laptop, emulators running): `npm run admin` → sign in as admin@joinloane.com → suspend any student from her page with a reason → Activity Log: the top row says "Suspended her account" on her @name → click her name → scroll to "Admin Actions On Her Account". Phone: ☰ → Help → scroll to "Past reports".
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, the dashboard build, and 354 shared tests (5 new). GitHub runs the full set on push — see below.
+- B8 still waits on payments, F7 and H10 on your decisions, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- Nothing to deploy from tonight (dashboard and app only).
+- Small one: the audit log keeps a deleted girl's old @username on the line that records her deletion (admins only). Left as is — say if you want it gone.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+- Still open from run 57: should a suspended girl's profile look "not found" to other students, or stay visible?
+
+**Next up:** Keep sweeping (H1) — next, re-read the dashboard's Overview numbers and Campuses page against deleted and suspended accounts (do they still count?). Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- Dashboard Activity Log in plain words, with who it was done to by current name; her page lists admin actions on her account; tests
+- Help → Past reports: loading line instead of a false empty; statuses in her words (never "Dismissed"); test
+- Decisions and North Star notes; autopilot log for run 61
 
 ---
 
