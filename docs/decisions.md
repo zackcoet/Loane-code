@@ -6,6 +6,31 @@ much as the answer.
 
 ---
 
+## 2026-10-28 — Admins mark Founding Closets; the dashboard's Rentals page names girls live (autopilot run 64)
+
+**Decision:** a new admin-only function, `setFoundingCloset({ uid, on,
+reason })`, sets `users/{uid}.isFoundingCloset`, in one transaction
+with one audit row (`founding_closet_marked` / `_unmarked`). It refuses
+a deleted account, an admin account and a no-op (already marked / not
+marked); taking a deleted account off is allowed. She gets no notice
+and nothing in the app reads the mark — it is the team's list of launch
+closets. The Founding Closets page counts each closet's pieces and
+looks that are up now from the loaded data, not `stats.listingCount`,
+the same rule as the Overview (run 62). On Rentals, and on a girl's new
+"Her Rentals And Sales" panel, each girl is shown by her account today
+(`personLabelWithCopy`), with the rental's copy only as a fallback;
+search matches both. Disputed rentals are never hidden by the search.
+
+**Why:** nothing outside the emulator's fake data ever set the mark, so
+on the live project the Founding Closets page could only be empty. A
+notice to her would announce a programme Zack hasn't defined, so there
+is none. Rentals showed the name copied onto each booking: after a
+rename an admin could not find a girl's rentals by her current @name,
+and nothing on her page said what she had rented or lent — the "same
+name in two disputes" signal `resolveDispute` was built for.
+
+---
+
 ## 2026-10-27 — The dashboard counts what is on Loane now, and counts campuses live (autopilot run 62)
 
 **Decision:** one set of rules in `shared/src/dashboardCounts.ts`. A

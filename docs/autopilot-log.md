@@ -3,6 +3,7 @@
 Plain-English record of every autonomous run. Newest entry at the top. Rules and backlog live in [`NORTH_STAR.md`](../NORTH_STAR.md).
 
 ## 🚨 NEEDS ZACK
+- From run 64 (only when you next deploy): one new dashboard function, for marking Founding Closets. Normal deploy, nothing to switch on, no new index. Students never see the mark.
 - From run 63 (only when you next deploy): a server fix so a deleted girl's taken-down pieces and looks can't be put back, and she can't be given free try-ons. Normal deploy, nothing to switch on, no new index.
 - Nothing new from run 62 to deploy (dashboard only — it picks the change up next time it's built).
 - Nothing new from run 61 to deploy (dashboard and app changes only). One small question: when an admin deletes an account, the audit log keeps her old @username on that one line (admins only see it). I left it — it's the record of who was deleted — but say if you'd rather it went too.
@@ -56,6 +57,39 @@ Plain-English record of every autonomous run. Newest entry at the top. Rules and
 - From run 12 (no rush, all before launch): pick a crash reporter (Sentry free tier is the obvious one), and when you're ready, do the 30-minute console checklist in `docs/production-ops.md` (spending alert, daily backups, error emails).
 - Still waiting on an OK from run 10: Followers/Following lists are newest-first instead of A–Z.
 - Still open from run 5: whether a deleted account's old @handle should ever be freed up, and when to start flagging "Venmo me" in chats.
+
+---
+
+## 2026-10-28 (run 64, ~10 PM Central) — Rentals you can search, and Founding Closets you can actually fill
+
+**Plan:** Everything left on the backlog still waits on you (F7, H10), on payments (B8) or on a real phone (G8, H5). So, as run 63 suggested, this run re-read the dashboard's Rentals and Founding Closets pages against renamed and deleted accounts (backlog H1).
+
+**Built / Fixed (what you would notice):**
+- **Rentals has a search box and a status filter.** Type a piece or a girl's name (her name today or the one she booked under). Disputed rentals stay pinned at the top whatever you type, so one can't be missed.
+- **Each rental names both girls by their account today**, clickable through to her page. Before, it showed the name copied on the day she booked — after a rename you couldn't find her, and it wasn't clickable.
+- **A student's page now lists her rentals and sales** — which side she was on, the piece, who with (clickable), dates, price, and how any dispute was decided. Disputes first. Before, the only way to spot "same name in two disputes" was scrolling every rental.
+- **Founding Closets could never be filled on the live project.** Only the fake test data ever set the mark. Now there's a **Make Founding Closet** button on her page (asks why, writes an audit line). Students never see it. It refuses deleted and admin accounts.
+- The Founding Closets page counts **pieces and looks that are up now** (it counted removed ones), shows how many times she's lent, links to her page, and its empty message says how to add one.
+- Fixed two leftover "Phase 4 / Phase 1" developer messages on those empty pages.
+
+**What to tap to see it:** Laptop, emulators running: `npm run admin` → sign in as admin@joinloane.com → **Rentals**: type "ella" in the search box; each row says "Lender @…" / "Renter @…" — click one to open her page. On her page scroll to **Her Rentals And Sales**. Then at the top of her page press **Make Founding Closet**, write a reason, confirm → open **Founding Closets** in the menu (reload the dashboard) and she's listed.
+
+**Skipped / blocked:**
+- The overnight machine still can't start the test database (Google's download is blocked here). Passed here: type checks, lint, the index check, the dashboard and server builds, and 373 shared tests (10 new). GitHub ran the full set, database tests included (3 new): **all green ✅**.
+- B8 still waits on payments, F7 and H10 on your decisions, and G8 and H5 need a real phone.
+
+**🚨 NEEDS ZACK:**
+- When you next deploy: the new Founding Closets function. Normal deploy, nothing to switch on.
+- Optional: I made Founding Closets something only the team sees (no badge, no message to her). If it's meant to be a perk girls know about, say so and a later run can add a badge.
+- Still the one decision from run 22: USC-only with a waitlist, or keep letting any .edu in.
+- Still open from run 57: should a suspended girl's profile look "not found" to other students, or stay visible?
+
+**Next up:** Keep sweeping (H1) — next, re-read the dashboard's Reports page actions (warn / take down) against a girl who renamed herself between the report and the decision. Your answer on F7 would unlock the next real feature.
+
+**Commits:**
+- Dashboard Rentals: search and status filter, each girl by her name today (clickable); her page lists her rentals and sales; test
+- Founding Closets: admins can mark or unmark a launch closet from her page (server-only, audited); the page counts pieces and looks up now and links to her; tests
+- Decisions and North Star notes; autopilot log for run 64
 
 ---
 
