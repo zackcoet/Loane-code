@@ -143,7 +143,8 @@ function CurrentPage({
     return <ClaimsPage data={data} campusId={campusId} onOpenUser={onOpenUser} />;
   }
   if (page === 'campuses') return <CampusesPage campuses={data.campuses} />;
-  if (page === 'founding') return <FoundingClosetsPage data={data} campusId={campusId} />;
+  if (page === 'founding')
+    return <FoundingClosetsPage data={data} campusId={campusId} onOpenUser={onOpenUser} />;
   if (page === 'legal') return <LegalPage data={data} />;
   return <ActivityLogPage data={data} onOpenUser={onOpenUser} />;
 }

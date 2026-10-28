@@ -104,6 +104,24 @@ export function grantBlockedReason(status: AccountStatus): string | null {
 }
 
 /**
+ * Can an admin mark (or unmark) this account as a Founding Closet — one
+ * of the launch closets the dashboard's Founding Closets page tracks?
+ * Taking a deleted account OFF is always fine (deletion already does
+ * it); putting one ON would list an empty shell as a launch closet.
+ * Admin accounts are not closets at all.
+ */
+export function foundingClosetBlockedReason(
+  user: { status: string; role: string; deletedAt?: unknown; isFoundingCloset: boolean },
+  on: boolean,
+): string | null {
+  if (!on) return user.isFoundingCloset ? null : 'She is not a Founding Closet.';
+  if (user.isFoundingCloset) return 'She is already a Founding Closet.';
+  if (user.status === 'deactivated') return 'That account is deleted.';
+  if (user.role === 'admin') return 'Admin accounts are not closets.';
+  return null;
+}
+
+/**
  * What a finished sale writes on the piece.
  *
  * A sale takes the piece off the market (`sold`). But if an admin took
@@ -197,6 +215,8 @@ const ADMIN_ACTION_LABELS: Record<string, string> = {
   user_account_deleted: 'Deleted her account',
   user_data_exported: 'Exported her data',
   tryon_granted: 'Gave her extra try-ons',
+  founding_closet_marked: 'Made her a Founding Closet',
+  founding_closet_unmarked: 'Took her off Founding Closets',
   report_reviewing: 'Marked a report as being looked at',
   report_actioned: 'Acted on a report',
   report_dismissed: 'Dismissed a report',

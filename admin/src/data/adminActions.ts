@@ -75,6 +75,11 @@ export const grantTryOns = call<{ uid: string; count: number; reason: string }, 
   'grantTryOns',
 );
 
+/** Marks or unmarks one of the team's launch closets. Audited; she never sees it. */
+export const setFoundingCloset = call<{ uid: string; on: boolean; reason: string }, { ok: true }>(
+  'setFoundingCloset',
+);
+
 /** Everything about one student, for a privacy request. Audited. */
 export const adminExportUserData = call<{ uid: string; reason: string }, Record<string, unknown>>(
   'adminExportUserData',

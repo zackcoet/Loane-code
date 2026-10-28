@@ -8,6 +8,7 @@ import {
   adminActionLabel,
   adminActionsAboutUser,
   bookingsForUser,
+  foundingClosetBlockedReason,
   grantBlockedReason,
   isCountedListing,
   isCountedPost,
@@ -32,6 +33,7 @@ import {
   addAdminNote,
   adminErrorMessage,
   grantTryOns,
+  setFoundingCloset,
   adminExportUserData,
   adminDeleteAccount,
   suspendUser,
@@ -49,7 +51,14 @@ interface Props {
 }
 
 type Dialog =
-  'suspend' | 'unsuspend' | 'note' | 'grantTryOns' | 'exportData' | 'deleteAccount' | null;
+  | 'suspend'
+  | 'unsuspend'
+  | 'note'
+  | 'grantTryOns'
+  | 'founding'
+  | 'exportData'
+  | 'deleteAccount'
+  | null;
 
 export function UserDetailPage({ user, data, onBack, onOpenUser }: Props) {
   const listings = data.listings.filter((listing) => listing.ownerUid === user.uid);
@@ -169,6 +178,16 @@ export function UserDetailPage({ user, data, onBack, onOpenUser }: Props) {
   /** Her @username, typed again before an account is erased. */
   const [confirmName, setConfirmName] = useState('');
 
+  // The dashboard loads its data once, so after marking her the page
+  // would still show the old answer; this holds the new one until the
+  // next load.
+  const [founding, setFounding] = useState(user.isFoundingCloset === true);
+  useEffect(() => setFounding(user.isFoundingCloset === true), [user.uid, user.isFoundingCloset]);
+  const foundingBlocked = foundingClosetBlockedReason(
+    { ...user, isFoundingCloset: founding },
+    !founding,
+  );
+
   const suspended = user.status === 'suspended';
   const deleted = user.status === 'deactivated';
   // Two rules the panel should not even offer, never mind enforce.
@@ -185,6 +204,10 @@ export function UserDetailPage({ user, data, onBack, onOpenUser }: Props) {
         loadNotes();
       }
       if (dialog === 'grantTryOns') await grantTryOns({ uid: user.uid, count: grantCount, reason });
+      if (dialog === 'founding') {
+        await setFoundingCloset({ uid: user.uid, on: !founding, reason });
+        setFounding(!founding);
+      }
       if (dialog === 'exportData') {
         const { data: exported } = await adminExportUserData({ uid: user.uid, reason });
         downloadJson(
@@ -294,6 +317,16 @@ export function UserDetailPage({ user, data, onBack, onOpenUser }: Props) {
             onClick={() => setDialog('grantTryOns')}
           >
             Give free try-ons
+          </button>
+          {/* The team's own list of launch closets (Founding Closets
+              page). She never sees it. */}
+          <button
+            className="outline-button"
+            disabled={Boolean(foundingBlocked)}
+            title={foundingBlocked ?? undefined}
+            onClick={() => setDialog('founding')}
+          >
+            {founding ? 'Remove Founding Closet' : 'Make Founding Closet'}
           </button>
         </div>
       </section>
@@ -550,7 +583,7 @@ export function UserDetailPage({ user, data, onBack, onOpenUser }: Props) {
         ) : actions.length === 0 ? (
           <EmptyState
             title="No admin actions on her account"
-            body="Suspensions, notes, data exports and try-on grants on her account show here, with who did them and why."
+            body="Suspensions, notes, data exports, try-on grants and Founding Closet changes on her account show here, with who did them and why."
           />
         ) : (
           <table className="data-table">
@@ -585,13 +618,17 @@ export function UserDetailPage({ user, data, onBack, onOpenUser }: Props) {
             ? `Suspend @${user.username}?`
             : dialog === 'grantTryOns'
               ? `Give @${user.username} free try-ons?`
-              : dialog === 'exportData'
-                ? `Export everything about @${user.username}?`
-                : dialog === 'deleteAccount'
-                  ? `Delete @${user.username}'s account?`
-                  : dialog === 'unsuspend'
-                    ? `Lift the suspension on @${user.username}?`
-                    : 'Add a private note'
+              : dialog === 'founding'
+                ? founding
+                  ? `Take @${user.username} off Founding Closets?`
+                  : `Make @${user.username} a Founding Closet?`
+                : dialog === 'exportData'
+                  ? `Export everything about @${user.username}?`
+                  : dialog === 'deleteAccount'
+                    ? `Delete @${user.username}'s account?`
+                    : dialog === 'unsuspend'
+                      ? `Lift the suspension on @${user.username}?`
+                      : 'Add a private note'
         }
         description={
           dialog === 'suspend'
@@ -600,11 +637,13 @@ export function UserDetailPage({ user, data, onBack, onOpenUser }: Props) {
               ? 'Downloads one file with her profile, pieces, looks, rentals, chats and activity. Only for a privacy request — say which one.'
               : dialog === 'deleteAccount'
                 ? 'Cannot be undone. Exactly what her own "Delete my account" does: her looks, pieces, comments, likes, follows, photos and login go; past rentals, reviews she wrote and chats stay under "Deleted account". Refused while she has a rental going. Export her data first if she asked for a copy.'
-                : dialog === 'grantTryOns'
-                  ? `Adds ${grantCount} try-ons on top of her free five. Each one costs us about $0.08 to generate, unless it comes from the cache.`
-                  : dialog === 'unsuspend'
-                    ? 'She gets full access back and is told so.'
-                    : 'Only admins can read this. She never sees it.'
+                : dialog === 'founding'
+                  ? 'Only the Founding Closets page in this dashboard uses this. She and other students never see it. Say why — it goes in the audit log.'
+                  : dialog === 'grantTryOns'
+                    ? `Adds ${grantCount} try-ons on top of her free five. Each one costs us about $0.08 to generate, unless it comes from the cache.`
+                    : dialog === 'unsuspend'
+                      ? 'She gets full access back and is told so.'
+                      : 'Only admins can read this. She never sees it.'
         }
         confirmLabel={
           dialog === 'suspend'
@@ -613,11 +652,15 @@ export function UserDetailPage({ user, data, onBack, onOpenUser }: Props) {
               ? 'Lift it'
               : dialog === 'grantTryOns'
                 ? `Give ${grantCount}`
-                : dialog === 'exportData'
-                  ? 'Download'
-                  : dialog === 'deleteAccount'
-                    ? 'Delete for good'
-                    : 'Save note'
+                : dialog === 'founding'
+                  ? founding
+                    ? 'Take her off'
+                    : 'Make her one'
+                  : dialog === 'exportData'
+                    ? 'Download'
+                    : dialog === 'deleteAccount'
+                      ? 'Delete for good'
+                      : 'Save note'
         }
         danger={error ?? undefined}
         busy={busy}

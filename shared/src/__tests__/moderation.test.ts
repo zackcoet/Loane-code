@@ -3,6 +3,7 @@ import {
   adminActionLabel,
   adminActionsAboutUser,
   adminTargetLabel,
+  foundingClosetBlockedReason,
   grantBlockedReason,
   listingFieldsOnSale,
   moderationButtonBlockedReason,
@@ -222,5 +223,38 @@ describe("a deleted girl's things stay down", () => {
     expect(grantBlockedReason('deactivated')).toMatch(/deleted/);
     expect(grantBlockedReason('active')).toBeNull();
     expect(grantBlockedReason('suspended')).toBeNull();
+  });
+});
+
+describe('marking a Founding Closet', () => {
+  const girl = { status: 'active', role: 'student', isFoundingCloset: false };
+
+  it('is allowed for an ordinary student, and for a suspended one', () => {
+    expect(foundingClosetBlockedReason(girl, true)).toBeNull();
+    expect(foundingClosetBlockedReason({ ...girl, status: 'suspended' }, true)).toBeNull();
+  });
+
+  it('is refused for a deleted account, an admin, or one already marked', () => {
+    expect(foundingClosetBlockedReason({ ...girl, status: 'deactivated' }, true)).toMatch(
+      /deleted/,
+    );
+    expect(foundingClosetBlockedReason({ ...girl, role: 'admin' }, true)).toMatch(/Admin/);
+    expect(foundingClosetBlockedReason({ ...girl, isFoundingCloset: true }, true)).toMatch(
+      /already/,
+    );
+  });
+
+  it('can always take a marked girl off, never one who is not on', () => {
+    expect(
+      foundingClosetBlockedReason(
+        { ...girl, status: 'deactivated', isFoundingCloset: true },
+        false,
+      ),
+    ).toBeNull();
+    expect(foundingClosetBlockedReason(girl, false)).toMatch(/not a Founding Closet/);
+  });
+
+  it('reads in words in the audit log', () => {
+    expect(adminActionLabel('founding_closet_marked')).toBe('Made her a Founding Closet');
   });
 });

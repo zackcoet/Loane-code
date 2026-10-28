@@ -126,7 +126,7 @@ export { writeReview, editReview } from './reviews/writeReview';
 export { submitReport } from './moderation/report';
 export { submitSupportRequest } from './support/contact';
 export { blockUser, unblockUser } from './moderation/block';
-export { suspendUser, unsuspendUser, addAdminNote } from './admin/moderateUsers';
+export { suspendUser, unsuspendUser, addAdminNote, setFoundingCloset } from './admin/moderateUsers';
 export {
   hideListing,
   restoreListing,

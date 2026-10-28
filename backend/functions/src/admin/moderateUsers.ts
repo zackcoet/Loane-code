@@ -3,6 +3,7 @@ import { logger } from 'firebase-functions';
 import {
   brand,
   COLLECTIONS,
+  foundingClosetBlockedReason,
   isIsoDate,
   suspendBlockedReason,
   campusToday,
@@ -212,3 +213,52 @@ export const addAdminNote = onCall<{ uid: string; note: string }, Promise<{ note
     return { noteId: noteRef.id };
   },
 );
+
+/**
+ * Marking a student as a Founding Closet (or taking her off).
+ *
+ * The dashboard has had a Founding Closets page since September, but the
+ * only thing that ever set the mark was the emulator's fake data — on
+ * the live project the page could only ever be empty. Only a server can
+ * write it (the database rules refuse it from the phone), it is audited
+ * like every other admin action, and it is never shown to her or to
+ * other students: it is the team's own list of launch closets.
+ */
+export const setFoundingCloset = onCall<
+  { uid: string; on: boolean; reason: string },
+  Promise<{ ok: true }>
+>({ region: 'us-central1' }, async (request) => {
+  const admin = requireAdminContext(request);
+  const { uid: rawUid, on, reason: rawReason } = request.data ?? {};
+  const uid = requireUid(rawUid);
+  if (typeof on !== 'boolean') throw invalidArgument('Mark her, or take her off?');
+  const reason = requireReason(rawReason, 'Say why. It goes in the audit log.');
+
+  const ref = db().collection(COLLECTIONS.users).doc(uid);
+
+  // One step, so a double-click writes one audit row, not two.
+  await db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw notFound('We could not find that student.');
+    const user = snap.data() as User;
+    const blocked = foundingClosetBlockedReason(
+      { ...user, isFoundingCloset: user.isFoundingCloset === true },
+      on,
+    );
+    if (blocked) throw failed(blocked);
+
+    tx.update(ref, { isFoundingCloset: on, updatedAt: now() });
+    logAdminAction(tx, {
+      admin,
+      action: on ? 'founding_closet_marked' : 'founding_closet_unmarked',
+      targetType: 'user',
+      targetId: uid,
+      notes: reason,
+      before: { isFoundingCloset: !on },
+      after: { isFoundingCloset: on },
+    });
+  });
+
+  logger.info('Founding closet changed', { uid, on, by: admin.uid });
+  return { ok: true };
+});

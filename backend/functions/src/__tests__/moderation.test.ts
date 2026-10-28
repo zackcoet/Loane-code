@@ -13,6 +13,7 @@
  *   - A deleted girl's piece, look or comment stays down, and she gets
  *     no free try-ons (that would recreate her erased settings).
  *   - Every action writes one audit row and one notice to her.
+ *   - Founding Closets: marked once per click, never a deleted account.
  *
  * Run the emulators first:  npm run emulators
  */
@@ -44,6 +45,7 @@ const NAMES = [
   'unsuspendUser',
   'addAdminNote',
   'grantTryOns',
+  'setFoundingCloset',
 ] as const;
 const fns = {} as Record<(typeof NAMES)[number], Fn>;
 
@@ -482,5 +484,48 @@ describe('free try-ons', () => {
     ).toMatch(/account is deleted/);
     expect((await settings().get()).exists).toBe(false);
     expect(await auditRows('tryon_granted')).toHaveLength(0);
+  });
+});
+
+describe('marking a Founding Closet', () => {
+  const owner = () => db.doc(`${COLLECTIONS.users}/${OWNER}`);
+
+  it('marks her and takes her off, one audit row each', async () => {
+    await fns.setFoundingCloset(as(ADMIN, { uid: OWNER, on: true, reason: 'Launch closet' }));
+    expect((await owner().get()).data()?.isFoundingCloset).toBe(true);
+    expect(await auditRows('founding_closet_marked')).toHaveLength(1);
+
+    await fns.setFoundingCloset(as(ADMIN, { uid: OWNER, on: false, reason: 'Left campus' }));
+    expect((await owner().get()).data()?.isFoundingCloset).toBe(false);
+    expect(await auditRows('founding_closet_unmarked')).toHaveLength(1);
+  });
+
+  it('marks her once when clicked twice', async () => {
+    await Promise.allSettled([
+      fns.setFoundingCloset(as(ADMIN, { uid: OWNER, on: true, reason: 'Launch' })),
+      fns.setFoundingCloset(as(OTHER_ADMIN, { uid: OWNER, on: true, reason: 'Launch' })),
+    ]);
+    expect(await auditRows('founding_closet_marked')).toHaveLength(1);
+  });
+
+  it('refuses a deleted account, a student caller and junk, writing nothing', async () => {
+    await owner().update({ status: 'deactivated' });
+    expect(
+      await attempt(() =>
+        fns.setFoundingCloset(as(ADMIN, { uid: OWNER, on: true, reason: 'Launch' })),
+      ),
+    ).toMatch(/account is deleted/);
+    expect(
+      await attempt(() =>
+        fns.setFoundingCloset(as(COMMENTER, { uid: OWNER, on: true, reason: 'x' }, false)),
+      ),
+    ).not.toBe('ok');
+    expect(
+      await attempt(() =>
+        fns.setFoundingCloset(as(ADMIN, { uid: OWNER, on: 'yes', reason: 'Launch' })),
+      ),
+    ).toMatch(/Mark her/);
+    expect((await owner().get()).data()?.isFoundingCloset).not.toBe(true);
+    expect(await auditRows('founding_closet_marked')).toHaveLength(0);
   });
 });
