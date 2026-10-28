@@ -106,7 +106,14 @@ function CurrentPage({
     );
   }
   if (page === 'users' && selectedUser) {
-    return <UserDetailPage user={selectedUser} data={data} onBack={onBackToUsers} />;
+    return (
+      <UserDetailPage
+        user={selectedUser}
+        data={data}
+        onBack={onBackToUsers}
+        onOpenUser={onSelectUser}
+      />
+    );
   }
   if (page === 'users') {
     return (
@@ -118,7 +125,8 @@ function CurrentPage({
       />
     );
   }
-  if (page === 'rentals') return <RentalsPage data={data} campusId={campusId} />;
+  if (page === 'rentals')
+    return <RentalsPage data={data} campusId={campusId} onOpenUser={onOpenUser} />;
   if (page === 'listings')
     return <ListingsPage data={data} campusId={campusId} onSelectUser={onOpenUser} />;
   if (page === 'posts')

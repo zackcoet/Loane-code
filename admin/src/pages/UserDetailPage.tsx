@@ -1,25 +1,31 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   AUTO_FILTER_REPORTER_UID,
+  BOOKING_STATUS_LABELS,
   COLLECTIONS,
+  DISPUTE_OUTCOME_LABELS,
   CATEGORY_LABELS,
   adminActionLabel,
   adminActionsAboutUser,
+  bookingsForUser,
   grantBlockedReason,
   isCountedListing,
   isCountedPost,
+  personLabelWithCopy,
   reportPersonLabel,
   reportsAboutUser,
   type AdminAction,
   type AdminNote,
   type AppEvent,
+  type DisputeOutcome,
   type User,
   type UserPrivate,
 } from '@loane/shared';
 import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import type { AdminData } from '../data/adminData';
-import { formatShortDate, humanize, toDate } from '../data/adminData';
+import { formatMoney, formatShortDate, humanize, toDate } from '../data/adminData';
+import { PersonLink } from '../components/PersonLink';
 import { Avatar, EmptyState, MetricCard, Panel, Pill } from '../components/ui';
 import { ActionDialog } from '../components/ActionDialog';
 import {
@@ -38,15 +44,26 @@ interface Props {
   user: User;
   data: AdminData;
   onBack: () => void;
+  /** Opens another girl's page (the other side of a rental). */
+  onOpenUser: (uid: string) => void;
 }
 
 type Dialog =
   'suspend' | 'unsuspend' | 'note' | 'grantTryOns' | 'exportData' | 'deleteAccount' | null;
 
-export function UserDetailPage({ user, data, onBack }: Props) {
+export function UserDetailPage({ user, data, onBack, onOpenUser }: Props) {
   const listings = data.listings.filter((listing) => listing.ownerUid === user.uid);
   const posts = data.posts.filter((post) => post.authorUid === user.uid);
   const events = recentUserEvents(data.events, user.uid);
+  // Her rentals and sales on both sides, open disputes first, from the
+  // bookings the dashboard already loaded (newest 250 across campus).
+  const rentals = bookingsForUser(
+    [...data.bookings].sort(
+      (a, b) => (toDate(b.createdAt)?.getTime() ?? 0) - (toDate(a.createdAt)?.getTime() ?? 0),
+    ),
+    user.uid,
+  );
+  const openDisputes = rentals.filter((row) => row.booking.status === 'disputed').length;
 
   // Her school email lives in her private document now, so it is one
   // read for the one student an admin is actually looking at, rather
@@ -365,6 +382,76 @@ export function UserDetailPage({ user, data, onBack }: Props) {
           </div>
         </Panel>
       </section>
+
+      <Panel
+        title="Her Rentals And Sales"
+        kicker={`${openDisputes} disputed · ${rentals.length} loaded`}
+      >
+        {rentals.length === 0 ? (
+          <EmptyState
+            title="No rentals yet"
+            body="Pieces she lends, sells, rents or buys show here, with who was on the other side."
+          />
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>She was</th>
+                <th>Piece</th>
+                <th>With</th>
+                <th>Dates</th>
+                <th>Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rentals.map(({ booking, side }) => {
+                const otherUid = side === 'lender' ? booking.renterUid : booking.lenderUid;
+                const otherCopy = side === 'lender' ? booking.renter : booking.lender;
+                const sale = booking.kind === 'purchase';
+                const outcome = booking.disputeResolution?.outcome as DisputeOutcome | undefined;
+                return (
+                  <tr key={booking.id}>
+                    <td>
+                      <Pill
+                        tone={
+                          booking.status === 'disputed'
+                            ? 'bad'
+                            : booking.status === 'completed'
+                              ? 'good'
+                              : 'neutral'
+                        }
+                      >
+                        {BOOKING_STATUS_LABELS[booking.status]}
+                      </Pill>
+                      {outcome && DISPUTE_OUTCOME_LABELS[outcome] ? (
+                        <div className="cell-note">Dispute: {DISPUTE_OUTCOME_LABELS[outcome]}</div>
+                      ) : null}
+                    </td>
+                    <td>
+                      {side === 'lender' ? (sale ? 'Seller' : 'Lender') : sale ? 'Buyer' : 'Renter'}
+                    </td>
+                    <td>{booking.listing.name}</td>
+                    <td>
+                      <PersonLink
+                        person={personLabelWithCopy(otherUid, data.users, otherCopy)}
+                        onOpen={onOpenUser}
+                      />
+                    </td>
+                    <td>
+                      {booking.startDate && booking.endDate
+                        ? `${booking.startDate} to ${booking.endDate}`
+                        : 'Purchase'}
+                    </td>
+                    <td>{formatMoney(booking.amounts.renterTotalCents)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+        <p className="cell-note">Decide a disputed return from Rentals.</p>
+      </Panel>
 
       <Panel
         title="Reports About Her"

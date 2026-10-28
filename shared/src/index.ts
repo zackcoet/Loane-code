@@ -47,3 +47,4 @@ export * from './moderation';
 export * from './campusMatch';
 export * from './requestExpiry';
 export * from './dashboardCounts';
+export * from './adminRentals';
