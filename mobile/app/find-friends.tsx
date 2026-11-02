@@ -98,7 +98,7 @@ export default function FindFriends() {
             typing
               ? searching
                 ? 'Still looking…'
-                : 'Try her exact @username — search matches the start of a handle.'
+                : 'Try her exact @username. Search matches the start of a handle.'
               : 'Search for someone, or invite your friends and they will show up here.'
           }
           actionLabel={typing ? undefined : 'Invite friends'}

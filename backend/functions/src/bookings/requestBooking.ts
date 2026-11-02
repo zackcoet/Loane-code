@@ -261,7 +261,7 @@ export const requestBooking = onCall<RequestBookingInput, Promise<RequestBooking
         title: `@${renter.username} wants to rent your ${listing.name}`,
         body:
           startDate && endDate
-            ? `${formatRange({ startDate, endDate })} — accept or decline within ${REQUEST_EXPIRY_HOURS} hours.`
+            ? `${formatRange({ startDate, endDate })}. Accept or decline within ${REQUEST_EXPIRY_HOURS} hours.`
             : `Accept or decline within ${REQUEST_EXPIRY_HOURS} hours.`,
         bookingId: bookingRef.id,
         actor: { uid: renter.uid, username: renter.username, photoUrl: renter.photoUrl },

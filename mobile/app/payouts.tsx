@@ -28,8 +28,8 @@ const WHAT_ARRIVES = [
   },
   {
     icon: 'shield-checkmark-outline' as const,
-    title: 'Protection on every piece',
-    body: 'A hold on the renter’s card covers damage or a piece that does not come back, released when it does.',
+    title: 'Protection on everything you lend',
+    body: 'A hold on the renter’s card covers damage or anything that does not come back, released when it does.',
   },
   {
     icon: 'receipt-outline' as const,

@@ -92,7 +92,7 @@ export async function requireVerifiedStudent(request: CallableRequest): Promise<
  */
 export async function requireHandoffReady(user: User, doing: string): Promise<void> {
   if (!user.photoUrl) {
-    throw failed(`Add a profile photo before ${doing} — you'll be meeting in person.`);
+    throw failed(`Add a profile photo before ${doing}. You'll be meeting in person.`);
   }
 
   const settings = await db()
@@ -104,6 +104,6 @@ export async function requireHandoffReady(user: User, doing: string): Promise<vo
 
   const phone = (settings.data() as UserPrivate | undefined)?.phone;
   if (!phone) {
-    throw failed(`Add your phone number before ${doing} — it's how the handoff gets arranged.`);
+    throw failed(`Add your phone number before ${doing}. It's how the handoff gets arranged.`);
   }
 }

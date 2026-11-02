@@ -66,7 +66,7 @@ export default function MyWishlist() {
 
   return (
     <Screen flush>
-      <Header title="My Wishlist" onBack={() => router.back()} />
+      <Header title="Closet Crushes" onBack={() => router.back()} />
 
       {/* The way in. Saved is where she has already shortlisted things,
           which makes it the closest thing Loane has to a fitting room. */}
@@ -74,7 +74,7 @@ export default function MyWishlist() {
         <Pressable
           onPress={() => openFittingRoom()}
           accessibilityRole="button"
-          accessibilityLabel="Try on your saved pieces"
+          accessibilityLabel="Try on your Closet Crushes"
           style={({ pressed }) => [styles.fittingRoom, pressed && styles.fittingRoomPressed]}
         >
           <Icon name="sparkles" size={20} tint={color.role.shared.label} />
@@ -133,7 +133,7 @@ export default function MyWishlist() {
         ) : items.listings.length === 0 ? (
           <EmptyState
             title="Nothing saved yet"
-            body="Tap the heart on a piece and it waits for you here."
+            body="Tap the heart on anything you love and it waits for you here."
             actionLabel="Browse closets"
             onAction={() => router.replace('/(tabs)/discover')}
           />
@@ -173,7 +173,7 @@ export default function MyWishlist() {
         ) : tryOns.items.length === 0 ? (
           <EmptyState
             title="No try-ons saved yet"
-            body="Try a piece on and tap Save look. Only you can see these."
+            body="Try something on and tap Save look. Only you can see these."
             actionLabel="Try something on"
             onAction={() => router.push('/try-on-body')}
           />

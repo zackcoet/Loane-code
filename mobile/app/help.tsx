@@ -53,7 +53,7 @@ const TOPICS: { value: SupportTopic; label: string }[] = [
 const FAQ = [
   {
     title: 'How renting works',
-    body: 'Request a piece for your dates. The lender accepts, you meet on campus, then both sides confirm handoff and return in Loane.',
+    body: 'Request what you want for your dates. The lender accepts, you meet on campus, then both sides confirm handoff and return in Loane.',
   },
   {
     title: 'How payment works during beta',

@@ -168,7 +168,7 @@ export default function CreateAccount() {
           <Text style={text.h2}>Every great closet has{'\n'}a name behind it.</Text>
           <Text style={[text.label, styles.caption]}>Create your account</Text>
           <Text style={[text.small, styles.explainer]}>
-            Use your school email — it&apos;s how we keep Loane to students on your campus.
+            Use your school email. It&apos;s how we keep Loane to students on your campus.
           </Text>
 
           <Input

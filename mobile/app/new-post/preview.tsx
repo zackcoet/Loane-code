@@ -78,7 +78,7 @@ export default function PostPreview() {
         listingId: tag.listingId,
         ownerUid: profile.uid,
         label: {
-          name: listing?.name ?? 'Your piece',
+          name: listing?.name ?? 'Your item',
           coverUrl: listing?.coverUrl ?? null,
           priceCents3Day: listing?.pricing?.threeDayCents ?? null,
           salePriceCents: listing?.salePriceCents ?? null,

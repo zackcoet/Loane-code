@@ -170,7 +170,7 @@ export default function PostDetails() {
               Post details
             </Text>
             <Row
-              label="Tag pieces"
+              label="Tag your closet"
               value={draft.tagCount > 0 ? String(draft.tagCount) : null}
               onPress={() => router.push('/new-post/tag')}
             />

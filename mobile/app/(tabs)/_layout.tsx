@@ -221,7 +221,18 @@ export default function TabsLayout() {
             title: 'Activity',
             tabBarIcon: ({ focused }) => (
               <TabIcon
-                name={focused ? 'heart' : 'heart-outline'}
+                /*
+                  A HANGER, NOT A HEART. Ella's note: the heart here
+                  competed with the heart that saves something, and
+                  two hearts meaning different things on one screen
+                  is a coin toss.
+
+                  One glyph for both states, because
+                  MaterialCommunityIcons has no filled hanger. Focus
+                  is carried by the colour, which is how the bar
+                  already distinguishes the tabs.
+                */
+                name="hanger"
                 focused={focused}
                 target="activity"
               />

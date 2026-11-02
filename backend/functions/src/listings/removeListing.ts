@@ -41,11 +41,11 @@ export const removeListing = onCall<RemoveListingInput, Promise<RemoveListingRes
   async (request: CallableRequest<RemoveListingInput>): Promise<RemoveListingResult> => {
     const user = await requireActiveUser(request);
     const listingId = request.data?.listingId;
-    if (!listingId) throw invalidArgument('Which piece do you want to remove?');
+    if (!listingId) throw invalidArgument('Which item do you want to remove?');
 
     const ref = db().collection(COLLECTIONS.listings).doc(listingId);
     const snap = await ref.get();
-    if (!snap.exists) throw notFound('That piece is no longer listed.');
+    if (!snap.exists) throw notFound('That item is no longer listed.');
 
     const listing = snap.data() as Listing;
     if (listing.ownerUid !== user.uid) {
@@ -67,7 +67,7 @@ export const removeListing = onCall<RemoveListingInput, Promise<RemoveListingRes
     );
     if (live.length > 0) {
       throw failed(
-        'This piece has a rental in progress. Finish or cancel it before removing the listing.',
+        'This item has a rental in progress. Finish or cancel it before removing the listing.',
       );
     }
 

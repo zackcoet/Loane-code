@@ -85,7 +85,7 @@ export const LIMITS = {
    * content is usually somebody having a bad time, not an attacker,
    * and the last thing to do is stop her telling us.
    */
-  report: { max: 20, windowMs: DAY, message: 'Thanks — we already have several from you today.' },
+  report: { max: 20, windowMs: DAY, message: 'Thanks. We already have several from you today.' },
 } as const satisfies Record<string, Limit>;
 
 export type LimitName = keyof typeof LIMITS;

@@ -332,7 +332,7 @@ export function validateListingDraft(draft: ListingDraft): ValidationResult {
 
   if (rentable) {
     if (draft.garmentValueCents == null) {
-      return fail("Set what the piece is worth — it's what protects you if it's damaged.");
+      return fail("Set what it's worth. It's what protects you if it's damaged.");
     }
     const value = validateGarmentValueCents(draft.garmentValueCents);
     if (!value.ok) return value;

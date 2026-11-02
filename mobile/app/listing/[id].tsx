@@ -112,7 +112,7 @@ export default function ListingDetail() {
     return (
       <Screen flush>
         <Header title="" onBack={() => router.back()} />
-        <EmptyState title="Not found" body="That piece is no longer listed." />
+        <EmptyState title="Not found" body="That item is no longer listed." />
       </Screen>
     );
   }
@@ -139,7 +139,7 @@ export default function ListingDetail() {
           <View style={styles.headerActions}>
             <IconButton
               name={saved ? 'heart' : 'heart-outline'}
-              accessibilityLabel={saved ? 'Remove from saved' : 'Save this piece'}
+              accessibilityLabel={saved ? 'Remove from Closet Crushes' : 'Add to Closet Crushes'}
               onPress={() => void toggle('listing')}
             />
             {isMine ? (
@@ -346,13 +346,30 @@ export default function ListingDetail() {
       {/* When it is free, before she has to pick dates to find out.
           Read-only: choosing dates still happens on the request
           screen, where the price changes with the length. */}
+      {/* Not on something that is only for sale: there is nothing to
+          be free, and a calendar on a one-off purchase is a question
+          she does not have. */}
       {!isMine && listing.intent !== 'sell' ? (
-        <View style={styles.availability}>
-          <Text variant="label" style={styles.availabilityLabel}>
-            When it&apos;s free
-          </Text>
+        <Pressable
+          onPress={() => router.push({ pathname: '/availability', params: { id: listing.id } })}
+          accessibilityRole="button"
+          accessibilityLabel="See when it's free"
+          style={styles.availability}
+        >
+          <View style={styles.availabilityHead}>
+            <Text variant="label" style={styles.availabilityLabel}>
+              When it&apos;s free
+            </Text>
+            {/* The chevron is what says this is a way in. It used to be
+                a plain label over a strip, and Ella tapped it
+                expecting more. */}
+            <Icon name="chevron-forward" size={18} tint={color.text.muted} />
+          </View>
           <AvailabilityStrip listing={listing} />
-        </View>
+          <Text variant="caption" tone="muted" uppercase={false}>
+            Next two weeks. Tap for the full calendar.
+          </Text>
+        </Pressable>
       ) : null}
 
       <View style={styles.actionBar}>
@@ -438,6 +455,7 @@ function AvailabilityStrip({ listing }: { listing: Listing }) {
 
 const styles = StyleSheet.create({
   availability: { paddingHorizontal: spacing.md, paddingBottom: spacing.md, gap: spacing.xs },
+  availabilityHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   availabilityLabel: {},
   strip: { flexDirection: 'row', gap: 2 },
   stripDay: { flex: 1, alignItems: 'center', gap: 2 },

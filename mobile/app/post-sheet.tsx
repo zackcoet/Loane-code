@@ -24,7 +24,7 @@ interface Option {
 const OPTIONS: Option[] = [
   {
     title: 'Post a look',
-    body: 'Show off an outfit. Tag the pieces from your closet.',
+    body: 'Show off an outfit. Tag anything in it from your closet.',
     action: 'look',
     // Posting is the additive, expressive one, so it gets the plus.
     icon: 'add',

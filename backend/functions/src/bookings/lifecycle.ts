@@ -173,7 +173,7 @@ export const recordDropoff = onCall<
   const { bookingId, photos = [], notes } = request.data ?? {};
   if (!bookingId) throw invalidArgument('Which rental?');
   if (photos.length === 0) {
-    throw invalidArgument('Add a photo of the piece before you hand it over.');
+    throw invalidArgument('Add a photo before you hand it over.');
   }
 
   await db().runTransaction(async (tx) => {
@@ -192,7 +192,7 @@ export const recordDropoff = onCall<
     notify(tx, {
       uid: booking.renterUid,
       type: 'rental_upcoming',
-      title: 'Your piece is on its way',
+      title: 'It is on its way',
       body: `${booking.lender.username} dropped off ${pieceName(booking)}. Confirm when you have it.`,
       bookingId,
     });
@@ -411,11 +411,11 @@ export const setBlockedDates = onCall<
 >({ region: 'us-central1' }, async (request) => {
   const user = await requireActiveUser(request);
   const { listingId, dates = [] } = request.data ?? {};
-  if (!listingId) throw invalidArgument('Which piece?');
+  if (!listingId) throw invalidArgument('Which item?');
 
   const listingRef = db().collection(COLLECTIONS.listings).doc(listingId);
   const snap = await listingRef.get();
-  if (!snap.exists) throw failed('That piece is no longer listed.');
+  if (!snap.exists) throw failed('That item is no longer listed.');
   if ((snap.data() as { ownerUid: string }).ownerUid !== user.uid) {
     throw failed("That's not your listing.");
   }

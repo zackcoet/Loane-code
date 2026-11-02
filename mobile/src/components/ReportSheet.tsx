@@ -106,7 +106,7 @@ export function ReportSheet({
           keyboardShouldPersistTaps="handled"
         >
           <Text variant="bodySmall" tone="secondary">
-            Reporting {targetLabel}. Only Loane sees this — they are never told who reported them.
+            Reporting {targetLabel}. Only Loane sees this. They are never told who reported them.
           </Text>
 
           <Text variant="label" style={styles.section}>

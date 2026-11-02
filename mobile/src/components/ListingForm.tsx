@@ -364,7 +364,7 @@ export function ListingForm({ controller, submitLabel, onSubmit }: Props) {
             onChangeText={(v) => set('cleaningFee', v)}
             placeholder="$0"
             keyboardType="decimal-pad"
-            hint="Charged on top of the rental. You keep all of it — Loane takes no cut of cleaning."
+            hint="Charged on top of the rental. You keep all of it. Loane takes no cut of cleaning."
           />
         </View>
       ) : null}

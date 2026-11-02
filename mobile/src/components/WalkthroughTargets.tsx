@@ -22,6 +22,7 @@ import { Keyboard, View, useWindowDimensions, type LayoutChangeEvent } from 'rea
 export type WalkthroughTargetKey =
   | 'feed'
   | 'search'
+  | 'crushes'
   | 'messages'
   | 'post'
   | 'activity'

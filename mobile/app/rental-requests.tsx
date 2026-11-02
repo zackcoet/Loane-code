@@ -61,7 +61,7 @@ export default function RentalRequests() {
     title: 'Waiting on you',
     note:
       incoming.length === 0
-        ? 'Nobody has asked to rent one of your pieces right now.'
+        ? 'Nobody has asked to rent from your closet right now.'
         : `${incoming.length} ${incoming.length === 1 ? 'person wants' : 'people want'} something from your closet`,
   });
   incoming.forEach((booking) => rows.push({ kind: 'booking', booking, incoming: true }));
@@ -86,7 +86,7 @@ export default function RentalRequests() {
       ) : incoming.length === 0 && outgoing.length === 0 ? (
         <EmptyState
           title="No requests right now"
-          body="Requests on your pieces, and the ones you have sent, both land here."
+          body="Requests on your closet, and the ones you have sent, both land here."
           actionLabel={`See all ${WORDS.rentals}`}
           onAction={() => router.push('/my-rentals')}
         />

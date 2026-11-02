@@ -28,15 +28,15 @@ export function ClosetPicker({ visible, listings, takenIds, onPick, onClose }: P
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={styles.sheet}>
-        <Header title="Tag a piece" onBack={onClose} />
+        <Header title="Tag something" onBack={onClose} />
 
         {available.length === 0 ? (
           <EmptyState
             title={listings.length === 0 ? 'Nothing in your closet yet' : 'All tagged'}
             body={
               listings.length === 0
-                ? 'Add a piece to your closet and you can tag it in your looks.'
-                : 'Every piece in your closet is already tagged on this photo.'
+                ? 'Add something to your closet and you can tag it in your looks.'
+                : 'Everything in your closet is already tagged on this photo.'
             }
           />
         ) : (
@@ -63,7 +63,7 @@ export function ClosetPicker({ visible, listings, takenIds, onPick, onClose }: P
                       ? `${formatCentsShort(item.pricing.threeDayCents)} · 3 days`
                       : item.salePriceCents != null
                         ? `${formatCentsShort(item.salePriceCents)} to own`
-                        : '—'}
+                        : '-'}
                   </Text>
                 </View>
               </Pressable>

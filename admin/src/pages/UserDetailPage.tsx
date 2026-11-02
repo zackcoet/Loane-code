@@ -85,7 +85,7 @@ export function UserDetailPage({ user, data, onBack }: Props) {
         ) : null}
         {protectedAccount ? (
           <p className="cell-note">
-            This is an admin account. Admins cannot be suspended from here — remove the admin
+            This is an admin account. Admins cannot be suspended from here. Remove the admin
             claim first.
           </p>
         ) : null}
@@ -103,7 +103,7 @@ export function UserDetailPage({ user, data, onBack }: Props) {
           <p className="cell-note" style={{ marginTop: 12 }}>
             {user.stats.cancellations} cancelled{' '}
             {user.stats.cancellations === 1 ? 'rental' : 'rentals'}
-            {user.stats.cancellations > 2 ? ' — worth a look' : ''}
+            {user.stats.cancellations > 2 ? ' (worth a look)' : ''}
           </p>
         ) : null}
       </Panel>

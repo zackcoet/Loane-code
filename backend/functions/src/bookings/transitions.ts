@@ -136,7 +136,7 @@ export function otherSide(booking: Booking, actor: Actor): string {
 
 /** A short label for a piece, used in notification copy. */
 export function pieceName(booking: Booking): string {
-  return booking.listing?.name ?? 'a piece';
+  return booking.listing?.name ?? 'an item';
 }
 
 /**
@@ -194,14 +194,14 @@ export function completeBooking(
       booking.kind === 'purchase'
         ? `How was buying from @${booking.lender.username}?`
         : `How was renting from @${booking.lender.username}?`,
-    body: 'Leave a review — it helps the next person decide.',
+    body: 'Leave a review. It helps the next person decide.',
     bookingId: booking.id,
   });
   notify(writer, {
     uid: booking.lenderUid,
     type: 'review_requested',
     title: `How was lending to @${booking.renter.username}?`,
-    body: 'Leave a review — it helps the next lender decide.',
+    body: 'Leave a review. It helps the next lender decide.',
     bookingId: booking.id,
   });
 }

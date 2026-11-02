@@ -62,6 +62,13 @@ export interface PhotoCheckResult {
   skipped: boolean;
 }
 
+/*
+  eslint-disable no-restricted-syntax --
+  These are PROMPTS sent to Anthropic, not text any student ever sees.
+  The no-em-dash rule is a copy rule for the app's voice; rewording a
+  tuned prompt to satisfy a linter would be changing behaviour for the
+  sake of a style check.
+*/
 const PROMPTS: Record<PhotoKind, string> = {
   body: `You are checking a photo a college student is about to use for a virtual clothing try-on. The try-on puts garments onto her body, so the photo has to work for that.
 

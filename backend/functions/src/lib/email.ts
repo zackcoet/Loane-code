@@ -105,7 +105,7 @@ function plainText({ code, firstName }: Omit<VerificationEmail, 'to'>): string {
     '',
     "If you didn't ask for this, you can ignore this email.",
     '',
-    `${brand.name} — ${brand.taglines.primary}`,
+    `${brand.name}. ${brand.taglines.primary}`,
   ].join('\n');
 }
 

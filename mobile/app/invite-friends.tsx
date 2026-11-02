@@ -32,7 +32,7 @@ export default function InviteFriends() {
   // The sheet opens once on arrival, not on every re-render.
   const opened = useRef(false);
 
-  const message = `Come share closets with me on Loane — it's rentals from girls at ${
+  const message = `Come share closets with me on Loane. It's rentals from girls at ${
     campusName ?? 'our school'
   }. Rent something for gameday instead of buying it.\n\n${brand.website}`;
 

@@ -67,7 +67,7 @@ export default function QuickAddPiece() {
     if (!photoId) {
       // Reached somehow without knowing which photo to tag. The piece is
       // still saved, which is the part that would have hurt to lose.
-      Alert.alert('Added to your closet', 'Your piece is live on your campus.');
+      Alert.alert('Added to your closet', 'It is live on your campus.');
       router.back();
       return;
     }
@@ -87,7 +87,7 @@ export default function QuickAddPiece() {
 
   return (
     <Screen flush>
-      <Header title="Add a piece" onBack={() => router.back()} />
+      <Header title="Add an item" onBack={() => router.back()} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

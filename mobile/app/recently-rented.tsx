@@ -38,7 +38,7 @@ export default function RecentlyRented() {
       ) : rented.length === 0 ? (
         <EmptyState
           title="Nothing rented yet"
-          body="Pieces you have borrowed show up here so you can find them again."
+          body="Anything you have borrowed shows up here so you can find it again."
           actionLabel="Browse closets"
           onAction={() => router.replace('/(tabs)/discover')}
         />

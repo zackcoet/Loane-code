@@ -37,7 +37,7 @@ export function saveErrorMessage(error: unknown): string {
   if (text.includes('permission-denied') || text.includes('insufficient permissions')) {
     // Her doing it again will not help. Say so, and give us something
     // to search for when she sends a screenshot.
-    return "Loane wouldn't accept that. It's our fault, not yours — send us a screenshot at team@joinloane.com and we'll sort it. (save-rejected)";
+    return "Loane wouldn't accept that. It's our fault, not yours. Send us a screenshot at team@joinloane.com and we'll sort it. (save-rejected)";
   }
   if (text.includes('unauthenticated')) {
     return 'You have been signed out. Sign in again and your draft will still be here.';

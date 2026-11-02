@@ -20,6 +20,7 @@ import {
 import { color, controls, spacing } from '@loane/shared';
 import { CampusChip } from '../../src/components/CampusChip';
 import { EmptyState } from '../../src/components/EmptyState';
+import { HeaderActions } from '../../src/components/HeaderActions';
 import { IconButton } from '../../src/components/IconButton';
 import { Logo } from '../../src/components/Logo';
 import { LoaneLoader } from '../../src/components/LoaneLoader';
@@ -38,7 +39,6 @@ import { useProfileGate } from '../../src/hooks/useProfileGate';
 import { useTryOnEnabled } from '../../src/hooks/useTryOn';
 import { SuggestedClosets } from '../../src/components/SuggestedClosets';
 import { useOpenChat } from '../../src/hooks/useOpenChat';
-import { WalkthroughTarget } from '../../src/components/WalkthroughTargets';
 import { useHiddenUids } from '../../src/hooks/useBlocks';
 import { logEvent } from '../../src/analytics/events';
 
@@ -131,13 +131,7 @@ export default function Feed() {
           find one" — and messages moved to the bar where an unread dot
           is visible from every screen rather than only this one.
         */}
-        <WalkthroughTarget target="search">
-          <IconButton
-            name="search-outline"
-            onPress={() => router.push('/(tabs)/discover')}
-            accessibilityLabel="Search closets"
-          />
-        </WalkthroughTarget>
+        <HeaderActions />
       </View>
 
       <View style={styles.campusRow}>

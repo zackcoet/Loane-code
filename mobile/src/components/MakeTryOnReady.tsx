@@ -73,7 +73,7 @@ export function MakeTryOnReady({ visible, onClose, onReady }: Props) {
       const out = await prepareFlatPhoto({ imageBase64 });
 
       if (!out.data.ok) {
-        setFix(out.data.fix ?? 'Try another photo of just this piece.');
+        setFix(out.data.fix ?? 'Try another photo of just this item.');
         setStage('failed');
         return;
       }
@@ -191,8 +191,8 @@ export function MakeTryOnReady({ visible, onClose, onReady }: Props) {
           {stage === 'capture' ? (
             <>
               <Tip icon="albums-outline" text="Lay it flat on a plain white sheet" strong />
-              <Tip icon="crop-outline" text="The whole piece in frame, nothing cropped" />
-              <Tip icon="remove-circle-outline" text="One piece only — no shoes, no bags" />
+              <Tip icon="crop-outline" text="The whole item in frame, nothing cropped" />
+              <Tip icon="remove-circle-outline" text="One item only, no shoes or bags" />
               {permission?.granted ? (
                 <Button label="Take photo" onPress={() => void onShutter()} />
               ) : (

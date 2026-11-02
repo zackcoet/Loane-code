@@ -266,7 +266,7 @@ export default function EditProfile() {
 
           <Text style={[text.label, styles.sizeHeading]}>My sizes</Text>
           <Text style={[text.small, styles.sizeHelp]}>
-            Worth filling in either way — this is what &quot;will it fit me?&quot; is answered from
+            Worth filling in either way. This is what &quot;will it fit me?&quot; is answered from
             when you are the one renting.
           </Text>
 

@@ -56,7 +56,7 @@ export default function OwnIt() {
     return (
       <Screen flush>
         <Header title={WORDS.buy} onBack={() => router.back()} />
-        <EmptyState title="Not for sale" body="This piece is not available to buy." />
+        <EmptyState title="Not for sale" body="This is not available to buy." />
       </Screen>
     );
   }
@@ -98,7 +98,7 @@ export default function OwnIt() {
             <Line label="Total" value={formatCents(total)} strong />
           </View>
           <Text variant="caption" tone="muted" uppercase={false}>
-            Loane isn&apos;t taking payments yet — settle this between yourselves.
+            Loane isn&apos;t taking payments yet. Settle this between yourselves.
           </Text>
         </Card>
 

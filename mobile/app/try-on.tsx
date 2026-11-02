@@ -244,7 +244,7 @@ export default function TryOn() {
 
       {room.outfit.length > 0 && !room.state.busy ? (
         <Text variant="caption" tone="muted" uppercase={false} style={styles.disclaimer}>
-          An AI approximation — not a guide to fit, size or colour.
+          An AI approximation, not a guide to fit, size or colour.
         </Text>
       ) : null}
 

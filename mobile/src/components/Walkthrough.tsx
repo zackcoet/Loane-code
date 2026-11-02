@@ -38,27 +38,33 @@ const STEPS: Step[] = [
   {
     target: 'feed',
     title: 'Your campus feed',
-    body: 'Looks from students at USC. Tap a tagged piece to rent it.',
+    body: 'Looks from students at USC. Tap a tagged item to rent it.',
   },
   {
     target: 'search',
-    title: 'Find a piece',
-    body: 'Search closets by occasion, size or price — gameday, formals, rush.',
+    title: 'Find your next favorite',
+    body: 'Search closets by occasion, size or price: gameday, formals, rush.',
   },
   {
     target: 'messages',
     title: 'Your messages',
-    body: 'Handoffs get arranged here. A dot means somebody is waiting on you.',
+    body: 'Ask questions, check the fit or fabric, and sort out last-minute details. A dot means someone is waiting on you.',
   },
   {
     target: 'post',
     title: 'Share or lend',
-    body: 'Post a look, or put a piece of yours on Loane for someone else to rent.',
+    body: 'Post a look for all of your friends to see, or list your closet for your campus community to rent or buy.',
   },
   {
-    target: 'profile',
-    title: 'Saved pieces',
-    body: 'Heart a piece to save it, and find it again here.',
+    /*
+      THE HEART IN THE HEADER, not the profile tab. Closet Crushes
+      used to live on the profile and the tour pointed there; it is
+      now one tap from every main screen, so the tour points at the
+      thing she will actually use.
+    */
+    target: 'crushes',
+    title: 'Closet Crushes',
+    body: 'Heart anything you love and it waits for you here.',
   },
   {
     target: 'activity',

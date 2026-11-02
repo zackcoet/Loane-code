@@ -86,7 +86,7 @@ export default function TagPieces() {
   if (!current) {
     return (
       <Screen>
-        <Header title="Tag pieces" onBack={() => router.back()} />
+        <Header title="Tag your closet" onBack={() => router.back()} />
         <View style={styles.empty}>
           <Text variant="bodySmall" tone="secondary">
             This draft is gone. Start again from the + button.
@@ -104,7 +104,7 @@ export default function TagPieces() {
         listingId: tag.listingId,
         x: tag.x,
         y: tag.y,
-        name: listing?.name ?? 'Your piece',
+        name: listing?.name ?? 'Your item',
         priceCents3Day: listing?.pricing?.threeDayCents ?? null,
         salePriceCents: listing?.salePriceCents ?? null,
       };
@@ -120,7 +120,7 @@ export default function TagPieces() {
     const photo = photos.find((p) => p.id === photoId);
     if (!photo) return;
     if (draft.tagCount >= LIMITS.taggedListings.max) {
-      Alert.alert('That is the limit', `A look can tag up to ${LIMITS.taggedListings.max} pieces.`);
+      Alert.alert('That is the limit', `A look can tag up to ${LIMITS.taggedListings.max} items.`);
       return;
     }
 
@@ -133,9 +133,9 @@ export default function TagPieces() {
 
     ActionSheetIOS.showActionSheetWithOptions(
       {
-        options: ['Cancel', 'Select from my closet', 'Add a new piece'],
+        options: ['Cancel', 'Select from my closet', 'Add something new'],
         cancelButtonIndex: 0,
-        title: 'Tag a piece here',
+        title: 'Tag something here',
       },
       (choice) => {
         if (choice === 0) setPicking(null);
@@ -174,12 +174,12 @@ export default function TagPieces() {
   const hint = moving
     ? 'Tap where it should go'
     : draft.tagCount === 0
-      ? 'Tap a piece to tag it'
+      ? 'Tap something to tag it'
       : null;
 
   return (
     <Screen flush>
-      <Header title="Tag pieces" onBack={() => router.back()} />
+      <Header title="Tag your closet" onBack={() => router.back()} />
 
       <FlatList
         data={photos}

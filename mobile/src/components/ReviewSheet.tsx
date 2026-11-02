@@ -97,7 +97,7 @@ export function ReviewSheet({ visible, bookingId, aboutUsername, onClose }: Prop
             label="Anything to add? (optional)"
             value={body}
             onChangeText={setBody}
-            placeholder="Was she easy to deal with? Was the piece as described?"
+            placeholder="Was she easy to deal with? Was it as described?"
             multiline
             numberOfLines={4}
             style={styles.multiline}

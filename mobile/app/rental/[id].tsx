@@ -135,7 +135,7 @@ export default function RentalScreen() {
   const onCancel = () => {
     const reasons = [
       'My plans changed',
-      isLender ? 'The piece is no longer available' : 'I found something else',
+      isLender ? 'It is no longer available' : 'I found something else',
       'We could not agree on a handoff',
       'Something else',
     ];
@@ -312,7 +312,7 @@ export default function RentalScreen() {
             )}
           </View>
           <Text variant="caption" tone="muted" style={styles.blockBody}>
-            Loane isn&apos;t taking payments yet — settle this between yourselves.
+            Loane isn&apos;t taking payments yet. Settle this between yourselves.
           </Text>
         </Card>
 
@@ -380,7 +380,7 @@ export default function RentalScreen() {
                 void run('record that', async () => {
                   const photo = await askPhoto();
                   if (!photo) {
-                    Alert.alert('Loane', 'A photo of the piece is needed at drop-off.');
+                    Alert.alert('Loane', 'A photo of the item is needed at drop-off.');
                     return;
                   }
                   await recordDropoff({ bookingId: booking.id, photos: [photo] });
@@ -516,7 +516,7 @@ function StatusBanner({ booking, isLender }: { booking: Booking; isLender: boole
     confirmed: booking.handoff.dropoffAt
       ? isLender
         ? 'Dropped off. Waiting for her to confirm she has it.'
-        : 'It’s been dropped off — confirm when you have it.'
+        : 'It’s been dropped off. Confirm when you have it.'
       : isLender
         ? 'Confirmed. Record the drop-off with a photo when you hand it over.'
         : 'Confirmed. She’ll drop it off and you confirm when you have it.',

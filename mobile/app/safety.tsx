@@ -22,7 +22,7 @@ import { Text } from '../src/components/Text';
 const TIPS = [
   {
     title: 'Meet in public places',
-    body: 'Hand off and return pieces somewhere busy on campus — a dining hall, a library lobby, the student center.',
+    body: 'Hand off and return somewhere busy on campus: a dining hall, a library lobby, the student center.',
   },
   {
     title: 'Verify the owner',

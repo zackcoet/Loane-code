@@ -146,7 +146,7 @@ export function RentalsPage({ data, campusId }: { data: AdminData; campusId: str
       <ActionDialog
         open={deciding !== null}
         title="Decide this dispute"
-        description="Both sides are told what you decided. No money moves — payments are not live yet."
+        description="Both sides are told what you decided. No money moves. Payments are not live yet."
         confirmLabel="Record decision"
         danger={error ?? undefined}
         busy={busy}

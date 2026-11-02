@@ -156,7 +156,7 @@ export function ProfileHeader({
         <View style={styles.shopLine}>
           <View style={styles.countTag}>
             <Text variant="caption" style={styles.countTagText} uppercase={false}>
-              {listings.length} {listings.length === 1 ? 'piece' : 'pieces'}
+              {listings.length} {listings.length === 1 ? 'find' : 'finds'}
             </Text>
           </View>
           {cheapest != null ? (

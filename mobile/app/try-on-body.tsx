@@ -100,7 +100,7 @@ export default function TryOnBody() {
         {/* --- The models, given the room ---------------------------- */}
         <Text variant="label">Use a model</Text>
         <Text variant="caption" tone="muted" uppercase={false} style={styles.hint}>
-          Computer-generated — they are not real people. Everyone shares these, so trying a piece
+          Computer-generated, so they are not real people. Everyone shares these, so trying a piece
           on a model is usually instant.
         </Text>
 

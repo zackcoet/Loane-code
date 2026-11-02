@@ -104,7 +104,7 @@ function createAuth(): Auth {
     // signed out the moment the app closes. That used to happen in
     // silence; a blanket catch here is what hid the bug for weeks.
     console.error(
-      '[Loane] Auth persistence failed to initialise — users will be signed out ' +
+      '[Loane] Auth persistence failed to initialise. Users will be signed out ' +
         'on every launch. Check the @firebase/auth import in config.ts.',
       error,
     );

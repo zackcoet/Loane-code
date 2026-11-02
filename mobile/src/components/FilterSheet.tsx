@@ -1,13 +1,30 @@
 /**
  * The filter sheet behind Discover's Filter button.
  *
- * Edits a draft copy, so backing out leaves her results untouched — only
+ * Edits a draft copy, so backing out leaves her results untouched. Only
  * "Show results" applies anything.
+ *
+ * THE BACK ARROW, AND WHY IT TOOK TWO GOES.
+ *
+ * Ella could open this and not get out. The first fix was right about
+ * the cause, and did not work: a React Native Modal gets no safe-area
+ * inset of its own, so the header sat under the Dynamic Island and the
+ * arrow was off the top of the glass. It wrapped the sheet in
+ * SafeAreaView.
+ *
+ * That was the trap. SafeAreaView from react-native-safe-area-context
+ * measures itself inside its own NATIVE view hierarchy, and a Modal is
+ * a separate one with no provider in it. Inside a Modal it can report
+ * an inset of zero, which puts the header back under the island. The
+ * fix looked correct in the diff and changed nothing on a real phone.
+ *
+ * So the inset is now read in Discover, OUTSIDE the Modal, where it is
+ * known good, and passed in as a plain number. Padding from a number
+ * cannot be zeroed by a context that is not there.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   CATEGORIES,
   CATEGORY_LABELS,
@@ -33,6 +50,11 @@ import { useKeyboardPadding } from '../hooks/useKeyboardPadding';
 interface Props {
   visible: boolean;
   filters: Filters;
+  /**
+   * The top safe-area inset, measured by Discover. See the note above:
+   * this cannot be measured from in here.
+   */
+  topInset: number;
   /** How many listings the draft would show, so she can see it narrowing. */
   resultCount: number;
   onPreview: (filters: Filters) => void;
@@ -40,9 +62,31 @@ interface Props {
   onClose: () => void;
 }
 
-export function FilterSheet({ visible, filters, resultCount, onPreview, onApply, onClose }: Props) {
+export function FilterSheet({
+  visible,
+  filters,
+  topInset,
+  resultCount,
+  onPreview,
+  onApply,
+  onClose,
+}: Props) {
   const [draft, setDraft] = useState<Filters>(filters);
   const keyboardPadding = useKeyboardPadding();
+
+  /*
+    START FROM WHAT IS ACTUALLY APPLIED, every time it opens.
+
+    A Modal's children stay mounted when it is hidden, so `draft` kept
+    whatever she had been editing when she backed out. Reopening showed
+    chips selected that were never applied, which makes "back leaves
+    your results untouched" a lie the second time you look at it.
+  */
+  useEffect(() => {
+    if (visible) setDraft(filters);
+    // Only when it opens. Following `filters` as well would reset her
+    // edits underneath her, because onPreview changes it as she taps.
+  }, [visible]);
 
   const update = (next: Filters) => {
     setDraft(next);
@@ -59,7 +103,7 @@ export function FilterSheet({ visible, filters, resultCount, onPreview, onApply,
           Dynamic Island and the back arrow could not be tapped at all.
           Every other screen goes through Screen, which handles this.
           The button was never broken; it was off the top of the glass. */}
-      <SafeAreaView style={styles.sheet} edges={['top', 'left', 'right']}>
+      <View style={[styles.sheet, { paddingTop: topInset }]}>
         <Header
           title="Filter"
           onBack={onClose}
@@ -168,7 +212,7 @@ export function FilterSheet({ visible, filters, resultCount, onPreview, onApply,
             onPress={() => onApply(draft)}
           />
         </View>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 }

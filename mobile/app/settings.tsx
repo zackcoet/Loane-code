@@ -113,7 +113,7 @@ export default function Settings() {
     },
     {
       label: 'Campus Email',
-      value: settings?.campusEmail ?? '—',
+      value: settings?.campusEmail ?? 'Not set',
       readOnly: true,
     },
     /*

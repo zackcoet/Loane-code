@@ -169,7 +169,7 @@ export default function Chat() {
             <ActivityIndicator color={color.icon.default} />
           </View>
         ) : messages.length === 0 ? (
-          <EmptyState title="Say hello" body="Ask about fit, condition, or where to meet." />
+          <EmptyState title="Say hello" body="Ask about fit, fabric, or any last-minute details." />
         ) : (
           <FlatList
             data={messages}

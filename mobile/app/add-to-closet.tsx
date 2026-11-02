@@ -35,7 +35,7 @@ export default function AddToCloset() {
       meta: { intent: controller.form.intent ?? 'rent', photos: controller.form.photos.length },
     });
 
-    Alert.alert('Added to your closet', 'Your piece is live on your campus.');
+    Alert.alert('Added to your closet', 'It is live on your campus.');
     router.replace({ pathname: '/listing/[id]', params: { id: listingId } });
   };
 

@@ -10,6 +10,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { fontFamilyFor, color, controls, spacing, type } from '@loane/shared';
 import { Button } from '../../src/components/Button';
 import { EmptyState } from '../../src/components/EmptyState';
+import { HeaderActions } from '../../src/components/HeaderActions';
 import { IconButton } from '../../src/components/IconButton';
 import { ProfileChecklist } from '../../src/components/ProfileChecklist';
 import { ProfileHeader } from '../../src/components/ProfileHeader';
@@ -59,6 +60,8 @@ export default function Profile() {
           accessibilityLabel="Open menu"
         />
         <View style={styles.headerRight}>
+          {/* Same two, in the same order, as every other main screen. */}
+          <HeaderActions />
           <IconButton
             name="settings-outline"
             onPress={() => router.push('/settings')}

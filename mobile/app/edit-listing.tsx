@@ -88,7 +88,7 @@ export default function EditListing() {
   const onRemove = () => {
     if (!listing) return;
     Alert.alert(
-      'Remove this piece?',
+      'Remove this listing?',
       'It comes out of the marketplace. If it has ever been rented we keep the record, so past rentals and reviews stay intact.',
       [
         { text: 'Cancel', style: 'cancel' },
@@ -137,7 +137,7 @@ export default function EditListing() {
     return (
       <Screen flush>
         <Header title="Edit" onBack={() => router.back()} />
-        <EmptyState title="Not found" body="That piece is no longer listed." />
+        <EmptyState title="Not found" body="That item is no longer listed." />
       </Screen>
     );
   }
@@ -146,7 +146,7 @@ export default function EditListing() {
     return (
       <Screen flush>
         <Header title="Edit" onBack={() => router.back()} />
-        <EmptyState title="Not yours" body="You can only edit pieces in your own closet." />
+        <EmptyState title="Not yours" body="You can only edit what is in your own closet." />
       </Screen>
     );
   }

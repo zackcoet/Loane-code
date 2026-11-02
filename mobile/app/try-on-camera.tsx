@@ -41,7 +41,7 @@ const TIPS: { icon: string; text: string; strong?: boolean }[] = [
   { icon: 'person-outline', text: 'Stand inside the outline, head to feet' },
   {
     icon: 'shirt-outline',
-    text: 'Wear fitted clothes — loose clothing shows through',
+    text: 'Wear fitted clothes. Loose clothing shows through',
     strong: true,
   },
   { icon: 'resize-outline', text: 'Arms and legs slightly apart' },
@@ -104,7 +104,7 @@ export default function TryOnCamera() {
         <Header title="Your photo" onBack={() => router.back()} />
         <EmptyState
           title="Loane needs your camera"
-          body="The photo is used to show clothes on you. It stays private to your account — no other student and no admin can see it."
+          body="The photo is used to show clothes on you. It stays private to your account, and no other student and no admin can see it."
           actionLabel="Allow camera"
           onAction={() => void requestPermission()}
         />
@@ -215,7 +215,7 @@ export default function TryOnCamera() {
                 uppercase={false}
                 style={styles.outlineHint}
               >
-                Wear fitted clothes — loose clothing shows through
+                Wear fitted clothes. Loose clothing shows through
               </Text>
             </View>
           </>

@@ -31,7 +31,7 @@
 
 export const TERMS_V2 = String.raw`# Terms of Service
 
-**Effective date:** DRAFT — not yet in effect · **Company:** Loane, Inc., a Delaware corporation · **Contact:** team@joinloane.com
+**Effective date:** DRAFT, not yet in effect · **Company:** Loane, Inc., a Delaware corporation · **Contact:** team@joinloane.com
 
 > **This is version 2.** What changed since v1: the service fee moved from the renter to the lender, lenders answer within 24 hours instead of 48, you can now buy a piece outright ("Own It"), and same-day rentals exist. Each is explained below.
 
@@ -63,7 +63,7 @@ Loane is a marketplace where college students rent, buy, and sell clothing with 
 
 **Same-day rentals.** A lender can mark a piece as available the same day it's asked for, and set a premium for it. If you request a piece for today, **the lender has 2 hours to answer** before the request declines itself. The premium is shown before you send the request.
 
-**Own It — buying a piece.** If an item is listed for sale, you can ask to buy it outright. The seller has 24 hours to accept, you arrange the handoff in the app, and **ownership passes when you both confirm**. The piece then leaves the marketplace. You cannot buy a piece that's already promised to someone else for a future rental — you'll see the date it's free.
+**Own It: buying something outright.** If an item is listed for sale, you can ask to buy it outright. The seller has 24 hours to accept, you arrange the handoff in the app, and **ownership passes when you both confirm**. The piece then leaves the marketplace. You cannot buy a piece that's already promised to someone else for a future rental. You'll see the date it's free.
 
 **Handoffs** happen in person between students. Loane doesn't arrange shipping or delivery. See Section 10 for safety.
 
@@ -73,7 +73,7 @@ Loane is a marketplace where college students rent, buy, and sell clothing with 
 
 **Loane's fee is paid by the lender: 20% of the rental or sale price.** It's deducted from what the lender receives, and it's shown in her payout breakdown. There is no minimum fee.
 
-**Cleaning fees pass to the lender in full.** If a lender charges a cleaning fee, Loane takes nothing from it — it reimburses a cost she actually pays. The renter agrees to it before requesting.
+**Cleaning fees pass to the lender in full.** If a lender charges a cleaning fee, Loane takes nothing from it. it reimburses a cost she actually pays. The renter agrees to it before requesting.
 
 **The same-day premium is split like the rental**, 80% to the lender and 20% to Loane, because it's additional earnings rather than a cost being reimbursed.
 
@@ -102,7 +102,7 @@ Repeated cancellations may limit your account.
 
 **If something goes wrong.** A lender can report damage, excessive cleaning needs, a missing item, or non-return within that 48-hour window, with photos. Loane reviews the drop-off photo, the return photos, messages, and both sides' accounts before deciding.
 
-**Your liability as a renter.** Before you request a rental, you agree that if Loane decides you're responsible, your saved card may be charged for reasonable cleaning or repair costs, or — for loss, theft, non-return, or damage that can't be repaired — up to the item's documented value shown on the listing. You'll be told the amount and the reason before you're charged. **Nothing is ever held on your card against an item's value.**
+**Your liability as a renter.** Before you request a rental, you agree that if Loane decides you're responsible, your saved card may be charged for reasonable cleaning or repair costs, or, for loss, theft, non-return, or damage that can't be repaired, up to the item's documented value shown on the listing. You'll be told the amount and the reason before you're charged. **Nothing is ever held on your card against an item's value.**
 
 **Loane's decision.** Loane makes a good-faith decision based on the evidence available. Loane is not an insurer and doesn't guarantee that a lender will recover the full value of an item.
 
@@ -157,7 +157,7 @@ Loane, Inc. · team@joinloane.com
 
 export const PRIVACY_V2 = String.raw`# Privacy Policy
 
-**Effective date:** DRAFT — not yet in effect · **Company:** Loane, Inc., a Delaware corporation · **Contact:** team@joinloane.com
+**Effective date:** DRAFT, not yet in effect · **Company:** Loane, Inc., a Delaware corporation · **Contact:** team@joinloane.com
 
 > **This is version 2.** What's new since v1: your phone number and finding friends from contacts.
 
@@ -165,9 +165,9 @@ export const PRIVACY_V2 = String.raw`# Privacy Policy
 
 **When you sign up:** your school email address, your first name, the username you choose, and your password. **We do not ask for your date of birth.** Loane is for current college students, which your school email is what establishes.
 
-**Your profile:** anything you add — a photo, a bio, your sizes. Sizes are private unless you turn on showing them.
+**Your profile:** anything you add: a photo, a bio, your sizes. Sizes are private unless you turn on showing them.
 
-**Your phone number, if you give it.** It's optional. We use it so the other student can reach you about a handoff, and — if you ask us to — to match you with friends already on Loane. **It is never shown on your public profile.** You can remove it in Settings at any time.
+**Your phone number, if you give it.** It's optional. We use it so the other student can reach you about a handoff, and, if you ask us to, to match you with friends already on Loane. **It is never shown on your public profile.** You can remove it in Settings at any time.
 
 **What you do on Loane:** listings, posts, comments, reviews, messages, rentals, purchases, and a log of meaningful actions (for example, that a listing was viewed) with a timestamp.
 
@@ -183,7 +183,7 @@ This only happens if you tap it, and only when you tap it.
 ## Who else sees your information
 
 - **Other students on your campus** see your public profile, your listings, your posts, and your reviews. They do not see your school email, your phone number, your sizes unless you've turned that on.
-- **The student you're renting from or to** sees your name, your profile, and — once a rental is agreed — your phone number, so you can arrange the handoff.
+- **The student you're renting from or to** sees your name, your profile, and, once a rental is agreed, your phone number, so you can arrange the handoff.
 - **Stripe** processes payments. Loane never stores your full card number.
 - **Loane admins** can see reports, claims, listings, posts and account details in order to run the service and resolve disputes. 
 - **Nobody buys this data.** We don't sell personal information.

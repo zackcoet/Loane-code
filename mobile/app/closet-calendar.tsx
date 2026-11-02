@@ -85,7 +85,7 @@ export default function ClosetCalendar() {
         <Header title="Closet Calendar" onBack={() => router.back()} />
         <EmptyState
           title="Nothing out yet"
-          body="When somebody rents a piece, the dates show up here so you know what is where."
+          body="When somebody rents from your closet, the dates show up here so you know what is where."
         />
       </Screen>
     );

@@ -31,14 +31,14 @@ async function setSaved(
 ): Promise<SaveResult> {
   const user = await requireActiveUser(request);
   const listingId = request.data?.listingId;
-  if (!listingId) throw invalidArgument('Which piece do you want to save?');
+  if (!listingId) throw invalidArgument('Which item do you want to save?');
 
   const listingRef = db().collection(COLLECTIONS.listings).doc(listingId);
   const saveRef = db().collection(COLLECTIONS.saves).doc(ids.save(user.uid, listingId));
 
   await db().runTransaction(async (tx) => {
     const [listingSnap, saveSnap] = await Promise.all([tx.get(listingRef), tx.get(saveRef)]);
-    if (!listingSnap.exists) throw notFound('That piece is no longer listed.');
+    if (!listingSnap.exists) throw notFound('That item is no longer listed.');
 
     const alreadySaved = saveSnap.exists;
     if (alreadySaved === shouldSave) return;

@@ -7,7 +7,8 @@
  * are written up in src/hooks/useDiscover.ts and docs/roadmap.md.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ActionSheetIOS,
@@ -37,6 +38,7 @@ import { Chip } from '../../src/components/Chip';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FilterSheet } from '../../src/components/FilterSheet';
 import { ListingCard } from '../../src/components/ListingCard';
+import { HeaderActions } from '../../src/components/HeaderActions';
 import { Logo } from '../../src/components/Logo';
 import { LoaneLoader } from '../../src/components/LoaneLoader';
 import { Screen } from '../../src/components/Screen';
@@ -77,26 +79,50 @@ export default function Discover() {
 
   const { search, setSearch, filters, setFilters, sort, setSort } = useDiscoverState();
   const [tab, setTab] = useState<'explore' | 'following'>('explore');
-  const [quickOccasion, setQuickOccasion] = useState<Occasion | null>(
-    OCCASIONS.includes(occasionParam as Occasion) ? (occasionParam as Occasion) : null,
-  );
+  const insets = useSafeAreaInsets();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [draftFilters, setDraftFilters] = useState<Filters>(EMPTY_FILTERS);
 
-  // The quick chips above the grid are a shortcut into the same occasion
-  // filter the sheet edits, so the two can never disagree.
-  const effectiveFilters = useMemo<Filters>(
-    () =>
-      quickOccasion
-        ? { ...filters, occasions: [...new Set([...filters.occasions, quickOccasion])] }
-        : filters,
-    [filters, quickOccasion],
-  );
+  /*
+    THE CHIPS ABOVE THE GRID ARE THE FILTER. Not a shortcut into it, not
+    a copy of it: the same list.
+
+    They used to be their own single-choice `quickOccasion`, merged into
+    the real filters at read time. Two problems with that, and Ella hit
+    both. Only one occasion at a time, so "formal or wedding" was two
+    searches. And the sheet never showed the chip as selected, so the
+    two disagreed about what was filtered right in front of you.
+
+    Reading and writing one list means multi-select and agreement come
+    for free, and there is no merge step to get wrong. The matching is
+    already OR: see useDiscoverResults, which asks whether the listing
+    has ANY of the chosen occasions.
+  */
+  const occasions = filters.occasions;
+  const toggleOccasion = (value: Occasion) => {
+    const on = occasions.includes(value);
+    setFilters({
+      ...filters,
+      occasions: on ? occasions.filter((o) => o !== value) : [...occasions, value],
+    });
+    if (!on) logEvent('filter_used', { surface: 'discover', meta: { occasion: value } });
+  };
+
+  // A deep link like /discover?occasion=formal still lands on its chip.
+  const deepLinked = useRef(false);
+  useEffect(() => {
+    if (deepLinked.current) return;
+    deepLinked.current = true;
+    if (OCCASIONS.includes(occasionParam as Occasion)) {
+      setFilters({ ...filters, occasions: [occasionParam as Occasion] });
+    }
+    // Runs once, on the way in. Re-running it would fight her taps.
+  }, []);
 
   const visible = useDiscoverResults({
     listings: campusListings,
     search,
-    filters: effectiveFilters,
+    filters,
     sort,
     followingUids: tab === 'following' ? followingUids : null,
   });
@@ -111,7 +137,7 @@ export default function Discover() {
   }).length;
 
   const cardWidth = (width - spacing.md * (GRID_COLUMNS + 1)) / GRID_COLUMNS;
-  const activeCount = countActiveFilters(effectiveFilters);
+  const activeCount = countActiveFilters(filters);
 
   const openSort = () => {
     const labels = SORTS.map((s) => SORT_LABELS[s]);
@@ -144,7 +170,8 @@ export default function Discover() {
           <Logo size={30} lockup="mark" />
         </View>
         <Text variant="label">Discover</Text>
-        <View style={styles.headerSpacer} />
+        {/* No search button: this IS search. */}
+        <HeaderActions hideSearch />
       </View>
 
       <View style={styles.searchWrap}>
@@ -161,7 +188,7 @@ export default function Discover() {
               });
             }
           }}
-          placeholder="Search closets and pieces"
+          placeholder="Search closets and finds"
           placeholderTextColor={color.text.muted}
           autoCapitalize="none"
           autoCorrect={false}
@@ -193,12 +220,8 @@ export default function Discover() {
           <Chip
             key={value}
             label={OCCASION_LABELS[value]}
-            active={quickOccasion === value}
-            onPress={() => {
-              const next = quickOccasion === value ? null : value;
-              setQuickOccasion(next);
-              if (next) logEvent('filter_used', { surface: 'discover', meta: { occasion: next } });
-            }}
+            active={occasions.includes(value)}
+            onPress={() => toggleOccasion(value)}
           />
         ))}
       </ScrollView>
@@ -248,18 +271,15 @@ export default function Discover() {
           title="Nothing here yet"
           body={
             tab === 'following'
-              ? 'Follow a few closets and their pieces show up here.'
+              ? 'Follow a few closets and their finds show up here.'
               : search || activeCount > 0
                 ? 'Try a different search, or loosen your filters.'
-                : 'Closets on your campus will show up here as students list their pieces.'
+                : 'Closets on your campus will show up here as students list their finds.'
           }
           actionLabel={activeCount > 0 ? 'Clear filters' : undefined}
           onAction={
             activeCount > 0
-              ? () => {
-                  setFilters(EMPTY_FILTERS);
-                  setQuickOccasion(null);
-                }
+              ? () => setFilters(EMPTY_FILTERS)
               : undefined
           }
         />
@@ -279,7 +299,7 @@ export default function Discover() {
           removeClippedSubviews
           ListHeaderComponent={
             <Text variant="caption" tone="muted" style={styles.count}>
-              {visible.length} {visible.length === 1 ? 'piece' : 'pieces'}
+              {visible.length} {visible.length === 1 ? 'find' : 'finds'}
             </Text>
           }
           renderItem={({ item }) => (
@@ -298,6 +318,8 @@ export default function Discover() {
       <FilterSheet
         visible={sheetOpen}
         filters={filters}
+        // Measured out here, where there is a provider. See FilterSheet.
+        topInset={insets.top}
         resultCount={previewCount}
         onPreview={setDraftFilters}
         onApply={(next) => {

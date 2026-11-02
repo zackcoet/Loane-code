@@ -36,7 +36,7 @@ interface Item {
 /** The three things people come back for. */
 const QUICK: Item[] = [
   { label: 'Liked', icon: 'heart-outline', href: '/liked' },
-  { label: 'Saved', icon: 'bookmark-outline', href: '/my-wishlist' },
+  { label: 'Closet Crushes', icon: 'heart-outline', href: '/my-wishlist' },
   { label: 'Recently Rented', icon: 'time-outline', href: '/recently-rented' },
 ];
 

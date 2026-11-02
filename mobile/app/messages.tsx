@@ -8,6 +8,7 @@ import { color, controls, spacing, type Conversation } from '@loane/shared';
 import { Avatar } from '../src/components/Avatar';
 import { EmptyState } from '../src/components/EmptyState';
 import { Header } from '../src/components/Header';
+import { HeaderActions } from '../src/components/HeaderActions';
 import { Screen } from '../src/components/Screen';
 import { Text } from '../src/components/Text';
 import { useAuth } from '../src/auth/AuthProvider';
@@ -20,7 +21,7 @@ export default function Messages() {
 
   return (
     <Screen flush>
-      <Header title="Messages" onBack={() => router.back()} />
+      <Header title="Messages" onBack={() => router.back()} right={<HeaderActions />} />
 
       {loading ? (
         <View style={styles.loading}>

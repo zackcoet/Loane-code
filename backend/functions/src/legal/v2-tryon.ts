@@ -36,7 +36,7 @@ Loane uses AI in two places. Both are described here so you know what happens to
 
 ### Photo checks
 
-When you add a photo of yourself for try-on, or a lay-it-flat photo of a garment you're listing, **the photo is sent to a third-party AI service to check it will work** — that it shows one whole garment, or one whole person, on a plain background. The photo is sent for that check and is not stored by us to perform it. **A photo that fails the check is never saved at all.**
+When you add a photo of yourself for try-on, or a lay-it-flat photo of a garment you're listing, **the photo is sent to a third-party AI service to check it will work**, meaning it shows one whole garment, or one whole person, on a plain background. The photo is sent for that check and is not stored by us to perform it. **A photo that fails the check is never saved at all.**
 
 ### AI try-on
 
@@ -59,7 +59,7 @@ If you choose to use try-on:
 
 export const TRYON_PRIVACY_SECTION = String.raw`## AI photo checks
 
-When you add a body photo for try-on, or a lay-it-flat photo of something you're listing, **the photo is sent to a third-party AI service (Anthropic) to check that it will work** — one whole garment, or one whole person, plain background, enough light. We don't store the photo to run that check. **If it fails, the photo is never saved at all.**
+When you add a body photo for try-on, or a lay-it-flat photo of something you're listing, **the photo is sent to a third-party AI service (Anthropic) to check that it will work**: one whole garment, or one whole person, plain background, enough light. We don't store the photo to run that check. **If it fails, the photo is never saved at all.**
 
 ## AI try-on
 

@@ -32,7 +32,7 @@ import { Avatar } from '../../src/components/Avatar';
 import { BookingRow, needsMe } from '../../src/components/BookingRow';
 import { EmptyState } from '../../src/components/EmptyState';
 import { Header } from '../../src/components/Header';
-import { IconButton } from '../../src/components/IconButton';
+import { HeaderActions } from '../../src/components/HeaderActions';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
 import { useMyBookings } from '../../src/hooks/useBookings';
@@ -112,7 +112,7 @@ export default function Activity() {
       title: 'Lending',
       note:
         lendingRest.length === 0
-          ? 'Pieces you have lent out show up here.'
+          ? 'Anything you have lent out shows up here.'
           : `${lendingRest.length} out or upcoming`,
     });
     out.push(...lendingRest.map((b) => ({ kind: 'booking' as const, booking: b, isLender: true })));
@@ -122,7 +122,7 @@ export default function Activity() {
       title: 'Renting',
       note:
         rentingRest.length === 0
-          ? 'Pieces you have asked for show up here.'
+          ? 'Anything you have asked for shows up here.'
           : `${rentingRest.length} requested or with you`,
     });
     out.push(
@@ -142,19 +142,13 @@ export default function Activity() {
     <Screen flush>
       <Header
         title="Activity"
-        right={
-          <IconButton
-            name="chatbubble-outline"
-            /*
-              The TAB, not the standalone route. Messages is in the bar
-              now, so pushing /messages would stack a second inbox over
-              the tabs with the Messages tab sitting unhighlighted
-              underneath it.
-            */
-            onPress={() => router.push('/(tabs)/messages')}
-            accessibilityLabel="Messages"
-          />
-        }
+        /*
+          The chat bubble that used to live here is gone. Messages is a
+          tab now, with its own unread dot visible from every screen,
+          so a second way in from this header was a button competing
+          with the bar underneath it.
+        */
+        right={<HeaderActions />}
       />
 
       <View style={styles.tabRow}>
@@ -184,7 +178,7 @@ export default function Activity() {
         ) : nothingAtAll ? (
           <EmptyState
             title={`Nothing ${WORDS.out} yet`}
-            body="Requests on your pieces, and the ones you have asked for, both land here."
+            body="Requests on your closet, and the ones you have asked for, both land here."
             actionLabel="Find something to wear"
             onAction={() => router.push('/(tabs)/discover')}
           />

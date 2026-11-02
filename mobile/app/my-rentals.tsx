@@ -75,7 +75,7 @@ export default function MyRentals() {
           title={tab === 'renting' ? 'No rentals yet' : 'Nothing lent out yet'}
           body={
             tab === 'renting'
-              ? 'Pieces you request will show up here.'
+              ? 'Anything you request will show up here.'
               : 'When someone asks to rent from your closet, it lands here.'
           }
           actionLabel={tab === 'renting' ? 'Browse closets' : undefined}

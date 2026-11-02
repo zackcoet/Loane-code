@@ -63,7 +63,7 @@ export default function MyListings() {
       ) : items.length === 0 ? (
         <EmptyState
           title="Nothing listed yet"
-          body="Add a piece and it shows up here, and on your campus."
+          body="Add something and it shows up here, and on your campus."
           actionLabel="Add to closet"
           onAction={() => router.push('/add-to-closet')}
         />
@@ -74,7 +74,7 @@ export default function MyListings() {
           contentContainerStyle={styles.list}
           ListHeaderComponent={
             <Button
-              label="Add another piece"
+              label="Add another item"
               variant="outline"
               onPress={() => router.push('/add-to-closet')}
               style={styles.addButton}

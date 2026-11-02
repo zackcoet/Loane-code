@@ -205,7 +205,7 @@ export default function ClaimUsername() {
               available === true
                 ? touched
                   ? 'Available'
-                  : 'Available — tap to change it'
+                  : 'Available. Tap to change it'
                 : undefined
             }
           />

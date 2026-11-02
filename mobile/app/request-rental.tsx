@@ -133,7 +133,7 @@ export default function RequestRental() {
     return (
       <Screen flush>
         <Header title="Request" onBack={() => router.back()} />
-        <EmptyState title="Not available" body="That piece is no longer up for rent." />
+        <EmptyState title="Not available" body="That item is no longer up for rent." />
       </Screen>
     );
   }
@@ -142,7 +142,7 @@ export default function RequestRental() {
     return (
       <Screen flush>
         <Header title="Request" onBack={() => router.back()} />
-        <EmptyState title="That's yours" body="You can't rent a piece from your own closet." />
+        <EmptyState title="That's yours" body="You can't rent from your own closet." />
       </Screen>
     );
   }
@@ -304,9 +304,9 @@ export default function RequestRental() {
         <Card style={styles.notice}>
           <Text variant="label">Paying for this</Text>
           <Text variant="bodySmall" tone="secondary" style={styles.noticeBody}>
-            Loane isn&apos;t taking payments yet. Arrange it with @{listing.owner.username} directly
-            — cash, Venmo, whatever suits you both. The total above is what the rental is worth so
-            you both have the same number.
+            Loane isn&apos;t taking payments yet. Arrange it with @{listing.owner.username}
+            directly, by cash or Venmo or whatever suits you both. The total above is what the
+            rental is worth, so you both have the same number.
           </Text>
         </Card>
 
