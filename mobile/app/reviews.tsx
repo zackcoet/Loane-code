@@ -60,7 +60,7 @@ export default function Reviews() {
                   {reviews.length === 1 ? 'review' : 'reviews'}
                 </Text>
               </View>
-            ) : null
+            ) : undefined
           }
           renderItem={({ item }) => (
             <View style={styles.review}>

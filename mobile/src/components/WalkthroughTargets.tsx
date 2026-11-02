@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentRef,
   type ReactNode,
 } from 'react';
 import { Keyboard, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
@@ -120,7 +121,14 @@ export function WalkthroughTarget({
   target: WalkthroughTargetKey;
   children: ReactNode;
 }) {
-  const ref = useRef<View>(null);
+  /*
+    ComponentRef, not View. React Native 0.88 made `View` the type of
+    the COMPONENT rather than of the thing on screen, so `useRef<View>`
+    now describes a function and has no measureInWindow on it. This
+    spelling asks for "whatever View's ref actually is" and survives
+    the next time that changes.
+  */
+  const ref = useRef<ComponentRef<typeof View>>(null);
   const { registerTarget, updateTarget } = useWalkthroughTargets();
 
   const measure = useCallback(() => {

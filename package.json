@@ -10,7 +10,7 @@
     "backend/functions"
   ],
   "engines": {
-    "node": ">=20 <21"
+    "node": ">=22.13"
   },
   "scripts": {
     "build:shared": "npm run build --workspace @loane/shared",
@@ -38,6 +38,8 @@
     "vite": "^6.4.3"
   },
   "overrides": {
-    "vite": "^6.4.3"
+    "vite": "^6.4.3",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   }
 }

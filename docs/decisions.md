@@ -1113,3 +1113,42 @@ renter.
 
 **Open:** the pale pink fill is `balletSoft`. If the pink in Zack's
 reference is deeper than that, it is one constant in one file.
+
+## 2026-11-02 — Expo SDK 58, and Node 22
+
+Expo Go on an iPhone only ever runs the newest SDK, and it updated
+itself to 58 while the project was on 57. That is not a bug we can
+wait out: **the phone stopped being able to open the project at all.**
+
+Upgraded to SDK 58 — React Native 0.86 → 0.88, React 19.2 → 19.3,
+reanimated 4.5 → 4.7, gesture-handler 2 → 3. `expo-doctor` is 20/20.
+
+**Node 22 is now required.** React Native 0.88's tooling refuses Node
+20. `.nvmrc` and the root `engines` both say 22.13+, which also matches
+what the Cloud Functions runtime has always declared. Running anything
+here on Node 20 from now on will fail in confusing ways.
+
+**Three things the upgrade actually broke, all small:**
+
+1. `FlatList`'s header and footer props no longer accept `null`, only
+   an element or nothing. Six screens passed `: null`.
+2. `View` is now the type of the component, not of the thing on
+   screen, so `useRef<View>` had no `measureInWindow`. The walkthrough
+   now asks for `ComponentRef<typeof View>`, which survives the next
+   time that changes.
+3. `disableHierarchicalLookup` in `metro.config.js` is rejected by
+   Expo 58, whose own monorepo resolution needs it. It was there to
+   stop two copies of a package being resolved; that is handled
+   properly now by a `react` override in the root package.json.
+
+**One thing to watch.** Regenerating the lockfile refreshed 114
+transitive packages inside their existing ranges — almost all build
+tooling, and harmless. One was not: **Stripe moved 23.0.0 → 23.1.0,
+which changed the API version its types expect.** Stripe is now pinned
+exactly, because an Expo upgrade has no business changing the API
+version our payments talk to. Moving Stripe is its own decision, made
+deliberately and tested.
+
+**This will happen again** at SDK 59. The permanent fix is a
+development build, which pins the SDK and never auto-updates — and
+which push notifications and App Check are both already waiting on.

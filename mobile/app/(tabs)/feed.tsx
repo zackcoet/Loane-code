@@ -234,7 +234,7 @@ export default function Feed() {
               <Text variant="caption" tone="muted" style={styles.end}>
                 You&apos;re all caught up
               </Text>
-            ) : null
+            ) : undefined
           }
           renderItem={({ item, index }) => (
             <>

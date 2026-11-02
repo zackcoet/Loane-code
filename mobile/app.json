@@ -56,7 +56,8 @@
         {
           "contactsPermission": "Loane checks which of your contacts are already on your campus. Only scrambled phone numbers are sent, and your contacts are never saved."
         }
-      ]
+      ],
+      "expo-status-bar"
     ],
     "experiments": {
       "typedRoutes": true

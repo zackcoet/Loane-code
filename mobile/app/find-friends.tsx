@@ -111,7 +111,7 @@ export default function FindFriends() {
           keyboardDismissMode="on-drag"
           contentContainerStyle={styles.list}
           ListHeaderComponent={
-            typing ? null : (
+            typing ? undefined : (
               <Text variant="label" tone="muted" style={styles.sectionLabel}>
                 Closets you know
               </Text>

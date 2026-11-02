@@ -219,7 +219,7 @@ export default function ArrangePhotos() {
               >
                 <Icon name="add" size={22} tint={color.text.muted} />
               </Pressable>
-            ) : null
+            ) : undefined
           }
         />
       </View>

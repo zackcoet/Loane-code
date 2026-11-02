@@ -150,7 +150,7 @@ export default function MyWishlist() {
                 <Text variant="caption" tone="muted" style={styles.note}>
                   {unavailable.length} no longer available
                 </Text>
-              ) : null
+              ) : undefined
             }
             renderItem={({ item }) => (
               <View style={item.status === 'active' ? undefined : styles.dimmed}>

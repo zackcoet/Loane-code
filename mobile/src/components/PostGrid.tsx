@@ -12,7 +12,7 @@ const COLUMNS = 2;
 interface Props {
   posts: Post[];
   onPress: (postId: string) => void;
-  header?: React.ReactElement | null;
+  header?: React.ReactElement;
 }
 
 export function PostGrid({ posts, onPress, header }: Props) {
