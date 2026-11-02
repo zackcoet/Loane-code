@@ -67,3 +67,7 @@ coverage/
 # repo. The committed scripts next to them have real names.
 backend/functions/scripts/_*.ts
 __pycache__/
+
+# Expo writes one of these if you run `npx expo start` from the repo
+# root by mistake. The real tsconfigs live in each workspace.
+/tsconfig.json
