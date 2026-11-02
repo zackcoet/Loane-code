@@ -35,9 +35,18 @@ export const checkUsername = httpsCallable<
   never sees a correct code to compare against, which is the whole
   point: a check the phone performs is a check the phone can skip.
 */
+/**
+ * Sent from the email screen, before the account exists, so the code
+ * is already in her inbox by the time she finishes onboarding.
+ */
+export const startEmailVerification = httpsCallable<
+  { email: string },
+  { sent: boolean; expiresInMinutes: number }
+>(functions, 'startEmailVerification');
+
 export const sendVerificationCode = httpsCallable<
-  void,
-  { sent: true; expiresInMinutes: number }
+  { force?: boolean },
+  { sent: boolean; expiresInMinutes: number }
 >(functions, 'sendVerificationCode');
 
 export const confirmVerificationCode = httpsCallable<{ code: string }, { confirmed: true }>(
@@ -47,7 +56,7 @@ export const confirmVerificationCode = httpsCallable<{ code: string }, { confirm
 
 export const changeUnverifiedEmail = httpsCallable<
   { email: string },
-  { sent: true; expiresInMinutes: number; email: string }
+  { sent: boolean; expiresInMinutes: number; email: string }
 >(functions, 'changeUnverifiedEmail');
 
 export const changeUsername = httpsCallable<{ username: string }, { username: string }>(

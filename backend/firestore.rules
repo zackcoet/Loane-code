@@ -59,7 +59,35 @@ service cloud.firestore {
     function isVerifiedStudent() {
       return isActive()
         && existingUser().isVerified == true
-        && existingUser().emailConfirmed == true;
+        && (!verificationRequired() || existingUser().emailConfirmed == true);
+    }
+
+    /*
+     * Is email verification switched on?
+     *
+     * THE RULES FOLLOW THE SAME SWITCH THE APP AND THE FUNCTIONS DO —
+     * config/verification.required — so there is exactly one place to
+     * turn this off. If Gmail starts bouncing at two in the morning,
+     * flipping one boolean in the console unblocks every new student
+     * immediately, with no deploy and no App Store review. Rules that
+     * ignored the switch would keep the door locked anyway and make
+     * that switch a lie.
+     *
+     * A MISSING DOCUMENT MEANS OFF. `get()` returns null for a
+     * document that does not exist, and reading `.data` off null
+     * fails the whole rule — which would deny everything on a project
+     * where nobody has created the config yet. Off is also the right
+     * default: the dangerous failure is locking out real students, not
+     * briefly admitting an unconfirmed one the server will refuse
+     * anyway.
+     *
+     * It costs one document read per request. Firestore caches a get()
+     * within a single evaluation, so calling this twice in one rule is
+     * still one read.
+     */
+    function verificationRequired() {
+      let cfg = get(/databases/$(database)/documents/config/verification);
+      return cfg != null && cfg.data.get('required', false) == true;
     }
 
     // Has she proven the mailbox is hers?
@@ -73,7 +101,8 @@ service cloud.firestore {
     // got no further — from browsing a campus of real girls' closets,
     // photographs and names. That is the data this protects.
     function hasProvenEmail() {
-      return signedIn() && existingUser().emailConfirmed == true;
+      return signedIn()
+        && (!verificationRequired() || existingUser().emailConfirmed == true);
     }
 
     // Which fields is this write touching?
@@ -319,6 +348,18 @@ service cloud.firestore {
      * leaves an audit row — a switch that turns on spending should
      * never be flippable from a phone.
      */
+    /*
+     * emailVerifications/{hash} — in-flight verification codes.
+     *
+     * CLOSED COMPLETELY. Not "only hers": a student who could read her
+     * own pending document could read the hash, and a hash of six
+     * digits is six digits — a second of work to reverse. Only the
+     * Cloud Functions, which bypass these rules, ever touch it.
+     */
+    match /emailVerifications/{key} {
+      allow read, write: if false;
+    }
+
     match /config/{docId} {
       allow read: if signedIn();
       allow write: if false;

@@ -35,6 +35,7 @@ import {
   spacing,
   type,
   validateDisplayName,
+  normalizeEmail,
   validateEmail,
   validatePassword,
 } from '@loane/shared';
@@ -42,7 +43,7 @@ import { Button } from '../../src/components/Button';
 import { Input } from '../../src/components/Input';
 import { Screen } from '../../src/components/Screen';
 import { Header } from '../../src/components/Header';
-import { checkCampusEmail } from '../../src/firebase/callables';
+import { checkCampusEmail, startEmailVerification } from '../../src/firebase/callables';
 import { callableErrorMessage } from '../../src/firebase/errors';
 import { useSignupDraft } from '../../src/auth/signupDraft';
 import { useKeyboardPadding } from '../../src/hooks/useKeyboardPadding';
@@ -124,6 +125,25 @@ export default function CreateAccount() {
         return;
       }
       storePassword(password);
+
+      /*
+        SEND THE CODE NOW, not at the end.
+
+        She still has a username to pick and the terms to agree to,
+        which is about a minute — and that minute is the email's
+        travel time. Sending at the last step instead means she
+        finishes onboarding and then sits watching six empty boxes,
+        which is the worst possible moment to ask anybody to wait.
+
+        Deliberately not awaited as a blocker, and deliberately not
+        fatal. If the send fails she carries on and the code screen
+        has a Resend button; stopping sign-up here because an email
+        was slow would be trading a certain loss for a possible one.
+      */
+      void startEmailVerification({ email: normalizeEmail(campusEmail) }).catch(() => {
+        // The code screen will say so, and can send another.
+      });
+
       router.push('/(onboarding)/username');
     } catch (err) {
       setError(callableErrorMessage(err, 'Could not check that right now. Try again.'));

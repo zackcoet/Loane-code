@@ -1700,13 +1700,14 @@ describe('the show-sizes toggle', () => {
  * back, a signed-in account gets nothing but its own.
  */
 describe('before she has confirmed her email', () => {
-  /** Ella, signed in, account real, inbox unproven. */
-  async function unconfirmed() {
+  /** Ella, signed in, account real, inbox unproven — and the gate on. */
+  async function unconfirmed({ required = true }: { required?: boolean } = {}) {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(
         doc(ctx.firestore(), 'users', ELLA),
         userDoc(ELLA, { emailConfirmed: false, emailConfirmedAt: null }),
       );
+      await setDoc(doc(ctx.firestore(), 'config', 'verification'), { required });
     });
   }
 
@@ -1742,6 +1743,33 @@ describe('before she has confirmed her email', () => {
     await assertSucceeds(getDoc(doc(asElla(), 'config', 'verification')));
   });
 
+  it('is let in anyway while the switch is off, which is what the switch is for', async () => {
+    // Email breaks at two in the morning. One boolean in the console
+    // unblocks every new student, with no deploy and no App Store
+    // review. A rule that ignored it would make that switch a lie.
+    await unconfirmed({ required: false });
+    await assertSucceeds(getDoc(doc(asElla(), 'listings', 'listing-1')));
+    await assertSucceeds(
+      setDoc(doc(asElla(), 'listings', 'listing-switch-off'), listingDoc(ELLA, {
+        id: 'listing-switch-off',
+      })),
+    );
+  });
+
+  it('is let in when nobody has created the switch at all', async () => {
+    // get() returns null for a document that does not exist, and
+    // reading through null fails the whole rule — which would deny
+    // everything on a project where the config was never seeded.
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(
+        doc(ctx.firestore(), 'users', ELLA),
+        userDoc(ELLA, { emailConfirmed: false, emailConfirmedAt: null }),
+      );
+      await deleteDoc(doc(ctx.firestore(), 'config', 'verification'));
+    });
+    await assertSucceeds(getDoc(doc(asElla(), 'listings', 'listing-1')));
+  });
+
   it('confirming turns the lights back on', async () => {
     await unconfirmed();
     await assertFails(getDoc(doc(asElla(), 'listings', 'listing-1')));
@@ -1752,5 +1780,15 @@ describe('before she has confirmed her email', () => {
     });
 
     await assertSucceeds(getDoc(doc(asElla(), 'listings', 'listing-1')));
+  });
+});
+
+describe('pending verification codes', () => {
+  it('are closed to everybody, including the student they belong to', async () => {
+    // Not "only hers": a hash of six digits is six digits, a second
+    // of work to reverse. Only a Cloud Function ever reads these.
+    await assertFails(getDoc(doc(asElla(), 'emailVerifications', 'any-key')));
+    await assertFails(setDoc(doc(asElla(), 'emailVerifications', 'any-key'), { codeHash: 'x' }));
+    await assertFails(getDoc(doc(asAdmin(), 'emailVerifications', 'any-key')));
   });
 });

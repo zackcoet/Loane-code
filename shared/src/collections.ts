@@ -37,6 +37,17 @@ export const COLLECTIONS = {
    */
   phoneHashes: 'phoneHashes',
   /**
+   * emailVerifications/{sha256(email)}
+   *
+   * One in-flight verification code per address, as a hash — never the
+   * code. Keyed by email rather than by uid because the first code is
+   * sent before the account exists, and hashed so the collection is
+   * not a list of real students' addresses.
+   *
+   * NOTHING MAY READ THIS BUT A CLOUD FUNCTION. See firestore.rules.
+   */
+  emailVerifications: 'emailVerifications',
+  /**
    * tryOns/{tryOnId} — generated try-on images. Private to their owner,
    * written only by Cloud Functions. See docs/decisions.md.
    */

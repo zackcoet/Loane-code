@@ -88,10 +88,19 @@ export default function VerifyEmail() {
 
   const email = settings?.campusEmail ?? '';
 
-  const send = useCallback(async (): Promise<void> => {
+  /**
+   * `force` is the difference between this screen opening and her
+   * asking for another code.
+   *
+   * One was already sent when she typed her address, two screens ago.
+   * Opening here must not spend a second of her five — the server
+   * decides, and reuses anything it sent in the last couple of
+   * minutes. Resend always means a new one.
+   */
+  const send = useCallback(async (force: boolean): Promise<void> => {
     setError(null);
     try {
-      await sendVerificationCode();
+      await sendVerificationCode({ force });
       setSecondsLeft(RESEND_SECONDS);
     } catch (err) {
       setError(callableErrorMessage(err, 'We could not send that code. Try again in a moment.'));
@@ -101,7 +110,7 @@ export default function VerifyEmail() {
   useEffect(() => {
     if (sent.current) return;
     sent.current = true;
-    void send();
+    void send(false);
   }, [send]);
 
   // Leave only when the profile itself says she is confirmed.
@@ -150,7 +159,7 @@ export default function VerifyEmail() {
     setBusy(true);
     setCode('');
     setNotice(null);
-    await send();
+    await send(true);
     setNotice('New code sent.');
     setBusy(false);
   };

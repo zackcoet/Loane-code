@@ -125,6 +125,7 @@ export { deleteTryOnData } from './tryon/deleteTryOnData';
 export { setTryOnBodyPhoto, clearTryOnBodyPhoto } from './tryon/setBodyPhoto';
 export { checkPhoto } from './tryon/checkPhoto';
 export {
+  startEmailVerification,
   sendVerificationCode,
   confirmVerificationCode,
   changeUnverifiedEmail,

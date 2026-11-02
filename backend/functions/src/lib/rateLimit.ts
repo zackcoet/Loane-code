@@ -46,6 +46,17 @@ export const LIMITS = {
   /** A student setting up one account, maybe retrying a bad password. */
   signUp: { max: 5, windowMs: HOUR, message: 'Too many sign-ups from here. Try again later.' },
 
+  /**
+   * Verification codes, counted BY IP, from the signed-out endpoint on
+   * the email screen. A girl who mistypes her address twice and then
+   * gets it right has used three.
+   */
+  verificationEmail: {
+    max: 5,
+    windowMs: HOUR,
+    message: 'Too many codes requested from here. Try again later.',
+  },
+
   /** Asking for six dresses before a formal is a busy evening, not abuse. */
   rentalRequest: {
     max: 20,

@@ -62,7 +62,8 @@ async function seedStudent(overrides: Record<string, unknown> = {}) {
 }
 
 function pending() {
-  return db.collection(COLLECTIONS.users).doc(UID).collection('private').doc('verification');
+  const key = createHash('sha256').update(EMAIL).digest('hex');
+  return db.collection(COLLECTIONS.emailVerifications).doc(key);
 }
 
 /**
@@ -76,7 +77,7 @@ async function currentCode(): Promise<string> {
   const hash = (await pending().get()).get('codeHash') as string;
   for (let n = 0; n < 1_000_000; n += 1) {
     const guess = String(n).padStart(6, '0');
-    if (createHash('sha256').update(`${UID}:${guess}`).digest('hex') === hash) return guess;
+    if (createHash('sha256').update(`${EMAIL}:${guess}`).digest('hex') === hash) return guess;
   }
   throw new Error('No code matched the stored hash.');
 }
@@ -111,12 +112,13 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await db.recursiveDelete(db.collection(COLLECTIONS.users));
+  await db.recursiveDelete(db.collection(COLLECTIONS.emailVerifications));
   await seedStudent();
 });
 
 describe('sending a code', () => {
   it('stores a hash and never the code itself', async () => {
-    await sendVerificationCode.run(asElla());
+    await sendVerificationCode.run(asElla({ force: true }));
 
     const doc = await pending().get();
     const stored = doc.data() as Record<string, unknown>;
@@ -130,7 +132,7 @@ describe('sending a code', () => {
   });
 
   it('expires the code ten minutes out', async () => {
-    const result = await sendVerificationCode.run(asElla());
+    const result = await sendVerificationCode.run(asElla({ force: true }));
     expect(result.expiresInMinutes).toBe(10);
 
     const expiresAt = (await pending().get()).get('expiresAt').toMillis();
@@ -140,10 +142,10 @@ describe('sending a code', () => {
   });
 
   it('kills the previous code when a new one is sent', async () => {
-    await sendVerificationCode.run(asElla());
+    await sendVerificationCode.run(asElla({ force: true }));
     const first = await currentCode();
 
-    await sendVerificationCode.run(asElla());
+    await sendVerificationCode.run(asElla({ force: true }));
 
     const stale = await attempt(confirmVerificationCode, { code: first });
     expect(stale.ok).toBe(false);
@@ -153,16 +155,16 @@ describe('sending a code', () => {
   });
 
   it('stops after five codes in an hour', async () => {
-    for (let i = 0; i < 5; i += 1) await sendVerificationCode.run(asElla());
+    for (let i = 0; i < 5; i += 1) await sendVerificationCode.run(asElla({ force: true }));
 
-    const sixth = await attempt(sendVerificationCode);
+    const sixth = await attempt(sendVerificationCode, { force: true });
     expect(sixth.ok).toBe(false);
     expect(sixth.message).toMatch(/too many/i);
   });
 
   it('refuses somebody who is already confirmed', async () => {
     await seedStudent({ emailConfirmed: true });
-    const result = await attempt(sendVerificationCode);
+    const result = await attempt(sendVerificationCode, { force: true });
     expect(result.ok).toBe(false);
     expect(result.message).toMatch(/already/i);
   });
@@ -170,7 +172,7 @@ describe('sending a code', () => {
 
 describe('confirming a code', () => {
   it('accepts the right code and marks her confirmed', async () => {
-    await sendVerificationCode.run(asElla());
+    await sendVerificationCode.run(asElla({ force: true }));
     const code = await currentCode();
 
     await confirmVerificationCode.run(asElla({ code }));
@@ -183,7 +185,7 @@ describe('confirming a code', () => {
   });
 
   it('refuses the wrong code without confirming her', async () => {
-    await sendVerificationCode.run(asElla());
+    await sendVerificationCode.run(asElla({ force: true }));
     const wrong = (await currentCode()) === '000000' ? '111111' : '000000';
 
     const result = await attempt(confirmVerificationCode, { code: wrong });
@@ -195,7 +197,7 @@ describe('confirming a code', () => {
   });
 
   it('refuses an expired code and says so', async () => {
-    await sendVerificationCode.run(asElla());
+    await sendVerificationCode.run(asElla({ force: true }));
     const code = await currentCode();
     // Reach into the stored document rather than waiting ten minutes.
     await pending().update({ expiresAt: new Date(Date.now() - 1000) });
@@ -209,7 +211,7 @@ describe('confirming a code', () => {
   });
 
   it('dies after five wrong attempts, even if the sixth is right', async () => {
-    await sendVerificationCode.run(asElla());
+    await sendVerificationCode.run(asElla({ force: true }));
     const code = await currentCode();
     const wrong = code === '000000' ? '111111' : '000000';
 
@@ -224,7 +226,7 @@ describe('confirming a code', () => {
   });
 
   it('rejects anything that is not six digits before spending an attempt', async () => {
-    await sendVerificationCode.run(asElla());
+    await sendVerificationCode.run(asElla({ force: true }));
 
     for (const code of ['', '12345', '1234567', 'abcdef', '12 34 56']) {
       const result = await attempt(confirmVerificationCode, { code });
@@ -239,5 +241,29 @@ describe('confirming a code', () => {
     const result = await attempt(confirmVerificationCode, { code: '123456' });
     expect(result.ok).toBe(false);
     expect(result.message).toMatch(/new code/i);
+  });
+});
+
+describe('opening the code screen', () => {
+  it('reuses a code sent moments ago instead of spending another', async () => {
+    await sendVerificationCode.run(asElla({ force: true }));
+    const first = await currentCode();
+
+    // What the screen does when it opens: asks, without insisting.
+    const again = await sendVerificationCode.run(asElla());
+
+    expect(again.sent).toBe(false);
+    // The code she already has in her inbox still works, which is the
+    // whole point — otherwise the first email is dead on arrival.
+    expect(await currentCode()).toBe(first);
+    await confirmVerificationCode.run(asElla({ code: first }));
+  });
+
+  it('does not count a reuse against her five an hour', async () => {
+    await sendVerificationCode.run(asElla({ force: true }));
+    for (let i = 0; i < 10; i += 1) await sendVerificationCode.run(asElla());
+
+    // One send used, four left.
+    expect((await pending().get()).get('sendsThisHour')).toBe(1);
   });
 });
