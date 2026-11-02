@@ -154,7 +154,18 @@ export default function ClaimUsername() {
 
       logEvent('signup_completed', { surface: 'onboarding' });
       reset();
-      router.replace('/(tabs)/feed');
+      /*
+        NO NAVIGATION HERE ANY MORE.
+
+        Where she goes next depends on whether email verification is
+        switched on, and this screen has no business knowing that. The
+        root layout sees the profile appear and sends her either to
+        the code screen or straight to the Feed.
+
+        It used to replace with the Feed directly, which now means a
+        flash of somebody else's closet before the code screen takes
+        over — a glimpse of the app she has not earned yet.
+      */
     } catch (err) {
       setError(callableErrorMessage(err, 'Could not finish setting up your account. Try again.'));
     } finally {

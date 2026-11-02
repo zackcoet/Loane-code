@@ -1152,3 +1152,48 @@ deliberately and tested.
 **This will happen again** at SDK 59. The permanent fix is a
 development build, which pins the SDK and never auto-updates — and
 which push notifications and App Check are both already waiting on.
+
+## 2026-11-02 — Email verification is on (a code, not a link)
+
+The OTP backend paused on 2026-10-12 is finished and wired up. A
+student types back a **6-digit code** sent to the school address she
+signed up with. Never a link: university mail scanners follow links in
+incoming messages and would burn a one-time link before she opened it.
+
+**Gmail sends it, for now.** `loaneapp@gmail.com` with an App Password,
+chosen because it needed no domain records and no approval — real codes
+in real inboxes today. Its limits are real and written down in the
+README: about 500 messages a day, and a personal gmail.com address is
+likelier to be filtered than `joinloane.com`. All sending is in one
+file so that swap stays a one-file change.
+
+**Two flags, and the rules now check the second one.**
+`isVerified` means her address is on a school domain, which is true the
+moment she types it. `emailConfirmed` means the mailbox answered.
+`isVerifiedStudent()` in the security rules now requires both, and a
+new `hasProvenEmail()` gates READS of listings, posts, comments and the
+social edges. Deliberately narrower than `isVerifiedStudent()`: it does
+not check suspension, because a suspended student is still allowed to
+read and this must not quietly change that.
+
+**What stays readable while unconfirmed**, because she would otherwise
+be locked in a room with no door: her own account, her own private
+documents, the campuses list, the legal documents, and
+`config/verification` — which is how the app knows to ask her at all.
+
+**Existing accounts are grandfathered.** Zack's call. Seven accounts
+predate this and none ever confirmed anything.
+`scripts/grandfatherVerification.ts` marks them, and records
+`verificationMethod: 'manual_admin'` rather than `'email_confirmed'` —
+nobody proved those inboxes, a human decided to trust them, and the
+whole point of that field is knowing which is which.
+
+**A bug found on the way:** the paused code wrote
+`verificationMethod: 'email_code'`, which is not one of the three
+allowed values. Typecheck missed it because a Firestore update object
+is a bag of fields rather than a `User`. It is `'email_confirmed'` now,
+with a `satisfies` so it cannot drift again.
+
+**Still off.** `config/verification.required` stays false until a test
+code has actually arrived in a real `@email.sc.edu` inbox. A required
+verification that cannot send email is a locked front door.

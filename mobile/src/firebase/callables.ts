@@ -30,6 +30,26 @@ export const checkUsername = httpsCallable<
   { available: boolean; reason?: string }
 >(functions, 'checkUsername');
 
+/*
+  Email verification. Codes are made and checked only here — the app
+  never sees a correct code to compare against, which is the whole
+  point: a check the phone performs is a check the phone can skip.
+*/
+export const sendVerificationCode = httpsCallable<
+  void,
+  { sent: true; expiresInMinutes: number }
+>(functions, 'sendVerificationCode');
+
+export const confirmVerificationCode = httpsCallable<{ code: string }, { confirmed: true }>(
+  functions,
+  'confirmVerificationCode',
+);
+
+export const changeUnverifiedEmail = httpsCallable<
+  { email: string },
+  { sent: true; expiresInMinutes: number; email: string }
+>(functions, 'changeUnverifiedEmail');
+
 export const changeUsername = httpsCallable<{ username: string }, { username: string }>(
   functions,
   'changeUsername',

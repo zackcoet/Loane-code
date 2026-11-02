@@ -118,12 +118,80 @@ With the emulators running:
 npm test
 ```
 
-30 tests covering the two things that would hurt most if they broke:
+356 tests, covering the things that would hurt most if they broke:
 
-- **Security rules** (24) — a student cannot mark herself verified, inflate
-  her follower count, edit someone else's listing, or touch bookings.
-- **Double-booking** (6) — ten simultaneous requests for the same dress on
-  the same weekend produce exactly one booking.
+- **Security rules** (158) — a student cannot mark herself verified or
+  confirm her own email, inflate her follower count, edit someone else's
+  listing, or touch bookings.
+- **Double-booking** — many simultaneous requests for the same dress on the
+  same weekend produce exactly one booking.
+- **Email verification** (11) — the real functions, called through `.run()`,
+  for the right code, the wrong code, an expired code, the attempt limit and
+  the hourly send limit.
+
+## Email verification
+
+A student proves she controls the school inbox she signed up with by typing
+back a **6-digit code**. Not a link: university mail systems run scanners
+that follow every link in an incoming message, which burns a one-time link
+before she has opened it.
+
+**How it runs.** She finishes sign-up, lands on "Enter your code", and the
+app calls `sendVerificationCode`. The server makes the code, stores only a
+hash of it, and emails it. `confirmVerificationCode` checks what she typed
+and sets `emailConfirmed` on her account. The app never sees a correct code,
+so there is nothing for it to skip.
+
+- Codes last **10 minutes**. A new code replaces the old one.
+- **5 wrong attempts** per code, then she needs a new one.
+- **5 codes per account per hour.**
+- Stored as a SHA-256 hash salted with her uid — never in plain text, never
+  in a log line.
+
+**Two flags, and they are not the same thing.** `isVerified` means her
+address is on a school domain, which is true the moment she types it.
+`emailConfirmed` means the mailbox answered. Only the second is evidence,
+and it is the one the security rules check.
+
+**The switch.** `config/verification.required` in Firestore decides whether
+an unconfirmed student is blocked. It is off by default and lives in the
+database rather than in the app, so it can be turned off in seconds if email
+breaks — without shipping a build to the App Store.
+
+### Changing who sends the email
+
+All sending lives in **one file**: `backend/functions/src/lib/email.ts`.
+Nothing else in the codebase knows or cares which provider is used — callers
+pass an address, a code and a first name.
+
+Today it is **Gmail**, with an App Password, from `loaneapp@gmail.com`. That
+was chosen for speed: no domain records, no sales call, no sandbox approval.
+It has two real limits. A free Gmail sends about **500 messages a day**, and
+a code from a personal `gmail.com` address is likelier to land in Spam or
+Promotions than one from `joinloane.com` — and a university filter is the
+fussiest audience there is.
+
+To move to a domain sender (Resend, Postmark, SES):
+
+1. Replace `transport` and `FROM` in that file. Nothing else changes.
+2. Set the new secret:
+   `firebase functions:secrets:set NEW_PROVIDER_KEY --project loane-code`
+3. Swap the name in the `secrets: [...]` list on the two functions in
+   `backend/functions/src/auth/emailVerification.ts`.
+4. Delete the old secret:
+   `firebase functions:secrets:destroy GMAIL_APP_PASSWORD --project loane-code`
+
+**The App Password is a secret in the strongest sense.** It lets whoever
+holds it send as that account and read its inbox over IMAP, and it bypasses
+2-Step Verification. It lives in Google Secret Manager and nowhere else. If
+one is ever pasted somewhere it shouldn't be, revoke it at
+myaccount.google.com/apppasswords and set a new one — the old one dies the
+moment it is deleted.
+
+**Locally there is no secret at all.** Against the emulator the sender logs
+the code to the emulator console instead of sending, so the whole flow is
+testable without touching Gmail. That path is impossible in production: a
+deployed function declares the secret and will not start without it.
 
 ## Deploying
 
@@ -148,9 +216,10 @@ Next: **Phase 1 — Accounts.** See [docs/roadmap.md](docs/roadmap.md).
 
 ### Before beta launch, non-negotiable
 
-- [ ] **Real campus email verification.** Right now, typing an `sc.edu`
-      address is all it takes. We must email a confirmation link before real
-      students and real garments are involved.
+- [x] **Real campus email verification.** Built: a 6-digit code to her
+      school inbox. See "Email verification" above. Still needs the switch
+      turning on (`config/verification.required`) once a test code has
+      actually landed in a real inbox.
 - [ ] Firebase App Check
 - [ ] Terms of Service and Privacy Policy
 - [ ] Final brand hex codes (three are sampled, marked `TODO-CONFIRM`)

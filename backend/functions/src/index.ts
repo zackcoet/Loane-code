@@ -127,6 +127,7 @@ export { checkPhoto } from './tryon/checkPhoto';
 export {
   sendVerificationCode,
   confirmVerificationCode,
+  changeUnverifiedEmail,
 } from './auth/emailVerification';
 export { prepareFlatPhoto } from './tryon/prepareFlatPhoto';
 export { grantTryOns, setTryOnConfig } from './tryon/admin';

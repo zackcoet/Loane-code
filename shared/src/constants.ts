@@ -445,6 +445,8 @@ export const EVENT_TYPES = [
   'app_open',
   'onboarding_step',
   'signup_completed',
+  /** She typed the code back. The real end of sign-up. */
+  'email_confirmed',
   'profile_edit',
   'post_view',
   'post_like',

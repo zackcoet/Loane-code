@@ -1,12 +1,9 @@
 import { onCall, type CallableRequest } from 'firebase-functions/v2/https';
 import { logger } from 'firebase-functions';
-import type { Campus, User, UsernameLock, UserPrivate } from '@loane/shared';
+import type { User, UsernameLock, UserPrivate } from '@loane/shared';
 import {
   newUserWalkthrough,
   COLLECTIONS,
-  color,
-  emailDomain,
-  matchesCampusDomain,
   newUserStripe,
   normalizeEmail,
   normalizeUsername,
@@ -20,6 +17,7 @@ import { auth, db, now, FieldValue } from '../lib/admin';
 import { callerIp, rateLimit } from '../lib/rateLimit';
 import { alreadyTaken, failed, internal, invalidArgument } from '../lib/errors';
 import { latestLegalVersions } from '../legal/legal';
+import { campusForEmail, EDU_MESSAGE, isEduEmail } from './campus';
 
 /**
  * `createAccount`
@@ -63,8 +61,6 @@ interface CreateAccountResult {
   /** Short-lived token; the app calls signInWithCustomToken with it. */
   token: string;
 }
-
-const EDU_MESSAGE = 'Use your .edu school email.';
 
 export const createAccount = onCall<CreateAccountInput, Promise<CreateAccountResult>>(
   { region: 'us-central1' },
@@ -282,39 +278,3 @@ export const checkCampusEmail = onCall<
   const campus = await campusForEmail(email);
   return { allowed: true, campusName: campus.name };
 });
-
-function isEduEmail(email: string): boolean {
-  return emailDomain(email)?.endsWith('.edu') ?? false;
-}
-
-async function campusForEmail(email: string): Promise<Campus> {
-  const domain = emailDomain(email);
-  if (!domain) throw invalidArgument('Enter a valid email address.');
-
-  const campusSnap = await db().collection(COLLECTIONS.campuses).where('isLive', '==', true).get();
-  const seeded = campusSnap.docs
-    .map((d) => ({ ...(d.data() as Campus), id: d.id }))
-    .find((c) => matchesCampusDomain(email, c.emailDomains));
-  if (seeded) return seeded;
-
-  const id = `school-${domain.replace(/[^a-z0-9]+/g, '-')}`;
-  return {
-    id,
-    name: domain,
-    shortName: domain,
-    emailDomains: [domain],
-    city: '',
-    state: '',
-    brandColor: color.campus.dotFallback,
-    isLive: true,
-    stats: {
-      userCount: 0,
-      verifiedUserCount: 0,
-      listingCount: 0,
-      postCount: 0,
-      bookingCount: 0,
-    },
-    createdAt: now() as never,
-    updatedAt: now() as never,
-  };
-}

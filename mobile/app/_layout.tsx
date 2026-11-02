@@ -28,14 +28,20 @@ import { WalkthroughTargetsProvider } from '../src/components/WalkthroughTargets
 import { logEvent } from '../src/analytics/events';
 import { FONTS_TO_LOAD } from '../src/theme/fonts';
 import { LoaneLoader } from '../src/components/LoaneLoader';
+import { useVerificationGate } from '../src/hooks/useVerificationGate';
 
 function RootNavigator() {
   const { loading, firebaseUser, profile, needsOnboarding } = useAuth();
+  const { loading: gateLoading, mustVerify } = useVerificationGate();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
+    // Routing while we still do not know whether verification is on
+    // would guess, and a wrong guess here is a student bounced out of
+    // the app she was already using.
+    if (gateLoading) return;
 
     const group = segments[0];
     const inOnboarding = group === '(onboarding)';
@@ -49,6 +55,24 @@ function RootNavigator() {
      * guard stops lying about having covered every case.
      */
     const atRoot = group === undefined;
+    const onVerifyScreen = inOnboarding && segments[1] === 'verify-email';
+
+    /*
+      SHE HAS AN ACCOUNT BUT HAS NOT PROVEN HER INBOX.
+
+      Checked before everything else, because it outranks everything
+      else: an unconfirmed student has a profile, so without this she
+      would be sent to the Feed by the branch below and sit there
+      unable to do anything, every action refused by the server with
+      no explanation of what to fix.
+
+      This is also what catches her on a cold start days later — the
+      rule is about her state, not about where she came from.
+    */
+    if (profile && mustVerify) {
+      if (!onVerifyScreen) router.replace('/(onboarding)/verify-email');
+      return;
+    }
 
     if (profile) {
       // ONLY rescue her from a screen she should not still be on.
@@ -75,7 +99,7 @@ function RootNavigator() {
     if (!firebaseUser && !inOnboarding && !inAuth) {
       router.replace('/(onboarding)');
     }
-  }, [loading, firebaseUser, profile, needsOnboarding, segments, router]);
+  }, [loading, gateLoading, mustVerify, firebaseUser, profile, needsOnboarding, segments, router]);
 
   useEffect(() => {
     if (profile) logEvent('app_open', { surface: 'other' });

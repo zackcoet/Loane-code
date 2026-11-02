@@ -41,8 +41,8 @@ function userDoc(uid: string, overrides: Record<string, unknown> = {}) {
     isVerified: true,
     verificationMethod: 'domain_claimed',
     verifiedAt: new Date(),
-    emailConfirmed: false,
-    emailConfirmedAt: null,
+    emailConfirmed: true,
+    emailConfirmedAt: new Date(),
     sizes: { tops: null, bottoms: null, dresses: null, shoe: null },
     role: 'student',
     status: 'active',
@@ -212,7 +212,16 @@ describe('users', () => {
   });
 
   it('stops her confirming her own email', async () => {
+    // Start unconfirmed, or this is a no-op write that changes no
+    // fields and so is not the thing we mean to test.
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'users', ELLA), userDoc(ELLA, { emailConfirmed: false }));
+    });
     await assertFails(updateDoc(doc(asElla(), 'users', ELLA), { emailConfirmed: true }));
+  });
+
+  it('stops her back-dating the moment she was confirmed', async () => {
+    await assertFails(updateDoc(doc(asElla(), 'users', ELLA), { emailConfirmedAt: new Date() }));
   });
 
   it('stops her un-suspending her own account', async () => {
@@ -1680,5 +1689,68 @@ describe('the show-sizes toggle', () => {
 
   it('stops her flipping it on someone else', async () => {
     await assertFails(updateDoc(doc(asElla(), 'users', MADDIE), { showSizes: true }));
+  });
+});
+
+/**
+ * The email gate.
+ *
+ * Typing a .edu address is not proof of anything — the mailbox has to
+ * answer. These are the tests that say so: until she types the code
+ * back, a signed-in account gets nothing but its own.
+ */
+describe('before she has confirmed her email', () => {
+  /** Ella, signed in, account real, inbox unproven. */
+  async function unconfirmed() {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(
+        doc(ctx.firestore(), 'users', ELLA),
+        userDoc(ELLA, { emailConfirmed: false, emailConfirmedAt: null }),
+      );
+    });
+  }
+
+  it('she cannot read the campus closets', async () => {
+    await unconfirmed();
+    await assertFails(getDoc(doc(asElla(), 'listings', 'listing-1')));
+  });
+
+  it('she cannot read the feed', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'posts', 'post-1'), postDoc(ELLA));
+    });
+    await unconfirmed();
+    await assertFails(getDoc(doc(asElla(), 'posts', 'post-1')));
+  });
+
+  it('she cannot list a piece', async () => {
+    await unconfirmed();
+    await assertFails(
+      setDoc(doc(asElla(), 'listings', 'listing-unconfirmed'), listingDoc(ELLA, {
+        id: 'listing-unconfirmed',
+      })),
+    );
+  });
+
+  it('she can still read her own account, or she could never get out of the hole', async () => {
+    await unconfirmed();
+    await assertSucceeds(getDoc(doc(asElla(), 'users', ELLA)));
+  });
+
+  it('she can still read the verification switch, which is how the app knows to ask', async () => {
+    await unconfirmed();
+    await assertSucceeds(getDoc(doc(asElla(), 'config', 'verification')));
+  });
+
+  it('confirming turns the lights back on', async () => {
+    await unconfirmed();
+    await assertFails(getDoc(doc(asElla(), 'listings', 'listing-1')));
+
+    // Only a Cloud Function can do this, which is the point.
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(ctx.firestore().doc(`users/${ELLA}`), userDoc(ELLA), { merge: true });
+    });
+
+    await assertSucceeds(getDoc(doc(asElla(), 'listings', 'listing-1')));
   });
 });

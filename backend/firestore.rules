@@ -44,11 +44,36 @@ service cloud.firestore {
       return signedIn() && existingUser().status == 'active';
     }
 
-    // Campus-verified AND active. Today isVerified is set from the email
-    // domain alone (see docs/security.md) — the check is wired up now so
-    // that turning on real verification changes nothing here.
+    // Campus-verified AND active.
+    //
+    // TWO FLAGS, AND THEY MEAN DIFFERENT THINGS. `isVerified` says her
+    // address is on an approved school domain, which is true the moment
+    // she types it. `emailConfirmed` says a code was sent there and she
+    // typed it back. Only the second is evidence that the mailbox is
+    // hers, so only the second actually protects anything.
+    //
+    // Neither can be written by the app — see the users/ update rule,
+    // where both are absent from the allowed list. A student cannot
+    // make herself a verified student; a Cloud Function does it after
+    // checking the code.
     function isVerifiedStudent() {
-      return isActive() && existingUser().isVerified == true;
+      return isActive()
+        && existingUser().isVerified == true
+        && existingUser().emailConfirmed == true;
+    }
+
+    // Has she proven the mailbox is hers?
+    //
+    // The READ-SIDE gate, and deliberately narrower than
+    // isVerifiedStudent(): it asks only about the email, not about
+    // suspension, because a suspended student is still allowed to read
+    // (see isActive) and this must not quietly change that.
+    //
+    // It is what stops somebody who has typed any .edu address — and
+    // got no further — from browsing a campus of real girls' closets,
+    // photographs and names. That is the data this protects.
+    function hasProvenEmail() {
+      return signedIn() && existingUser().emailConfirmed == true;
     }
 
     // Which fields is this write touching?
@@ -362,7 +387,7 @@ service cloud.firestore {
           && draft().stats.completedRentals == 0;
       }
 
-      allow read: if signedIn();
+      allow read: if hasProvenEmail();
 
       allow create: if isVerifiedStudent()
         && draft().ownerUid == uid()
@@ -404,7 +429,7 @@ service cloud.firestore {
     // posts — outfit looks
     // -----------------------------------------------------------------
     match /posts/{postId} {
-      allow read: if signedIn();
+      allow read: if hasProvenEmail();
 
       // Posts are created ONLY by the createPost function.
       //
@@ -447,7 +472,7 @@ service cloud.firestore {
     // signed by somebody else.
     // -----------------------------------------------------------------
     match /comments/{commentId} {
-      allow read: if signedIn();
+      allow read: if hasProvenEmail();
       allow write: if false;
     }
 
@@ -458,12 +483,12 @@ service cloud.firestore {
     // honest. The app calls a callable function instead of writing here.
     // -----------------------------------------------------------------
     match /follows/{followId} {
-      allow read: if signedIn();
+      allow read: if hasProvenEmail();
       allow write: if false;
     }
 
     match /likes/{likeId} {
-      allow read: if signedIn();
+      allow read: if hasProvenEmail();
       allow write: if false;
     }
 
@@ -607,7 +632,8 @@ service cloud.firestore {
     match /events/{eventId} {
       function allowedType() {
         return request.resource.data.type in [
-          'app_open', 'onboarding_step', 'signup_completed', 'profile_edit',
+          'app_open', 'onboarding_step', 'signup_completed', 'email_confirmed',
+          'profile_edit',
           'post_view', 'post_like', 'post_unlike', 'post_save', 'post_unsave',
           'post_create', 'post_edit', 'post_delete',
           'listing_view', 'listing_create', 'listing_edit', 'listing_remove',
