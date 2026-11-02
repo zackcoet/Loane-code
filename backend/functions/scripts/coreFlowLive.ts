@@ -134,6 +134,28 @@ async function signUp(appName: string, username: string): Promise<Student> {
     username,
   })) as { data: { uid: string; token: string; campusId: string } };
   await signInWithCustomToken(getAuth(app), r.data.token);
+
+  /*
+    STAND IN FOR HER TYPING THE CODE.
+
+    Email verification is on in production, so without this a
+    throwaway student is refused by every rule and every guard a line
+    later, and the whole run fails for a reason that has nothing to do
+    with what it is testing.
+
+    Done with admin credentials, which is exactly what
+    confirmVerificationCode does after checking the code — so
+    everything downstream is testing the real thing. The one step not
+    covered is the code itself, which needs a real inbox and is tested
+    by hand.
+  */
+  await adminDb().collection('users').doc(r.data.uid).update({
+    emailConfirmed: true,
+    emailConfirmedAt: Timestamp.now(),
+    verificationMethod: 'manual_admin',
+    updatedAt: Timestamp.now(),
+  });
+
   return {
     uid: r.data.uid,
     campusId: r.data.campusId,
@@ -169,6 +191,36 @@ async function main(): Promise<void> {
     lender = await signUp(`cf-lender-${stamp}`, LENDER);
     renter = await signUp(`cf-renter-${stamp}`, RENTER);
     return `${LENDER} + ${RENTER}`;
+  });
+
+  await step('both are ready to meet in person', async () => {
+    /*
+      A FACE AND A PHONE NUMBER, FOR BOTH OF THEM.
+
+      requireHandoffReady refuses a booking from anybody without both,
+      per ACTOR rather than per booking — so the renter needs them too,
+      not just the lender whose profile the next step edits. This is
+      what the app's own gate makes her do before Loane It.
+
+      Its absence is why this run failed the first time it was tried
+      against production: the guard shipped weeks ago, the script was
+      written before it, and nothing had been deployed in between for
+      the mismatch to show up.
+    */
+    const face = await upload(renter, `users/${renter.uid}/profile/avatar-${Date.now()}.jpg`);
+    await updateDoc(doc(renter.db, 'users', renter.uid), {
+      photoUrl: face.url,
+      updatedAt: serverTimestamp(),
+    });
+
+    for (const student of [lender, renter]) {
+      await setDoc(
+        doc(student.db, 'users', student.uid, 'private', 'settings'),
+        { uid: student.uid, phone: '+18035550100', updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+    }
+    return 'photos and numbers on both';
   });
 
   await step('a non-school email is refused', async () => {

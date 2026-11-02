@@ -1197,3 +1197,40 @@ with a `satisfies` so it cannot drift again.
 **Still off.** `config/verification.required` stays false until a test
 code has actually arrived in a real `@email.sc.edu` inbox. A required
 verification that cannot send email is a locked front door.
+
+## 2026-11-02 — Live on loane-code, verification ON
+
+Everything that had been sitting undeployed went up, and email
+verification is on. Production went from 57 Cloud Functions to 74.
+
+**Order mattered and was followed.** The seven existing accounts were
+grandfathered BEFORE the new rules went live, so nobody was locked out
+for a moment. They are recorded `manual_admin`, not `email_confirmed`.
+
+**Try-on is off, in one line.** `TRY_ON_ENABLED` in shared. Nothing
+deleted. Its three outside-service functions are not exported, because
+the Firebase CLI reads every function in the codebase before deploying
+any of them — so one function declaring a secret that does not exist
+blocks the whole deploy, not just itself. That cost one failed deploy
+to discover. Bringing it back is three lines and two secrets; see
+docs/roadmap.md.
+
+**`CONTACT_MATCH_PEPPER` was generated server-side** with openssl,
+piped straight into Secret Manager, never printed. Safe to create fresh
+because `phoneHashes` was empty. **It must never be rotated** now
+without re-hashing, or every contact match breaks.
+
+**The live core flow was broken and nobody knew**, which is the exact
+failure it exists to catch. It had 11 failures on the first run, all
+cascading from one: `requireHandoffReady` refuses a booking from
+anybody without a photo and a phone, per actor, and the script only
+ever gave the LENDER a photo. The guard shipped weeks ago; the script
+predates it; nothing had been deployed in between, so the mismatch had
+nowhere to show up. Now 20 passed, 0 failed.
+
+The lesson is the one already written in CLAUDE.md and worth repeating:
+emulator-green means nothing about production, and a long gap between
+deploys hides this kind of drift rather than avoiding it.
+
+**`npm run live` / `npm run practice`** switch the phone app between
+loane-code and the emulators, and say out loud which one you are on.
