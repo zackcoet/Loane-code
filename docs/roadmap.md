@@ -305,6 +305,49 @@ the long pole, not the code.
 - Campus and email-domain management
 - Founding closets tracker
 
+## AI Try-On — switched off for v1, comes back in v2
+
+**Nothing is deleted.** Every screen, hook, Cloud Function and test is
+still in the repo and still compiles. Three things make it unreachable,
+and all three have to be undone to bring it back:
+
+1. **`TRY_ON_ENABLED` in `shared/src/constants.ts` is `false`.** The app
+   hides every entry point from this one line, and
+   `assertTryOnEnabled` on the server refuses regardless of what
+   `config/tryOn` says. Flip it to `true`.
+
+2. **Three Cloud Functions are not exported.** See the comment at the
+   bottom of `backend/functions/src/index.ts` — the three lines to
+   uncomment are written out there:
+
+   | Function | Calls | Does |
+   |---|---|---|
+   | `generateTryOn` | FASHN | makes the image |
+   | `prepareFlatPhoto` | FASHN + Anthropic | cleans a garment photo |
+   | `checkPhoto` | Anthropic | is this body photo usable |
+
+3. **Their API keys are not set on `loane-code`:**
+
+   ```bash
+   cd backend && npx firebase functions:secrets:set FASHN_API_KEY --project loane-code
+   cd backend && npx firebase functions:secrets:set ANTHROPIC_API_KEY --project loane-code
+   ```
+
+   The FASHN key already exists in `backend/functions/.env` for the
+   emulator; it has never been put into Secret Manager.
+
+**Why the exports and not just the switch.** The Firebase CLI reads
+every function in the codebase before deploying any of them, so a
+function declaring a secret that does not exist blocks the whole
+deploy — not just itself. That is what held up the 2026-11-02 launch
+deploy, and it is why those three lines are commented rather than
+merely dark.
+
+**`config/tryOn` is a different switch and still works.** That one is
+operational — "turn it off for an hour, the bill looks wrong".
+`TRY_ON_ENABLED` is the product decision, and it holds even if that
+document is missing or set wrong.
+
 ## Phase 8 — Launch prep
 
 - Firebase App Check

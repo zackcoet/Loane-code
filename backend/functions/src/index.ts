@@ -120,20 +120,47 @@ export { matchContacts } from './social/matchContacts';
 // --- AI try-on --------------------------------------------------------------
 // Everything that costs money runs server-side. The app cannot call FASHN
 // and cannot write one field of a tryOn document. See docs/decisions.md.
-export { generateTryOn } from './tryon/generateTryOn';
+
 export { deleteTryOnData } from './tryon/deleteTryOnData';
 export { setTryOnBodyPhoto, clearTryOnBodyPhoto } from './tryon/setBodyPhoto';
-export { checkPhoto } from './tryon/checkPhoto';
+
 export {
   startEmailVerification,
   sendVerificationCode,
   confirmVerificationCode,
   changeUnverifiedEmail,
 } from './auth/emailVerification';
-export { prepareFlatPhoto } from './tryon/prepareFlatPhoto';
+
 export { grantTryOns, setTryOnConfig } from './tryon/admin';
 export { sweepUnsavedTryOns, runTryOnSweep } from './tryon/sweepUnsavedTryOns';
 export { acceptLegalDocs, publishLegalDoc, saveLegalDraft } from './legal/legal';
 
 // --- Later phases -----------------------------------------------------------
 // export { saveListing }             from './social/save';        // Phase 3
+
+/*
+  AI TRY-ON: THE THREE FUNCTIONS THAT CALL OUTSIDE SERVICES ARE NOT
+  EXPORTED FOR v1.
+
+    generateTryOn     FASHN        makes the image
+    prepareFlatPhoto  FASHN + Anthropic
+    checkPhoto        Anthropic    is this body photo usable
+
+  NOT DELETED — the files, their tests and everything around them are
+  untouched, and the lines below bring them back.
+
+  Two reasons they are commented out rather than merely switched off.
+  The feature is off for v1 (see TRY_ON_ENABLED), so a deployed
+  function nobody may call is a URL with an API key behind it and no
+  purpose. And FASHN_API_KEY and ANTHROPIC_API_KEY are not set on
+  loane-code: the Firebase CLI reads every function in the codebase
+  before it deploys any of them, so an unexported function with a
+  missing secret blocks the entire deploy.
+
+  To bring try-on back for v2: set both secrets, uncomment these three
+  lines, and flip TRY_ON_ENABLED. See docs/roadmap.md.
+
+  export { generateTryOn } from './tryon/generateTryOn';
+  export { prepareFlatPhoto } from './tryon/prepareFlatPhoto';
+  export { checkPhoto } from './tryon/checkPhoto';
+*/

@@ -11,7 +11,7 @@
  */
 
 import type { CallableRequest } from 'firebase-functions/v2/https';
-import { COLLECTIONS, type TryOnConfig } from '@loane/shared';
+import { COLLECTIONS, TRY_ON_ENABLED, type TryOnConfig } from '@loane/shared';
 import { db } from '../lib/admin';
 import { failed } from '../lib/errors';
 
@@ -28,6 +28,19 @@ export async function readTryOnConfig(): Promise<TryOnConfig> {
 }
 
 export async function assertTryOnEnabled(request: CallableRequest): Promise<void> {
+  /*
+    The v1 switch, before anything else and before any read.
+
+    Hiding the buttons in the app is not security — a replayed call or
+    an older build still reaches this function. This is the refusal
+    that actually holds, and it holds even if config/tryOn says the
+    feature is on, because a product decision must not depend on a row
+    in a database being correct.
+  */
+  if (!TRY_ON_ENABLED) {
+    throw failed('Try-on is not part of this version of Loane yet.');
+  }
+
   const config = await readTryOnConfig();
   if (config.enabled) return;
   if (config.enabledForAdmins && request.auth?.token?.admin === true) return;

@@ -803,3 +803,35 @@ export const TRYON_FREE_LIFETIME = 5;
 /** What she is told when she runs out, until credits exist. */
 export const TRYON_LIMIT_MESSAGE =
   "You've used your 5 free try-ons, more coming soon";
+
+// ---------------------------------------------------------------------------
+// AI Try-On — OFF FOR v1
+// ---------------------------------------------------------------------------
+
+/**
+ * The whole feature, in one boolean.
+ *
+ * NOTHING IS DELETED. Every screen, hook, Cloud Function and test is
+ * still here and still compiles. This is the switch that makes it
+ * unreachable: flip it to true and the feature comes back exactly as
+ * it was, in one line.
+ *
+ * WHY IT IS A CONSTANT AND NOT THE config/tryOn DOCUMENT. That
+ * document already exists and is the right tool for "turn it off for
+ * an hour because the bill looks wrong". This is a different
+ * question — "v1 does not have this feature" — and it has to hold
+ * even when the config is missing, misread, or set wrong by somebody
+ * poking at the admin dashboard. The document is an operational
+ * switch; this is a product decision, and a product decision should
+ * not depend on a row in a database being correct.
+ *
+ * It is also checked on BOTH sides. The app hides every way in; the
+ * server refuses anyway. Neither alone is enough: hiding a button is
+ * not security, and a server-only refusal leaves buttons that do
+ * nothing.
+ *
+ * To bring it back for v2, see docs/roadmap.md — the three Cloud
+ * Functions that call FASHN and Anthropic are not currently exported,
+ * and their API keys are not set on loane-code.
+ */
+export const TRY_ON_ENABLED = false;

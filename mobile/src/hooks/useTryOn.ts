@@ -21,6 +21,8 @@ import {
 import { getDownloadURL, ref } from 'firebase/storage';
 import {
   COLLECTIONS,
+  isTryOnReady,
+  TRY_ON_ENABLED,
   type Listing,
   type PresetId,
   type TryOn,
@@ -46,7 +48,15 @@ import { logEvent } from '../analytics/events';
  * that refuses a generation and the app that decides whether to offer
  * one have to mean the same thing by "ready".
  */
-export { isTryOnReady as isTryOnEligible } from '@loane/shared';
+export function isTryOnEligible(
+  listing: Parameters<typeof isTryOnReady>[0],
+): boolean {
+  // The v1 switch first, so every badge, sparkle and entry point in
+  // the app disappears from one place — including the ones on cards,
+  // which have no business subscribing to a config document each.
+  if (!TRY_ON_ENABLED) return false;
+  return isTryOnReady(listing);
+}
 
 /**
  * Her body photo: whether she has one, and removing it.
@@ -400,6 +410,8 @@ export function useSaveTryOn() {
 /** The on/off switch, so the app can hide the feature without a deploy. */
 export function useTryOnEnabled() {
   const { profile } = useAuth();
+  // Hooks cannot be called conditionally, so the switch is applied to
+  // the RESULT rather than by skipping the subscription below.
   const [config, setConfig] = useState<{ enabled: boolean; enabledForAdmins: boolean } | null>(
     null,
   );
@@ -421,6 +433,7 @@ export function useTryOnEnabled() {
   }, [profile?.uid]);
 
   return useMemo(() => {
+    if (!TRY_ON_ENABLED) return false;
     if (!config) return false;
     if (config.enabled) return true;
     return config.enabledForAdmins && profile?.role === 'admin';
